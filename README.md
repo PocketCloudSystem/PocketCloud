@@ -13,6 +13,7 @@
 
 ## NOTE
 - You don't have to download the plugins (CloudBridge, CloudBridge-Proxy)
+- If you want your server to save when the server stops, then you need to turn on "auto-save" in server.properties
 
 ## Modules
 - **Sign Module** (Enabled by default)
