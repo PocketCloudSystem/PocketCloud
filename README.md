@@ -91,6 +91,9 @@
 | pocketcloud.notify.receive     | You can receive notifications        | Receive notifications    |
 | pocketcloud.maintenance.bypass | You can bypass the maintenance mode  | Bypass maintenance mode  |
 
+## BETA
+- If you find bugs or something like that please create an [issue](https://github.com/PocketCloudSystem/PocketCloud/issues/new?assignees=&labels=&template=bug_report.md&title=) it would be very kind! :heart:
+
 ## Config
 ```json
 {
