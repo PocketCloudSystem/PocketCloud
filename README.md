@@ -2,6 +2,8 @@
 
 ## Requirements
 - Linux OS
+- Java 17
+- Screen or tmux
 
 ## Installation
 - Create a folder for the cloud
