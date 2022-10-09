@@ -57,6 +57,8 @@ class PocketCloud {
     public function __construct() {
         self::$instance = $this;
 
+        Utils::createDefaultFiles();
+
         $this->config = new CloudConfig();
         $this->messagesConfig = new MessagesConfig();
         $this->notifyConfig = new NotifyConfig();
@@ -64,7 +66,6 @@ class PocketCloud {
         $this->maintenanceConfig = new MaintenanceConfig();
         $this->signLayoutConfig = new SignLayoutConfig();
 
-        Utils::createDefaultFiles();
         Utils::check();
         Utils::createLockFile();
 
