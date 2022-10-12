@@ -7,17 +7,7 @@ class AsyncClosureTask extends AsyncTask {
     public function __construct(private \Closure $closure, private ?\Closure $completion = null) {}
 
     public function onRun(): void {
-        $reflection = new \ReflectionFunction($this->closure);
-
-        $result = null;
-        if ($reflection->getNumberOfParameters() == 0) {
-            ($this->closure)();
-        } else {
-            if ($reflection->getParameters()[0]->isPassedByReference()) ($this->closure)($result);
-            else ($this->closure)();
-        }
-
-        $this->setResult($result);
+        $this->setResult(($this->closure)());
     }
 
     public function onCompletion(): void {

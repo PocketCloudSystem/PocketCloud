@@ -35,8 +35,10 @@ class SoftwareManager {
         (new SoftwareDownloadEvent($software))->call();
         CloudLogger::get()->info("Downloading §e" . $software->getName() . " §rsoftware...");
 
+        $url = $software->getUrl();
+        $fileName = $software->getFileName();
         AsyncPool::getInstance()->submitTask(AsyncClosureTask::fromClosure(
-            fn(bool &$result) => $result = Utils::download($software->getUrl(), SOFTWARE_PATH . $software->getFileName()),
+            fn() => Utils::download($url, SOFTWARE_PATH . $fileName),
             function(bool $result) use($software) {
                 if (!$result) {
                     CloudLogger::get()->error("§cCan't download the §e" . $software->getName() . " §csoftware!");
