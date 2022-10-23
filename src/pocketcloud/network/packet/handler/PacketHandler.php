@@ -151,7 +151,7 @@ class PacketHandler {
             } else $packet->sendResponse(new CloudServerStopResponsePacket(ErrorReason::SERVER_EXISTENCE()), $client);
         });
 
-        PacketListener::getInstance()->register(CloudServerSavePacket::class, function(CloudServerStopRequestPacket $packet, ServerClient $client): void {
+        PacketListener::getInstance()->register(CloudServerSavePacket::class, function(CloudServerSavePacket $packet, ServerClient $client): void {
             if (($server = ServerClientManager::getInstance()->getServerOfClient($client)) !== null) {
                 CloudServerManager::getInstance()->saveServer($server);
             }
