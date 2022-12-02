@@ -2,6 +2,7 @@
 
 namespace pocketcloud\player;
 
+use pocketcloud\event\impl\player\PlayerKickEvent;
 use pocketcloud\network\Network;
 use pocketcloud\network\packet\impl\normal\LocalPlayerUpdatePacket;
 use pocketcloud\network\packet\impl\normal\PlayerKickPacket;
@@ -69,6 +70,8 @@ class CloudPlayer {
     }
 
     public function kick(string $reason = "") {
+        ($ev = new PlayerKickEvent($this, $reason))->call();
+        if ($ev->isCancelled()) return;
         if ($this->getCurrentProxy() === null) $this->getCurrentServer()?->sendPacket(new PlayerKickPacket($this->getName(), $reason));
         else $this->getCurrentProxy()->sendPacket(new PlayerKickPacket($this->getName(), $reason));
     }

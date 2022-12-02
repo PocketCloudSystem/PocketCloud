@@ -5,6 +5,7 @@ namespace pocketcloud\network\packet\handler;
 use pocketcloud\config\MaintenanceConfig;
 use pocketcloud\config\NotifyConfig;
 use pocketcloud\event\impl\network\NetworkPacketReceiveEvent;
+use pocketcloud\event\impl\player\PlayerSwitchServerEvent;
 use pocketcloud\event\impl\server\ServerCrashEvent;
 use pocketcloud\event\impl\server\ServerDisconnectEvent;
 use pocketcloud\network\client\ServerClientManager;
@@ -168,6 +169,7 @@ class PacketHandler {
                 if (($server = CloudServerManager::getInstance()->getServerByName($packet->getNewServer())) !== null) {
                     Network::getInstance()->broadcastPacket($packet);
                     CloudLogger::get()->debug("Player " . $player->getName() . " performed a server switch (" . ($player->getCurrentServer()?->getName() ?? "NULL") . " -> " . ($server?->getName() ?? "NULL") . ")");
+                    (new PlayerSwitchServerEvent($player, $player->getCurrentServer(), $server));
                     $player->setCurrentServer($server);
                 }
             }

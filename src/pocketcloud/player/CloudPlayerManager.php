@@ -2,6 +2,8 @@
 
 namespace pocketcloud\player;
 
+use pocketcloud\event\impl\player\PlayerConnectEvent;
+use pocketcloud\event\impl\player\PlayerDisconnectEvent;
 use pocketcloud\network\Network;
 use pocketcloud\network\packet\impl\normal\LocalPlayerRegisterPacket;
 use pocketcloud\network\packet\impl\normal\LocalPlayerUnregisterPacket;
@@ -19,12 +21,14 @@ class CloudPlayerManager {
         else CloudLogger::get()->debug("Player " . $player->getName() . " is connected. (On: " . ($player->getCurrentServer()?->getName() ?? "NULL") . ")");
         $this->players[$player->getName()] = $player;
         Network::getInstance()->broadcastPacket(new LocalPlayerRegisterPacket($player->toArray()));
+        (new PlayerConnectEvent($player, ($player->getCurrentServer() ?? $player->getCurrentProxy())))->call();
     }
 
     public function removePlayer(CloudPlayer $player) {
         if ($player->getCurrentServer() === null) CloudLogger::get()->debug("Player " . $player->getName() . " is disconnected. (From: " . ($player->getCurrentProxy()?->getName() ?? "NULL") . ")");
         else CloudLogger::get()->debug("Player " . $player->getName() . " is disconnected. (From: " . ($player->getCurrentServer()?->getName() ?? "NULL") . ")");
         if (isset($this->players[$player->getName()])) unset($this->players[$player->getName()]);
+        (new PlayerDisconnectEvent($player, ($player->getCurrentServer() ?? $player->getCurrentProxy())))->call();
         $player->setCurrentServer(null);
         $player->setCurrentProxy(null);
         Network::getInstance()->broadcastPacket(new LocalPlayerUnregisterPacket($player->getName()));

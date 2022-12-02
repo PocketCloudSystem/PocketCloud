@@ -7,11 +7,11 @@ use pocketcloud\server\CloudServer;
 
 class PlayerSwitchServerEvent extends PlayerEvent {
 
-    public function __construct(private CloudPlayer $player, private CloudServer $oldServer, private CloudServer $newServer) {
+    public function __construct(private CloudPlayer $player, private ?CloudServer $oldServer, private CloudServer $newServer) {
         parent::__construct($this->player);
     }
 
-    public function getOldServer(): CloudServer {
+    public function getOldServer(): ?CloudServer {
         return $this->oldServer;
     }
 

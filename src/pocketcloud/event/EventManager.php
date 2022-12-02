@@ -19,8 +19,8 @@ class EventManager {
         $reflection = new \ReflectionClass($listener);
         foreach ($reflection->getMethods() as $method) {
             if (!$method->isAbstract() && !$method->isStatic() && $method->isPublic() && $method->getNumberOfParameters() == 1) {
-                $event = $method->getParameters()[0]->getType();
-                if ($event instanceof Event) $this->handlers[$event::class][] = $method->getClosure($listener);
+                $event = $method->getParameters()[0]->getType()->getName();
+                if (is_subclass_of($event, Event::class)) $this->handlers[$event][] = $method->getClosure($listener);
             }
         }
     }
