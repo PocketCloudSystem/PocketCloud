@@ -158,7 +158,16 @@ class Utils {
 
         $github = false;
         $ch = curl_init();
-        curl_setopt_array($ch, [CURLOPT_URL => "pocket-cloud.tk/"]);
+        curl_setopt_array($ch, [
+            CURLOPT_URL => "pocket-cloud.tk/",
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_SSL_VERIFYHOST => 2,
+            CURLOPT_FORBID_REUSE => 1,
+            CURLOPT_FRESH_CONNECT => 1,
+            CURLOPT_AUTOREFERER => true,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_RETURNTRANSFER => true
+        ]);
         curl_exec($ch);
         $errno = curl_errno($ch);
         if ($errno !== 0) $github = true;
