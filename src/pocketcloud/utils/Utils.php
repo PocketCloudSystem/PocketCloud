@@ -71,6 +71,7 @@ class Utils {
     }
 
     public static function deleteDir($dirPath) {
+        $dirPath = rtrim($dirPath, DIRECTORY_SEPARATOR);
         if (is_dir($dirPath)) {
             foreach (array_diff(scandir($dirPath), [".", ".."]) as $object) {
                 if (filetype($dirPath . DIRECTORY_SEPARATOR . $object) == "dir") {
@@ -80,11 +81,13 @@ class Utils {
                 }
             }
 
-            rmdir($dirPath);
+            rmdir($dirPath . DIRECTORY_SEPARATOR);
         }
     }
 
     public static function copyDir($src, $dst) {
+        $src = rtrim($src, DIRECTORY_SEPARATOR);
+        $dst = rtrim($dst, DIRECTORY_SEPARATOR);
         if (!file_exists($src)) @mkdir($src);
         if (!file_exists($dst)) @mkdir($dst);
 

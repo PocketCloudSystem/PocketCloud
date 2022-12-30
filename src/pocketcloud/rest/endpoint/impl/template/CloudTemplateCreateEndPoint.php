@@ -31,8 +31,6 @@ class CloudTemplateCreateEndPoint extends EndPoint {
         if ($minServerCount < 0) $minServerCount = 0;
         if ($maxServerCount < 0) $maxServerCount = 2;
 
-        var_dump($lobby, $maintenance, $static, $maxPlayerCount, $minServerCount, $maxServerCount, $startNewWhenFull, $autoStart);
-
         if (TemplateManager::getInstance()->getTemplateByName($name) !== null) {
             return ["error" => "The template already exists!"];
         }
