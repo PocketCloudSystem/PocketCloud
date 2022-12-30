@@ -13,6 +13,7 @@ use pocketcloud\scheduler\Task;
 use pocketcloud\server\CloudServerManager;
 use pocketcloud\server\crash\CrashChecker;
 use pocketcloud\server\status\ServerStatus;
+use pocketcloud\template\TemplateType;
 use pocketcloud\utils\CloudLogger;
 use pocketcloud\utils\Utils;
 
@@ -32,9 +33,11 @@ class ServerTimeoutTask extends Task {
                         CrashChecker::writeCrashFile($server, $crashData);
                     } else {
                         CloudLogger::get()->info("The server §e" . $server->getName() . " §r§ccouldn't §rbe started!");
+                        if ($server->getTemplate()->getTemplateType() === TemplateType::PROXY()) Utils::copyFile($server->getPath() . "logs/server.log", $server->getTemplate()->getPath() . "logs/server.log");
+                        else Utils::copyFile($server->getPath() . "server.log", $server->getTemplate()->getPath() . "server.log");
                     }
                     Notifier::sendNotify(NotifyMessage::SERVER_COULD_NOT_START()->withReplacements(["server" => $server->getName()]));
-                    Utils::deleteDir($server->getPath());
+                    if (!$server->getTemplate()->isStatic()) Utils::deleteDir($server->getPath());
                 }
             } else if ($server->getServerStatus() === ServerStatus::ONLINE() || $server->getServerStatus() === ServerStatus::FULL() || $server->getServerStatus() === ServerStatus::IN_GAME()) {
                 if ($server->isFirstCheck()) {
@@ -60,8 +63,10 @@ class ServerTimeoutTask extends Task {
                             } else {
                                 CloudLogger::get()->info("The server §e" . $server->getName() . " §ris §ctimed out§r!");
                                 Notifier::sendNotify(NotifyMessage::SERVER_TIMED_OUT()->withReplacements(["server" => $server->getName()]));
+                                if ($server->getTemplate()->getTemplateType() === TemplateType::PROXY()) Utils::copyFile($server->getPath() . "logs/server.log", $server->getTemplate()->getPath() . "logs/server.log");
+                                else Utils::copyFile($server->getPath() . "server.log", $server->getTemplate()->getPath() . "server.log");
                             }
-                            Utils::deleteDir($server->getPath());
+                            if (!$server->getTemplate()->isStatic()) Utils::deleteDir($server->getPath());
                         }
                     }
                 }
@@ -75,8 +80,10 @@ class ServerTimeoutTask extends Task {
                         CrashChecker::writeCrashFile($server, $crashData);
                     } else {
                         CloudLogger::get()->info("It tokes too long to stop the server §e" . $server->getName() . "§r! Force shutdown...");
+                        if ($server->getTemplate()->getTemplateType() === TemplateType::PROXY()) Utils::copyFile($server->getPath() . "logs/server.log", $server->getTemplate()->getPath() . "logs/server.log");
+                        else Utils::copyFile($server->getPath() . "server.log", $server->getTemplate()->getPath() . "server.log");
                     }
-                    Utils::deleteDir($server->getPath());
+                    if (!$server->getTemplate()->isStatic()) Utils::deleteDir($server->getPath());
                     Utils::kill($server->getCloudServerData()->getProcessId());
                 }
             } else if ($server->getServerStatus() === ServerStatus::OFFLINE()) {
@@ -90,7 +97,7 @@ class ServerTimeoutTask extends Task {
                     Notifier::sendNotify(NotifyMessage::SERVER_CRASHED()->withReplacements(["server" => $server->getName()]));
                 }
 
-                Utils::deleteDir($server->getPath());
+                if (!$server->getTemplate()->isStatic()) Utils::deleteDir($server->getPath());
             }
         }
     }

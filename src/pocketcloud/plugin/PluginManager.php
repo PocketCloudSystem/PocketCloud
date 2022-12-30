@@ -103,6 +103,25 @@ class PluginManager {
         if (isset($this->enabledPlugins[$plugin->getDescription()->getName()])) unset($this->enabledPlugins[$plugin->getDescription()->getName()]);
     }
 
+    public function clear() {
+        $this->plugins = [];
+        $this->enabledPlugins = [];
+    }
+
+    public function reload() {
+        foreach ($this->plugins as $plugin) {
+            if ($plugin->isEnabled()) $this->disablePlugin($plugin);
+            unset($this->plugins[$plugin->getDescription()->getName()]);
+        }
+
+        $this->clear();
+
+        foreach (array_diff(scandir(CLOUD_PLUGINS_PATH), [".", ".."]) as $file) {
+            $path = CLOUD_PLUGINS_PATH . $file;
+            $this->loadPlugin($path);
+        }
+    }
+
     public function getPluginByName(string $name): ?Plugin {
         return $this->plugins[$name] ?? null;
     }

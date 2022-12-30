@@ -70,18 +70,20 @@ class TemplateManager {
         Network::getInstance()->broadcastPacket(new LocalTemplateUnregisterPacket($template->getName()));
     }
 
-    public function editTemplate(Template $template, ?bool $lobby, ?bool $maintenance, ?int $maxPlayerCount, ?int $minServerCount, ?int $maxServerCount, ?bool $autoStart) {
+    public function editTemplate(Template $template, ?bool $lobby, ?bool $maintenance, ?bool $static, ?int $maxPlayerCount, ?int $minServerCount, ?int $maxServerCount, ?bool $startNewWhenFull, ?bool $autoStart) {
         $startTime = microtime(true);
         CloudLogger::get()->info("Editing template §e" . $template->getName() . "§r...");
         $cfg = $this->getTemplatesConfig();
         $template->setLobby(($lobby === null ? $template->isLobby() : $lobby));
         $template->setMaintenance(($maintenance === null ? $template->isMaintenance() : $maintenance));
+        $template->setStatic(($static === null ? $template->isStatic() : $static));
         $template->setMaxPlayerCount(($maxPlayerCount === null ? $template->getMaxPlayerCount() : $maxPlayerCount));
         $template->setMinServerCount(($minServerCount === null ? $template->getMinServerCount() : $minServerCount));
         $template->setMaxServerCount(($maxServerCount === null ? $template->getMaxServerCount() : $maxServerCount));
+        $template->setStartNewWhenFull(($startNewWhenFull === null ? $template->isStartNewWhenFull() : $startNewWhenFull));
         $template->setAutoStart(($autoStart === null ? $template->isAutoStart() : $autoStart));
 
-        (new TemplateEditEvent($template, $lobby, $maintenance, $maxPlayerCount, $minServerCount, $maxServerCount, $autoStart))->call();
+        (new TemplateEditEvent($template, $lobby, $maintenance, $static, $maxPlayerCount, $minServerCount, $maxServerCount, $startNewWhenFull, $autoStart))->call();
 
         $cfg->set($template->getName(), $template->toArray());
         $cfg->save();
@@ -107,11 +109,6 @@ class TemplateManager {
 
     private function getTemplatesConfig(): Config {
         return new Config(TEMPLATES_PATH . "templates.json", 1);
-    }
-
-    public function reload() {
-        $this->templates = [];
-        $this->loadTemplates();
     }
 
     public function getTemplates(): array {

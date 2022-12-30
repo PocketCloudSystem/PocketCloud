@@ -19,6 +19,7 @@ abstract class AsyncTask extends Thread {
             $this->onRun();
         } catch (\Throwable $t) {
             $this->crashed = true;
+            CloudLogger::get()->error("§cAsynchron task §8'§e" . (new \ReflectionClass($this))->getShortName() . "§8' §ccrashed!");
             CloudLogger::get()->exception($t);
         }
 

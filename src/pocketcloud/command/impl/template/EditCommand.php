@@ -17,13 +17,15 @@ class EditCommand extends Command {
                             $template,
                             ($args[1] == "lobby" ? $realValue : null),
                             ($args[1] == "maintenance" ? $realValue : null),
+                            ($args[1] == "static" ? $realValue : null),
                             ($args[1] == "maxPlayerCount" ? $realValue : null),
                             ($args[1] == "minServerCount" ? $realValue : null),
                             ($args[1] == "maxServerCount" ? $realValue : null),
+                            ($args[1] == "startNewWhenFull" ? $realValue : null),
                             ($args[1] == "autoStart" ? $realValue : null),
                         );
                     } else CloudLogger::get()->error("§cYou've provided the wrong value for the key §e" . $args[1] . "§c! Expected: §e" . $expected);
-                } else CloudLogger::get()->error("§cThe edit key doesn't exists! §8(§rValid keys: §elobby, maintenance, maxPlayerCount, minServerCount, maxServerCount, autoStart§8)");
+                } else CloudLogger::get()->error("§cThe edit key doesn't exists! §8(§rValid keys: §elobby, maintenance, static, maxPlayerCount, minServerCount, maxServerCount, startNewWhenFull, autoStart§8)");
             } else CloudLogger::get()->error("§cThe template doesn't exists!");
         } else return false;
         return true;

@@ -67,7 +67,6 @@ class Utils {
         if (!file_exists(IN_GAME_PATH)) mkdir(IN_GAME_PATH);
         if (!file_exists(LOG_PATH)) file_put_contents(LOG_PATH, "");
         if (!file_exists(TEMP_PATH)) mkdir(TEMP_PATH);
-        else { self::deleteDir(TEMP_PATH); mkdir(TEMP_PATH); }
         if (!file_exists(TEMPLATES_PATH)) mkdir(TEMPLATES_PATH);
     }
 
@@ -111,7 +110,6 @@ class Utils {
     public static function copyFile($src, $dst) {
         if (is_file($src)) copy($src, $dst);
     }
-
 
     public static function cleanPath(string $path, bool $removePath = false): string {
         if ($removePath) return ($explode = explode(DIRECTORY_SEPARATOR, str_replace(["\\", "//", "/"], DIRECTORY_SEPARATOR, $path)))[count($explode) - 1];
@@ -259,7 +257,7 @@ class Utils {
     public static function requireAll(string $dirPath) {
         foreach (array_diff(scandir($dirPath), [".", ".."]) as $file) {
             if (is_file($dirPath . "/" . $file)) {
-                require_once $dirPath . "/" . $file;
+                if (!class_exists($dirPath . "/" . $file)) include_once $dirPath . "/" . $file;
             } else if (is_dir($dirPath . "/" . $file)) {
                 self::requireAll($dirPath . "/" . $file);
             }
@@ -287,5 +285,12 @@ class Utils {
         foreach($array as $key => $value) {
             yield (string) $key => $value;
         }
+    }
+
+    public static function generateString(int $length = 5): string {
+        $characters = "1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        $string = "";
+        for ($i = 0; $i < $length; $i++) $string .= $characters[mt_rand(0, (strlen($characters) - 1))];
+        return $string;
     }
 }

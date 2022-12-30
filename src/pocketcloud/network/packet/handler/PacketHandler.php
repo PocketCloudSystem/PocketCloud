@@ -88,7 +88,7 @@ class PacketHandler {
 
                 ServerClientManager::getInstance()->removeClient($server);
                 CloudServerManager::getInstance()->removeServer($server);
-                Utils::deleteDir($server->getPath());
+                if (!$server->getTemplate()->isStatic()) Utils::deleteDir($server->getPath());
             }
         });
 

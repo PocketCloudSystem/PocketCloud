@@ -23,8 +23,10 @@ class ListCommand extends Command {
                     "§e" . $template->getName() .
                     " §8- §risLobby: §a" . ($template->isLobby() ? "§aYES" : "§cNO") .
                     " §8- §risMaintenance: §a" . ($template->isMaintenance() ? "§aYES" : "§cNO") .
+                    " §8- §risStatic: §a" . ($template->isStatic() ? "§aYES" : "§cNO") .
                     " §8- §rMinServerCount: §e" . $template->getMinServerCount() .
                     " §8- §rMaxServerCount: §e" . $template->getMaxServerCount() .
+                    " §8- §rStartNewWhenFull: §a" . ($template->isStartNewWhenFull() ? "§aYES" : "§cNO") .
                     " §8- §risAutoStart: §a" . ($template->isAutoStart() ? "§aYES" : "§cNO") .
                     " §8- §rType: §e" . ($template->getTemplateType() === TemplateType::SERVER() ? "§eSERVER" : "§cPROXY")
                 );

@@ -18,6 +18,7 @@ use pocketcloud\lib\snooze\SleeperHandler;
 use pocketcloud\network\Network;
 use pocketcloud\player\CloudPlayerManager;
 use pocketcloud\plugin\PluginManager;
+use pocketcloud\rest\RestAPI;
 use pocketcloud\scheduler\AsyncPool;
 use pocketcloud\scheduler\TaskScheduler;
 use pocketcloud\server\CloudServerManager;
@@ -25,10 +26,12 @@ use pocketcloud\software\SoftwareManager;
 use pocketcloud\task\CheckServerAmountTask;
 use pocketcloud\task\ServerTimeoutTask;
 use pocketcloud\template\TemplateManager;
+use pocketcloud\update\UpdateChecker;
 use pocketcloud\utils\Address;
 use pocketcloud\utils\CloudLogger;
 use pocketcloud\utils\ShutdownHandler;
 use pocketcloud\utils\Utils;
+use pocketcloud\utils\VersionInfo;
 
 class PocketCloud {
 
@@ -50,7 +53,10 @@ class PocketCloud {
     private TemplateManager $templateManager;
     private CloudPlayerManager $cloudPlayerManager;
     private CloudServerManager $cloudServerManager;
+    private RestAPI $restAPI;
+    private UpdateChecker $updateChecker;
     private Network $network;
+    private bool $reloading = false;
     private bool $running = false;
 
     /** @throws ErrorException */
@@ -75,6 +81,10 @@ class PocketCloud {
 
         $startTime = microtime(true);
 
+        CloudLogger::get()->emptyLine();
+        CloudLogger::get()->info("§bPocket§3Cloud §8(§e" . VersionInfo::VERSION . "§8) - §fdeveloped by §e" . implode("§8, §e", VersionInfo::DEVELOPERS));
+        CloudLogger::get()->emptyLine();
+
         CloudLogger::get()->info("Starting cloud...");
 
         $this->taskScheduler = new TaskScheduler();
@@ -89,6 +99,8 @@ class PocketCloud {
         $this->templateManager = new TemplateManager();
         $this->cloudPlayerManager = new CloudPlayerManager();
         $this->cloudServerManager = new CloudServerManager();
+        $this->restAPI = new RestAPI();
+        $this->updateChecker = new UpdateChecker();
         $this->network = new Network(new Address("127.0.0.1", $this->config->getCloudPort()));
 
         CloudLogger::get()->info("Loading all plugins...");
@@ -113,6 +125,25 @@ class PocketCloud {
         $this->taskScheduler->scheduleRepeatingTask(new CheckServerAmountTask(), 20);
 
         $this->tick();
+    }
+
+    public function reload() {
+        $startTime = microtime(true);
+        CloudLogger::get()->info("Reloading...");
+        $this->reloading = true;
+
+        $this->config->reload();
+        $this->messagesConfig->reload();
+        $this->notifyConfig->reload();
+        $this->modulesConfig->reload();
+        $this->maintenanceConfig->reload();
+        $this->signLayoutConfig->reload();
+
+        $this->pluginManager->reload();
+
+        $this->reloading = false;
+        CloudLogger::get()->info("Cloud was §areloaded §rin §e" . number_format((microtime(true) - $startTime), 3) . "s§r.");
+        $this->updateChecker->check();
     }
 
     private function tick(): void {
@@ -214,8 +245,20 @@ class PocketCloud {
         return $this->cloudServerManager;
     }
 
+    public function getRestAPI(): RestAPI {
+        return $this->restAPI;
+    }
+
+    public function getUpdateChecker(): UpdateChecker {
+        return $this->updateChecker;
+    }
+
     public function getNetwork(): Network {
         return $this->network;
+    }
+
+    public function isReloading(): bool {
+        return $this->reloading;
     }
 
     public function isRunning(): bool {

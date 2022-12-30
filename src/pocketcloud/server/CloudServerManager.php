@@ -46,8 +46,12 @@ class CloudServerManager {
                     $port = ($template->getTemplateType() === TemplateType::SERVER() ? PortManager::getFreePort() : PortManager::getFreeProxyPort());
                     if ($port !== 0) {
                         $server = new CloudServer($id, $template, new CloudServerData($port, $template->getMaxPlayerCount(), 0), ServerStatus::STARTING());
-                        if (!file_exists($server->getPath())) mkdir($server->getPath());
-                        Utils::copyDir($template->getPath(), $server->getPath());
+                        if (file_exists($server->getPath()) && !$template->isStatic()) Utils::deleteDir($server->getPath());
+                        if (!file_exists($server->getPath())) {
+                            mkdir($server->getPath());
+                            Utils::copyDir($template->getPath(), $server->getPath());
+                        }
+
                         if ($template->getTemplateType() === TemplateType::SERVER()) Utils::copyDir(SERVER_PLUGINS_PATH, $server->getPath() . "plugins/");
                         else Utils::copyDir(PROXY_PLUGINS_PATH, $server->getPath() . "plugins/");
 
@@ -73,6 +77,7 @@ class CloudServerManager {
         $server->setStopTime(microtime(true));
         if ($force) {
             if ($server->getCloudServerData()->getProcessId() !== 0) Utils::kill($server->getCloudServerData()->getProcessId());
+            if (!$server->getTemplate()->isStatic()) Utils::deleteDir($server->getPath());
         } else {
             $server->sendPacket(new DisconnectPacket(DisconnectReason::SERVER_SHUTDOWN()));
         }

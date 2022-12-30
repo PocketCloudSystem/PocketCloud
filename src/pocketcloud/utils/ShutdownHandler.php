@@ -3,11 +3,12 @@
 namespace pocketcloud\utils;
 
 use pocketcloud\PocketCloud;
+use pocketcloud\rest\RestAPI;
 
 class ShutdownHandler {
 
     public static function register() {
-        register_shutdown_function(fn() => PocketCloud::getInstance()->shutdown());
+        register_shutdown_function(fn() => self::shutdown());
 
         if (function_exists("pcntl_signal")) {
             pcntl_signal(SIGTERM, fn(int $signo) => self::shutdown());
@@ -30,5 +31,6 @@ class ShutdownHandler {
     private static function shutdown() {
         CloudLogger::get()->emptyLine();
         PocketCloud::getInstance()->shutdown();
+        if (RestAPI::getInstance()->getApp() !== null) RestAPI::getInstance()->getApp()->stop();
     }
 }

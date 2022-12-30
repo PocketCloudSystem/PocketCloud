@@ -17,7 +17,7 @@ class Console extends Thread {
         $this->notifier = new SleeperNotifier();
 
         PocketCloud::getInstance()->getSleeperHandler()->addNotifier($this->notifier, function (): void {
-            while (($line = $this->buffer->shift()) !== null) CommandManager::getInstance()->execute($line);
+            while (($line = $this->buffer->shift()) !== null) if (!PocketCloud::getInstance()->isReloading()) CommandManager::getInstance()->execute($line);
         });
     }
 

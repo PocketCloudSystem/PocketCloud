@@ -16,7 +16,7 @@ class CreateCommand extends Command {
                 $templateType = TemplateType::SERVER();
                 if (isset($args[1])) $templateType = TemplateType::getTemplateTypeByName($args[1]) ?? TemplateType::SERVER();
 
-                TemplateManager::getInstance()->createTemplate(new Template($args[0], false, true, 20, 0, 2, false, $templateType));
+                TemplateManager::getInstance()->createTemplate(new Template($args[0], false, true, false, 20, 0, 2, false, false, $templateType));
             } else CloudLogger::get()->error("§cThe template already exists!");
         } else return false;
         return true;

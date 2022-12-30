@@ -5,6 +5,7 @@ namespace pocketcloud\command;
 use pocketcloud\command\impl\general\ExitCommand;
 use pocketcloud\command\impl\general\HelpCommand;
 use pocketcloud\command\impl\general\ListCommand;
+use pocketcloud\command\impl\general\ReloadCommand;
 use pocketcloud\command\impl\player\KickCommand;
 use pocketcloud\command\impl\plugin\DisableCommand;
 use pocketcloud\command\impl\plugin\EnableCommand;
@@ -46,6 +47,7 @@ class CommandManager {
         $this->registerCommand(new SaveCommand("save", "Save a server", "save <server>", []));
         $this->registerCommand(new ExecuteCommand("execute", "Send a command to a server", "execute <server> <commandLine>", ["execute"]));
         $this->registerCommand(new KickCommand("kick", "Kick a player", "kick <player> [reason]", []));
+        $this->registerCommand(new ReloadCommand("reload", "Reload the cloud", "reload", []));
     }
 
     public function registerCommand(Command $command): bool {
