@@ -1,22 +1,14 @@
 # PocketCloud (BETA)
 
-## Requirements
-- Linux OS
-- Java 17
-- Screen or tmux
+## [Requirements](https://github.com/PocketCloudSystem/PocketCloud/wiki/Requirements)
 
-## Installation
-- Create a folder for the cloud
-- Download this [PHP-Binary](https://jenkins.pmmp.io/job/PHP-8.0-Aggregate/)
-- Put the "bin" directory in the folder
-- Download the ".phar" File from the releases
-- Put the .phar file in the folder
-- Make a start file with this content: `bin/php7/bin/php PocketCloud.phar`
-- Give the start file permissions and execute the script
+## [Installation](https://github.com/PocketCloudSystem/PocketCloud/wiki/Installation)
 
 ## Features
 - Templates
 - Dynamic Servers
+- Static Servers
+- RestAPI
 - Customizable Messages (Location: storage/inGame/messages.json)
 - Maintenance System
 - Automatically downloading server software (PocketMine, WaterdogPE) & plugins (CloudBridge)
@@ -142,8 +134,11 @@
   "server-saved": "{PREFIX}§7The server was saved!",
   "template-maintenance": "§cThis template is in maintenance!",
   "connect-to-server": "{PREFIX}§7Connecting to server §e%0%§7...",
+  "connect-to-server-target": "{PREFIX}§e%0% §7is connecting to server §e%1%§7...",
   "already-connected": "{PREFIX}§7You are already connected to the server §e%0%§7",
+  "already-connected-target": "{PREFIX}§e%0% is already connected to the server §e%1%§7",
   "cant-connect": "{PREFIX}§7Can't connect to the server §e%0%§7!",
+  "cant-connect-target": "{PREFIX}§e%0% 7can't be connected to the server §e%1%§7!",
   "npc-name-tag": "§7%0% playing.\n§8× §e§l%1%",
   "process-cancelled": "{PREFIX}§7The process has been cancelled!",
   "select-npc": "{PREFIX}§7Please select a npc to remove by hitting on them!",
