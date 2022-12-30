@@ -46,9 +46,10 @@ class CloudServerManager {
                     $port = ($template->getTemplateType() === TemplateType::SERVER() ? PortManager::getFreePort() : PortManager::getFreeProxyPort());
                     if ($port !== 0) {
                         $server = new CloudServer($id, $template, new CloudServerData($port, $template->getMaxPlayerCount(), 0), ServerStatus::STARTING());
-                        if (file_exists($server->getPath()) && !$template->isStatic()) Utils::deleteDir($server->getPath());
                         if (!file_exists($server->getPath())) {
-                            mkdir($server->getPath());
+                            Utils::copyDir($template->getPath(), $server->getPath());
+                        } else {
+                            if (!$template->isStatic()) Utils::deleteDir($server->getPath());
                             Utils::copyDir($template->getPath(), $server->getPath());
                         }
 

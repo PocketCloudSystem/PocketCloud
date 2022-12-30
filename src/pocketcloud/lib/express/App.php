@@ -12,6 +12,7 @@ use pocketcloud\lib\express\utils\Utils;
 use pocketcloud\lib\express\network\Processor;
 use pocketcloud\lib\express\network\SocketServer;
 use pocketcloud\utils\Address;
+use pocketcloud\utils\CloudLogger;
 use function spl_autoload_register;
 use function str_starts_with;
 use function substr;
@@ -37,7 +38,11 @@ final class App {
                 /** @var SocketClient $client */
                 $client = $data["client"];
                 $buf = $data["buffer"];
-                $client->write($this->__internalReceiveRequest($client->getAddress(), $buf));
+                if ($buf === null || $buf === false) {
+                    CloudLogger::get()->warn("§cInvalid request! §8(§e" . $client->getAddress() . "§8)");
+                } else {
+                    $client->write($this->__internalReceiveRequest($client->getAddress(), $buf));
+                }
             }
         });
 
