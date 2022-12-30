@@ -15,7 +15,7 @@ class AsyncUpdateCheckTask extends AsyncTask {
                     CURLOPT_SSL_VERIFYPEER => false,
                     CURLOPT_SSL_VERIFYHOST => false,
                     CURLOPT_RETURNTRANSFER => true,
-                    CURLOPT_HEADER => true,
+                    CURLOPT_HEADER => false
                 ]
             );
 
