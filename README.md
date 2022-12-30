@@ -17,6 +17,8 @@
 ## Features
 - Templates
 - Dynamic Servers
+- Static Servers
+- RestAPI
 - Customizable Messages (Location: storage/inGame/messages.json)
 - Maintenance System
 - Automatically downloading server software (PocketMine, WaterdogPE) & plugins (CloudBridge)
@@ -142,8 +144,11 @@
   "server-saved": "{PREFIX}§7The server was saved!",
   "template-maintenance": "§cThis template is in maintenance!",
   "connect-to-server": "{PREFIX}§7Connecting to server §e%0%§7...",
+  "connect-to-server-target": "{PREFIX}§e%0% §7is connecting to server §e%1%§7...",
   "already-connected": "{PREFIX}§7You are already connected to the server §e%0%§7",
+  "already-connected-target": "{PREFIX}§e%0% is already connected to the server §e%1%§7",
   "cant-connect": "{PREFIX}§7Can't connect to the server §e%0%§7!",
+  "cant-connect-target": "{PREFIX}§e%0% 7can't be connected to the server §e%1%§7!",
   "npc-name-tag": "§7%0% playing.\n§8× §e§l%1%",
   "process-cancelled": "{PREFIX}§7The process has been cancelled!",
   "select-npc": "{PREFIX}§7Please select a npc to remove by hitting on them!",
