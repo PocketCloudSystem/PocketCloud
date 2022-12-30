@@ -72,21 +72,14 @@ class Utils {
 
     public static function deleteDir($dirPath) {
         if (is_dir($dirPath)) {
-            $folderHandle = opendir($dirPath);
-
-            if (!$folderHandle) return;
-
-            while($file = readdir($folderHandle)) {
-                if (($file != ".") && ($file != "..")) {
-                    if (is_dir($dirPath . "/" . $file))  {
-                        self::deleteDir($dirPath . "/" . $file . "/");
-                    } else {
-                        unlink($dirPath . "/" . $file);
-                    }
+            foreach (array_diff(scandir($dirPath), [".", ".."]) as $object) {
+                if (filetype($dirPath . DIRECTORY_SEPARATOR . $object) == "dir") {
+                    self::deleteDir($dirPath . DIRECTORY_SEPARATOR . $object);
+                } else {
+                    unlink($dirPath . DIRECTORY_SEPARATOR . $object);
                 }
             }
 
-            closedir($folderHandle);
             rmdir($dirPath);
         }
     }
@@ -94,17 +87,14 @@ class Utils {
     public static function copyDir($src, $dst) {
         if (!file_exists($src)) @mkdir($src);
         if (!file_exists($dst)) @mkdir($dst);
-        $dir = opendir($src);
-        while($file = readdir($dir)) {
-            if (($file != ".") && ($file != "..")) {
-                if (is_dir($src . "/" . $file))  {
-                    self::copyDir($src . "/" . $file, $dst . "/" . $file);
-                } else {
-                    copy($src . "/" . $file, $dst . "/" . $file);
-                }
+
+        foreach (array_diff(scandir($src), [".", ".."]) as $file) {
+            if (filetype($src . DIRECTORY_SEPARATOR . $file) == "dir") {
+                self::copyDir($src . DIRECTORY_SEPARATOR . $file, $dst . DIRECTORY_SEPARATOR . $file);
+            } else {
+                copy($src . DIRECTORY_SEPARATOR . $file, $dst . DIRECTORY_SEPARATOR . $file);
             }
         }
-        closedir($dir);
     }
 
     public static function copyFile($src, $dst) {
