@@ -1,4 +1,4 @@
-# PocketCloud (BETA)
+# PocketCloud
 
 ## [Requirements](https://github.com/PocketCloudSystem/PocketCloud/wiki/Requirements)
 
