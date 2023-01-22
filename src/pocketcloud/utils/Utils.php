@@ -79,13 +79,17 @@ class Utils {
                 } else {
                     try {
                         unlink($dirPath . DIRECTORY_SEPARATOR . $object);
-                    } catch (\Throwable $exception) {}
+                    } catch (\Throwable $exception) {
+                        CloudLogger::get()->debug("Can't delete file: " . $dirPath . DIRECTORY_SEPARATOR . $object);
+                    }
                 }
             }
 
             try {
                 rmdir($dirPath . DIRECTORY_SEPARATOR);
-            } catch (\Throwable $exception) {}
+            } catch (\Throwable $exception) {
+                CloudLogger::get()->debug("Can't delete dir: " . $dirPath . DIRECTORY_SEPARATOR);
+            }
         }
     }
 
@@ -99,13 +103,25 @@ class Utils {
             if (filetype($src . DIRECTORY_SEPARATOR . $file) == "dir") {
                 self::copyDir($src . DIRECTORY_SEPARATOR . $file, $dst . DIRECTORY_SEPARATOR . $file);
             } else {
-                copy($src . DIRECTORY_SEPARATOR . $file, $dst . DIRECTORY_SEPARATOR . $file);
+                try {
+                    copy($src . DIRECTORY_SEPARATOR . $file, $dst . DIRECTORY_SEPARATOR . $file);
+                } catch (\Throwable $exception) {
+                    CloudLogger::get()->debug("Can't copy file from: " . $src . DIRECTORY_SEPARATOR . $file . " to " . $dst . DIRECTORY_SEPARATOR . $file);
+                }
             }
         }
     }
 
     public static function copyFile($src, $dst) {
-        if (is_file($src)) copy($src, $dst);
+        $src = rtrim($src, DIRECTORY_SEPARATOR);
+        $dst = rtrim($dst, DIRECTORY_SEPARATOR);
+        if (!file_exists($src)) {
+            try {
+                if (is_file($src)) copy($src, $dst);
+            } catch (\Throwable $exception) {
+                CloudLogger::get()->debug("Can't copy file from: " . $src . " to " . $dst);
+            }
+        }
     }
 
     public static function cleanPath(string $path, bool $removePath = false): string {

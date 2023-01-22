@@ -4,6 +4,6 @@ namespace pocketcloud\utils;
 
 final class VersionInfo {
 
-    public const VERSION = "1.1.3";
+    public const VERSION = "1.1.4";
     public const DEVELOPERS = ["r3pt1s"];
 }
