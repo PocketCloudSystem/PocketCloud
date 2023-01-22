@@ -40,6 +40,9 @@ class RestAPI {
 
     public function __construct() {
         self::setInstance($this);
+    }
+
+    public function init() {
         if (CloudConfig::getInstance()->isRestAPIEnabled()) {
             $this->app = new App();
             $this->endpoints = [

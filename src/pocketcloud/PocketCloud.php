@@ -112,6 +112,7 @@ class PocketCloud {
         $this->templateManager->loadTemplates();
 
         $this->console->start();
+        $this->restAPI->init();
 
         $startedTime = (microtime(true) - $startTime);
         (new CloudStartedEvent($startedTime))->call();
