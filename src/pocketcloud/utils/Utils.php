@@ -115,7 +115,7 @@ class Utils {
     public static function copyFile($src, $dst) {
         $src = rtrim($src, DIRECTORY_SEPARATOR);
         $dst = rtrim($dst, DIRECTORY_SEPARATOR);
-        if (!file_exists($src)) {
+        if (file_exists($src)) {
             try {
                 if (is_file($src)) copy($src, $dst);
             } catch (\Throwable $exception) {
