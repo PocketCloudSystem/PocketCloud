@@ -2,42 +2,35 @@
 
 namespace pocketcloud\config;
 
-use pocketcloud\utils\Config;
+use pocketcloud\lib\config\Configuration;
 use pocketcloud\utils\SingletonTrait;
 use pocketcloud\utils\Utils;
 
-class CloudConfig {
+class CloudConfig extends Configuration {
     use SingletonTrait;
 
-    private Config $config;
-    private int $cloudPort;
-    private bool $debugMode;
-    private bool $restApiEnabled;
-    private int $restApiPort;
-    private string $restApiAuthKey;
+    /** @ignored */
+    private string $generatedKey;
+    private int $cloudPort = 3656;
+    private bool $debugMode = true;
+    private array $restAPI = [
+        "enabled" => true,
+        "port" => 8000,
+        "auth-key" => "123"
+    ];
 
     public function __construct() {
         self::setInstance($this);
-        $this->config = new Config(STORAGE_PATH . "config.json", 1);
+        parent::__construct(STORAGE_PATH . "config.json", self::TYPE_JSON);
+        $this->restAPI["auth-key"] = ($this->generatedKey = Utils::generateString(10));
 
-        if (!$this->config->exists("cloud-port")) $this->config->set("cloud-port", mt_rand(100, 10000));
-        if (!$this->config->exists("debug-mode")) $this->config->set("debug-mode", true);
-        if (!$this->config->exists("rest-api")) $this->config->set("rest-api", ["enabled" => true, "port" => 8000, "auth-key" => Utils::generateString(10)]);
-        $this->config->save();
-
-        $this->load();
-    }
-
-    private function load(): void {
-        $this->cloudPort = $this->getConfig()->get("cloud-port");
-        $this->debugMode = $this->getConfig()->get("debug-mode");
-        $this->restApiEnabled = $this->getConfig()->get("rest-api")["enabled"];
-        $this->restApiPort = $this->getConfig()->get("rest-api")["port"];
-        $this->restApiAuthKey = $this->getConfig()->get("rest-api")["auth-key"];
+        if (!$this->load()) $this->save();
     }
 
     public function reload(): void {
-        $this->config->reload();
+        $this->cloudPort = 3656;
+        $this->debugMode = false;
+        $this->restAPI = ["enabled" => true, "port" => 8000, "auth-key" => $this->generatedKey];
         $this->load();
     }
 
@@ -50,18 +43,14 @@ class CloudConfig {
     }
 
     public function isRestAPIEnabled(): bool {
-        return $this->restApiEnabled;
+        return $this->restAPI["enabled"];
     }
 
     public function getRestAPIPort(): int {
-        return $this->restApiPort;
+        return $this->restAPI["port"];
     }
 
     public function getRestAPIAuthKey(): string {
-        return $this->restApiAuthKey;
-    }
-
-    public function getConfig(): Config {
-        return $this->config;
+        return $this->restAPI["auth-key"];
     }
 }

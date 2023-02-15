@@ -3,6 +3,7 @@
 namespace pocketcloud\lib\express;
 
 use Closure;
+use pocketcloud\lib\express\io\Request;
 use pocketcloud\lib\snooze\SleeperNotifier;
 use pocketcloud\PocketCloud;
 use pocketcloud\lib\express\io\Response;
@@ -38,10 +39,10 @@ final class App {
                 /** @var SocketClient $client */
                 $client = $data["client"];
                 $buf = $data["buffer"];
-                if ($buf === null || $buf === false) {
-                    CloudLogger::get()->warn("§cInvalid request! §8(§e" . $client->getAddress() . "§8)");
-                } else {
+                if (is_string($buffer)) {
                     $client->write($this->__internalReceiveRequest($client->getAddress(), $buf));
+                } else {
+                    CloudLogger::get()->warn("§cInvalid request! §8(§e" . $client->getAddress() . "§8)");
                 }
             }
         });
@@ -89,9 +90,8 @@ final class App {
 	 */
 	public function __internalReceiveRequest(Address $address, string $request): string {
 		$request =  Utils::parseRequest($address, $request);
-        if ($this->router->isRegistered($request)) {
-			return $this->router->execute($request);
-		}
+        if (!$request instanceof Request) return new Response(500);
+        if ($this->router->isRegistered($request)) return $this->router->execute($request);
 		$response = new Response(404);
 		if ($this->invalidUrlHandler !== null) ($this->invalidUrlHandler)($request, $response);
 		return $response;

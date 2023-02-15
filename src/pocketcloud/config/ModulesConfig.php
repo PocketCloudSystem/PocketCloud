@@ -2,40 +2,28 @@
 
 namespace pocketcloud\config;
 
-use pocketcloud\utils\Config;
+use pocketcloud\lib\config\Configuration;
 use pocketcloud\utils\SingletonTrait;
 
-class ModulesConfig {
+class ModulesConfig extends Configuration {
     use SingletonTrait;
 
-    private Config $config;
-    private bool $signModule;
-    private bool $npcModule;
-    private bool $globalChatModule;
-    private bool $hubCommandModule;
+    private bool $signModule = true;
+    private bool $npcModule = true;
+    private bool $globalChatModule = false;
+    private bool $hubCommandModule = true;
 
     public function __construct() {
         self::setInstance($this);
-        $this->config = new Config(IN_GAME_PATH . "modules.json", 1);
-
-        if (!$this->config->exists("sign-module")) $this->config->set("sign-module", true);
-        if (!$this->config->exists("npc-module")) $this->config->set("npc-module", true);
-        if (!$this->config->exists("global-chat-module")) $this->config->set("global-chat-module", false);
-        if (!$this->config->exists("hubcommand-module")) $this->config->set("hubcommand-module", true);
-        $this->config->save();
-
-        $this->load();
-    }
-
-    private function load(): void {
-        $this->signModule = $this->getConfig()->get("sign-module");
-        $this->npcModule = $this->getConfig()->get("npc-module");
-        $this->globalChatModule = $this->getConfig()->get("global-chat-module");
-        $this->hubCommandModule = $this->getConfig()->get("hubcommand-module");
+        parent::__construct(IN_GAME_PATH . "modules.json", self::TYPE_JSON);
+        if (!$this->load()) $this->save();
     }
 
     public function reload(): void {
-        $this->config->reload();
+        $this->signModule = true;
+        $this->npcModule = true;
+        $this->globalChatModule = false;
+        $this->hubCommandModule = true;
         $this->load();
     }
 
@@ -51,7 +39,7 @@ class ModulesConfig {
         return $this->globalChatModule;
     }
 
-    public function getConfig(): Config {
-        return $this->config;
+    public function isHubCommandModule(): bool {
+        return $this->hubCommandModule;
     }
 }

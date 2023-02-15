@@ -9,7 +9,6 @@ abstract class Thread extends \Thread {
     private bool $running = false;
 
     public function start(int $options = PTHREADS_INHERIT_NONE): bool {
-        ExceptionHandler::set();
         $this->running = true;
         return parent::start($options);
     }
@@ -29,6 +28,8 @@ abstract class Thread extends \Thread {
                 if (!class_exists($class)) require str_replace("\\", DIRECTORY_SEPARATOR, __DIR__ . DIRECTORY_SEPARATOR . ".." . DIRECTORY_SEPARATOR . substr($class, strlen("pocketcloud\\"), strlen($class))) . ".php";
             }
         });
+
+        ExceptionHandler::set();
 
         if (\Phar::running()) {
             define("CLOUD_PATH", str_replace("phar://", "", dirname(__DIR__, 4) . DIRECTORY_SEPARATOR));
@@ -51,6 +52,6 @@ abstract class Thread extends \Thread {
     }
 
     public function isRunning(): bool {
-        return true;
+        return $this->running;
     }
 }

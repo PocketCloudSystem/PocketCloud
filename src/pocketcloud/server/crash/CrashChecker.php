@@ -12,8 +12,10 @@ class CrashChecker {
         if (!file_exists($server->getPath() . "crashdumps/")) return false;
         foreach (array_diff(scandir($server->getPath() . "crashdumps/"), [".", ".."]) as $file) {
             if (pathinfo($server->getPath() . "crashdumps/" . $file, PATHINFO_EXTENSION) == "log") {
-                $filePath = $server->getPath() . "crashdumps/" . $file;
-                break;
+                if ((time() - filectime($server->getPath() . "crashdumps/" . $file)) <= 60) {
+                    $filePath = $server->getPath() . "crashdumps/" . $file;
+                    break;
+                }
             }
         }
 

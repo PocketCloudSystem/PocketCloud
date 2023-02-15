@@ -56,6 +56,15 @@ class MessagesConfig {
 
     private Config $config;
     private string $prefix;
+    private string $serverStartMessage;
+    private string $serverCouldNotStartMessage;
+    private string $serverTimedOutMessage;
+    private string $serverStopMessage;
+    private string $serverCrashedMessage;
+    private string $noPermissionsMessage;
+    private string $notificationsActivated;
+    private string $notificationsDeactivated;
+
 
     public function __construct() {
         self::setInstance($this);

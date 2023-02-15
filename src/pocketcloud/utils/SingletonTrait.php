@@ -4,6 +4,7 @@ namespace pocketcloud\utils;
 
 trait SingletonTrait {
 
+    /** @ignored */
     private static ?self $instance = null;
 
     public function __construct() {

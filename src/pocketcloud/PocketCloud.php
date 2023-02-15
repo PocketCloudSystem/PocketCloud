@@ -160,6 +160,7 @@ class PocketCloud {
     public function shutdown() {
         if ($this->running) {
             $this->running = false;
+            if (RestAPI::getInstance()->getApp() !== null) RestAPI::getInstance()->getApp()->stop();
             ShutdownHandler::unregister();
             CloudLogger::get()->debug("Force stopping all servers");
             $this->cloudServerManager->stopAll(true);

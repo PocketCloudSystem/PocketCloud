@@ -42,11 +42,15 @@ class AsyncUpdateCheckTask extends AsyncTask {
             $current = explode(".", UpdateChecker::getInstance()->getCurrentVersion());
             $latest = explode(".", $this->getResult()[0]);
             $outdated = false;
+            $highVersion = false;
 
             $i = 0;
             foreach ($current as $number) {
                 if (intval($latest[$i]) > intval($number)) {
                     $outdated = true;
+                    break;
+                } else if (intval($number) > intval($latest[$i])) {
+                    $highVersion = true;
                     break;
                 }
                 $i++;
@@ -59,7 +63,13 @@ class AsyncUpdateCheckTask extends AsyncTask {
                 CloudLogger::get()->warn("§cYour Version: §e" . VersionInfo::VERSION . " §8| §cLatest Version: §e" . $this->getResult()[0]);
                 CloudLogger::get()->warn("§cAlso make sure that the plugins are up to date!");
             } else {
-                CloudLogger::get()->info("§aYour version of §bPocket§3Cloud §ais up to date!");
+                if ($highVersion) {
+                    CloudLogger::get()->warn("§cYour version of §bPocket§3Cloud §cis too HIGH! Please install the latest version from §8'§bgithub.com/PocketCloudSystem/PocketCloud/releases/latest§8'§c!");
+                    CloudLogger::get()->warn("§cYour Version: §e" . VersionInfo::VERSION . " §8| §cLatest Version: §e" . $this->getResult()[0]);
+                    CloudLogger::get()->warn("§cAlso make sure that the plugins are up to date!");
+                } else {
+                    CloudLogger::get()->info("§aYour version of §bPocket§3Cloud §ais up to date!");
+                }
             }
         }
     }
