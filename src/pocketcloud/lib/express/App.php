@@ -39,7 +39,7 @@ final class App {
                 /** @var SocketClient $client */
                 $client = $data["client"];
                 $buf = $data["buffer"];
-                if (is_string($buffer)) {
+                if (is_string($buf)) {
                     $client->write($this->__internalReceiveRequest($client->getAddress(), $buf));
                 } else {
                     CloudLogger::get()->warn("§cInvalid request! §8(§e" . $client->getAddress() . "§8)");
