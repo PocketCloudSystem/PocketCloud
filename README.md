@@ -1,3 +1,5 @@
+# [!] The support for PM4 is getting removed on March, 31st.
+
 # PocketCloud
 
 ## [Requirements](https://github.com/PocketCloudSystem/PocketCloud/wiki/Requirements)
