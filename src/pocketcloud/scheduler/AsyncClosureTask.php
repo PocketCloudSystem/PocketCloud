@@ -7,7 +7,7 @@ class AsyncClosureTask extends AsyncTask {
     public function __construct(private \Closure $closure, private ?\Closure $completion = null) {}
 
     public function onRun(): void {
-        $this->setResult(($this->closure)());
+        $this->setResult(($this->closure)($this));
     }
 
     public function onCompletion(): void {

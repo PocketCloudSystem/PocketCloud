@@ -2,6 +2,7 @@
 
 namespace pocketcloud\utils;
 
+use pocketcloud\config\CloudConfig;
 use pocketcloud\scheduler\AsyncClosureTask;
 use pocketcloud\scheduler\AsyncPool;
 
@@ -45,7 +46,7 @@ class Utils {
 
     public static function executeWithStartCommand(string $path, string $name, string $softwareStartCommand) {
         if (self::$startCommand == "") return;
-        passthru("cd " . $path . " && " . str_replace(["%name%", "%start_command%"], [$name, $softwareStartCommand], self::$startCommand));
+        passthru("cd " . $path . " && " . str_replace(["%name%", "%start_command%", "%SOFTWARE_PATH%"], [$name, $softwareStartCommand, SOFTWARE_PATH], self::$startCommand));
     }
 
     public static function containKeys(array $array, ...$keys): bool {
@@ -215,9 +216,21 @@ class Utils {
     public static function detectStartMethod(): bool {
         if (PHP_OS_FAMILY == "Linux") {
             if (self::isTmuxInstalled()) {
+                if (CloudConfig::getInstance()->getStartMethod() == "screen") {
+                    if (self::isScreenInstalled()) {
+                        self::$startCommand = "screen -dmS %name% %start_command%";
+                        return true;
+                    }
+                }
                 self::$startCommand = "tmux new-session -d -s %name% bash -c '%start_command%'";
                 return true;
             } else if (self::isScreenInstalled()) {
+                if (CloudConfig::getInstance()->getStartMethod() == "tmux") {
+                    if (self::isTmuxInstalled()) {
+                        self::$startCommand = "tmux new-session -d -s %name% bash -c '%start_command%'";
+                        return true;
+                    }
+                }
                 self::$startCommand = "screen -dmS %name% %start_command%";
                 return true;
             }

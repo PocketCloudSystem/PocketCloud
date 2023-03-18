@@ -2,6 +2,7 @@
 
 namespace pocketcloud\software;
 
+use pocketcloud\config\CloudConfig;
 use pocketcloud\event\impl\software\SoftwareDownloadEvent;
 use pocketcloud\event\impl\software\SoftwareRegisterEvent;
 use pocketcloud\event\impl\software\SoftwareUnregisterEvent;
@@ -19,8 +20,8 @@ class SoftwareManager {
 
     public function __construct() {
         self::setInstance($this);
-        $this->registerSoftware(new Software("PocketMine-MP", Utils::getBinary() . " " . SOFTWARE_PATH . "PocketMine-MP.phar --no-wizard", "https://github.com/pmmp/PocketMine-MP/releases/latest/download/PocketMine-MP.phar", "PocketMine-MP.phar", ["pmmp"]));
-        $this->registerSoftware(new Software("WaterdogPE", "java -jar " . SOFTWARE_PATH . "Waterdog.jar", "https://jenkins.waterdog.dev/job/Waterdog/job/WaterdogPE/job/master/lastSuccessfulBuild/artifact/target/Waterdog.jar", "Waterdog.jar", ["wdpe"]));
+        $this->registerSoftware(new Software("PocketMine-MP", CloudConfig::getInstance()->getStartCommand("server"), "https://github.com/pmmp/PocketMine-MP/releases/latest/download/PocketMine-MP.phar", "PocketMine-MP.phar", ["pmmp"]));
+        $this->registerSoftware(new Software("WaterdogPE", CloudConfig::getInstance()->getStartCommand("proxy"), "https://jenkins.waterdog.dev/job/Waterdog/job/WaterdogPE/job/master/lastSuccessfulBuild/artifact/target/Waterdog.jar", "Waterdog.jar", ["wdpe"]));
     }
 
     public function downloadAll() {

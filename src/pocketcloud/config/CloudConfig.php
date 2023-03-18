@@ -3,6 +3,7 @@
 namespace pocketcloud\config;
 
 use pocketcloud\lib\config\Configuration;
+use pocketcloud\software\Software;
 use pocketcloud\utils\SingletonTrait;
 use pocketcloud\utils\Utils;
 
@@ -18,6 +19,11 @@ class CloudConfig extends Configuration {
         "port" => 8000,
         "auth-key" => "123"
     ];
+    private array $startCommands = [
+        "server" => "bin/php7/bin/php %SOFTWARE_PATH%PocketMine-MP.phar --no-wizard",
+        "proxy" => "java -jar %SOFTWARE_PATH%Waterdog.jar"
+    ];
+    private string $startMethod = "tmux";
 
     public function __construct() {
         self::setInstance($this);
@@ -31,6 +37,8 @@ class CloudConfig extends Configuration {
         $this->cloudPort = 3656;
         $this->debugMode = false;
         $this->restAPI = ["enabled" => true, "port" => 8000, "auth-key" => $this->generatedKey];
+        $this->startCommands = ["server" => "bin/php/bin/php %SOFTWARE_PATH%PocketMine-MP.phar", "proxy" => "java -jar %SOFTWARE_PATH%Waterdog.jar"];
+        $this->startMethod = "tmux";
         $this->load();
     }
 
@@ -52,5 +60,17 @@ class CloudConfig extends Configuration {
 
     public function getRestAPIAuthKey(): string {
         return $this->restAPI["auth-key"];
+    }
+
+    public function getStartCommand(string $software): string {
+        return $this->startCommands[strtolower($software)] ?? "";
+    }
+
+    public function getStartCommands(): array {
+        return $this->startCommands;
+    }
+
+    public function getStartMethod(): string {
+        return $this->startMethod;
     }
 }

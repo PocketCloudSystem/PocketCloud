@@ -57,7 +57,7 @@ class PocketCloud {
     private UpdateChecker $updateChecker;
     private Network $network;
     private bool $reloading = false;
-    private bool $running = false;
+    private bool $running;
 
     /** @throws ErrorException */
     public function __construct() {
