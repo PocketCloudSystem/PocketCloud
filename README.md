@@ -1,4 +1,4 @@
-# [!] The support for PM4 is getting removed on March, 31st.
+# [!] The support for PM4 is getting removed on June, 1st.
 
 # PocketCloud
 
