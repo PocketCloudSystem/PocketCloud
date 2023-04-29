@@ -1,3 +1,4 @@
+# [!] PocketCloud V1 will not be continued, instead I will work on V2
 # [!] The support for PM4 is getting removed on June, 1st.
 
 # PocketCloud
