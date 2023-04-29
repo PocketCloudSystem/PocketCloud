@@ -168,32 +168,11 @@ class Utils {
         if (!file_exists(SERVER_PLUGINS_PATH . "CloudBridge.phar")) $downloadServerPlugin = true;
         if (!file_exists(PROXY_PLUGINS_PATH . "CloudBridge.jar")) $downloadProxyPlugin = true;
 
-        $github = false;
-        $ch = curl_init();
-        curl_setopt_array($ch, [
-            CURLOPT_URL => "pocket-cloud.tk/",
-            CURLOPT_SSL_VERIFYPEER => false,
-            CURLOPT_SSL_VERIFYHOST => 2,
-            CURLOPT_FORBID_REUSE => 1,
-            CURLOPT_FRESH_CONNECT => 1,
-            CURLOPT_AUTOREFERER => true,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_RETURNTRANSFER => true
-        ]);
-        curl_exec($ch);
-        $errno = curl_errno($ch);
-        if ($errno !== 0) $github = true;
-
         $serverPluginsPath = SERVER_PLUGINS_PATH;
         $proxyPluginsPath = PROXY_PLUGINS_PATH;
 
-        if (!$github) {
-            if ($downloadServerPlugin) AsyncPool::getInstance()->submitTask(AsyncClosureTask::fromClosure(fn() => self::download("https://pocket-cloud.tk/?file=CloudBridge.phar", $serverPluginsPath . "CloudBridge.phar")));
-            if ($downloadProxyPlugin) AsyncPool::getInstance()->submitTask(AsyncClosureTask::fromClosure(fn() => self::download("https://pocket-cloud.tk/?file=CloudBridge.jar", $proxyPluginsPath . "CloudBridge.jar")));
-        } else {
-            if ($downloadServerPlugin) AsyncPool::getInstance()->submitTask(AsyncClosureTask::fromClosure(fn() => self::download("https://github.com/PocketCloudSystem/CloudBridge/releases/latest/download/CloudBridge.phar", $serverPluginsPath . "CloudBridge.phar")));
-            if ($downloadProxyPlugin) AsyncPool::getInstance()->submitTask(AsyncClosureTask::fromClosure(fn() => self::download("https://github.com/PocketCloudSystem/CloudBridge-Proxy/releases/latest/download/CloudBridge.jar", $proxyPluginsPath . "CloudBridge.jar")));
-        }
+        if ($downloadServerPlugin) AsyncPool::getInstance()->submitTask(AsyncClosureTask::fromClosure(fn() => self::download("https://github.com/PocketCloudSystem/CloudBridge/releases/latest/download/CloudBridge.phar", $serverPluginsPath . "CloudBridge.phar")));
+        if ($downloadProxyPlugin) AsyncPool::getInstance()->submitTask(AsyncClosureTask::fromClosure(fn() => self::download("https://github.com/PocketCloudSystem/CloudBridge-Proxy/releases/latest/download/CloudBridge.jar", $proxyPluginsPath . "CloudBridge.jar")));
     }
 
     public static function download(string $url, string $fileLocation): bool {
