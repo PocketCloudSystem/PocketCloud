@@ -6,4 +6,5 @@ $phar = new Phar(__DIR__ . "/PocketCloud.phar", 0, "PocketCloud.phar");
 $phar->setStub($phar->createDefaultStub("src/pocketcloud/PocketCloud.php"));
 $phar->buildFromDirectory(__DIR__ . "/", "/\.php$/");
 if (isset($phar["make-phar.php"])) unset($phar["make-phar.php"]);
+if (isset($phar["make-phar.bat"])) unset($phar["make-phar.bat"]);
 $phar->compressFiles(Phar::GZ);
