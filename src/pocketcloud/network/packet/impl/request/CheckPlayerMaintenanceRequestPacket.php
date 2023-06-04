@@ -1,0 +1,35 @@
+<?php
+
+namespace pocketcloud\network\packet\impl\request;
+
+use pocketcloud\config\MaintenanceList;
+use pocketcloud\network\client\ServerClient;
+use pocketcloud\network\packet\impl\response\CheckPlayerMaintenanceResponsePacket;
+use pocketcloud\network\packet\RequestPacket;
+use pocketcloud\network\packet\utils\PacketData;
+
+class CheckPlayerMaintenanceRequestPacket extends RequestPacket {
+
+    public function __construct(
+        string $requestId = "",
+        private string $player = ""
+    ) {
+        parent::__construct($requestId);
+    }
+
+    public function encodePayload(PacketData $packetData) {
+        $packetData->write($this->player);
+    }
+
+    public function decodePayload(PacketData $packetData) {
+        $this->player = $packetData->readString();
+    }
+
+    public function getPlayer(): string {
+        return $this->player;
+    }
+
+    public function handle(ServerClient $client) {
+        $this->sendResponse(new CheckPlayerMaintenanceResponsePacket(MaintenanceList::is($this->player)), $client);
+    }
+}
