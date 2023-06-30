@@ -34,7 +34,10 @@ final class ServerStatus {
         return self::$members;
     }
 
-    public function __construct(private string $name, private string $display) {}
+    public function __construct(
+        private readonly string $name,
+        private readonly string $display
+    ) {}
 
     public function getName(): string {
         return $this->name;

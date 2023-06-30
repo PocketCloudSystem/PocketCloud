@@ -28,7 +28,7 @@ abstract class Worker extends NativeWorker {
 
     abstract public function onRun(): void;
 
-    public function quit() {
+    public function quit(): void {
         $this->running = false;
 
         if(!$this->isShutdown()){
@@ -42,7 +42,7 @@ abstract class Worker extends NativeWorker {
         ThreadManager::getInstance()->remove($this);
     }
 
-    public function registerClassLoader() {
+    public function registerClassLoader(): void {
         if (\Phar::running()) {
             define("CLOUD_PATH", str_replace("phar://", "", dirname(__DIR__, 4) . DIRECTORY_SEPARATOR));
         } else {

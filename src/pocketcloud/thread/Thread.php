@@ -26,13 +26,13 @@ abstract class Thread extends NativeThread {
         ThreadManager::getInstance()->remove($this);
     }
 
-    public function quit() {
+    public function quit(): void {
         $this->running = false;
     }
 
     abstract public function onRun(): void;
 
-    public function registerClassLoader() {
+    public function registerClassLoader(): void {
         if (\Phar::running()) {
             define("CLOUD_PATH", str_replace("phar://", "", dirname(__DIR__, 4) . DIRECTORY_SEPARATOR));
         } else {

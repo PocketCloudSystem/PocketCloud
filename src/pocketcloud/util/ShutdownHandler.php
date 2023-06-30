@@ -6,7 +6,7 @@ use pocketcloud\PocketCloud;
 
 class ShutdownHandler {
 
-    public static function register() {
+    public static function register(): void {
         register_shutdown_function(fn() => self::shutdown());
 
         if (function_exists("pcntl_signal")) {
@@ -17,7 +17,7 @@ class ShutdownHandler {
         }
     }
 
-    public static function unregister() {
+    public static function unregister(): void {
         register_shutdown_function(fn() => null);
 
         if (function_exists("pcntl_signal")) {
@@ -27,7 +27,7 @@ class ShutdownHandler {
         }
     }
 
-    private static function shutdown() {
+    private static function shutdown(): void {
         CloudLogger::get()->emptyLine();
         PocketCloud::getInstance()->shutdown();
     }

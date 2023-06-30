@@ -13,7 +13,7 @@ class UpdateChecker {
 
     private array $data = [];
 
-    public function check() {
+    public function check(): void {
         AsyncExecutor::execute(function(): false|string {
             try {
                 $ch = curl_init("https://api.github.com/repos/PocketCloudSystem/PocketCloud/releases/latest");

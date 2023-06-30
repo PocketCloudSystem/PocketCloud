@@ -92,7 +92,7 @@ class Template {
     }
 
     /** @internal */
-    public function apply(array $data) {
+    public function apply(array $data): void {
         $this->name = $data["name"];
         $this->lobby = $data["lobby"];
         $this->maintenance = $data["maintenance"];

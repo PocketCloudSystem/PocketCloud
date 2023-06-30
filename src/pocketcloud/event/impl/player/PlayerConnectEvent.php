@@ -7,8 +7,11 @@ use pocketcloud\server\CloudServer;
 
 class PlayerConnectEvent extends PlayerEvent {
 
-    public function __construct(private CloudPlayer $player, private CloudServer $server) {
-        parent::__construct($this->player);
+    public function __construct(
+        CloudPlayer $player,
+        private readonly CloudServer $server
+    ) {
+        parent::__construct($player);
     }
 
     public function getServer(): CloudServer {

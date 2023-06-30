@@ -40,7 +40,7 @@ class PlayerTextPacket extends CloudPacket {
         return $this->textType;
     }
 
-    public function handle(ServerClient $client) {
+    public function handle(ServerClient $client): void {
         if (($player = CloudPlayerManager::getInstance()->getPlayerByName($this->player)) !== null) $player->send($this->message, $this->textType);
     }
 }

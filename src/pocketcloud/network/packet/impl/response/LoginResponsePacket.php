@@ -10,11 +10,11 @@ class LoginResponsePacket extends ResponsePacket {
 
     public function __construct(private ?VerifyStatus $status = null) {}
 
-    public function encodePayload(PacketData $packetData) {
+    public function encodePayload(PacketData $packetData): void {
         $packetData->writeVerifyStatus($this->status);
     }
 
-    public function decodePayload(PacketData $packetData) {
+    public function decodePayload(PacketData $packetData): void {
         $this->status = $packetData->readVerifyStatus();
     }
 

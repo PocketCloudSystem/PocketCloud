@@ -9,7 +9,7 @@ abstract class CloudPlugin {
     private bool $enabled = false;
     private TaskScheduler $scheduler;
 
-    public function __construct(private CloudPluginDescription $description) {
+    public function __construct(private readonly CloudPluginDescription $description) {
         $this->scheduler = new TaskScheduler($this);
     }
 
@@ -19,7 +19,7 @@ abstract class CloudPlugin {
 
     public function onDisable(): void {}
 
-    public function setEnabled(bool $enabled) {
+    public function setEnabled(bool $enabled): void {
         $this->enabled = $enabled;
     }
 

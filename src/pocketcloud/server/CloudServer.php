@@ -33,7 +33,12 @@ class CloudServer {
     private int $startTime;
     private int $stopTime = 0;
 
-    public function __construct(private int $id, private Template $template, private CloudServerData $cloudServerData, private ServerStatus $serverStatus) {
+    public function __construct(
+        private readonly int $id,
+        private readonly Template $template,
+        private readonly CloudServerData $cloudServerData,
+        private ServerStatus $serverStatus
+    ) {
         $this->cloudServerStorage = new CloudServerStorage($this);
         $this->verifyStatus = VerifyStatus::NOT_APPLIED();
         $this->startTime = time();
@@ -130,7 +135,7 @@ class CloudServer {
         return $this->cloudServerStorage;
     }
 
-    public function sync() {
+    public function sync(): void {
         $packets = [];
         foreach (TemplateManager::getInstance()->getTemplates() as $template) $packets[] = new TemplateSyncPacket($template);
         foreach (CloudServerManager::getInstance()->getServers() as $server) {

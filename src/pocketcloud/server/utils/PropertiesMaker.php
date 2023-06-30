@@ -72,14 +72,14 @@ class PropertiesMaker {
         ]
     ];
 
-    public static function makeProperties(Template $template) {
+    public static function makeProperties(Template $template): void {
         $fileName = ($template->getTemplateType() === TemplateType::SERVER() ? "server.properties" : "config.yml");
         $config = new Config($template->getPath() . $fileName, ($fileName == "server.properties" ? 0 : 2));
         foreach (self::KEYS[$template->getTemplateType()->getName()] as $key => $value) $config->set($key, $value);
         $config->save();
     }
 
-    public static function copyProperties(CloudServer $server) {
+    public static function copyProperties(CloudServer $server): void {
         $fileName = ($server->getTemplate()->getTemplateType() === TemplateType::SERVER() ? "server.properties" : "config.yml");
         if (!file_exists($server->getTemplate()->getPath() . $fileName)) self::makeProperties($server->getTemplate());
         if (file_exists($server->getPath() . $fileName)) @unlink($server->getPath() . $fileName);

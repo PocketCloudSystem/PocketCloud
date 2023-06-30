@@ -51,7 +51,7 @@ class LibraryManager {
         ));
     }
 
-    public function load() {
+    public function load(): void {
         foreach ($this->libraries as $library) {
             if (!$library->exists()) {
                 $temporaryLogger = new Logger(saveMode: false);
@@ -72,11 +72,11 @@ class LibraryManager {
         }
     }
 
-    public function addLibrary(Library $library) {
+    public function addLibrary(Library $library): void {
         $this->libraries[$library->getName()] = $library;
     }
 
-    public function removeLibrary(Library $library) {
+    public function removeLibrary(Library $library): void {
         if (isset($this->libraries[$library->getName()])) unset($this->libraries[$library->getName()]);
     }
 

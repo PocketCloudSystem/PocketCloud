@@ -43,7 +43,7 @@ class Network extends Thread {
         }
     }
 
-    public function init() {
+    public function init(): void {
         CloudLogger::get()->info(Language::current()->translate("network.bind", $this->address->__toString()));
         if (!$this->bind($this->address)) {
             CloudLogger::get()->error(Language::current()->translate("network.bind.failed", $this->address->__toString()));
@@ -98,7 +98,7 @@ class Network extends Thread {
         return @socket_recvfrom($this->socket, $buffer, 65535, 0, $address, $port) !== false;
     }
 
-    public function close() {
+    public function close(): void {
         if ($this->isConnected()) {
             (new NetworkCloseEvent())->call();
             $this->connected = false;
@@ -113,7 +113,7 @@ class Network extends Thread {
         return $success;
     }
 
-    public function broadcastPacket(CloudPacket $packet, ServerClient... $excluded) {
+    public function broadcastPacket(CloudPacket $packet, ServerClient... $excluded): void {
         foreach (ServerClientManager::getInstance()->getClients() as $client) {
             if (!in_array($client, $excluded)) $client->sendPacket(clone $packet);
         }

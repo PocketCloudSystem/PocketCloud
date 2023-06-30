@@ -32,7 +32,7 @@ class PlayerKickPacket extends CloudPacket {
         return $this->reason;
     }
 
-    public function handle(ServerClient $client) {
+    public function handle(ServerClient $client): void {
         if (($player = CloudPlayerManager::getInstance()->getPlayerByName($this->playerName)) !== null) $player->kick($this->reason);
     }
 }

@@ -10,11 +10,11 @@ class CloudNotifyPacket extends CloudPacket {
 
     public function __construct(private string $message = "") {}
 
-    public function encodePayload(PacketData $packetData) {
+    public function encodePayload(PacketData $packetData): void {
         $packetData->write($this->message);
     }
 
-    public function decodePayload(PacketData $packetData) {
+    public function decodePayload(PacketData $packetData): void {
         $this->message = $packetData->readString();
     }
 
@@ -22,5 +22,5 @@ class CloudNotifyPacket extends CloudPacket {
         return $this->message;
     }
 
-    public function handle(ServerClient $client) {}
+    public function handle(ServerClient $client): void {}
 }

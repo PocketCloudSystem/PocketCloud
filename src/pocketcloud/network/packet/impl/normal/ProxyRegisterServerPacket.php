@@ -13,12 +13,12 @@ class ProxyRegisterServerPacket extends CloudPacket {
         private int $port = 0
     ) {}
 
-    public function encodePayload(PacketData $packetData) {
+    public function encodePayload(PacketData $packetData): void {
         $packetData->write($this->serverName);
         $packetData->write($this->port);
     }
 
-    public function decodePayload(PacketData $packetData) {
+    public function decodePayload(PacketData $packetData): void {
         $this->serverName = $packetData->readString();
         $this->port = $packetData->readInt();
     }
@@ -31,5 +31,5 @@ class ProxyRegisterServerPacket extends CloudPacket {
         return $this->port;
     }
 
-    public function handle(ServerClient $client) {}
+    public function handle(ServerClient $client): void {}
 }

@@ -19,11 +19,11 @@ class CloudServerStopRequestPacket extends RequestPacket {
         parent::__construct($requestId);
     }
 
-    public function encodePayload(PacketData $packetData) {
+    public function encodePayload(PacketData $packetData): void {
         $packetData->write($this->server);
     }
 
-    public function decodePayload(PacketData $packetData) {
+    public function decodePayload(PacketData $packetData): void {
         $this->server = $packetData->readString();
     }
 
@@ -31,12 +31,15 @@ class CloudServerStopRequestPacket extends RequestPacket {
         return $this->server;
     }
 
-    public function handle(ServerClient $client) {
+    public function handle(ServerClient $client): void {
         if (($server = CloudServerManager::getInstance()->getServerByName($this->server)) !== null) {
             CloudServerManager::getInstance()->stopServer($server);
             $this->sendResponse(new CloudServerStopResponsePacket(ErrorReason::NO_ERROR()), $client);
         } else if (($template = TemplateManager::getInstance()->getTemplateByName($this->server)) !== null) {
             CloudServerManager::getInstance()->stopTemplate($template);
+            $this->sendResponse(new CloudServerStopResponsePacket(ErrorReason::NO_ERROR()), $client);
+        } else if ($this->server == "all") {
+            CloudServerManager::getInstance()->stopAll();
             $this->sendResponse(new CloudServerStopResponsePacket(ErrorReason::NO_ERROR()), $client);
         } else $this->sendResponse(new CloudServerStopResponsePacket(ErrorReason::SERVER_EXISTENCE()), $client);
     }

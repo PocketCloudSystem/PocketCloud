@@ -8,9 +8,9 @@ use pocketmine\snooze\SleeperHandlerEntry;
 class AsyncWorker extends Worker {
 
     public function __construct(
-        private int $id,
-        private int $memoryLimit,
-        private SleeperHandlerEntry $entry
+        private readonly int $id,
+        private readonly int $memoryLimit,
+        private readonly SleeperHandlerEntry $entry
     ) {}
 
     public function onRun(): void {

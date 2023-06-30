@@ -29,11 +29,11 @@ final class NotifyType {
     }
 
     public function __construct(
-        private string $name,
-        private string $message
+        private readonly string $name,
+        private readonly string $message
     ) {}
 
-    public function notify(array $params) {
+    public function notify(array $params): void {
         Network::getInstance()->broadcastPacket(new CloudNotifyPacket(str_replace(array_keys($params), array_values($params), $this->message)), ...ServerClientManager::getInstance()->pickClients(fn(ServerClient $client) => $client->getServer() !== null && $client->getServer()->getTemplate()->getTemplateType() === TemplateType::PROXY()));
     }
 

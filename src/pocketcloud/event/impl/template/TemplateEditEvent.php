@@ -6,8 +6,18 @@ use pocketcloud\template\Template;
 
 class TemplateEditEvent extends TemplateEvent {
 
-    public function __construct(private Template $template, private ?bool $lobby, private ?bool $maintenance, private ?bool $static, private ?int $maxPlayerCount, private ?int $minServerCount, private ?int $maxServerCount, private ?bool $startNewWhenFull, private ?bool $autoStart) {
-        parent::__construct($this->template);
+    public function __construct(
+        Template $template,
+        private readonly ?bool $lobby,
+        private readonly ?bool $maintenance,
+        private readonly ?bool $static,
+        private readonly ?int $maxPlayerCount,
+        private readonly ?int $minServerCount,
+        private readonly ?int $maxServerCount,
+        private readonly ?bool $startNewWhenFull,
+        private readonly ?bool $autoStart
+    ) {
+        parent::__construct($template);
     }
 
     public function getLobby(): ?bool {

@@ -11,7 +11,7 @@ class TaskScheduler implements Tickable {
     /** @var array<TaskHandler> */
     private array $tasks = [];
 
-    public function __construct(private CloudPlugin $owner) {}
+    public function __construct(private readonly CloudPlugin $owner) {}
 
     private function scheduleTask(Task $task, int $delay, int $period, bool $repeat): void {
         $taskHandler = new TaskHandler($task, $delay, $period, $repeat, $this->owner);
@@ -19,26 +19,26 @@ class TaskScheduler implements Tickable {
         $this->tasks[$taskHandler->getId()] = $taskHandler;
     }
 
-    public function scheduleDelayedTask(Task $task, int $delay) {
+    public function scheduleDelayedTask(Task $task, int $delay): void {
         $this->scheduleTask($task, $delay, -1, false);
     }
 
-    public function scheduleRepeatingTask(Task $task, int $period) {
+    public function scheduleRepeatingTask(Task $task, int $period): void {
         $this->scheduleTask($task, -1, $period, true);
     }
 
-    public function scheduleDelayedRepeatingTask(Task $task, int $delay, int $period) {
+    public function scheduleDelayedRepeatingTask(Task $task, int $delay, int $period): void {
         $this->scheduleTask($task, $delay, $period, true);
     }
 
-    public function cancel(Task $task) {
+    public function cancel(Task $task): void {
         if (isset($this->tasks[$task->getTaskHandler()->getId()])) {
             $task->getTaskHandler()->cancel();
             unset($this->tasks[$task->getTaskHandler()->getId()]);
         }
     }
 
-    public function cancelAll() {
+    public function cancelAll(): void {
         foreach ($this->tasks as $task) $task->cancel();
         $this->tasks = [];
     }

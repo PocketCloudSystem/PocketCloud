@@ -6,7 +6,7 @@ class PortManager {
 
     private static array $usedPorts = [];
 
-    public static function addPort(int $port) {
+    public static function addPort(int $port): void {
         if (!in_array($port, self::$usedPorts)) self::$usedPorts[] = $port;
     }
 
@@ -28,7 +28,7 @@ class PortManager {
         return $port;
     }
 
-    public static function getFreeProxyPort() {
+    public static function getFreeProxyPort(): int {
         for ($i = 19132; $i < 20000; $i++) {
             if (in_array($i, self::$usedPorts)) {
                 continue;

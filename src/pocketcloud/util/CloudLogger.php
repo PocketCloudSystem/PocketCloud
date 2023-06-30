@@ -9,7 +9,7 @@ final class CloudLogger {
 
     private static ?Logger $logger = null;
 
-    public static function set(?Logger $logger) {
+    public static function set(?Logger $logger): void {
         self::$logger = $logger;
     }
 

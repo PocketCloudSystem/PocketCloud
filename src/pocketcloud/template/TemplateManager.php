@@ -35,7 +35,7 @@ class TemplateManager implements Reloadable, Tickable {
         $this->templatesConfig = new Config(TEMPLATES_PATH . "templates.json", 1);
     }
 
-    public function loadTemplates() {
+    public function loadTemplates(): void {
         CloudLogger::get()->info(Language::current()->translate("template.loading"));
         foreach ($this->templatesConfig->getAll() as $name => $data) {
             CloudLogger::get()->debug("Loading template " . ($data["name"] ?? $name));
@@ -51,7 +51,7 @@ class TemplateManager implements Reloadable, Tickable {
         }
     }
 
-    public function createTemplate(Template $template) {
+    public function createTemplate(Template $template): void {
         $startTime = microtime(true);
         CloudLogger::get()->info(Language::current()->translate("template.create", $template->getName()));
         $this->templatesConfig->set($template->getName(), $template->toArray());
@@ -67,7 +67,7 @@ class TemplateManager implements Reloadable, Tickable {
         Network::getInstance()->broadcastPacket(new TemplateSyncPacket($template));
     }
 
-    public function deleteTemplate(Template $template) {
+    public function deleteTemplate(Template $template): void {
         $startTime = microtime(true);
         CloudLogger::get()->info(Language::current()->translate("template.delete", $template->getName()));
         $this->templatesConfig->remove($template->getName());
@@ -83,7 +83,7 @@ class TemplateManager implements Reloadable, Tickable {
         Network::getInstance()->broadcastPacket(new TemplateSyncPacket($template, true));
     }
 
-    public function editTemplate(Template $template, ?bool $lobby, ?bool $maintenance, ?bool $static, ?int $maxPlayerCount, ?int $minServerCount, ?int $maxServerCount, ?bool $startNewWhenFull, ?bool $autoStart) {
+    public function editTemplate(Template $template, ?bool $lobby, ?bool $maintenance, ?bool $static, ?int $maxPlayerCount, ?int $minServerCount, ?int $maxServerCount, ?bool $startNewWhenFull, ?bool $autoStart): void {
         $startTime = microtime(true);
         CloudLogger::get()->info(Language::current()->translate("template.edit", $template->getName()));
         $template->setLobby(($lobby === null ? $template->isLobby() : $lobby));

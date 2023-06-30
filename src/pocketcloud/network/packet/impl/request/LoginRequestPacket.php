@@ -26,17 +26,17 @@ class LoginRequestPacket extends RequestPacket {
         parent::__construct($requestId);
     }
 
-    public function encodePayload(PacketData $packetData) {
+    public function encodePayload(PacketData $packetData): void {
         $packetData->write($this->serverName);
         $packetData->write($this->processId);
     }
 
-    public function decodePayload(PacketData $packetData) {
+    public function decodePayload(PacketData $packetData): void {
         $this->serverName = $packetData->readString();
         $this->processId = $packetData->readInt();
     }
 
-    public function handle(ServerClient $client) {
+    public function handle(ServerClient $client): void {
         if (($server = CloudServerManager::getInstance()->getServerByName($this->serverName)) !== null) {
             ServerClientManager::getInstance()->addClient($server, $client);
             CloudLogger::get()->info(Language::current()->translate("server.started", $server->getName()));

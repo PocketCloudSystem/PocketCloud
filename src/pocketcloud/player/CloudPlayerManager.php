@@ -15,7 +15,7 @@ class CloudPlayerManager {
     /** @var array<CloudPlayer> */
     private array $players = [];
 
-    public function addPlayer(CloudPlayer $player) {
+    public function addPlayer(CloudPlayer $player): void {
         if ($player->getCurrentServer() === null) CloudLogger::get()->debug("Player %s is connected. (On: %s)", false, $player->getName(), ($player->getCurrentProxy()?->getName() ?? "NULL"));
         else CloudLogger::get()->debug("Player %s is connected. (On: %s)", false, $player->getName(), ($player->getCurrentServer()?->getName() ?? "NULL"));
         $this->players[$player->getName()] = $player;
@@ -23,7 +23,7 @@ class CloudPlayerManager {
         (new PlayerConnectEvent($player, ($player->getCurrentServer() ?? $player->getCurrentProxy())))->call();
     }
 
-    public function removePlayer(CloudPlayer $player) {
+    public function removePlayer(CloudPlayer $player): void {
         if ($player->getCurrentServer() === null) CloudLogger::get()->debug("Player %s is disconnected. (From: %s)", false, $player->getName(), ($player->getCurrentProxy()?->getName() ?? "NULL"));
         else CloudLogger::get()->debug("Player %s is disconnected. (From: %s)", false, $player->getName(), ($player->getCurrentServer()?->getName() ?? "NULL"));
         if (isset($this->players[$player->getName()])) unset($this->players[$player->getName()]);

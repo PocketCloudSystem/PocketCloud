@@ -14,11 +14,11 @@ use pocketcloud\util\Utils;
 
 class ConfigSetup extends Setup {
 
-    public function onStart() {
+    public function onStart(): void {
         CloudLogger::get()->info("Welcome to the §bPocket§3Cloud§r-Setup!");
     }
 
-    public function onCancel() {
+    public function onCancel(): void {
         CloudLogger::get()->warn(Language::current()->translate("setup.default.cancelled"));
         $this->handleResults([]);
     }

@@ -7,7 +7,7 @@ use pocketcloud\server\CloudServer;
 class CloudServerStorage {
 
     public function __construct(
-        private CloudServer $server,
+        private readonly CloudServer $server,
         private array $storage = []
     ) {}
 

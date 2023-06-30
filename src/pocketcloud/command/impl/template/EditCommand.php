@@ -3,13 +3,13 @@
 namespace pocketcloud\command\impl\template;
 
 use pocketcloud\command\Command;
+use pocketcloud\command\sender\ICommandSender;
 use pocketcloud\language\Language;
 use pocketcloud\template\TemplateManager;
-use pocketcloud\util\CloudLogger;
 
 class EditCommand extends Command {
 
-    public function execute(string $label, array $args): bool {
+    public function execute(ICommandSender $sender, string $label, array $args): bool {
         if (isset($args[0]) && isset($args[1]) && isset($args[2])) {
             if (($template = TemplateManager::getInstance()->getTemplateByName($args[0])) !== null) {
                 if ($template::isValidEditKey($args[1])) {
@@ -25,9 +25,9 @@ class EditCommand extends Command {
                             ($args[1] == "startNewWhenFull" ? $realValue : null),
                             ($args[1] == "autoStart" ? $realValue : null),
                         );
-                    } else CloudLogger::get()->error(Language::current()->translate("command.edit.failed.second", $args[1], $expected));
-                } else CloudLogger::get()->error(Language::current()->translate("command.edit.failed.first"));
-            } else CloudLogger::get()->error(Language::current()->translate("template.not.found"));
+                    } else $sender->error(Language::current()->translate("command.edit.failed.second", $args[1], $expected));
+                } else $sender->error(Language::current()->translate("command.edit.failed.first"));
+            } else $sender->error(Language::current()->translate("template.not.found"));
         } else return false;
         return true;
     }

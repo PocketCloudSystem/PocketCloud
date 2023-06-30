@@ -12,11 +12,11 @@ class CommandSendAnswerPacket extends CloudPacket {
 
     public function __construct(private ?CommandExecutionResult $result = null) {}
 
-    public function encodePayload(PacketData $packetData) {
+    public function encodePayload(PacketData $packetData): void {
         $packetData->writeCommandExecutionResult($this->result);
     }
 
-    public function decodePayload(PacketData $packetData) {
+    public function decodePayload(PacketData $packetData): void {
         $this->result = $packetData->readCommandExecutionResult();
     }
 
@@ -24,7 +24,7 @@ class CommandSendAnswerPacket extends CloudPacket {
         return $this->result;
     }
 
-    public function handle(ServerClient $client) {
+    public function handle(ServerClient $client): void {
         if (($server = $client->getServer()) !== null) {
             $promise = $server->getCloudServerStorage()->get("command_promise");
             if ($promise instanceof Promise) {

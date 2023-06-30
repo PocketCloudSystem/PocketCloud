@@ -18,10 +18,10 @@ use pocketcloud\util\Utils;
 class CloudPlayer {
 
     public function __construct(
-        private string $name,
-        private string $host,
-        private string $xboxUserId,
-        private string $uniqueId,
+        private readonly string $name,
+        private readonly string $host,
+        private readonly string $xboxUserId,
+        private readonly string $uniqueId,
         private ?CloudServer $currentServer = null,
         private ?CloudServer $currentProxy = null
     ) {}
@@ -59,35 +59,35 @@ class CloudPlayer {
         $this->currentProxy = $currentProxy;
     }
 
-    public function send(string $message, TextType $textType) {
+    public function send(string $message, TextType $textType): void {
         Network::getInstance()->broadcastPacket(new PlayerTextPacket($this->getName(), $message, $textType), ...ServerClientManager::getInstance()->pickClients(fn(ServerClient $client) => $client->getServer() !== null && $client->getServer()->getTemplate()->getTemplateType() === TemplateType::PROXY()));
     }
 
-    public function sendMessage(string $message) {
+    public function sendMessage(string $message): void {
         $this->send($message, TextType::MESSAGE());
     }
 
-    public function sendPopup(string $message) {
+    public function sendPopup(string $message): void {
         $this->send($message, TextType::POPUP());
     }
 
-    public function sendTip(string $message) {
+    public function sendTip(string $message): void {
         $this->send($message, TextType::TIP());
     }
 
-    public function sendTitle(string $message) {
+    public function sendTitle(string $message): void {
         $this->send($message, TextType::TITLE());
     }
 
-    public function sendActionBarMessage(string $message) {
+    public function sendActionBarMessage(string $message): void {
         $this->send($message, TextType::ACTION_BAR());
     }
 
-    public function sendToastNotification(string $title, string $body) {
+    public function sendToastNotification(string $title, string $body): void {
         $this->send($title . "\n" .  $body, TextType::TOAST_NOTIFICATION());
     }
 
-    public function kick(string $reason = "") {
+    public function kick(string $reason = ""): void {
         ($ev = new PlayerKickEvent($this, $reason))->call();
         if ($ev->isCancelled()) return;
         if ($this->getCurrentProxy() === null) $this->getCurrentServer()?->sendPacket(new PlayerKickPacket($this->getName(), $reason));

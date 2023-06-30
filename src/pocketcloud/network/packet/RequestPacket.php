@@ -9,17 +9,17 @@ abstract class RequestPacket extends CloudPacket {
 
     public function __construct(private string $requestId = "") {}
 
-    final public function encode(PacketData $packetData) {
+    final public function encode(PacketData $packetData): void {
         parent::encode($packetData);
         $packetData->write($this->requestId);
     }
 
-    final public function decode(PacketData $packetData) {
+    final public function decode(PacketData $packetData): void {
         parent::decode($packetData);
         $this->requestId = $packetData->readString();
     }
 
-    public function sendResponse(ResponsePacket $packet, ServerClient $client) {
+    public function sendResponse(ResponsePacket $packet, ServerClient $client): void {
         $client->sendPacket($packet->setRequestId($this->requestId));
     }
 

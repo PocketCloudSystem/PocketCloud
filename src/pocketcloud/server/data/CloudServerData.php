@@ -4,7 +4,11 @@ namespace pocketcloud\server\data;
 
 class CloudServerData {
 
-    public function __construct(private int $port, private int $maxPlayers, private ?int $processId = null) {}
+    public function __construct(
+        private readonly int $port,
+        private readonly int $maxPlayers,
+        private ?int $processId = null
+    ) {}
 
     public function getPort(): int {
         return $this->port;

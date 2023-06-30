@@ -10,7 +10,7 @@ abstract class Task {
 
     public function onCancel() {}
 
-    public function setTaskHandler(TaskHandler $taskHandler) {
+    public function setTaskHandler(TaskHandler $taskHandler): void {
         $this->taskHandler = $taskHandler;
     }
 

@@ -11,16 +11,16 @@ class TaskHandler {
     private int $last = 0;
 
     public function __construct(
-        private Task $task,
+        private readonly Task $task,
         private int $delay,
-        private int $period,
-        private bool $repeat,
-        private CloudPlugin $owner
+        private readonly int $period,
+        private readonly bool $repeat,
+        private readonly CloudPlugin $owner
     ) {
         $this->id = mt_rand(PHP_INT_MIN, PHP_INT_MAX);
     }
 
-    public function cancel() {
+    public function cancel(): void {
         if (!$this->cancelled) {
             $this->cancelled = true;
             $this->task->onCancel();
@@ -31,7 +31,7 @@ class TaskHandler {
         return $this->cancelled;
     }
 
-    public function onUpdate(int $tick) {
+    public function onUpdate(int $tick): void {
         if ($this->delay > 0) {
             if (--$this->delay == 0) {
                 $this->last = $tick;

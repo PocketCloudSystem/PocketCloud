@@ -10,11 +10,11 @@ class ProxyUnregisterServerPacket extends CloudPacket {
 
     public function __construct(private string $serverName = "") {}
 
-    public function encodePayload(PacketData $packetData) {
+    public function encodePayload(PacketData $packetData): void {
         $packetData->write($this->serverName);
     }
 
-    public function decodePayload(PacketData $packetData) {
+    public function decodePayload(PacketData $packetData): void {
         $this->serverName = $packetData->readString();
     }
 
@@ -22,5 +22,5 @@ class ProxyUnregisterServerPacket extends CloudPacket {
         return $this->serverName;
     }
 
-    public function handle(ServerClient $client) {}
+    public function handle(ServerClient $client): void {}
 }

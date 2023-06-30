@@ -17,11 +17,11 @@ class CheckPlayerNotifyRequestPacket extends RequestPacket {
         parent::__construct($requestId);
     }
 
-    public function encodePayload(PacketData $packetData) {
+    public function encodePayload(PacketData $packetData): void {
         $packetData->write($this->player);
     }
 
-    public function decodePayload(PacketData $packetData) {
+    public function decodePayload(PacketData $packetData): void {
         $this->player = $packetData->readString();
     }
 
@@ -29,7 +29,7 @@ class CheckPlayerNotifyRequestPacket extends RequestPacket {
         return $this->player;
     }
 
-    public function handle(ServerClient $client) {
+    public function handle(ServerClient $client): void {
         $this->sendResponse(new CheckPlayerNotifyResponsePacket(NotifyList::is($this->player)), $client);
     }
 }

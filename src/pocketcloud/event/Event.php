@@ -8,7 +8,7 @@ abstract class Event {
         return (new \ReflectionClass($this))->getShortName();
     }
 
-    public function call() {
+    public function call(): void {
         EventManager::getInstance()->callEvent($this);
     }
 }

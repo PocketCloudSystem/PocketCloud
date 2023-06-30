@@ -2,16 +2,18 @@
 
 namespace pocketcloud\command;
 
+use pocketcloud\command\sender\ICommandSender;
+
 abstract class Command {
 
     public function __construct(
-        private string $name,
+        private readonly string $name,
         private string $description,
-        private string $usage,
-        private array $aliases = []
+        private readonly string $usage,
+        private readonly array $aliases = []
     ) {}
 
-    abstract public function execute(string $label, array $args): bool;
+    abstract public function execute(ICommandSender $sender, string $label, array $args): bool;
 
     public function setDescription(string $description): void {
         $this->description = $description;

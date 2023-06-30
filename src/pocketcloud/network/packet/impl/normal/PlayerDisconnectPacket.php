@@ -25,7 +25,7 @@ class PlayerDisconnectPacket extends CloudPacket {
         return $this->playerName;
     }
 
-    public function handle(ServerClient $client) {
+    public function handle(ServerClient $client): void {
         if (($player = CloudPlayerManager::getInstance()->getPlayerByName($this->playerName)) !== null) {
             if ($player->getCurrentProxy() === null) {
                 CloudPlayerManager::getInstance()->removePlayer($player);

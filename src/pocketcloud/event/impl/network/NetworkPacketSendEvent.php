@@ -7,8 +7,12 @@ use pocketcloud\network\packet\CloudPacket;
 
 class NetworkPacketSendEvent extends NetworkEvent {
 
-    public function __construct(private CloudPacket $packet, private ServerClient $client, private bool $success) {
-        parent::__construct($this->packet, $this->client);
+    public function __construct(
+        CloudPacket $packet,
+        ServerClient $client,
+        private readonly bool $success
+    ) {
+        parent::__construct($packet, $client);
     }
 
     public function isSuccess(): bool {

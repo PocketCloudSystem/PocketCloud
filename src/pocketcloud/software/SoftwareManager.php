@@ -20,7 +20,7 @@ class SoftwareManager {
         $this->registerSoftware(new Software("WaterdogPE", DefaultConfig::getInstance()->getStartCommand("proxy"), "https://github.com/WaterdogPE/WaterdogPE/releases/download/latest/Waterdog.jar", "Waterdog.jar", ["wdpe"]));
     }
 
-    public function downloadAll() {
+    public function downloadAll(): void {
         foreach ($this->software as $software) {
             if (!$this->isDownloaded($software)) {
                 $this->downloadSoftware($software);
@@ -28,7 +28,7 @@ class SoftwareManager {
         }
     }
 
-    public function downloadSoftware(Software $software) {
+    public function downloadSoftware(Software $software): void {
         $temporaryLogger = new Logger(saveMode: false);
         $temporaryLogger->info("Start downloading software: %s (%s)", $software->getName(), $software->getUrl());
         $result = Utils::download($software->getUrl(), SOFTWARE_PATH . $software->getFileName());

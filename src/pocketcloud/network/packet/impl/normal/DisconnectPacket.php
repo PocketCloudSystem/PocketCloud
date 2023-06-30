@@ -20,15 +20,15 @@ class DisconnectPacket extends CloudPacket {
 
     public function __construct(private ?DisconnectReason $disconnectReason = null) {}
 
-    public function encodePayload(PacketData $packetData) {
+    public function encodePayload(PacketData $packetData): void {
         $packetData->writeDisconnectReason($this->disconnectReason);
     }
 
-    public function decodePayload(PacketData $packetData) {
+    public function decodePayload(PacketData $packetData): void {
         $this->disconnectReason = $packetData->readDisconnectReason();
     }
 
-    public function handle(ServerClient $client) {
+    public function handle(ServerClient $client): void {
         if (($server = $client->getServer()) !== null) {
             if ($server->getServerStatus() === ServerStatus::OFFLINE()) {
                 if (isset(CloudServerManager::getInstance()->getServers()[$server->getName()])) CloudServerManager::getInstance()->removeServer($server);

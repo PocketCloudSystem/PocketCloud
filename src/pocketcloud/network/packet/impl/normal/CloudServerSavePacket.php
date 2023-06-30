@@ -8,7 +8,7 @@ use pocketcloud\server\CloudServerManager;
 
 class CloudServerSavePacket extends CloudPacket {
 
-    public function handle(ServerClient $client) {
+    public function handle(ServerClient $client): void {
         if (($server = $client->getServer()) !== null) {
             CloudServerManager::getInstance()->saveServer($server);
         }

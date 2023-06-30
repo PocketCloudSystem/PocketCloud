@@ -22,9 +22,9 @@ abstract class CloudPacket  {
         $this->decodePayload($packetData);
     }
 
-    public function encodePayload(PacketData $packetData) {}
+    public function encodePayload(PacketData $packetData): void {}
 
-    public function decodePayload(PacketData $packetData) {}
+    public function decodePayload(PacketData $packetData): void {}
 
     abstract public function handle(ServerClient $client);
 

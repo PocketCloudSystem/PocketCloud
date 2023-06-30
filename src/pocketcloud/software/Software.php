@@ -5,11 +5,11 @@ namespace pocketcloud\software;
 class Software {
 
     public function __construct(
-        private string $name,
-        private string $startCommand,
-        private string $url,
-        private string $fileName,
-        private array $aliases
+        private readonly string $name,
+        private readonly string $startCommand,
+        private readonly string $url,
+        private readonly string $fileName,
+        private readonly array $aliases
     ) {}
 
     public function getName(): string {

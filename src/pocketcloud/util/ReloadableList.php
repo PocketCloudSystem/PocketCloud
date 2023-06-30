@@ -9,16 +9,16 @@ class ReloadableList {
     /** @var array<Reloadable> */
     private static array $list = [];
 
-    public static function add(Reloadable $reloadable) {
+    public static function add(Reloadable $reloadable): void {
         self::$list[spl_object_id($reloadable)] = $reloadable;
     }
 
-    public static function remove(Reloadable $reloadable) {
+    public static function remove(Reloadable $reloadable): void {
         if (isset(self::$list[spl_object_id($reloadable)])) unset(self::$list[spl_object_id($reloadable)]);
     }
 
     /** @internal */
-    public static function reload() {
+    public static function reload(): void {
         foreach (self::$list as $reloadable) {
             try {
                 if ($reloadable->reload()) {

@@ -8,7 +8,7 @@ class IdManager {
 
     private static array $ids = [];
 
-    public static function addId(Template $template, int $id) {
+    public static function addId(Template $template, int $id): void {
         if (isset(self::$ids[$template->getName()])) {
             if (!in_array($id, self::$ids[$template->getName()])) {
                 self::$ids[$template->getName()][] = $id;
@@ -18,7 +18,7 @@ class IdManager {
         }
     }
 
-    public static function removeId(Template $template, int $id) {
+    public static function removeId(Template $template, int $id): void {
         if (isset(self::$ids[$template->getName()])) {
             if (in_array($id, self::$ids[$template->getName()])) {
                 unset(self::$ids[$template->getName()][array_search($id, self::$ids[$template->getName()])]);

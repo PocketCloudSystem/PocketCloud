@@ -7,7 +7,10 @@ use pocketcloud\http\io\Response;
 
 abstract class EndPoint {
 
-    public function __construct(private string $requestMethod, private string $path) {}
+    public function __construct(
+        private readonly string $requestMethod,
+        private readonly string $path
+    ) {}
 
     /**
      * @param Request $request

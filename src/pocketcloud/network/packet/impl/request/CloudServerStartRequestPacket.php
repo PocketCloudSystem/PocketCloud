@@ -20,12 +20,12 @@ class CloudServerStartRequestPacket extends RequestPacket {
         parent::__construct($requestId);
     }
 
-    public function encodePayload(PacketData $packetData) {
+    public function encodePayload(PacketData $packetData): void {
         $packetData->write($this->template);
         $packetData->write($this->count);
     }
 
-    public function decodePayload(PacketData $packetData) {
+    public function decodePayload(PacketData $packetData): void {
         $this->template = $packetData->readString();
         $this->count = $packetData->readInt();
     }
@@ -38,7 +38,7 @@ class CloudServerStartRequestPacket extends RequestPacket {
         return $this->count;
     }
 
-    public function handle(ServerClient $client) {
+    public function handle(ServerClient $client): void {
         if (($template = TemplateManager::getInstance()->getTemplateByName($this->template)) !== null) {
             if (count(CloudServerManager::getInstance()->getServersByTemplate($template)) < $template->getMaxServerCount()) {
                 CloudServerManager::getInstance()->startServer($template, $this->count);

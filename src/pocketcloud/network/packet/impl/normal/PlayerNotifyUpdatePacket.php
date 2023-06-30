@@ -14,12 +14,12 @@ class PlayerNotifyUpdatePacket extends CloudPacket {
         private bool $value = false
     ) {}
 
-    public function encodePayload(PacketData $packetData) {
+    public function encodePayload(PacketData $packetData): void {
         $packetData->write($this->playerName);
         $packetData->write($this->value);
     }
 
-    public function decodePayload(PacketData $packetData) {
+    public function decodePayload(PacketData $packetData): void {
         $this->playerName = $packetData->readString();
         $this->value = $packetData->readBool();
     }
@@ -32,7 +32,7 @@ class PlayerNotifyUpdatePacket extends CloudPacket {
         return $this->value;
     }
 
-    public function handle(ServerClient $client) {
+    public function handle(ServerClient $client): void {
         if ($this->value) NotifyList::add($this->playerName);
         else NotifyList::remove($this->playerName);
     }

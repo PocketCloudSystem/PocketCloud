@@ -29,7 +29,10 @@ final class TemplateType {
         return self::$members;
     }
 
-    public function __construct(private string $name, private Software $software) {}
+    public function __construct(
+        private readonly string $name,
+        private readonly Software $software
+    ) {}
 
     public function __toString(): string {
         return $this->name;

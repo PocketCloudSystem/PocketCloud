@@ -40,7 +40,7 @@ class CloudServerManager implements Tickable {
     /** @var array<CloudServer> */
     private array $servers = [];
 
-    public function startServer(Template $template, int $count = 1) {
+    public function startServer(Template $template, int $count = 1): void {
         if (count($this->getServersByTemplate($template)) >= $template->getMaxServerCount()) {
             CloudLogger::get()->info(Language::current()->translate("server.max.reached", $template->getName()));
         } else {
@@ -75,7 +75,7 @@ class CloudServerManager implements Tickable {
         }
     }
 
-    public function stopServer(CloudServer $server, bool $force = false) {
+    public function stopServer(CloudServer $server, bool $force = false): void {
         (new ServerStopEvent($server, $force))->call();
         CloudLogger::get()->info(Language::current()->translate("server.stopping", $server->getName()));
         NotifyType::STOPPING()->notify(["%server%" => $server->getName()]);
@@ -89,7 +89,7 @@ class CloudServerManager implements Tickable {
         }
     }
 
-    public function stopTemplate(Template $template, bool $force = false) {
+    public function stopTemplate(Template $template, bool $force = false): void {
         if (empty($this->getServersByTemplate($template))) {
             CloudLogger::get()->info(Language::current()->translate("server.none", $template->getName()));
             return;
@@ -98,11 +98,11 @@ class CloudServerManager implements Tickable {
         foreach ($this->getServersByTemplate($template) as $server) $this->stopServer($server, $force);
     }
 
-    public function stopAll(bool $force = false) {
+    public function stopAll(bool $force = false): void {
         foreach ($this->getServers() as $server) $this->stopServer($server, $force);
     }
 
-    public function saveServer(CloudServer $server) {
+    public function saveServer(CloudServer $server): void {
         $ev = new ServerSaveEvent($server);
         $ev->call();
 
@@ -119,7 +119,7 @@ class CloudServerManager implements Tickable {
         });
     }
 
-    public function instantSave(CloudServer $server) {
+    public function instantSave(CloudServer $server): void {
         Utils::copyDir($server->getPath() . "players/", $server->getTemplate()->getPath() . "players/");
         Utils::copyDir($server->getPath() . "plugin_data/", $server->getTemplate()->getPath() . "plugin_data/");
         Utils::copyDir($server->getPath() . "worlds/", $server->getTemplate()->getPath() . "worlds/");
@@ -144,7 +144,7 @@ class CloudServerManager implements Tickable {
         return $promise;
     }
 
-    public function addServer(CloudServer $server) {
+    public function addServer(CloudServer $server): void {
         if (!isset($this->servers[$server->getName()])) $this->servers[$server->getName()] = $server;
         IdManager::addId($server->getTemplate(), $server->getId());
         PortManager::addPort($server->getCloudServerData()->getPort());
@@ -157,7 +157,7 @@ class CloudServerManager implements Tickable {
         }
     }
 
-    public function removeServer(CloudServer $server) {
+    public function removeServer(CloudServer $server): void {
         if (isset($this->servers[$server->getName()])) unset($this->servers[$server->getName()]);
         IdManager::removeId($server->getTemplate(), $server->getId());
         PortManager::removePort($server->getCloudServerData()->getPort());
@@ -259,7 +259,7 @@ class CloudServerManager implements Tickable {
     }
 
     /** @internal */
-    public function printServerStackTrace(string $server, array $crashData) {
+    public function printServerStackTrace(string $server, array $crashData): void {
         CloudLogger::get()->info("§8[§cERROR§8/§e%s§r§8] §cUnhandled §e%s§c: §e%s §cwas thrown in §e%s §cat line §e%s", $server, $crashData["error"]["type"], $crashData["error"]["message"] ?? "Unknown error", $crashData["error"]["file"], $crashData["error"]["line"]);
         foreach ($crashData["trace"] as $message) CloudLogger::get()->debug("§c" . $message);
     }

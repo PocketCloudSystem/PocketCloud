@@ -21,11 +21,11 @@ class LibrarySyncPacket extends CloudPacket {
         }
     }
 
-    public function encodePayload(PacketData $packetData) {
+    public function encodePayload(PacketData $packetData): void {
         $packetData->write($this->data);
     }
 
-    public function decodePayload(PacketData $packetData) {
+    public function decodePayload(PacketData $packetData): void {
         $this->data = $packetData->readArray();
     }
 
@@ -33,5 +33,5 @@ class LibrarySyncPacket extends CloudPacket {
         return $this->data;
     }
 
-    public function handle(ServerClient $client) {}
+    public function handle(ServerClient $client): void {}
 }

@@ -9,8 +9,11 @@ use pocketcloud\player\CloudPlayer;
 class PlayerKickEvent extends PlayerEvent implements Cancelable {
     use CancelableTrait;
 
-    public function __construct(private CloudPlayer $player, private string $reason) {
-        parent::__construct($this->player);
+    public function __construct(
+        CloudPlayer $player,
+        private readonly string $reason
+    ) {
+        parent::__construct($player);
     }
 
     public function getReason(): string {

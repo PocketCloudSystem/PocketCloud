@@ -7,7 +7,10 @@ use pmmp\thread\ThreadSafe;
 
 class Address extends ThreadSafe {
 
-    public function __construct(private string $address, private int $port) {}
+    public function __construct(
+        private readonly string $address,
+        private readonly int $port
+    ) {}
 
     public function getAddress(): string {
         return $this->address;

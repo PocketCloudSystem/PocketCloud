@@ -57,7 +57,11 @@ final class CloudColor {
         return $message;
     }
 
-    public function __construct(private string $name, private string $colorCode, private string $color) {}
+    public function __construct(
+        private readonly string $name,
+        private readonly string $colorCode,
+        private readonly string $color
+    ) {}
 
     public function getName(): string {
         return $this->name;

@@ -85,7 +85,7 @@ class PocketCloud {
         $this->tick();
     }
 
-    public function start() {
+    public function start(): void {
         ini_set("memory_limit", ($memory = DefaultConfig::getInstance()->getMemoryLimit()) > 0 ? $memory . "M" : "-1");
 
         CloudLogger::get()->info("§bPocket§3Cloud §8(§ev" . VersionInfo::VERSION . (VersionInfo::BETA ? "@BETA" : "") . "§8) - §rdeveloped by §e" . implode("§8, §e", VersionInfo::DEVELOPERS));
@@ -136,7 +136,7 @@ class PocketCloud {
         $this->network->start();
     }
 
-    public function reload() {
+    public function reload(): void {
         if (!$this->reloading) {
             $this->reloading = true;
             $startTime = microtime(true);
@@ -156,7 +156,7 @@ class PocketCloud {
         }
     }
 
-    public function tick() {
+    public function tick(): void {
         $start = microtime(true);
         while ($this->running) {
             $this->sleeperHandler->sleepUntil($start);
@@ -166,7 +166,7 @@ class PocketCloud {
         }
     }
 
-    public function shutdown() {
+    public function shutdown(): void {
         if ($this->running) {
             $this->running = false;
             Setup::getCurrentSetup()?->cancel();
@@ -183,7 +183,7 @@ class PocketCloud {
             CloudLogger::get()->info(Language::current()->translate("cloud.stopped"));
             CloudLogger::close();
             CloudLogSaver::clear();
-            Utils::kill(getmypid(), true);
+            Utils::kill(getmypid());
         }
     }
 

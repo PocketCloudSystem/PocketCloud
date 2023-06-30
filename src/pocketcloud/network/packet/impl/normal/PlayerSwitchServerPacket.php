@@ -13,7 +13,10 @@ use pocketcloud\util\CloudLogger;
 
 class PlayerSwitchServerPacket extends CloudPacket {
 
-    public function __construct(private string $playerName = "", private string $newServer = "") {}
+    public function __construct(
+        private string $playerName = "",
+        private string $newServer = ""
+    ) {}
 
     public function encodePayload(PacketData $packetData): void {
         $packetData->write($this->playerName);
@@ -33,12 +36,12 @@ class PlayerSwitchServerPacket extends CloudPacket {
         return $this->newServer;
     }
 
-    public function handle(ServerClient $client) {
+    public function handle(ServerClient $client): void {
         if (($player = CloudPlayerManager::getInstance()->getPlayerByName($this->playerName)) !== null) {
             if (($server = CloudServerManager::getInstance()->getServerByName($this->newServer)) !== null) {
                 Network::getInstance()->broadcastPacket($this);
                 CloudLogger::get()->debug("Player %s performed a server switch (%s -> %s)", false, $player->getName(), ($player->getCurrentServer()?->getName() ?? "NULL"), ($server?->getName() ?? "NULL"));
-                (new PlayerSwitchServerEvent($player, $player->getCurrentServer(), $server));
+                (new PlayerSwitchServerEvent($player, $player->getCurrentServer(), $server))->call();
                 $player->setCurrentServer($server);
             }
         }

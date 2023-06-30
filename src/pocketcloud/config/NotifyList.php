@@ -9,17 +9,17 @@ class NotifyList implements Reloadable {
 
     private static ?Config $config = null;
 
-    private static function check() {
+    private static function check(): void {
         if (self::$config === null) self::$config = new Config(IN_GAME_PATH . "notifyList.json", 1);
     }
 
-    public static function add(string $playerName) {
+    public static function add(string $playerName): void {
         self::check();
         self::$config->set($playerName, true);
         self::$config->save();
     }
 
-    public static function remove(string $playerName) {
+    public static function remove(string $playerName): void {
         self::check();
         self::$config->remove($playerName);
         self::$config->save();

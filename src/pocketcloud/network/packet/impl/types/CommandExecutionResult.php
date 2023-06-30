@@ -7,8 +7,8 @@ use pocketcloud\util\Utils;
 class CommandExecutionResult {
 
     public function __construct(
-        private string $commandLine,
-        private array $messages
+        private readonly string $commandLine,
+        private readonly array $messages
     ) {}
 
     public function getMessage(int $index): ?string {

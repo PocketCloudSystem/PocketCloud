@@ -3,24 +3,24 @@
 namespace pocketcloud\command\impl\general;
 
 use pocketcloud\command\Command;
+use pocketcloud\command\sender\ICommandSender;
 use pocketcloud\language\Language;
 use pocketcloud\player\CloudPlayerManager;
 use pocketcloud\server\CloudServerManager;
 use pocketcloud\template\TemplateManager;
 use pocketcloud\template\TemplateType;
-use pocketcloud\util\CloudLogger;
 
 class ListCommand extends Command {
 
-    public function execute(string $label, array $args): bool {
+    public function execute(ICommandSender $sender, string $label, array $args): bool {
         $type = "servers";
         if (isset($args[0])) if (strtolower($args[0]) == "templates" || strtolower($args[0]) == "players" || strtolower($args[0]) == "servers") $type = strtolower($args[0]);
 
         if ($type == "templates") {
-            CloudLogger::get()->info("Templates §8(§e" . count(TemplateManager::getInstance()->getTemplates()) . "§8)§r:");
-            if (empty(TemplateManager::getInstance()->getTemplates())) CloudLogger::get()->info("§cNo templates available.");
+            $sender->info("Templates §8(§e" . count(TemplateManager::getInstance()->getTemplates()) . "§8)§r:");
+            if (empty(TemplateManager::getInstance()->getTemplates())) $sender->info("§cNo templates available.");
             foreach (TemplateManager::getInstance()->getTemplates() as $template) {
-                CloudLogger::get()->info(
+                $sender->info(
                     "§e" . $template->getName() .
                     " §8- §risLobby: §a" . ($template->isLobby() ? "§a" . Language::current()->translate("raw.yes") : "§c" . Language::current()->translate("raw.no")) .
                     " §8- §risMaintenance: §a" . ($template->isMaintenance() ? "§a" . Language::current()->translate("raw.yes") : "§c" . Language::current()->translate("raw.no")) .
@@ -33,10 +33,10 @@ class ListCommand extends Command {
                 );
             }
         } else if ($type == "servers") {
-            CloudLogger::get()->info("Servers §8(§e" . count(CloudServerManager::getInstance()->getServers()) . "§8)§r:");
-            if (empty(CloudServerManager::getInstance()->getServers())) CloudLogger::get()->info("§cNo servers available.");
+            $sender->info("Servers §8(§e" . count(CloudServerManager::getInstance()->getServers()) . "§8)§r:");
+            if (empty(CloudServerManager::getInstance()->getServers())) $sender->info("§cNo servers available.");
             foreach (CloudServerManager::getInstance()->getServers() as $server) {
-                CloudLogger::get()->info(
+                $sender->info(
                     "§e" . $server->getName() .
                     " §8- §rPort: §e" . $server->getCloudServerData()->getPort() . " §8| §rIPv6: §e" . $server->getCloudServerData()->getPort()+1 .
                     " §8- §rTemplate: §e" . $server->getTemplate()->getName() .
@@ -45,10 +45,10 @@ class ListCommand extends Command {
                 );
             }
         } else if ($type == "players") {
-            CloudLogger::get()->info("Players §8(§e" . count(CloudPlayerManager::getInstance()->getPlayers()) . "§8)§r:");
-            if (empty(CloudPlayerManager::getInstance()->getPlayers())) CloudLogger::get()->info("§cNo players are online.");
+            $sender->info("Players §8(§e" . count(CloudPlayerManager::getInstance()->getPlayers()) . "§8)§r:");
+            if (empty(CloudPlayerManager::getInstance()->getPlayers())) $sender->info("§cNo players are online.");
             foreach (CloudPlayerManager::getInstance()->getPlayers() as $player) {
-                CloudLogger::get()->info(
+                $sender->info(
                     "§e" . $player->getName() .
                     " §8- §rHost: §e" . $player->getHost() .
                     " §8- §rXboxUserId: §e" . $player->getXboxUserId() .

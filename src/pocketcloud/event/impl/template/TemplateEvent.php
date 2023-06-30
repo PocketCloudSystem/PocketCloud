@@ -7,7 +7,7 @@ use pocketcloud\template\Template;
 
 abstract class TemplateEvent extends Event {
 
-    public function __construct(private Template $template) {}
+    public function __construct(private readonly Template $template) {}
 
     public function getTemplate(): Template {
         return $this->template;

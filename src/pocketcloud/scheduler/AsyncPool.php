@@ -51,7 +51,7 @@ class AsyncPool implements Tickable {
         return $this->workers[$worker];
     }
 
-    public function submitTaskToWorker(AsyncTask $task, int $worker) {
+    public function submitTaskToWorker(AsyncTask $task, int $worker): void {
         if ($worker < 0 || $worker >= $this->size) return;
         if($task->isSubmitted()) return;
         $task->setSubmitted(true);

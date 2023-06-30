@@ -25,7 +25,7 @@ class Utils {
         return false;
     }
 
-    public static function createLockFile() {
+    public static function createLockFile(): void {
         $file = fopen(STORAGE_PATH . "cloud.lock", "a+b");
         if ($file === false) return;
         if (!flock($file, LOCK_EX | LOCK_NB)) flock($file, LOCK_SH);
@@ -36,7 +36,7 @@ class Utils {
         self::$lockFileHandle = $file;
     }
 
-    public static function deleteLockFile() {
+    public static function deleteLockFile(): void {
         try {
             if (self::$lockFileHandle === null) return;
             @flock(self::$lockFileHandle, LOCK_UN);
@@ -45,7 +45,7 @@ class Utils {
         } catch (\Throwable $exception) {}
     }
 
-    public static function executeWithStartCommand(string $path, string $name, string $softwareStartCommand) {
+    public static function executeWithStartCommand(string $path, string $name, string $softwareStartCommand): void {
         if (self::$startCommand == "") return;
         passthru("cd " . $path . " && " . str_replace(["%name%", "%start_command%", "%SOFTWARE_PATH%", "%CLOUD_PATH%"], [$name, $softwareStartCommand, SOFTWARE_PATH, CLOUD_PATH], self::$startCommand));
     }
@@ -58,7 +58,7 @@ class Utils {
         return $result;
     }
 
-    public static function createDefaultFiles() {
+    public static function createDefaultFiles(): void {
         if (!file_exists(STORAGE_PATH)) mkdir(STORAGE_PATH);
         if (!file_exists(LIBRARY_PATH)) mkdir(LIBRARY_PATH);
         if (!file_exists(CRASH_PATH)) mkdir(CRASH_PATH);
@@ -73,7 +73,7 @@ class Utils {
         if (!file_exists(TEMP_PATH)) mkdir(TEMP_PATH);
     }
 
-    public static function deleteDir($dirPath) {
+    public static function deleteDir($dirPath): void {
         $dirPath = rtrim($dirPath, DIRECTORY_SEPARATOR);
         if (is_dir($dirPath)) {
             try {
@@ -98,7 +98,7 @@ class Utils {
         }
     }
 
-    public static function copyDir(string $src, string $dst) {
+    public static function copyDir(string $src, string $dst): void {
         $src = rtrim($src, DIRECTORY_SEPARATOR);
         $dst = rtrim($dst, DIRECTORY_SEPARATOR);
         if (!file_exists($src)) @mkdir($src);
@@ -119,7 +119,7 @@ class Utils {
         }
     }
 
-    public static function copyFile(string $src, string $dst) {
+    public static function copyFile(string $src, string $dst): void {
         $src = rtrim($src, DIRECTORY_SEPARATOR);
         $dst = rtrim($dst, DIRECTORY_SEPARATOR);
         if (file_exists($src)) {
@@ -137,7 +137,7 @@ class Utils {
         return str_replace(CLOUD_PATH, rtrim(str_replace("pocketcloud", "pcsrc", basename(CLOUD_PATH)), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR, $path);
     }
 
-    public static function check() {
+    public static function check(): void {
         if (Utils::checkRunning($pid)) {
             CloudLogger::get()->error("Another instance of §bPocket§3Cloud §ris already running! (ProcessId: " . $pid . ")");
             exit(1);
@@ -168,7 +168,7 @@ class Utils {
         }
     }
 
-    public static function downloadFiles() {
+    public static function downloadFiles(): void {
         $downloadServerPlugin = false;
         $downloadProxyPlugin = false;
 

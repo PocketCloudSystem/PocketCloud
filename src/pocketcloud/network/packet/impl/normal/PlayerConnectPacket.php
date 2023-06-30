@@ -25,7 +25,7 @@ class PlayerConnectPacket extends CloudPacket {
         return $this->player;
     }
 
-    public function handle(ServerClient $client) {
+    public function handle(ServerClient $client): void {
         if (($server = $client->getServer()) !== null) {
             if (CloudPlayerManager::getInstance()->getPlayerByName($this->player->getName()) === null) {
                 if ($server->getTemplate()->getTemplateType() === TemplateType::SERVER()) $this->player->setCurrentServer($server);

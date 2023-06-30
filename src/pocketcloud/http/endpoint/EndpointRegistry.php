@@ -33,7 +33,7 @@ class EndpointRegistry {
     /** @var array<EndPoint> */
     private static array $endPoints = [];
 
-    public static function registerDefaults() {
+    public static function registerDefaults(): void {
         $endPoints = [
             new CloudInfoEndPoint(),
             new CloudPlayerGetEndPoint(), new CloudPlayerTextEndPoint(), new CloudPlayerKickEndPoint(), new CloudPlayerListEndPoint(),
@@ -47,7 +47,7 @@ class EndpointRegistry {
         }
     }
 
-    public static function addEndPoint(EndPoint $endPoint) {
+    public static function addEndPoint(EndPoint $endPoint): void {
         if (in_array(strtoupper($endPoint->getRequestMethod()), Request::SUPPORTED_REQUEST_METHODS)) {
             self::$endPoints[$endPoint->getPath()] = $endPoint;
             Router::getInstance()->{strtolower($endPoint->getRequestMethod())}($endPoint->getPath(), function(Request $request, Response $response) use ($endPoint): void {
@@ -68,7 +68,7 @@ class EndpointRegistry {
         } else CloudLogger::get()->error(Language::current()->translate("httpServer.endPoint.add.failed", $endPoint->getPath(), implode("§8, §e", Request::SUPPORTED_REQUEST_METHODS)));
     }
 
-    public static function removeEndPoint(EndPoint $endPoint) {
+    public static function removeEndPoint(EndPoint $endPoint): void {
         if (isset(self::$endPoints[$endPoint->getPath()])) unset(self::$endPoints[$endPoint->getPath()]);
     }
 

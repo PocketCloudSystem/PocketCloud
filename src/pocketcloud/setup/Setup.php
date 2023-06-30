@@ -21,7 +21,7 @@ abstract class Setup {
     private array $questions = [];
     private ?\Closure $completionHandler = null;
 
-    final public function startSetup() {
+    final public function startSetup(): void {
         if (self::$currentSetup !== null) return;
         self::$currentSetup = $this;
         Utils::clearConsole();
@@ -38,7 +38,7 @@ abstract class Setup {
         return $this;
     }
 
-    private function endSetup() {
+    private function endSetup(): void {
         Utils::clearConsole();
         CloudLogSaver::print();
         $this->currentQuestion = null;
@@ -48,7 +48,7 @@ abstract class Setup {
         if ($this->completionHandler !== null) ($this->completionHandler)($this->results);
     }
 
-    private function nextQuestion() {
+    private function nextQuestion(): void {
         if ($this->cancelled) return;
         if ($this->currentQuestion === null) {
             $this->currentQuestion = $this->questions[0];
@@ -69,7 +69,7 @@ abstract class Setup {
         }
     }
 
-    final public function handleInput(string $input) {
+    final public function handleInput(string $input): void {
         if ($this->cancelled) return;
 
         if (strtolower($input) == "cancel") {
@@ -90,9 +90,9 @@ abstract class Setup {
         }
     }
 
-    public function onStart() {}
+    public function onStart(): void {}
 
-    public function onCancel() {}
+    public function onCancel(): void {}
 
     private function checkResult(Question $question, string $line): mixed {
         if (count($question->getPossibleAnswers()) > 0) {
@@ -112,7 +112,7 @@ abstract class Setup {
         return $result;
     }
 
-    final public function cancel() {
+    final public function cancel(): void {
         if ($this->cancelled) return;
         $this->logger?->setSetupMode(false);
         $this->logger?->setSaveMode(true);

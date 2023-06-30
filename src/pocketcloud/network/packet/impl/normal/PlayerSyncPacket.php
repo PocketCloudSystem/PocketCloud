@@ -14,12 +14,12 @@ class PlayerSyncPacket extends CloudPacket {
         private bool $removal = false
     ) {}
 
-    public function encodePayload(PacketData $packetData) {
+    public function encodePayload(PacketData $packetData): void {
         $packetData->writePlayer($this->player);
         $packetData->write($this->removal);
     }
 
-    public function decodePayload(PacketData $packetData) {
+    public function decodePayload(PacketData $packetData): void {
         $this->player = $packetData->readPlayer();
         $this->removal = $packetData->readBool();
     }
@@ -32,5 +32,5 @@ class PlayerSyncPacket extends CloudPacket {
         return $this->removal;
     }
 
-    public function handle(ServerClient $client) {}
+    public function handle(ServerClient $client): void {}
 }

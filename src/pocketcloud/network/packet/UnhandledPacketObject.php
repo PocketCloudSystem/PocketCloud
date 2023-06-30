@@ -7,9 +7,9 @@ use pmmp\thread\ThreadSafe;
 class UnhandledPacketObject extends ThreadSafe {
 
     public function __construct(
-        private string $buffer,
-        private string $address,
-        private int $port
+        private readonly string $buffer,
+        private readonly string $address,
+        private readonly int $port
     ) {}
 
     public function getBuffer(): string {

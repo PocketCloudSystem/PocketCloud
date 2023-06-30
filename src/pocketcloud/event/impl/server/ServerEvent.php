@@ -7,7 +7,7 @@ use pocketcloud\server\CloudServer;
 
 abstract class ServerEvent extends Event {
 
-    public function __construct(private CloudServer $server) {}
+    public function __construct(private readonly CloudServer $server) {}
 
     public function getServer(): CloudServer {
         return $this->server;

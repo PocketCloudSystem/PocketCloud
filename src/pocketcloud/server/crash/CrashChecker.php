@@ -26,7 +26,7 @@ class CrashChecker {
         return true;
     }
 
-    public static function writeCrashFile(CloudServer $server, array $crashData) {
+    public static function writeCrashFile(CloudServer $server, array $crashData): void {
         $codeData = [];
         foreach($crashData["code"] as $line => $code) $codeData[] = "[" . $line . "] " . $code;
         $data = [

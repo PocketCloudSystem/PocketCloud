@@ -8,7 +8,10 @@ use pocketcloud\network\packet\CloudPacket;
 
 abstract class NetworkEvent extends Event {
 
-    public function __construct(private CloudPacket $packet, private ServerClient $client) {}
+    public function __construct(
+        private readonly CloudPacket $packet,
+        private readonly ServerClient $client
+    ) {}
 
     public function getPacket(): CloudPacket {
         return $this->packet;

@@ -12,11 +12,11 @@ use pocketcloud\util\CloudLogger;
 
 class TemplateSetup extends Setup {
 
-    public function onStart() {
+    public function onStart(): void {
         $this->getLogger()->info(Language::current()->translate("setup.template.welcome"));
     }
 
-    public function onCancel() {
+    public function onCancel(): void {
         CloudLogger::get()->warn(Language::current()->translate("setup.template.cancelled"));
     }
 

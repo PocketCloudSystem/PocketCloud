@@ -51,9 +51,9 @@ final class Language {
     private array $messages;
 
     public function __construct(
-        private string $name,
-        private string $filePath,
-        private array $aliases,
+        private readonly string $name,
+        private readonly string $filePath,
+        private readonly array $aliases,
         array $messages = []
     ) {
         try {
@@ -65,7 +65,7 @@ final class Language {
         }
     }
 
-    public function translate(string $key, mixed ...$params) {
+    public function translate(string $key, mixed ...$params): string {
         $message = str_replace("{PREFIX}", $this->messages["inGame.prefix"] ?? "", $this->messages[$key] ?? $key);
         foreach ($params as $i => $param) $message = str_replace("%" . $i . "%", $param, $message);
         return $message;

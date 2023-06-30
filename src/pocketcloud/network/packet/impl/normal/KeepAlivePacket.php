@@ -7,7 +7,7 @@ use pocketcloud\network\packet\CloudPacket;
 
 class KeepAlivePacket extends CloudPacket {
 
-    public function handle(ServerClient $client) {
+    public function handle(ServerClient $client): void {
         if (($server = $client->getServer()) !== null) {
             $server->setLastCheckTime(time());
             $server->sendPacket(new KeepAlivePacket());

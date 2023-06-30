@@ -9,7 +9,7 @@ class Promise {
     private ?\Closure $success = null;
     private ?\Closure $failure = null;
 
-    public function resolve(mixed $result) {
+    public function resolve(mixed $result): void {
         if ($this->resolved) return;
         $this->result = $result;
         if ($this->success !== null) ($this->success)($this->result);
@@ -17,7 +17,7 @@ class Promise {
         $this->failure = null;
     }
 
-    public function reject() {
+    public function reject(): void {
         if ($this->resolved) return;
         if ($this->failure !== null) ($this->failure)();
         $this->success = null;

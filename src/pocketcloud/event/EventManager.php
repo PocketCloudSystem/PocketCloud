@@ -10,13 +10,13 @@ class EventManager {
 
     private array $handlers = [];
 
-    public function registerEvent(string $eventClass, \Closure $closure, CloudPlugin $plugin) {
+    public function registerEvent(string $eventClass, \Closure $closure, CloudPlugin $plugin): void {
         if (is_subclass_of($eventClass, Event::class)) {
             $this->handlers[$plugin->getDescription()->getFullName()][$eventClass][] = $closure;
         }
     }
 
-    public function registerListener(Listener $listener, CloudPlugin $plugin) {
+    public function registerListener(Listener $listener, CloudPlugin $plugin): void {
         $reflection = new \ReflectionClass($listener);
         foreach ($reflection->getMethods() as $method) {
             if (!$method->isAbstract() && !$method->isStatic() && $method->isPublic() && $method->getNumberOfParameters() == 1) {
@@ -26,17 +26,17 @@ class EventManager {
         }
     }
 
-    public function removeHandlers(CloudPlugin $plugin) {
+    public function removeHandlers(CloudPlugin $plugin): void {
         if (isset($this->handlers[$plugin->getDescription()->getFullName()])) {
             unset($this->handlers[$plugin->getDescription()->getFullName()]);
         }
     }
 
-    public function removeAll() {
+    public function removeAll(): void {
         $this->handlers = [];
     }
 
-    public function callEvent(Event $event) {
+    public function callEvent(Event $event): void {
         foreach ($this->handlers as $pluginHandler) {
             foreach (($pluginHandler[$event::class] ?? []) as $handler) {
                 ($handler)($event);

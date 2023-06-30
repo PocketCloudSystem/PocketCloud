@@ -10,11 +10,11 @@ class CloudServerStopResponsePacket extends ResponsePacket {
 
     public function __construct(private ?ErrorReason $errorReason = null) {}
 
-    public function encodePayload(PacketData $packetData) {
+    public function encodePayload(PacketData $packetData): void {
         $packetData->writeErrorReason($this->errorReason);
     }
 
-    public function decodePayload(PacketData $packetData) {
+    public function decodePayload(PacketData $packetData): void {
         $this->errorReason = $packetData->readErrorReason();
     }
 

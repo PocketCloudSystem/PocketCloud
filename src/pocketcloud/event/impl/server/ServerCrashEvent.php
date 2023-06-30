@@ -6,8 +6,11 @@ use pocketcloud\server\CloudServer;
 
 class ServerCrashEvent extends ServerEvent {
 
-    public function __construct(private CloudServer $server, private array $data) {
-        parent::__construct($this->server);
+    public function __construct(
+        CloudServer $server,
+        private readonly array $data
+    ) {
+        parent::__construct($server);
     }
 
     public function getData(): array {

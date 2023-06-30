@@ -20,7 +20,10 @@ final class CloudLogLevel {
         self::register("debug", new CloudLogLevel("debug", "§6DEBUG"));
     }
 
-    public function __construct(private string $name, private string $prefix) {}
+    public function __construct(
+        private readonly string $name,
+        private readonly string $prefix
+    ) {}
 
     public function getName(): string {
         return $this->name;

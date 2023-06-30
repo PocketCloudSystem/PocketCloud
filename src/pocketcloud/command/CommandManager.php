@@ -18,6 +18,8 @@ use pocketcloud\command\impl\template\CreateCommand;
 use pocketcloud\command\impl\template\DeleteCommand;
 use pocketcloud\command\impl\template\EditCommand;
 use pocketcloud\command\impl\template\MaintenanceCommand;
+use pocketcloud\command\sender\ConsoleCommandSender;
+use pocketcloud\command\sender\ICommandSender;
 use pocketcloud\event\impl\command\CommandExecuteEvent;
 use pocketcloud\event\impl\command\CommandRegisterEvent;
 use pocketcloud\event\impl\command\CommandUnregisterCommand;
@@ -54,8 +56,9 @@ class CommandManager implements Reloadable {
         $this->registerCommand(new ReloadCommand("reload", "command.description.reload", "reload", []));
     }
 
-    public function execute(string $line): void {
+    public function execute(string $line, ?ICommandSender $sender = null): void {
         if (trim($line) == "") return;
+        $sender = $sender ?? new ConsoleCommandSender();
         $args = explode(" ", $line);
         $command = $this->getCommand($label = array_shift($args));
 
@@ -64,11 +67,11 @@ class CommandManager implements Reloadable {
             return;
         }
 
-        (new CommandExecuteEvent($command))->call();
-        if (!$command->execute($label, $args)) CloudLogger::get()->error($command->getUsage());
+        (new CommandExecuteEvent($sender, $command))->call();
+        if (!$command->execute($sender, $label, $args)) CloudLogger::get()->error($command->getUsage());
     }
 
-    public function registerCommand(Command $command) {
+    public function registerCommand(Command $command): void {
         if (!isset($this->commands[strtolower($command->getName())])) {
             (new CommandRegisterEvent($command))->call();
             $this->commands[strtolower($command->getName())] = $command;
@@ -78,7 +81,7 @@ class CommandManager implements Reloadable {
         }
     }
 
-    public function unregisterCommand(Command|string $command) {
+    public function unregisterCommand(Command|string $command): void {
         $command = $command instanceof Command ? strtolower($command->getName()) : strtolower($command);
         if (isset($this->commands[$command])) {
             (new CommandUnregisterCommand($commandClass = $this->commands[$command]))->call();
