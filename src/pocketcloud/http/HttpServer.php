@@ -11,6 +11,7 @@ use pocketcloud\http\io\Response;
 use pocketcloud\http\network\SocketClient;
 use pocketcloud\http\util\Router;
 use pocketcloud\http\util\HttpUtils;
+use pocketcloud\http\util\UnhandledHttpRequest;
 use pocketcloud\language\Language;
 use pocketcloud\PocketCloud;
 use pocketcloud\thread\Thread;
@@ -28,7 +29,7 @@ class HttpServer extends Thread implements Reloadable {
     private SleeperHandlerEntry $entry;
     private ?\Closure $invalidUrlHandler = null;
 
-    public function __construct(private Address $address) {
+    public function __construct(private readonly Address $address) {
         $this->buffer = new ThreadSafeArray();
     }
 
@@ -36,10 +37,7 @@ class HttpServer extends Thread implements Reloadable {
         while ($this->connected) {
             if ($c = $this->accept()) {
                 if ($buffer = $c->read(self::REQUEST_READ_LENGTH)) {
-                    $this->buffer[] = [
-                        "client" => $c,
-                        "buffer" => $buffer
-                    ];
+                    $this->buffer[] = new UnhandledHttpRequest($buffer, $c);
                     $this->entry->createNotifier()->wakeupSleeper();
                 }
             }
@@ -59,7 +57,7 @@ class HttpServer extends Thread implements Reloadable {
         return $response;
     }
 
-    public function init() {
+    public function init(): void {
         if (DefaultConfig::getInstance()->isHttpServerEnabled()) {
             (new HttpServerInitializeEvent())->call();
 
@@ -77,21 +75,16 @@ class HttpServer extends Thread implements Reloadable {
             }
 
             $this->entry = PocketCloud::getInstance()->getSleeperHandler()->addNotifier(function(): void {
+                /** @var UnhandledHttpRequest $data */
                 while (($data = $this->buffer->shift()) !== null) {
-                    /** @var SocketClient $client */
-                    $client = $data["client"];
-                    $buf = $data["buffer"];
-                    if (is_string($buf)) {
-                        try {
-                            $client->write($this->handleRequest($client->getAddress(), $buf));
-                        } catch (\Throwable $exception) {
-                            CloudLogger::get()->warn(Language::current()->translate("httpServer.request.invalid", $client->getAddress()->__toString()));
-                            CloudLogger::get()->debug($buf);
-                            CloudLogger::get()->exception($exception);
-                        }
-                    } else {
+                    $client = $data->getClient();
+                    $buf = $data->getBuffer();
+                    try {
+                        $client->write($this->handleRequest($client->getAddress(), $buf));
+                    } catch (\Throwable $exception) {
                         CloudLogger::get()->warn(Language::current()->translate("httpServer.request.invalid", $client->getAddress()->__toString()));
                         CloudLogger::get()->debug($buf);
+                        CloudLogger::get()->exception($exception);
                     }
                 }
             });
@@ -114,7 +107,7 @@ class HttpServer extends Thread implements Reloadable {
         return null;
     }
 
-    public function close() {
+    public function close(): void {
         if (!$this->connected) return;
         $this->connected = false;
         @socket_shutdown($this->socket);

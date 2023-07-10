@@ -2,6 +2,7 @@
 
 namespace pocketcloud\server;
 
+use pocketcloud\command\sender\ICommandSender;
 use pocketcloud\event\impl\server\ServerCantStartEvent;
 use pocketcloud\event\impl\server\ServerCrashEvent;
 use pocketcloud\event\impl\server\ServerSaveEvent;
@@ -17,6 +18,7 @@ use pocketcloud\network\packet\impl\normal\DisconnectPacket;
 use pocketcloud\network\packet\impl\normal\ProxyRegisterServerPacket;
 use pocketcloud\network\packet\impl\normal\ProxyUnregisterServerPacket;
 use pocketcloud\network\packet\impl\normal\ServerSyncPacket;
+use pocketcloud\network\packet\impl\types\CommandExecutionResult;
 use pocketcloud\network\packet\impl\types\DisconnectReason;
 use pocketcloud\network\packet\impl\types\NotifyType;
 use pocketcloud\PocketCloud;
@@ -131,7 +133,7 @@ class CloudServerManager implements Tickable {
         Utils::copyFile($server->getPath() . "white-list.txt", $server->getTemplate()->getPath() . "white-list.txt");
     }
 
-    public function sendCommand(CloudServer $server, string $commandLine): ?Promise {
+    public function sendCommand(CloudServer $server, string $commandLine, bool $internal = false, ?ICommandSender $internalSender = null): ?Promise {
         $ev = new ServerSendCommandEvent($server, $commandLine);
         $ev->call();
 
@@ -141,6 +143,16 @@ class CloudServerManager implements Tickable {
         $promise = new Promise();
         $server->getCloudServerStorage()->put("command_promise_time", time());
         $server->getCloudServerStorage()->put("command_promise", $promise);
+        if ($internal && $internalSender !== null) $promise->then(function(CommandExecutionResult $result) use($server, $internalSender): void {
+            $server->getCloudServerStorage()->remove("command_promise")->remove("command_promise_time");
+            $internalSender->info(Language::current()->translate("command.execute.success", $server->getName()));
+            if (empty($result->getMessages())) $internalSender->info("§c/");
+            else foreach ($result->getMessages() as $message) $internalSender->info("§e" . $server->getName() . "§8: §r" . $message);
+        })->failure(function() use($server, $internalSender): void {
+            $server->getCloudServerStorage()->remove("command_promise")->remove("command_promise_time");
+            $internalSender->info(Language::current()->translate("command.execute.failed", $server->getName()));
+        });
+
         return $promise;
     }
 

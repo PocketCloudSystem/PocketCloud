@@ -2,6 +2,7 @@
 
 namespace pocketcloud\http\endpoint\impl\server;
 
+use pocketcloud\command\sender\ConsoleCommandSender;
 use pocketcloud\http\io\Request;
 use pocketcloud\http\io\Response;
 use pocketcloud\http\util\Router;
@@ -23,7 +24,7 @@ class CloudServerExecuteEndPoint extends EndPoint {
             return ["error" => "The server doesn't exists!"];
         }
 
-        if (CloudServerManager::getInstance()->sendCommand($server, $command)) {
+        if (CloudServerManager::getInstance()->sendCommand($server, $command, true, new ConsoleCommandSender())) {
             return ["success" => "The command was successfully sent to the server!"];
         }
         return ["error" => "The command can't be send to the server!"];
