@@ -3,8 +3,6 @@
 namespace pocketcloud\library;
 
 use pocketcloud\console\log\Logger;
-use pocketcloud\language\Language;
-use pocketcloud\util\CloudLogger;
 use pocketcloud\util\SingletonTrait;
 use pocketcloud\util\Utils;
 
@@ -86,5 +84,9 @@ class LibraryManager {
 
     public function getLibraries(): array {
         return $this->libraries;
+    }
+
+    public static function getInstance(): ?self {
+        return self::$instance;
     }
 }

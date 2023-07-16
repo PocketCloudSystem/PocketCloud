@@ -55,4 +55,8 @@ class ServerClientManager {
     public function getClients(): array {
         return $this->clients;
     }
+
+    public static function getInstance(): ?self {
+        return self::$instance;
+    }
 }

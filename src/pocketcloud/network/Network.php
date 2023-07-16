@@ -126,4 +126,8 @@ class Network extends Thread {
     public function getAddress(): Address {
         return $this->address;
     }
+
+    public static function getInstance(): ?self {
+        return self::$instance;
+    }
 }

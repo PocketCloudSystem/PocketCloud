@@ -108,4 +108,8 @@ class CommandManager implements Reloadable {
     public function getCommands(): array {
         return $this->commands;
     }
+
+    public static function getInstance(): ?self {
+        return self::$instance;
+    }
 }

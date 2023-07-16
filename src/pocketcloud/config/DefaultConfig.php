@@ -125,4 +125,8 @@ class DefaultConfig extends Configuration implements Reloadable {
     public function getStartCommands(): array {
         return $this->startCommands;
     }
+
+    public static function getInstance(): self {
+        return self::$instance ??= new self;
+    }
 }

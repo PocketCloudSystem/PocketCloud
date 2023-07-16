@@ -167,4 +167,8 @@ class CloudPluginManager implements Tickable, Reloadable {
     public function getPlugins(): array {
         return $this->plugins;
     }
+
+    public static function getInstance(): ?self {
+        return self::$instance;
+    }
 }

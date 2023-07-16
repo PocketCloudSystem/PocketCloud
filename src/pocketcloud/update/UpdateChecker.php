@@ -13,6 +13,10 @@ class UpdateChecker {
 
     private array $data = [];
 
+    public function __construct() {
+        self::setInstance($this);
+    }
+
     public function check(): void {
         AsyncExecutor::execute(function(): false|string {
             try {
@@ -120,5 +124,9 @@ class UpdateChecker {
 
     public function getData(): array {
         return $this->data;
+    }
+
+    public static function getInstance(): self {
+        return self::$instance ??= new self();
     }
 }

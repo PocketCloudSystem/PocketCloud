@@ -15,6 +15,10 @@ class CloudPlayerManager {
     /** @var array<CloudPlayer> */
     private array $players = [];
 
+    public function __construct() {
+        self::setInstance($this);
+    }
+
     public function addPlayer(CloudPlayer $player): void {
         if ($player->getCurrentServer() === null) CloudLogger::get()->debug("Player %s is connected. (On: %s)", false, $player->getName(), ($player->getCurrentProxy()?->getName() ?? "NULL"));
         else CloudLogger::get()->debug("Player %s is connected. (On: %s)", false, $player->getName(), ($player->getCurrentServer()?->getName() ?? "NULL"));
@@ -47,5 +51,9 @@ class CloudPlayerManager {
 
     public function getPlayers(): array {
         return $this->players;
+    }
+
+    public static function getInstance(): ?self {
+        return self::$instance;
     }
 }

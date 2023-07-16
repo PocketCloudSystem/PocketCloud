@@ -151,4 +151,8 @@ class AsyncPool implements Tickable {
         $this->taskQueues = [];
         $this->workerLastUsed = [];
     }
+
+    public static function getInstance(): ?self {
+        return self::$instance;
+    }
 }

@@ -19,6 +19,10 @@ class Router {
     /** @var array<string, array<string, Closure>> $routes */
     protected array $routes = [];
 
+    public function __construct() {
+        self::setInstance($this);
+    }
+
     private function add(string $method, string $route, Closure $closure): void {
         $this->routes[$method][$route] = $closure;
     }
@@ -63,5 +67,9 @@ class Router {
             if (HttpUtils::matchPath($expectedPath, $path)) return [$expectedPath, $closure];
         }
         return null;
+    }
+
+    public static function getInstance(): ?self {
+        return self::$instance;
     }
 }

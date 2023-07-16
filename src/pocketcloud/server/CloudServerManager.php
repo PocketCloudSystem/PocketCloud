@@ -42,6 +42,10 @@ class CloudServerManager implements Tickable {
     /** @var array<CloudServer> */
     private array $servers = [];
 
+    public function __construct() {
+        self::setInstance($this);
+    }
+
     public function startServer(Template $template, int $count = 1): void {
         if (count($this->getServersByTemplate($template)) >= $template->getMaxServerCount()) {
             CloudLogger::get()->info(Language::current()->translate("server.max.reached", $template->getName()));
@@ -286,5 +290,9 @@ class CloudServerManager implements Tickable {
 
     public function getServers(): array {
         return $this->servers;
+    }
+
+    public static function getInstance(): ?self {
+        return self::$instance;
     }
 }

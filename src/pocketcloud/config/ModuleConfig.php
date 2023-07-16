@@ -43,4 +43,8 @@ class ModuleConfig extends Configuration implements Reloadable {
     public function isHubCommandModule(): bool {
         return $this->hubCommandModule;
     }
+
+    public static function getInstance(): self {
+        return self::$instance ??= new self;
+    }
 }

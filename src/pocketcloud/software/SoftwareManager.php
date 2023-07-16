@@ -40,7 +40,7 @@ class SoftwareManager {
         $temporaryLogger->info("Successfully downloaded library: %s (%s)", $software->getName(), SOFTWARE_PATH . $software->getFileName());
     }
 
-    #[Pure] public function isDownloaded(Software $software): bool {
+    public function isDownloaded(Software $software): bool {
         return file_exists(SOFTWARE_PATH . $software->getFileName());
     }
 
@@ -69,5 +69,9 @@ class SoftwareManager {
 
     public function getSoftware(): array {
         return $this->software;
+    }
+
+    public static function getInstance(): self {
+        return self::$instance ??= new self();
     }
 }

@@ -10,6 +10,10 @@ class EventManager {
 
     private array $handlers = [];
 
+    public function __construct() {
+        self::setInstance($this);
+    }
+
     public function registerEvent(string $eventClass, \Closure $closure, CloudPlugin $plugin): void {
         if (is_subclass_of($eventClass, Event::class)) {
             $this->handlers[$plugin->getDescription()->getFullName()][$eventClass][] = $closure;
@@ -42,5 +46,9 @@ class EventManager {
                 ($handler)($event);
             }
         }
+    }
+
+    public static function getInstance(): ?self {
+        return self::$instance;
     }
 }

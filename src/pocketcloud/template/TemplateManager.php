@@ -162,4 +162,8 @@ class TemplateManager implements Reloadable, Tickable {
     public function getTemplates(): array {
         return $this->templates;
     }
+
+    public static function getInstance(): ?self {
+        return self::$instance;
+    }
 }
