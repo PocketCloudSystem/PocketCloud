@@ -86,7 +86,7 @@ class LibraryManager {
         return $this->libraries;
     }
 
-    public static function getInstance(): ?self {
-        return self::$instance;
+    public static function getInstance(): self {
+        return self::$instance ??= new self;
     }
 }

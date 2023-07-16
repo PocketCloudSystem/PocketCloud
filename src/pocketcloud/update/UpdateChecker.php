@@ -127,6 +127,6 @@ class UpdateChecker {
     }
 
     public static function getInstance(): self {
-        return self::$instance ??= new self();
+        return self::$instance ??= new self;
     }
 }

@@ -56,7 +56,7 @@ class ServerClientManager {
         return $this->clients;
     }
 
-    public static function getInstance(): ?self {
-        return self::$instance;
+    public static function getInstance(): self {
+        return self::$instance ??= new self;
     }
 }
