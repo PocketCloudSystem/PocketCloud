@@ -12,7 +12,12 @@ class Logger {
     private mixed $cloudLogFile = null;
     private bool $closed = false;
 
-    public function __construct(private ?string $cloudLogPath = null, private bool $debugMode = true, private bool $saveMode = true, private bool $setupMode = false) {
+    public function __construct(
+        private readonly ?string $cloudLogPath = null,
+        private bool $debugMode = true,
+        private bool $saveMode = true,
+        private bool $setupMode = false
+    ) {
         if ($this->setupMode) $this->saveMode = false;
         if ($this->saveMode) $this->cloudLogFile = fopen($this->cloudLogPath ?? LOG_PATH, "ab");
     }

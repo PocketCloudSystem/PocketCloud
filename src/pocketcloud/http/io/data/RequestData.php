@@ -7,10 +7,10 @@ use pocketcloud\util\Address;
 class RequestData {
 	
 	public function __construct(
-        protected Address $requestAddress,
-        protected string $method,
-        protected string $path,
-        protected Queries $queries
+        private readonly Address $requestAddress,
+        private readonly string $method,
+        private readonly string $path,
+        private readonly Queries $queries
     ) {}
 
 	public function address(): Address {

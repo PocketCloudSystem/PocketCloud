@@ -14,11 +14,11 @@ use function strlen;
 
 class Response {
 	
-	protected string $body = "";
-	protected ?string $customResponseCodeMessage = null;
-	protected array $headers = ["Content-Type" => "text/plain", "Content-Length" => 0, "Connection" => "close"];
+	private string $body = "";
+	private ?string $customResponseCodeMessage = null;
+	private array $headers = ["Content-Type" => "text/plain", "Content-Length" => 0, "Connection" => "close"];
 	
-	public function __construct(protected int $statusCode = 200) { }
+	public function __construct(private int $statusCode = 200) { }
 	
 	public function code(int $statusCode): void {
 		$this->statusCode = $statusCode;

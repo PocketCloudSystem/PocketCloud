@@ -9,7 +9,7 @@ abstract class CloudPacket  {
 
     private bool $encoded = false;
 
-    public function encode(PacketData $packetData) {
+    public function encode(PacketData $packetData): void {
         if (!$this->encoded) {
             $this->encoded = true;
             $packetData->write((new \ReflectionClass($this))->getShortName());
@@ -17,7 +17,7 @@ abstract class CloudPacket  {
         } else throw new \RuntimeException("Packet: " . (new \ReflectionClass($this))->getShortName() . " is already encoded");
     }
 
-    public function decode(PacketData $packetData) {
+    public function decode(PacketData $packetData): void {
         $packetData->readString();
         $this->decodePayload($packetData);
     }

@@ -6,9 +6,9 @@ abstract class Task {
 
     private ?TaskHandler $taskHandler = null;
 
-    public function onRun() {}
+    abstract public function onRun(): void;
 
-    public function onCancel() {}
+    public function onCancel(): void {}
 
     public function setTaskHandler(TaskHandler $taskHandler): void {
         $this->taskHandler = $taskHandler;

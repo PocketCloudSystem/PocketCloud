@@ -46,7 +46,7 @@ class CloudServerManager implements Tickable {
         self::setInstance($this);
     }
 
-    public function startServer(Template $template, int $count = 1): void {
+    public function startServer(Template $template, int $count = 1): ?\Generator {
         if (count($this->getServersByTemplate($template)) >= $template->getMaxServerCount()) {
             CloudLogger::get()->info(Language::current()->translate("server.max.reached", $template->getName()));
         } else {
@@ -75,10 +75,12 @@ class CloudServerManager implements Tickable {
                         CloudLogger::get()->info(Language::current()->translate("server.starting", $server->getName()));
                         NotifyType::STARTING()->notify(["%server%" => $server->getName()]);
                         Utils::executeWithStartCommand($server->getPath(), $server->getName(), $template->getTemplateType()->getSoftware()->getStartCommand());
+                        yield $server;
                     }
                 }
             }
         }
+        return null;
     }
 
     public function stopServer(CloudServer $server, bool $force = false): void {

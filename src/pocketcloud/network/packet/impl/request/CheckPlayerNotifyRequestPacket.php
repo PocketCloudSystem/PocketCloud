@@ -10,12 +10,7 @@ use pocketcloud\network\packet\RequestPacket;
 
 class CheckPlayerNotifyRequestPacket extends RequestPacket {
 
-    public function __construct(
-        string $requestId = "",
-        private string $player = ""
-    ) {
-        parent::__construct($requestId);
-    }
+    public function __construct(private string $player = "") {}
 
     public function encodePayload(PacketData $packetData): void {
         $packetData->write($this->player);

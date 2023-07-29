@@ -56,12 +56,16 @@ final class Language {
         private readonly array $aliases,
         array $messages = []
     ) {
-        try {
-            $this->messages = @yaml_parse(@file_get_contents($this->filePath));
-        } catch (\Throwable $exception) {
+        if (file_exists($this->filePath)) {
+            try {
+                $this->messages = @yaml_parse(@file_get_contents($this->filePath));
+            } catch (\Throwable $exception) {
+                $this->messages = $messages;
+                CloudLogger::get()->exception($exception);
+            }
+        } else {
             $this->messages = $messages;
-            @file_put_contents($this->filePath, yaml_emit($messages, YAML_UTF8_ENCODING));
-            CloudLogger::get()->exception($exception);
+            file_put_contents($this->filePath, yaml_emit($this->messages));
         }
     }
 

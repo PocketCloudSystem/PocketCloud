@@ -11,9 +11,9 @@ class Request extends stdClass {
 	public const SUPPORTED_REQUEST_METHODS = ["GET", "POST", "PUT", "DELETE", "PATCH"];
 
 	public function __construct(
-        protected array $headers,
-        protected RequestData $requestData,
-        protected ?string $body = null
+        private readonly array $headers,
+        private readonly RequestData $requestData,
+        private readonly ?string $body = null
     ) {}
 
     public function authorized(): bool {

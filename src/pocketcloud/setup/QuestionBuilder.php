@@ -60,9 +60,9 @@ class QuestionBuilder {
     }
 
     public function build(): Question {
-        assert($this->key !== null);
-        assert($this->question !== null);
-        assert($this->parser !== null);
+        if ($this->key === null) throw new \LogicException("Parameter 'key' cannot be null");
+        if ($this->question === null) throw new \LogicException("Parameter 'question' cannot be null");
+        if ($this->parser === null) throw new \LogicException("Parameter 'parser' cannot be null");
         return new Question(
             $this->key,
             $this->question,

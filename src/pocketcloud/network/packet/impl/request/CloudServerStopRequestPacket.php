@@ -12,12 +12,7 @@ use pocketcloud\network\packet\utils\PacketData;
 
 class CloudServerStopRequestPacket extends RequestPacket {
 
-    public function __construct(
-        string $requestId = "",
-        private string $server = ""
-    ) {
-        parent::__construct($requestId);
-    }
+    public function __construct(private string $server = "") {}
 
     public function encodePayload(PacketData $packetData): void {
         $packetData->write($this->server);

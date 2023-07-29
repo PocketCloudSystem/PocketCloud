@@ -48,7 +48,7 @@ class UpdateChecker {
         }, function(null|string|false $result): void {
             if ($result === false || $result === null) {
                 if (Language::current() === Language::ENGLISH()) CloudLogger::get()->error("§cError occurred while checking for new updates!");
-                else CloudLogger::get()->error("§cEin Fehler ist während des Überprüfens von neuen Updates aufgetreten!");
+                else CloudLogger::get()->error("§cEin Fehler ist während der Überprüfung von neuen Updates aufgetreten!");
             } else {
                 $current = explode(".", UpdateChecker::getInstance()->getCurrentVersion());
                 $latest = explode(".", $result);

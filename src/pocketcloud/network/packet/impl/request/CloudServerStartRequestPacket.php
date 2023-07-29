@@ -13,12 +13,9 @@ use pocketcloud\network\packet\utils\PacketData;
 class CloudServerStartRequestPacket extends RequestPacket {
 
     public function __construct(
-        string $requestId = "",
         private string $template = "",
         private int $count = 0
-    ) {
-        parent::__construct($requestId);
-    }
+    ) {}
 
     public function encodePayload(PacketData $packetData): void {
         $packetData->write($this->template);

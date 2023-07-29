@@ -6,7 +6,10 @@ use JetBrains\PhpStorm\Pure;
 
 class AsyncClosureTask extends AsyncTask {
 
-    public function __construct(private \Closure $closure, private ?\Closure $completion = null) {}
+    public function __construct(
+        private readonly \Closure $closure,
+        private readonly ?\Closure $completion = null
+    ) {}
 
     public function onRun(): void {
         $this->setResult(($this->closure)($this));

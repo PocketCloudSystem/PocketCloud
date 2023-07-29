@@ -15,8 +15,6 @@ final class Pattern {
     public const OPTION_MAX_LENGTH = "len-max";
     public const OPTION_TYPE = "type";
 
-    private	function __construct() { }
-
     #[Pure] public static function isValid(string $string, array $pattern): bool {
         if (isset($pattern[self::OPTION_MIN_LENGTH]) && (strlen($string) < $pattern[self::OPTION_MIN_LENGTH])) return false;
         if (isset($pattern[self::OPTION_MAX_LENGTH]) && (strlen($string) > $pattern[self::OPTION_MAX_LENGTH])) return false;

@@ -7,7 +7,7 @@ use pocketcloud\network\packet\utils\PacketData;
 
 abstract class RequestPacket extends CloudPacket {
 
-    public function __construct(private string $requestId = "") {}
+    private string $requestId = "";
 
     final public function encode(PacketData $packetData): void {
         parent::encode($packetData);

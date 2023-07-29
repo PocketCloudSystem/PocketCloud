@@ -10,7 +10,7 @@ class PortManager {
         if (!in_array($port, self::$usedPorts)) self::$usedPorts[] = $port;
     }
 
-    public static function removePort(int $port) {
+    public static function removePort(int $port): void {
         if (in_array($port, self::$usedPorts)) unset(self::$usedPorts[array_search($port, self::$usedPorts)]);
     }
 
