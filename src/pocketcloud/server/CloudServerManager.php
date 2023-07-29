@@ -46,7 +46,8 @@ class CloudServerManager implements Tickable {
         self::setInstance($this);
     }
 
-    public function startServer(Template $template, int $count = 1): ?\Generator {
+    public function startServer(Template $template, int $count = 1): ?array {
+        $servers = [];
         if (count($this->getServersByTemplate($template)) >= $template->getMaxServerCount()) {
             CloudLogger::get()->info(Language::current()->translate("server.max.reached", $template->getName()));
         } else {
@@ -56,7 +57,7 @@ class CloudServerManager implements Tickable {
                 if ($id !== -1) {
                     $port = ($template->getTemplateType() === TemplateType::SERVER() ? PortManager::getFreePort() : PortManager::getFreeProxyPort());
                     if ($port !== 0) {
-                        $server = new CloudServer($id, $template, new CloudServerData($port, $template->getMaxPlayerCount(), 0), ServerStatus::STARTING());
+                        $servers[] = $server = new CloudServer($id, $template, new CloudServerData($port, $template->getMaxPlayerCount(), 0), ServerStatus::STARTING());
                         if (!file_exists($server->getPath())) {
                             Utils::copyDir($template->getPath(), $server->getPath());
                         } else {
@@ -75,10 +76,10 @@ class CloudServerManager implements Tickable {
                         CloudLogger::get()->info(Language::current()->translate("server.starting", $server->getName()));
                         NotifyType::STARTING()->notify(["%server%" => $server->getName()]);
                         Utils::executeWithStartCommand($server->getPath(), $server->getName(), $template->getTemplateType()->getSoftware()->getStartCommand());
-                        yield $server;
                     }
                 }
             }
+            return $servers;
         }
         return null;
     }
