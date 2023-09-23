@@ -81,6 +81,7 @@ final class CloudColor {
 
     /** @return array<CloudColor> */
     public static function getColors(): array {
+        self::check();
         return self::$members;
     }
 }

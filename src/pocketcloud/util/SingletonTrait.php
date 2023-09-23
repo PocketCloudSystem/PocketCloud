@@ -14,4 +14,8 @@ trait SingletonTrait {
     public static function setInstance(?self $instance): void {
         self::$instance = $instance;
     }
+
+    public static function isInitialized(): bool {
+        return self::$instance !== null;
+    }
 }

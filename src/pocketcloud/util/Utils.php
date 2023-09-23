@@ -268,7 +268,7 @@ class Utils {
         return $path;
     }
 
-    public static function requireDirectory(string $dirPath) {
+    public static function requireDirectory(string $dirPath): void {
         foreach (array_diff(scandir($dirPath), [".", ".."]) as $file) {
             if (is_file($dirPath . "/" . $file)) {
                 if (!class_exists($dirPath . "/" . $file)) include $dirPath . "/" . $file;
@@ -308,7 +308,7 @@ class Utils {
         return $string;
     }
 
-    public static function clearConsole() {
+    public static function clearConsole(): void {
         echo chr(27) . chr(91) . "H" . chr(27) . chr(91) . "J";
     }
 
