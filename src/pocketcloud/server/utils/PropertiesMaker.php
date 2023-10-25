@@ -19,7 +19,7 @@ class PropertiesMaker {
             "server-portv6" => "%server_portv6%",
             "enable-ipv6" => "on",
             "white-list" => "off",
-            "max-players" => "%max_players%",
+            "max_players" => "%max_players%",
             "gamemode" => "0",
             "force-gamemode" => "off",
             "hardcore" => "off",
