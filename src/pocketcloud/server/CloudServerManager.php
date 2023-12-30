@@ -132,7 +132,7 @@ class CloudServerManager implements Tickable {
         Utils::copyDir($server->getPath() . "players/", $server->getTemplate()->getPath() . "players/");
         Utils::copyDir($server->getPath() . "plugin_data/", $server->getTemplate()->getPath() . "plugin_data/");
         Utils::copyDir($server->getPath() . "worlds/", $server->getTemplate()->getPath() . "worlds/");
-        Utils::copyDir($server->getPath() . "players/", $server->getTemplate()->getPath() . "players/");
+        Utils::copyDir($server->getPath() . "plugins/", $server->getTemplate()->getPath() . "plugins/");
         Utils::copyFile($server->getPath() . "ops.txt", $server->getTemplate()->getPath() . "ops.txt");
         Utils::copyFile($server->getPath() . "banned-players.txt", $server->getTemplate()->getPath() . "banned-players.txt");
         Utils::copyFile($server->getPath() . "banned-ips.txt", $server->getTemplate()->getPath() . "banned-ips.txt");
