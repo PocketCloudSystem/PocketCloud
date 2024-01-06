@@ -41,28 +41,49 @@ class PropertiesMaker {
             "cloud-language" => "%language%"
         ],
         "PROXY" => [
-            "listener" => ["motd" => "%name%", "host" => "0.0.0.0:%server_port%", "max-players" => "%max_players%", "name" => "§bWaterdog§3PE"],
-            "permissions" => ["r3pt1s" => ["waterdog.player.transfer", "waterdog.server.transfer", "waterdog.player.transfer.other", "waterdog.player.list", "waterdog.command.help", "waterdog.command.info", "waterdog.command.end"]],
+            "listener" => [
+                "motd" => "%name%",
+                "host" => "0.0.0.0:%server_port%",
+                "max_players" => "%max_players%",
+                "name" => "§bWaterdog§3PE",
+                "forced_hosts" => "{}",
+                "additional_ports" => "[]",
+                "join_handler" => "DefaultJoinHandler",
+                "reconnect_handler" => "DefaultReconnectHandler"
+            ],
+            "permissions" => [
+                "r3pt1s" => ["waterdog.player.transfer", "waterdog.server.transfer", "waterdog.player.transfer.other", "waterdog.player.list", "waterdog.command.help", "waterdog.command.info", "waterdog.command.end"]
+            ],
             "permissions_default" => ["waterdog.command.help", "waterdog.command.info"],
+            "network_settings" => [
+                "connection_throttle" => 10,
+                "connection_throttle_time" => 1000,
+                "enable_ipv6" => false,
+                "max_user_mtu" => 1400,
+                "login_throttle" => 2,
+                "max_downstream_mtu" => 1400,
+                "connection_timeout" => 15
+            ],
             "enable_debug" => false,
             "upstream_encryption" => true,
             "online_mode" => true,
-            "enable_ipv6" => false,
             "use_login_extras" => false,
             "replace_username_spaces" => false,
             "enable_query" => true,
+            "compression" => "zlib",
             "prefer_fast_transfer" => true,
             "use_fast_codes" => true,
             "inject_proxy_commands" => true,
             "upstream_compression_level" => 6,
             "downstream_compression_level" => 2,
-            "enable_edu_features" => false,
-            "enable_packs" => false,
+            "enable_edu_features" => true,
+            "enable_packs" => true,
             "overwrite_client_packs" => false,
             "force_server_packs" => false,
             "pack_cache_size" => 16,
             "default_idle_threads" => -1,
-            "enable-statistics" => true,
+            "enable-statistics" => false,
+            "enable_error_reporting" => true,
             "cloud-path" => "%cloud_path%",
             "cloud-port" => "%port%",
             "server-name" => "%name%",
@@ -74,9 +95,13 @@ class PropertiesMaker {
 
     public static function makeProperties(Template $template): void {
         $fileName = ($template->getTemplateType() === TemplateType::SERVER() ? "server.properties" : "config.yml");
-        $config = new Config($template->getPath() . $fileName, ($fileName == "server.properties" ? 0 : 2));
-        foreach (self::KEYS[$template->getTemplateType()->getName()] as $key => $value) $config->set($key, $value);
-        $config->save();
+        if ($fileName == "server.properties") {
+            $config = new Config($template->getPath() . $fileName, Config::PROPERTIES);
+            foreach (self::KEYS[$template->getTemplateType()->getName()] as $key => $value) $config->set($key, $value);
+            $config->save();
+        } else {
+            file_put_contents($template->getPath() . $fileName, str_replace("'", "", yaml_emit(self::KEYS[$template->getTemplateType()->getName()], YAML_UTF8_ENCODING)));
+        }
     }
 
     public static function copyProperties(CloudServer $server): void {
