@@ -41,7 +41,7 @@ class PropertiesMaker {
             "cloud-language" => "%language%"
         ],
         "PROXY" => [
-            "listener" => ["motd" => "%name%", "host" => "0.0.0.0:%server_port%", "max-players" => "%max_players%", "name" => "§bWaterdog§3PE"],
+            "listener" => ["motd" => "%name%", "host" => "0.0.0.0:%server_port%", "max_players" => "%max_players%", "name" => "§bWaterdog§3PE"],
             "permissions" => ["r3pt1s" => ["waterdog.player.transfer", "waterdog.server.transfer", "waterdog.player.transfer.other", "waterdog.player.list", "waterdog.command.help", "waterdog.command.info", "waterdog.command.end"]],
             "permissions_default" => ["waterdog.command.help", "waterdog.command.info"],
             "enable_debug" => false,
