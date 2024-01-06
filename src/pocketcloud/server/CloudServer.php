@@ -25,7 +25,7 @@ use pocketcloud\util\Utils;
 
 class CloudServer {
 
-    public const TIMEOUT = 10;
+    public const TIMEOUT = 20;
 
     private CloudServerStorage $cloudServerStorage;
     private VerifyStatus $verifyStatus;
