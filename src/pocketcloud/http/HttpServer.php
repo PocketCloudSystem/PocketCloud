@@ -81,6 +81,7 @@ class HttpServer extends Thread implements Reloadable {
                     $buf = $data->getBuffer();
                     try {
                         $client->write($this->handleRequest($client->getAddress(), $buf));
+                        $client->close();
                     } catch (\Throwable $exception) {
                         CloudLogger::get()->warn(Language::current()->translate("httpServer.request.invalid", $client->getAddress()->__toString()));
                         CloudLogger::get()->debug($buf);
@@ -94,24 +95,24 @@ class HttpServer extends Thread implements Reloadable {
     }
 
     public function bind(): bool {
-        $this->socket = @socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
-        @socket_set_option($this->socket, SOL_SOCKET, SO_REUSEADDR, 1);
-        if (!@socket_bind($this->socket, $this->address->getAddress(), $this->address->getPort())) return false;
+        $this->socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
+        socket_set_option($this->socket, SOL_SOCKET, SO_REUSEADDR, 1);
+        if (!socket_bind($this->socket, $this->address->getAddress(), $this->address->getPort())) return false;
         $this->connected = true;
-        return @socket_listen($this->socket);
+        return socket_listen($this->socket);
     }
 
     public function accept(): ?SocketClient {
         if (!$this->connected) return null;
-        if (($c = @socket_accept($this->socket)) !== false && $c instanceof \Socket) return SocketClient::fromSocket($c);
+        if (($c = socket_accept($this->socket)) !== false && $c instanceof \Socket) return SocketClient::fromSocket($c);
         return null;
     }
 
     public function close(): void {
         if (!$this->connected) return;
         $this->connected = false;
-        @socket_shutdown($this->socket);
-        @socket_close($this->socket);
+        socket_shutdown($this->socket);
+        socket_close($this->socket);
     }
 
     public function reload(): bool {
