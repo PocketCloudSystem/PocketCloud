@@ -107,7 +107,7 @@ class PropertiesMaker {
     public static function copyProperties(CloudServer $server): void {
         $fileName = ($server->getTemplate()->getTemplateType() === TemplateType::SERVER() ? "server.properties" : "config.yml");
         if (!file_exists($server->getTemplate()->getPath() . $fileName)) self::makeProperties($server->getTemplate());
-        if (file_exists($server->getPath() . $fileName)) @unlink($server->getPath() . $fileName);
+        if (file_exists($server->getPath() . $fileName)) unlink($server->getPath() . $fileName);
         Utils::copyFile($server->getTemplate()->getPath() . $fileName, $server->getPath() . $fileName);
         $content = file_get_contents($server->getPath() . $fileName);
         if ($content === false) return;

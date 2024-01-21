@@ -29,19 +29,19 @@ class Utils {
         $file = fopen(STORAGE_PATH . "cloud.lock", "a+b");
         if ($file === false) return;
         if (!flock($file, LOCK_EX | LOCK_NB)) flock($file, LOCK_SH);
-        @ftruncate($file, 0);
-        @fwrite($file, (string) getmypid());
-        @fflush($file);
-        @flock($file, LOCK_SH);
+        ftruncate($file, 0);
+        fwrite($file, (string) getmypid());
+        fflush($file);
+        flock($file, LOCK_SH);
         self::$lockFileHandle = $file;
     }
 
     public static function deleteLockFile(): void {
         try {
             if (self::$lockFileHandle === null) return;
-            @flock(self::$lockFileHandle, LOCK_UN);
-            @fclose(self::$lockFileHandle);
-            @unlink(STORAGE_PATH . "cloud.lock");
+            flock(self::$lockFileHandle, LOCK_UN);
+            fclose(self::$lockFileHandle);
+            unlink(STORAGE_PATH . "cloud.lock");
         } catch (\Throwable $exception) {}
     }
 
@@ -101,8 +101,8 @@ class Utils {
     public static function copyDir(string $src, string $dst): void {
         $src = rtrim($src, DIRECTORY_SEPARATOR);
         $dst = rtrim($dst, DIRECTORY_SEPARATOR);
-        if (!file_exists($src)) @mkdir($src);
-        if (!file_exists($dst)) @mkdir($dst);
+        if (!file_exists($src)) mkdir($src);
+        if (!file_exists($dst)) mkdir($dst);
 
         foreach (array_diff(scandir($src), [".", ".."]) as $file) {
             try {

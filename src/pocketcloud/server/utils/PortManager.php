@@ -17,8 +17,8 @@ class PortManager {
     public static function getFreePort(): int {
         while (true) {
             $port = mt_rand(40000, 65535);
-            $socket = @socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
-            $state = @socket_connect($socket, "127.0.0.1", $port);
+            $socket = socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
+            $state = socket_connect($socket, "127.0.0.1", $port);
 
             if (!in_array([$port, $port+1], self::$usedPorts) && $state) {
                 socket_close($socket);

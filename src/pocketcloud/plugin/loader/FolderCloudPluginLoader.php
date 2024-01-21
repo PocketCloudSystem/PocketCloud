@@ -13,7 +13,7 @@ class FolderCloudPluginLoader implements CloudPluginLoader {
     }
 
     public function loadPlugin(string $path): string|CloudPlugin {
-        $pluginYml = @yaml_parse(file_get_contents($path . "/plugin.yml"));
+        $pluginYml = yaml_parse(file_get_contents($path . "/plugin.yml"));
         if (!is_array($pluginYml)) return "Can't parse plugin.yml";
         $pluginYml = CloudPluginDescription::fromArray($pluginYml);
         if ($pluginYml === null) return "Incorrect plugin.yml";

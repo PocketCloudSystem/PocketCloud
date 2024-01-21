@@ -18,7 +18,7 @@ class PharCloudPluginLoader implements CloudPluginLoader {
 
     public function loadPlugin(string $path): string|CloudPlugin {
         $phar = new \Phar($path);
-        $pluginYml = @yaml_parse(file_get_contents($phar["plugin.yml"]->getPathname()));
+        $pluginYml = yaml_parse(file_get_contents($phar["plugin.yml"]->getPathname()));
         if ($pluginYml == false) return "Can't parse plugin.yml";
         $pluginYml = CloudPluginDescription::fromArray($pluginYml);
         if ($pluginYml === null) return "Incorrect plugin.yml";

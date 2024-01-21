@@ -79,23 +79,23 @@ class Network extends Thread {
         if ($this->connected) return false;
         $this->address = $address;
         $this->socket = @socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
-        if(@socket_bind($this->socket, $address->getAddress(), $address->getPort()) === true) {
+        if(socket_bind($this->socket, $address->getAddress(), $address->getPort()) === true) {
             $this->connected = true;
             (new NetworkBindEvent($this->address))->call();
-            @socket_set_option($this->socket, SOL_SOCKET, SO_SNDBUF, 1024 * 1024 * 8);
-            @socket_set_option($this->socket, SOL_SOCKET, SO_RCVBUF, 1024 * 1024 * 8);
+            socket_set_option($this->socket, SOL_SOCKET, SO_SNDBUF, 1024 * 1024 * 8);
+            socket_set_option($this->socket, SOL_SOCKET, SO_RCVBUF, 1024 * 1024 * 8);
         } else return false;
         return true;
     }
 
     public function write(string $buffer, Address $dst): bool {
         if (!$this->isConnected()) return false;
-        return @socket_sendto($this->socket, $buffer, strlen($buffer), 0, $dst->getAddress(), $dst->getPort()) !== false;
+        return socket_sendto($this->socket, $buffer, strlen($buffer), 0, $dst->getAddress(), $dst->getPort()) !== false;
     }
 
     public function read(?string &$buffer, ?string &$address, ?int &$port): bool {
         if (!$this->isConnected()) return false;
-        return @socket_recvfrom($this->socket, $buffer, 65535, 0, $address, $port) !== false;
+        return socket_recvfrom($this->socket, $buffer, 65535, 0, $address, $port) !== false;
     }
 
     public function close(): void {
