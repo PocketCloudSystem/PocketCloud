@@ -255,6 +255,7 @@ final class DefaultMessages {
         "inGame.ui.cloudnpc.choose_server.title" => "§e%0%",
         "inGame.ui.cloudnpc.choose_server.text" => "§e%0% servers §7with the Template §e%1% §eavailable.",
         "inGame.ui.cloudnpc.choose_server.no.server" => "§cNo server available.",
+        "inGame.ui.cloudnpc.choose_server.button.server" => "§e%0%\n§a%1%§8/§c%2%",
         "inGame.proxy.stopped" => "§f§lProxy shutdown..."
     ];
 
@@ -509,6 +510,7 @@ final class DefaultMessages {
         "inGame.ui.cloudnpc.choose_server.title" => "§e%0%",
         "inGame.ui.cloudnpc.choose_server.text" => "§e%0% Server §7mit dem Template §e%1% §everfügbar.",
         "inGame.ui.cloudnpc.choose_server.no.server" => "§cKeine Server verfügbar",
+        "inGame.ui.cloudnpc.choose_server.button.server" => "§e%0%\n§a%1%§8/§c%2%",
         "inGame.proxy.stopped" => "§f§lProxy wird heruntergefahren..."
     ];
 }
