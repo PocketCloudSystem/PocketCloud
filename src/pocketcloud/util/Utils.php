@@ -311,11 +311,4 @@ class Utils {
     public static function clearConsole(): void {
         echo chr(27) . chr(91) . "H" . chr(27) . chr(91) . "J";
     }
-
-    public static function readLine(): string {
-        $input = fopen("php://stdin", "r");
-        $line = trim(fgets($input));
-        fclose($input);
-        return $line;
-    }
 }

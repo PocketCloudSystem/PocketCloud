@@ -30,9 +30,12 @@ class Console extends Thread {
     }
 
     public function onRun(): void {
+        $input = fopen("php://stdin", "r");
         while ($this->isRunning()) {
-            $this->buffer[] = Utils::readLine();
+            $this->buffer[] = trim(fgets($input));
             $this->entry->createNotifier()->wakeupSleeper();
         }
+
+        fclose($input);
     }
 }
