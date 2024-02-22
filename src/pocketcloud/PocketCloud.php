@@ -89,7 +89,7 @@ class PocketCloud {
         ini_set("memory_limit", ($memory = DefaultConfig::getInstance()->getMemoryLimit()) > 0 ? $memory . "M" : "-1");
 
         CloudLogger::get()->info("§bPocket§3Cloud §8(§ev" . VersionInfo::VERSION . (VersionInfo::BETA ? "@BETA" : "") . "§8) - §rdeveloped by §e" . implode("§8, §e", VersionInfo::DEVELOPERS));
-        if (Language::current()->getName() == "English") CloudLogger::get()->info("You can join our discord for information: §ehttps://discord.gg/3HbPEpaE3T");
+        if (Language::current() === Language::ENGLISH()) CloudLogger::get()->info("You can join our discord for information: §ehttps://discord.gg/3HbPEpaE3T");
         else CloudLogger::get()->info("Du kannst unserem Discord für Informationen beitreten: §ehttps://discord.gg/3HbPEpaE3T");
         CloudLogger::get()->emptyLine();
 
@@ -123,7 +123,12 @@ class PocketCloud {
             $this->httpServer->init();
         }
 
-        UpdateChecker::getInstance()->check();
+        if (DefaultConfig::getInstance()->isUpdateChecks()) {
+            UpdateChecker::getInstance()->check();
+        } else {
+            if (Language::current() === Language::ENGLISH()) CloudLogger::get()->info("The cloud does not check for updates. Please watch the github or discord more closely.");
+            else CloudLogger::get()->info("Die Cloud überprüft nun nicht mehr, ob Updates verfügbar sind. Bitte behalte den Discord oder GitHub besser im Blick.");
+        }
 
         $startedTime = (microtime(true) - $startTime);
         (new CloudStartedEvent($startedTime))->call();

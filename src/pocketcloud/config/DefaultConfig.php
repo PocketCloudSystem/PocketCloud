@@ -15,6 +15,8 @@ class DefaultConfig extends Configuration implements Reloadable {
     private string $language = "en_US";
     private int $memoryLimit = 512;
     private bool $debugMode = false;
+    private bool $updateChecks = true;
+    private bool $executeUpdates = true;
     private string $startMethod = "tmux";
     private array $network = [
         "port" => 3656,
@@ -42,6 +44,8 @@ class DefaultConfig extends Configuration implements Reloadable {
         $this->language = "en_US";
         $this->memoryLimit = 512;
         $this->debugMode = false;
+        $this->updateChecks = true;
+        $this->executeUpdates = true;
         $this->startMethod = "tmux";
         $this->network = ["port" => 3656, "encryption" => true];
         $this->httpServer = ["enabled" => true, "port" => 8000, "auth-key" => $this->generatedKey];
@@ -60,6 +64,14 @@ class DefaultConfig extends Configuration implements Reloadable {
 
     public function setDebugMode(bool $debugMode): void {
         $this->debugMode = $debugMode;
+    }
+
+    public function setUpdateChecks(bool $updateChecks): void {
+        $this->updateChecks = $updateChecks;
+    }
+
+    public function setExecuteUpdates(bool $executeUpdates): void {
+        $this->executeUpdates = $executeUpdates;
     }
 
     public function setStartMethod(string $startMethod): void {
@@ -92,6 +104,14 @@ class DefaultConfig extends Configuration implements Reloadable {
 
     public function isDebugMode(): bool {
         return $this->debugMode;
+    }
+
+    public function isUpdateChecks(): bool {
+        return $this->updateChecks;
+    }
+
+    public function isExecuteUpdates(): bool {
+        return $this->executeUpdates;
     }
 
     public function getStartMethod(): string {

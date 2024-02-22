@@ -37,7 +37,7 @@ class SoftwareManager {
             return;
         }
 
-        $temporaryLogger->info("Successfully downloaded library: %s (%s)", $software->getName(), SOFTWARE_PATH . $software->getFileName());
+        $temporaryLogger->info("Successfully downloaded software: %s (%s)", $software->getName(), SOFTWARE_PATH . $software->getFileName());
     }
 
     public function isDownloaded(Software $software): bool {
