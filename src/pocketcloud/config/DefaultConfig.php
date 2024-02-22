@@ -37,7 +37,8 @@ class DefaultConfig extends Configuration implements Reloadable {
         parent::__construct(STORAGE_PATH . "config.json", self::TYPE_JSON);
         $this->httpServer["auth-key"] = ($this->generatedKey = Utils::generateString(10));
 
-        if (!$this->load()) $this->save();
+        $this->load();
+        $this->save();
     }
 
     public function reload(): bool {
