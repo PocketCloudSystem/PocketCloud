@@ -54,17 +54,30 @@ final class Language {
         private readonly string $name,
         private readonly string $filePath,
         private readonly array $aliases,
-        array $messages = []
+        array $defaultMessages = []
     ) {
         if (file_exists($this->filePath)) {
             try {
                 $this->messages = yaml_parse(file_get_contents($this->filePath));
+                $foundMissingKeys = false;
+                foreach ($defaultMessages as $key => $value) {
+                    if (!isset($this->messages[$key])) {
+                        $this->messages[$key] = $value;
+                        $foundMissingKeys = true;
+                    }
+                }
+
+                if ($foundMissingKeys) {
+                    CloudLogger::get()->info("Incomplete language file found: %s, completed the file with the missing lang keys.", $this->filePath);
+                    file_put_contents($this->filePath, yaml_emit($this->messages, YAML_UTF8_ENCODING));
+                }
+
             } catch (\Throwable $exception) {
-                $this->messages = $messages;
+                $this->messages = $defaultMessages;
                 CloudLogger::get()->exception($exception);
             }
         } else {
-            $this->messages = $messages;
+            $this->messages = $defaultMessages;
             file_put_contents($this->filePath, yaml_emit($this->messages, YAML_UTF8_ENCODING));
         }
     }
