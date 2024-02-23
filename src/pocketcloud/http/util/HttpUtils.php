@@ -14,6 +14,7 @@ class HttpUtils {
 	
 	public static function parseRequest(Address $address, string $request): ?Request {
 		[$headers, $bodyLines] = self::splitData(explode("\r\n", $request));
+        if (empty($headers)) return null;
 		$req = explode(" ", trim(rtrim(array_shift($headers))));
 		$method = array_shift($req);
 		if (!in_array($method, Request::SUPPORTED_REQUEST_METHODS)) return null;

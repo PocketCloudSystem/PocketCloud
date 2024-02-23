@@ -19,7 +19,7 @@ class SocketClient extends ThreadSafe {
     }
 
     public function read(int $len): false|string {
-        return socket_read($this->socket, $len);
+        return @socket_read($this->socket, $len);
     }
 
     public function write(string $buffer): bool {
