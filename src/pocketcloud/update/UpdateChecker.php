@@ -129,7 +129,7 @@ class UpdateChecker {
             if (is_array($data) && isset($data["tag_name"])) {
                 $phar = new \Phar(SERVER_PLUGINS_PATH . "CloudBridge.phar");
                 if (isset($phar["plugin.yml"])) {
-                    $yaml = yaml_parse($phar["plugin.yml"]);
+                    $yaml = yaml_parse($phar["plugin.yml"]->getContent());
                     if (isset($yaml["version"])) {
                         if ($yaml["version"] !== $data["tag_name"]) {
                             if (Language::current() === Language::GERMAN()) {
