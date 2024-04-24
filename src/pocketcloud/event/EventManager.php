@@ -2,8 +2,10 @@
 
 namespace pocketcloud\event;
 
+use Closure;
 use pocketcloud\plugin\CloudPlugin;
 use pocketcloud\util\SingletonTrait;
+use ReflectionClass;
 
 class EventManager {
     use SingletonTrait;
@@ -14,14 +16,14 @@ class EventManager {
         self::setInstance($this);
     }
 
-    public function registerEvent(string $eventClass, \Closure $closure, CloudPlugin $plugin): void {
+    public function registerEvent(string $eventClass, Closure $closure, CloudPlugin $plugin): void {
         if (is_subclass_of($eventClass, Event::class)) {
             $this->handlers[$plugin->getDescription()->getFullName()][$eventClass][] = $closure;
         }
     }
 
     public function registerListener(Listener $listener, CloudPlugin $plugin): void {
-        $reflection = new \ReflectionClass($listener);
+        $reflection = new ReflectionClass($listener);
         foreach ($reflection->getMethods() as $method) {
             if (!$method->isAbstract() && !$method->isStatic() && $method->isPublic() && $method->getNumberOfParameters() == 1) {
                 $event = $method->getParameters()[0]->getType()->getName();

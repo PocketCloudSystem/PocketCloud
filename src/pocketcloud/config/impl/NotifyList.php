@@ -1,16 +1,17 @@
 <?php
 
-namespace pocketcloud\config;
+namespace pocketcloud\config\impl;
 
-use pocketcloud\util\Config;
+use pocketcloud\config\Config;
+use pocketcloud\config\type\ConfigTypes;
 use pocketcloud\util\Reloadable;
 
-class MaintenanceList implements Reloadable {
+class NotifyList implements Reloadable {
 
     private static ?Config $config = null;
 
     private static function check(): void {
-        if (self::$config === null) self::$config = new Config(IN_GAME_PATH . "maintenanceList.json", 1);
+        if (self::$config === null) self::$config = new Config(IN_GAME_PATH . "notifyList.json", ConfigTypes::JSON());
     }
 
     public static function add(string $playerName): void {
@@ -27,7 +28,7 @@ class MaintenanceList implements Reloadable {
 
     public static function is(string $playerName): bool {
         self::check();
-        return self::$config->exists($playerName) && self::$config->get($playerName, false);
+        return self::$config->has($playerName) && self::$config->get($playerName);
     }
 
     public static function all(): array {

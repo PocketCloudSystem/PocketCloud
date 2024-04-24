@@ -4,6 +4,8 @@ namespace pocketcloud\scheduler;
 
 use pmmp\thread\Runnable;
 use pocketcloud\util\CloudLogger;
+use ReflectionClass;
+use Throwable;
 
 abstract class AsyncTask extends Runnable {
 
@@ -16,9 +18,9 @@ abstract class AsyncTask extends Runnable {
     public function run(): void {
         try {
             $this->onRun();
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             $this->crashed = true;
-            CloudLogger::get()->error("§cAsynchronous task §8'§e" . (new \ReflectionClass($this))->getShortName() . "§8' §ccrashed!");
+            CloudLogger::get()->error("§cAsynchronous task §8'§e" . (new ReflectionClass($this))->getShortName() . "§8' §ccrashed!");
             CloudLogger::get()->exception($exception);
         }
 

@@ -18,13 +18,13 @@ final class TemplateType {
         self::register("proxy", new TemplateType("PROXY", SoftwareManager::getInstance()->getSoftwareByName("WaterdogPE")));
     }
 
-    public static function getTemplateTypeByName(string $name): ?TemplateType {
+    public static function get(string $name): ?TemplateType {
         self::check();
         return self::$members[strtoupper($name)] ?? null;
     }
 
     /** @return array<TemplateType> */
-    public static function getTemplateTypes(): array {
+    public static function getAll(): array {
         self::check();
         return self::$members;
     }

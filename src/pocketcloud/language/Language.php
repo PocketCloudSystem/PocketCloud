@@ -2,9 +2,10 @@
 
 namespace pocketcloud\language;
 
-use pocketcloud\config\DefaultConfig;
+use pocketcloud\config\impl\DefaultConfig;
 use pocketcloud\util\CloudLogger;
 use pocketcloud\util\EnumTrait;
+use Throwable;
 
 /**
  * @method static Language GERMAN()
@@ -72,7 +73,7 @@ final class Language {
                     file_put_contents($this->filePath, yaml_emit($this->messages, YAML_UTF8_ENCODING));
                 }
 
-            } catch (\Throwable $exception) {
+            } catch (Throwable $exception) {
                 $this->messages = $defaultMessages;
                 CloudLogger::get()->exception($exception);
             }

@@ -5,6 +5,7 @@ namespace pocketcloud\thread;
 use pmmp\thread\ThreadSafe;
 use pmmp\thread\ThreadSafeArray;
 use pocketcloud\util\SingletonTrait;
+use Throwable;
 
 class ThreadManager extends ThreadSafe {
     use SingletonTrait;
@@ -37,7 +38,7 @@ class ThreadManager extends ThreadSafe {
         foreach ($this->getAll() as $thread) {
             try {
                 $thread->quit();
-            } catch(\Throwable $e) {
+            } catch(Throwable) {
                 ++$crashedThreads;
             }
         }

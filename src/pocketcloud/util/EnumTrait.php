@@ -13,11 +13,6 @@ trait EnumTrait {
         }
     }
 
-    final public static function get(string $name, mixed $default = null): mixed {
-        self::check();
-        return self::$members[strtoupper($name)] ?? $default;
-    }
-
     final public static function getAll(): array {
         self::check();
         return self::$members;

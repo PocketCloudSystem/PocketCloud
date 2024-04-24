@@ -2,6 +2,7 @@
 
 namespace pocketcloud\network\packet\utils;
 
+use JsonSerializable;
 use pocketcloud\network\packet\impl\types\CommandExecutionResult;
 use pocketcloud\network\packet\impl\types\DisconnectReason;
 use pocketcloud\network\packet\impl\types\ErrorReason;
@@ -13,7 +14,7 @@ use pocketcloud\server\CloudServer;
 use pocketcloud\server\status\ServerStatus;
 use pocketcloud\template\Template;
 
-class PacketData implements \JsonSerializable {
+class PacketData implements JsonSerializable {
 
     public function __construct(private array $data = []) {}
 

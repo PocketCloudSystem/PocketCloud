@@ -2,8 +2,9 @@
 
 namespace pocketcloud\util;
 
-use pocketcloud\config\DefaultConfig;
+use pocketcloud\config\impl\DefaultConfig;
 use pocketcloud\console\log\Logger;
+use Throwable;
 
 class Utils {
 
@@ -42,7 +43,7 @@ class Utils {
             flock(self::$lockFileHandle, LOCK_UN);
             fclose(self::$lockFileHandle);
             unlink(STORAGE_PATH . "cloud.lock");
-        } catch (\Throwable $exception) {}
+        } catch (Throwable) {}
     }
 
     public static function executeWithStartCommand(string $path, string $name, string $softwareStartCommand): void {
@@ -83,16 +84,16 @@ class Utils {
                     } else {
                         try {
                             unlink($dirPath . DIRECTORY_SEPARATOR . $object);
-                        } catch (\Throwable $exception) {
+                        } catch (Throwable) {
                             CloudLogger::get()->debug("Can't delete file: " . $dirPath . DIRECTORY_SEPARATOR . $object);
                         }
                     }
                 }
-            } catch (\Throwable $exception) {}
+            } catch (Throwable) {}
 
             try {
                 rmdir($dirPath . DIRECTORY_SEPARATOR);
-            } catch (\Throwable $exception) {
+            } catch (Throwable) {
                 CloudLogger::get()->debug("Can't delete dir: " . $dirPath . DIRECTORY_SEPARATOR);
             }
         }
@@ -111,11 +112,11 @@ class Utils {
                 } else {
                     try {
                         copy($src . DIRECTORY_SEPARATOR . $file, $dst . DIRECTORY_SEPARATOR . $file);
-                    } catch (\Throwable $exception) {
+                    } catch (Throwable) {
                         CloudLogger::get()->debug("Can't copy file from: " . $src . DIRECTORY_SEPARATOR . $file . " to " . $dst . DIRECTORY_SEPARATOR . $file);
                     }
                 }
-            } catch (\Throwable $exception) {}
+            } catch (Throwable) {}
         }
     }
 
@@ -126,7 +127,7 @@ class Utils {
             try {
                 if (!file_exists(dirname($dst) . "/")) mkdir(dirname($dst));
                 if (is_file($src)) copy($src, $dst);
-            } catch (\Throwable $exception) {
+            } catch (Throwable) {
                 CloudLogger::get()->debug("Can't copy file from: " . $src . " to " . $dst);
             }
         }
@@ -292,12 +293,6 @@ class Utils {
                 } else {
                     exec("kill -9 $pid > /dev/null 2>&1");
                 }
-        }
-    }
-
-    public static function stringifyKeys(array $array): \Generator {
-        foreach($array as $key => $value) {
-            yield (string) $key => $value;
         }
     }
 

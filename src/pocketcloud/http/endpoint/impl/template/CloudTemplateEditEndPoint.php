@@ -6,6 +6,7 @@ use pocketcloud\http\io\Request;
 use pocketcloud\http\io\Response;
 use pocketcloud\http\util\Router;
 use pocketcloud\http\endpoint\EndPoint;
+use pocketcloud\template\TemplateHelper;
 use pocketcloud\template\TemplateManager;
 
 class CloudTemplateEditEndPoint extends EndPoint {
@@ -24,11 +25,11 @@ class CloudTemplateEditEndPoint extends EndPoint {
             return ["error" => "The template doesn't exists!"];
         }
         
-        if (!$template::isValidEditKey($editKey)) {
+        if (!TemplateHelper::isValidEditKey($editKey)) {
             return ["error" => "The given key doesn't exists!"];
         }
         
-        if (!$template::isValidEditValue($editValue, $editKey, $expected, $realValue)) {
+        if (!TemplateHelper::isValidEditValue($editValue, $editKey, $expected, $realValue)) {
             return ["error" => "You've provided the wrong value for the given key!"];
         }
         

@@ -2,15 +2,16 @@
 
 namespace pocketcloud\http;
 
+use Closure;
 use pmmp\thread\ThreadSafeArray;
-use pocketcloud\config\DefaultConfig;
+use pocketcloud\config\impl\DefaultConfig;
 use pocketcloud\event\impl\http\HttpServerInitializeEvent;
 use pocketcloud\http\endpoint\EndpointRegistry;
 use pocketcloud\http\io\Request;
 use pocketcloud\http\io\Response;
 use pocketcloud\http\network\SocketClient;
-use pocketcloud\http\util\Router;
 use pocketcloud\http\util\HttpUtils;
+use pocketcloud\http\util\Router;
 use pocketcloud\http\util\UnhandledHttpRequest;
 use pocketcloud\language\Language;
 use pocketcloud\PocketCloud;
@@ -19,15 +20,17 @@ use pocketcloud\util\Address;
 use pocketcloud\util\CloudLogger;
 use pocketcloud\util\Reloadable;
 use pocketmine\snooze\SleeperHandlerEntry;
+use Socket;
+use Throwable;
 
 class HttpServer extends Thread implements Reloadable {
 
     private bool $connected = false;
     public const REQUEST_READ_LENGTH = 8192;
-    protected ?\Socket $socket = null;
+    protected ?Socket $socket = null;
     private ThreadSafeArray $buffer;
     private SleeperHandlerEntry $entry;
-    private ?\Closure $invalidUrlHandler = null;
+    private ?Closure $invalidUrlHandler = null;
 
     public function __construct(private readonly Address $address) {
         $this->buffer = new ThreadSafeArray();
@@ -44,7 +47,7 @@ class HttpServer extends Thread implements Reloadable {
         }
     }
 
-    public function default(\Closure $closure): void {
+    public function default(Closure $closure): void {
         $this->invalidUrlHandler = $closure;
     }
 
@@ -70,7 +73,7 @@ class HttpServer extends Thread implements Reloadable {
                     CloudLogger::get()->error(Language::current()->translate("httpServer.bind.failed", $this->address->getPort()));
                     return;
                 }
-            } catch (\Throwable $exception) {
+            } catch (Throwable $exception) {
                 CloudLogger::get()->error(Language::current()->translate("httpServer.bind.failed.reason", $this->address->getPort(), $exception->getMessage()));
             }
 
@@ -82,7 +85,7 @@ class HttpServer extends Thread implements Reloadable {
                     try {
                         $client->write($this->handleRequest($client->getAddress(), $buf));
                         $client->close();
-                    } catch (\Throwable $exception) {
+                    } catch (Throwable $exception) {
                         CloudLogger::get()->warn(Language::current()->translate("httpServer.request.invalid", $client->getAddress()->__toString()));
                         CloudLogger::get()->debug($buf);
                         CloudLogger::get()->exception($exception);
@@ -104,7 +107,7 @@ class HttpServer extends Thread implements Reloadable {
 
     public function accept(): ?SocketClient {
         if (!$this->connected) return null;
-        if (($c = socket_accept($this->socket)) !== false && $c instanceof \Socket) return SocketClient::fromSocket($c);
+        if (($c = socket_accept($this->socket)) !== false && $c instanceof Socket) return SocketClient::fromSocket($c);
         return null;
     }
 

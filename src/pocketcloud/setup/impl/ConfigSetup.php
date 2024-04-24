@@ -2,13 +2,10 @@
 
 namespace pocketcloud\setup\impl;
 
-use pocketcloud\config\DefaultConfig;
+use pocketcloud\config\impl\DefaultConfig;
 use pocketcloud\language\Language;
 use pocketcloud\setup\QuestionBuilder;
 use pocketcloud\setup\Setup;
-use pocketcloud\template\Template;
-use pocketcloud\template\TemplateManager;
-use pocketcloud\template\TemplateType;
 use pocketcloud\util\CloudLogger;
 use pocketcloud\util\Utils;
 

@@ -2,8 +2,9 @@
 
 namespace pocketcloud\util;
 
-use pocketcloud\config\DefaultConfig;
+use pocketcloud\config\impl\DefaultConfig;
 use pocketcloud\console\log\Logger;
+use Throwable;
 
 final class CloudLogger {
 
@@ -16,13 +17,13 @@ final class CloudLogger {
     public static function get(): Logger {
         try {
             if (self::$logger === null) self::set(new Logger(LOG_PATH, DefaultConfig::getInstance()->isDebugMode()));
-        } catch (\Throwable $exception) {
+        } catch (Throwable) {
             self::set(new Logger(LOG_PATH, true));
         }
         return self::$logger;
     }
 
-    public static function close() {
-        if (self::$logger !== null) self::$logger->close();
+    public static function close(): void {
+        self::$logger?->close();
     }
 }

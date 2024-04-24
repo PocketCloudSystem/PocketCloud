@@ -2,11 +2,12 @@
 
 namespace pocketcloud;
 
+use Phar;
 use pocketcloud\command\CommandManager;
-use pocketcloud\config\DefaultConfig;
-use pocketcloud\config\MaintenanceList;
-use pocketcloud\config\ModuleConfig;
-use pocketcloud\config\NotifyList;
+use pocketcloud\config\impl\DefaultConfig;
+use pocketcloud\config\impl\MaintenanceList;
+use pocketcloud\config\impl\ModuleConfig;
+use pocketcloud\config\impl\NotifyList;
 use pocketcloud\console\Console;
 use pocketcloud\console\log\CloudLogSaver;
 use pocketcloud\event\EventManager;
@@ -24,11 +25,9 @@ use pocketcloud\setup\Setup;
 use pocketcloud\software\SoftwareManager;
 use pocketcloud\template\Template;
 use pocketcloud\template\TemplateManager;
-use pocketcloud\template\TemplateType;
 use pocketcloud\thread\ThreadManager;
 use pocketcloud\update\UpdateChecker;
 use pocketcloud\util\Address;
-use pocketcloud\util\AsyncExecutor;
 use pocketcloud\util\CloudLogger;
 use pocketcloud\util\ExceptionHandler;
 use pocketcloud\util\ReloadableList;
@@ -70,15 +69,11 @@ class PocketCloud {
             (new ConfigSetup())->completion(function(array $results): void {
                 $this->start();
                 if ($results["defaultLobbyTemplate"] ?? true) {
-                    TemplateManager::getInstance()->createTemplate(new Template(
-                        "Lobby", true, true, false, 20, 1, 3, true, false, TemplateType::SERVER()
-                    ));
+                    TemplateManager::getInstance()->createTemplate(Template::lobby("Lobby"));
                 }
 
                 if ($results["defaultProxyTemplate"] ?? true) {
-                    TemplateManager::getInstance()->createTemplate(new Template(
-                        "Proxy", false, true, false, 20, 1, 1, false, false, TemplateType::PROXY()
-                    ));
+                    TemplateManager::getInstance()->createTemplate(Template::proxy("Proxy"));
                 }
             })->startSetup();
         } else $this->start();
@@ -229,7 +224,7 @@ require_once "PocketCloud.php";
 
 define("SOURCE_PATH", __DIR__ . "/");
 
-if (\Phar::running()) {
+if (Phar::running()) {
     define("CLOUD_PATH", str_replace("phar://", "", dirname(__DIR__, 3) . DIRECTORY_SEPARATOR));
 } else {
     define("CLOUD_PATH", dirname(__DIR__, 2) . DIRECTORY_SEPARATOR);

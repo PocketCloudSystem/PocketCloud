@@ -8,6 +8,7 @@ use pocketcloud\language\Language;
 use pocketcloud\setup\impl\TemplateSetup;
 use pocketcloud\template\Template;
 use pocketcloud\template\TemplateManager;
+use pocketcloud\template\TemplateSettings;
 use pocketcloud\template\TemplateType;
 
 class CreateCommand extends Command {
@@ -19,9 +20,9 @@ class CreateCommand extends Command {
             } else {
                 if (!TemplateManager::getInstance()->checkTemplate($args[0])) {
                     $templateType = TemplateType::SERVER();
-                    if (isset($args[1])) $templateType = TemplateType::getTemplateTypeByName($args[1]) ?? TemplateType::SERVER();
+                    if (isset($args[1])) $templateType = TemplateType::get($args[1]) ?? TemplateType::SERVER();
 
-                    TemplateManager::getInstance()->createTemplate(new Template($args[0], false, true, false, 20, 0, 2, false, false, $templateType));
+                    TemplateManager::getInstance()->createTemplate(Template::create($args[0], TemplateSettings::create(false, true, false, 20, 0, 2, false, false), $templateType));
                 } else $sender->error(Language::current()->translate("template.already.exists"));
             }
         } else (new TemplateSetup())->startSetup();

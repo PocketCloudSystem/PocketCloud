@@ -4,14 +4,15 @@ namespace pocketcloud\http\network;
 
 use pmmp\thread\ThreadSafe;
 use pocketcloud\util\Address;
+use Socket;
 
 class SocketClient extends ThreadSafe {
 
-    protected ?\Socket $socket = null;
+    protected ?Socket $socket = null;
 
     public function __construct(protected Address $address) {}
 
-    public static function fromSocket(\Socket $socket): SocketClient {
+    public static function fromSocket(Socket $socket): SocketClient {
         socket_getpeername($socket, $address, $port);
         $c = new SocketClient(new Address($address, $port));
         $c->socket = $socket;

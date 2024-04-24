@@ -2,7 +2,6 @@
 
 namespace pocketcloud\network\client;
 
-use pmmp\thread\ThreadSafe;
 use pocketcloud\network\Network;
 use pocketcloud\network\packet\CloudPacket;
 use pocketcloud\server\CloudServer;

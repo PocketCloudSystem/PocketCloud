@@ -48,22 +48,19 @@ class CloudServerManager implements Tickable {
 
     public function startServer(Template $template, int $count = 1): ?array {
         $servers = [];
-        if (count($this->getServersByTemplate($template)) >= $template->getMaxServerCount()) {
+        if (count($this->getServersByTemplate($template)) >= $template->getSettings()->getMaxServerCount()) {
             CloudLogger::get()->info(Language::current()->translate("server.max.reached", $template->getName()));
         } else {
             for ($i = 0; $i < $count; $i++) {
-                if (count($this->getServersByTemplate($template)) >= $template->getMaxServerCount()) break;
+                if (count($this->getServersByTemplate($template)) >= $template->getSettings()->getMaxServerCount()) break;
                 $id = IdManager::getFreeId($template);
                 if ($id !== -1) {
                     $port = ($template->getTemplateType() === TemplateType::SERVER() ? PortManager::getFreePort() : PortManager::getFreeProxyPort());
                     if ($port !== 0) {
-                        $servers[] = $server = new CloudServer($id, $template, new CloudServerData($port, $template->getMaxPlayerCount(), 0), ServerStatus::STARTING());
-                        if (!file_exists($server->getPath())) {
-                            Utils::copyDir($template->getPath(), $server->getPath());
-                        } else {
-                            if (!$template->isStatic()) Utils::deleteDir($server->getPath());
-                            Utils::copyDir($template->getPath(), $server->getPath());
-                        }
+                        $servers[] = $server = new CloudServer($id, $template->getName(), new CloudServerData($port, $template->getSettings()->getMaxPlayerCount(), 0), ServerStatus::STARTING());
+
+                        if (file_exists($server->getPath()) && !$template->getSettings()->isStatic()) Utils::deleteDir($server->getPath());
+                        Utils::copyDir($template->getPath(), $server->getPath());
 
                         if ($template->getTemplateType() === TemplateType::SERVER()) Utils::copyDir(SERVER_PLUGINS_PATH, $server->getPath() . "plugins/");
                         else Utils::copyDir(PROXY_PLUGINS_PATH, $server->getPath() . "plugins/");
@@ -92,7 +89,7 @@ class CloudServerManager implements Tickable {
         $server->setStopTime(time());
         if ($force) {
             if ($server->getCloudServerData()->getProcessId() !== 0) Utils::kill($server->getCloudServerData()->getProcessId());
-            if (!$server->getTemplate()->isStatic()) Utils::deleteDir($server->getPath());
+            if (!$server->getTemplate()->getSettings()->isStatic()) Utils::deleteDir($server->getPath());
         } else {
             $server->sendPacket(new DisconnectPacket(DisconnectReason::SERVER_SHUTDOWN()));
         }
@@ -220,7 +217,7 @@ class CloudServerManager implements Tickable {
                         else Utils::copyFile($server->getPath() . "server.log", $server->getTemplate()->getPath() . "server.log");
                     }
                     NotifyType::START_FAILED()->notify(["%server%" => $server->getName()]);
-                    if (!$server->getTemplate()->isStatic()) Utils::deleteDir($server->getPath());
+                    if (!$server->getTemplate()->getSettings()->isStatic()) Utils::deleteDir($server->getPath());
                 }
             } else if ($server->getServerStatus() === ServerStatus::ONLINE() || $server->getServerStatus() === ServerStatus::FULL() || $server->getServerStatus() === ServerStatus::IN_GAME()) {
                 if (!$server->checkAlive()) {
@@ -240,7 +237,7 @@ class CloudServerManager implements Tickable {
                         if ($server->getTemplate()->getTemplateType() === TemplateType::PROXY()) Utils::copyFile($server->getPath() . "logs/server.log", $server->getTemplate()->getPath() . "logs/server.log");
                         else Utils::copyFile($server->getPath() . "server.log", $server->getTemplate()->getPath() . "server.log");
                     }
-                    if (!$server->getTemplate()->isStatic()) Utils::deleteDir($server->getPath());
+                    if (!$server->getTemplate()->getSettings()->isStatic()) Utils::deleteDir($server->getPath());
                 }
             } else if ($server->getServerStatus() === ServerStatus::STOPPING()) {
                 if (($server->getStopTime() + 10) <= time()) {
@@ -256,7 +253,7 @@ class CloudServerManager implements Tickable {
                         if ($server->getTemplate()->getTemplateType() === TemplateType::PROXY()) Utils::copyFile($server->getPath() . "logs/server.log", $server->getTemplate()->getPath() . "logs/server.log");
                         else Utils::copyFile($server->getPath() . "server.log", $server->getTemplate()->getPath() . "server.log");
                     }
-                    if (!$server->getTemplate()->isStatic()) Utils::deleteDir($server->getPath());
+                    if (!$server->getTemplate()->getSettings()->isStatic()) Utils::deleteDir($server->getPath());
                     Utils::kill($server->getCloudServerData()->getProcessId());
                 }
             } else if ($server->getServerStatus() === ServerStatus::OFFLINE()) {
@@ -271,7 +268,7 @@ class CloudServerManager implements Tickable {
                     NotifyType::CRASHED()->notify(["%server%" => $server->getName()]);
                 }
 
-                if (!$server->getTemplate()->isStatic()) Utils::deleteDir($server->getPath());
+                if (!$server->getTemplate()->getSettings()->isStatic()) Utils::deleteDir($server->getPath());
             }
         }
     }

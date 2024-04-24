@@ -25,7 +25,7 @@ class CloudServerStartEndPoint extends EndPoint {
             return ["error" => "The template doesn't exists!"];
         }
 
-        if (count(CloudServerManager::getInstance()->getServersByTemplate($template)) >= $template->getMaxServerCount()) {
+        if (count(CloudServerManager::getInstance()->getServersByTemplate($template)) >= $template->getSettings()->getMaxServerCount()) {
             return ["error" => "The max server count is already reached!"];
         }
 

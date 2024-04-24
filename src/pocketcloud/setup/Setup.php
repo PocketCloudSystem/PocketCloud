@@ -2,11 +2,10 @@
 
 namespace pocketcloud\setup;
 
+use Closure;
 use pocketcloud\console\log\CloudLogSaver;
 use pocketcloud\console\log\Logger;
 use pocketcloud\language\Language;
-use pocketcloud\PocketCloud;
-use pocketcloud\util\CloudLogger;
 use pocketcloud\util\Utils;
 
 abstract class Setup {
@@ -19,7 +18,7 @@ abstract class Setup {
     protected bool $cancelled = false;
     private array $results = [];
     private array $questions = [];
-    private ?\Closure $completionHandler = null;
+    private ?Closure $completionHandler = null;
 
     final public function startSetup(): void {
         if (self::$currentSetup !== null) return;
@@ -33,7 +32,7 @@ abstract class Setup {
         else $this->endSetup();
     }
 
-    final public function completion(\Closure $closure): self {
+    final public function completion(Closure $closure): self {
         $this->completionHandler = $closure;
         return $this;
     }

@@ -5,6 +5,7 @@ namespace pocketcloud\library;
 use pocketcloud\console\log\Logger;
 use pocketcloud\util\SingletonTrait;
 use pocketcloud\util\Utils;
+use Throwable;
 
 class LibraryManager {
     use SingletonTrait;
@@ -60,7 +61,7 @@ class LibraryManager {
                     } else {
                         $temporaryLogger->warn("Failed to downloaded library: %s", $library->getName());
                     }
-                } catch (\Throwable $exception) {
+                } catch (Throwable $exception) {
                     $temporaryLogger->warn("Failed to downloaded library: %s", $library->getName());
                     $temporaryLogger->exception($exception);
                 }

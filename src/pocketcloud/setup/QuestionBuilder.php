@@ -2,7 +2,9 @@
 
 namespace pocketcloud\setup;
 
+use Closure;
 use JetBrains\PhpStorm\Pure;
+use LogicException;
 
 class QuestionBuilder {
 
@@ -12,8 +14,8 @@ class QuestionBuilder {
     private array $possibleAnswers = [];
     private mixed $default = null;
     private ?string $recommendation = null;
-    private ?\Closure $parser = null;
-    private ?\Closure $resultHandler = null;
+    private ?Closure $parser = null;
+    private ?Closure $resultHandler = null;
 
     #[Pure] public static function builder(): QuestionBuilder {
         return new self();
@@ -49,20 +51,20 @@ class QuestionBuilder {
         return $this;
     }
 
-    public function parser(\Closure $parser): self {
+    public function parser(Closure $parser): self {
         $this->parser = $parser;
         return $this;
     }
 
-    public function resultHandler(\Closure $handler): self {
+    public function resultHandler(Closure $handler): self {
         $this->resultHandler = $handler;
         return $this;
     }
 
     public function build(): Question {
-        if ($this->key === null) throw new \LogicException("Parameter 'key' cannot be null");
-        if ($this->question === null) throw new \LogicException("Parameter 'question' cannot be null");
-        if ($this->parser === null) throw new \LogicException("Parameter 'parser' cannot be null");
+        if ($this->key === null) throw new LogicException("Parameter 'key' cannot be null");
+        if ($this->question === null) throw new LogicException("Parameter 'question' cannot be null");
+        if ($this->parser === null) throw new LogicException("Parameter 'parser' cannot be null");
         return new Question(
             $this->key,
             $this->question,

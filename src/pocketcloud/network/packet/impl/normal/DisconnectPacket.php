@@ -50,7 +50,7 @@ class DisconnectPacket extends CloudPacket {
 
             ServerClientManager::getInstance()->removeClient($server);
             CloudServerManager::getInstance()->removeServer($server);
-            if (!$server->getTemplate()->isStatic()) Utils::deleteDir($server->getPath());
+            if (!$server->getTemplate()->getSettings()->isStatic()) Utils::deleteDir($server->getPath());
         }
     }
 

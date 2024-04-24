@@ -1,8 +1,9 @@
 <?php
 
-namespace pocketcloud\config;
+namespace pocketcloud\config\impl;
 
 use configlib\Configuration;
+use pocketcloud\util\ExceptionHandler;
 use pocketcloud\util\Reloadable;
 use pocketcloud\util\SingletonTrait;
 
@@ -18,6 +19,14 @@ class ModuleConfig extends Configuration implements Reloadable {
         self::setInstance($this);
         parent::__construct(IN_GAME_PATH . "modules.json", self::TYPE_JSON);
         if (!$this->load()) $this->save();
+    }
+
+    public function load(): bool {
+        return ExceptionHandler::tryCatch(fn() => parent::load()) ?? false;
+    }
+
+    public function save(): bool {
+        return ExceptionHandler::tryCatch(fn() => parent::save()) ?? false;
     }
 
     public function reload(): bool {

@@ -2,7 +2,7 @@
 
 namespace pocketcloud\http\io;
 
-use pocketcloud\config\DefaultConfig;
+use pocketcloud\config\impl\DefaultConfig;
 use pocketcloud\http\io\data\RequestData;
 use stdClass;
 

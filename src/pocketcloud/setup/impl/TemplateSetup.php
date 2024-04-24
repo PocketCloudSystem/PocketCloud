@@ -6,6 +6,7 @@ use pocketcloud\language\Language;
 use pocketcloud\setup\QuestionBuilder;
 use pocketcloud\setup\Setup;
 use pocketcloud\template\Template;
+use pocketcloud\template\TemplateHelper;
 use pocketcloud\template\TemplateManager;
 use pocketcloud\template\TemplateType;
 use pocketcloud\util\CloudLogger;
@@ -107,14 +108,7 @@ class TemplateSetup extends Setup {
     public function handleResults(array $results): void {
         TemplateManager::getInstance()->createTemplate(new Template(
             $results["name"],
-            $results["lobby"] ?? false,
-            $results["maintenance"] ?? true,
-            $results["static"] ?? false,
-            $results["maxPlayerCount"] ?? 20,
-            $results["minServerCount"] ?? 1,
-            $results["maxServerCount"] ?? 1,
-            $results["startNewWhenFull"] ?? false,
-            $results["autoStart"] ?? false,
+            TemplateHelper::sumSettingsToInstance($results),
             ($results["templateType"] ?? false) ? TemplateType::PROXY() : TemplateType::SERVER()
         ));
     }

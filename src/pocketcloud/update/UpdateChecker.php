@@ -2,7 +2,10 @@
 
 namespace pocketcloud\update;
 
-use pocketcloud\config\DefaultConfig;
+use Exception;
+use JsonException;
+use Phar;
+use pocketcloud\config\impl\DefaultConfig;
 use pocketcloud\language\Language;
 use pocketcloud\software\SoftwareManager;
 use pocketcloud\util\AsyncExecutor;
@@ -44,13 +47,9 @@ class UpdateChecker {
                 if ($data === false || $data === null) {
                     return false;
                 } else {
-                    if (isset($data["tag_name"])) {
-                        return $data["tag_name"];
-                    } else {
-                        return false;
-                    }
+                    return $data["tag_name"] ?? false;
                 }
-            } catch (\JsonException $e) {
+            } catch (JsonException $e) {
                 CloudLogger::get()->exception($e);
                 return false;
             }
@@ -127,7 +126,7 @@ class UpdateChecker {
             $result = curl_exec($ch);
             $data = json_decode($result, true, flags: JSON_THROW_ON_ERROR);
             if (is_array($data) && isset($data["tag_name"])) {
-                $phar = new \Phar(SERVER_PLUGINS_PATH . "CloudBridge.phar");
+                $phar = new Phar(SERVER_PLUGINS_PATH . "CloudBridge.phar");
                 if (isset($phar["plugin.yml"])) {
                     $yaml = yaml_parse($phar["plugin.yml"]->getContent());
                     if (isset($yaml["version"])) {
@@ -154,7 +153,7 @@ class UpdateChecker {
                 @unlink(SERVER_PLUGINS_PATH . "CloudBridge.phar");
                 Utils::downloadFiles();
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             CloudLogger::get()->exception($e);
         }
     }
@@ -176,7 +175,7 @@ class UpdateChecker {
             $data = json_decode($result, true, flags: JSON_THROW_ON_ERROR);
             $currentGitCommit = $data["git_commit"];
             $pharGitCommit = str_repeat("00", 20);
-            if (isset(($phar = new \Phar(SOFTWARE_PATH . "PocketMine-MP.phar"))->getMetadata()["git"])) $pharGitCommit = $phar->getMetadata()["git"];
+            if (isset(($phar = new Phar(SOFTWARE_PATH . "PocketMine-MP.phar"))->getMetadata()["git"])) $pharGitCommit = $phar->getMetadata()["git"];
 
             if ($currentGitCommit !== $pharGitCommit) {
                 if (Language::current() === Language::GERMAN()) {
@@ -197,7 +196,7 @@ class UpdateChecker {
             if ($downloadNewest) {
                 SoftwareManager::getInstance()->downloadSoftware(SoftwareManager::getInstance()->getSoftwareByName("PocketMine-MP"));
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             CloudLogger::get()->exception($e);
         }
     }

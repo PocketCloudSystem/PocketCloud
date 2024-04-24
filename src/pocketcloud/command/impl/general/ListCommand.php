@@ -22,13 +22,13 @@ class ListCommand extends Command {
             foreach (TemplateManager::getInstance()->getTemplates() as $template) {
                 $sender->info(
                     "§e" . $template->getName() .
-                    " §8- §risLobby: §a" . ($template->isLobby() ? "§a" . Language::current()->translate("raw.yes") : "§c" . Language::current()->translate("raw.no")) .
-                    " §8- §risMaintenance: §a" . ($template->isMaintenance() ? "§a" . Language::current()->translate("raw.yes") : "§c" . Language::current()->translate("raw.no")) .
-                    " §8- §risStatic: §a" . ($template->isStatic() ? "§a" . Language::current()->translate("raw.yes") : "§c" . Language::current()->translate("raw.no")) .
-                    " §8- §rMinServerCount: §e" . $template->getMinServerCount() .
-                    " §8- §rMaxServerCount: §e" . $template->getMaxServerCount() .
-                    " §8- §rStartNewWhenFull: §a" . ($template->isStartNewWhenFull() ? "§a" . Language::current()->translate("raw.yes") : "§c" . Language::current()->translate("raw.no")) .
-                    " §8- §risAutoStart: §a" . ($template->isAutoStart() ? "§a" . Language::current()->translate("raw.yes") : "§c" . Language::current()->translate("raw.no")) .
+                    " §8- §risLobby: §a" . ($template->getSettings()->isLobby() ? "§a" . Language::current()->translate("raw.yes") : "§c" . Language::current()->translate("raw.no")) .
+                    " §8- §risMaintenance: §a" . ($template->getSettings()->isMaintenance() ? "§a" . Language::current()->translate("raw.yes") : "§c" . Language::current()->translate("raw.no")) .
+                    " §8- §risStatic: §a" . ($template->getSettings()->isStatic() ? "§a" . Language::current()->translate("raw.yes") : "§c" . Language::current()->translate("raw.no")) .
+                    " §8- §rMinServerCount: §e" . $template->getSettings()->getMinServerCount() .
+                    " §8- §rMaxServerCount: §e" . $template->getSettings()->getMaxServerCount() .
+                    " §8- §rStartNewWhenFull: §a" . ($template->getSettings()->isStartNewWhenFull() ? "§a" . Language::current()->translate("raw.yes") : "§c" . Language::current()->translate("raw.no")) .
+                    " §8- §risAutoStart: §a" . ($template->getSettings()->isAutoStart() ? "§a" . Language::current()->translate("raw.yes") : "§c" . Language::current()->translate("raw.no")) .
                     " §8- §rType: §e" . ($template->getTemplateType() === TemplateType::SERVER() ? "§eSERVER" : "§cPROXY")
                 );
             }

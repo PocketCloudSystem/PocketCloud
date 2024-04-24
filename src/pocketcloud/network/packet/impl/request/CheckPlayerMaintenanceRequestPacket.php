@@ -2,7 +2,7 @@
 
 namespace pocketcloud\network\packet\impl\request;
 
-use pocketcloud\config\MaintenanceList;
+use pocketcloud\config\impl\MaintenanceList;
 use pocketcloud\network\client\ServerClient;
 use pocketcloud\network\packet\impl\response\CheckPlayerMaintenanceResponsePacket;
 use pocketcloud\network\packet\RequestPacket;

@@ -14,6 +14,7 @@ use pocketcloud\util\CloudLogger;
 use pocketcloud\util\Reloadable;
 use pocketcloud\util\SingletonTrait;
 use pocketcloud\util\Tickable;
+use Throwable;
 
 class CloudPluginManager implements Tickable, Reloadable {
     use SingletonTrait;
@@ -69,7 +70,7 @@ class CloudPluginManager implements Tickable, Reloadable {
                     $this->plugins[$plugin->getDescription()->getName()] = $plugin;
                     $plugin->onLoad();
                 }
-            } catch (\Throwable $exception) {
+            } catch (Throwable $exception) {
                 CloudLogger::get()->error(Language::current()->translate("plugin.loading.failed", basename($path), $exception->getMessage()));
                 CloudLogger::get()->exception($exception);
             }
@@ -95,7 +96,7 @@ class CloudPluginManager implements Tickable, Reloadable {
         (new PluginEnableEvent($plugin))->call();
         try {
             $plugin->onEnable();
-        } catch (\Throwable $throwable) {
+        } catch (Throwable $throwable) {
             CloudLogger::get()->exception($throwable);
             $this->disablePlugin($plugin);
         }

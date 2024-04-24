@@ -2,8 +2,8 @@
 
 namespace pocketcloud\thread;
 
+use Phar;
 use pocketcloud\console\log\Logger;
-use pocketcloud\library\LibraryManager;
 use pocketcloud\util\CloudLogger;
 use pocketcloud\util\ExceptionHandler;
 use pmmp\thread\Worker as NativeWorker;
@@ -43,7 +43,7 @@ abstract class Worker extends NativeWorker {
     }
 
     public function registerClassLoader(): void {
-        if (\Phar::running()) {
+        if (Phar::running()) {
             define("CLOUD_PATH", str_replace("phar://", "", dirname(__DIR__, 4) . DIRECTORY_SEPARATOR));
         } else {
             define("CLOUD_PATH", dirname(__DIR__, 3) . DIRECTORY_SEPARATOR);

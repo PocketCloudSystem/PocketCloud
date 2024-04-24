@@ -2,11 +2,12 @@
 
 namespace pocketcloud\scheduler;
 
-use pocketcloud\config\DefaultConfig;
-use pocketcloud\thread\Thread;
+use pmmp\thread\Thread;
+use pocketcloud\config\impl\DefaultConfig;
 use pocketcloud\util\SingletonTrait;
 use pocketcloud\util\Tickable;
 use pocketmine\snooze\SleeperHandler;
+use SplQueue;
 
 class AsyncPool implements Tickable {
     use SingletonTrait;
@@ -14,7 +15,7 @@ class AsyncPool implements Tickable {
     private int $size = 10;
     private SleeperHandler $eventLoop;
 
-    /** @var array<int, \SplQueue<AsyncTask>> */
+    /** @var array<int, SplQueue<AsyncTask>> */
     private array $taskQueues = [];
     /** @var array<AsyncWorker> */
     private array $workers = [];
@@ -45,7 +46,7 @@ class AsyncPool implements Tickable {
             $entry = $this->eventLoop->addNotifier(fn() => $this->collectTasksFromWorker($worker));
             $this->workers[$worker] = $asyncWorker = new AsyncWorker($worker, DefaultConfig::getInstance()->getMemoryLimit(), $entry);
             $asyncWorker->start(Thread::INHERIT_INI);
-            $this->taskQueues[$worker] = new \SplQueue();
+            $this->taskQueues[$worker] = new SplQueue();
         }
 
         return $this->workers[$worker];
@@ -119,7 +120,7 @@ class AsyncPool implements Tickable {
     }
 
     public function getTaskQueueSizes(): array {
-        return array_map(fn(\SplQueue $queue) => $queue->count(), $this->taskQueues);
+        return array_map(fn(SplQueue $queue) => $queue->count(), $this->taskQueues);
     }
 
     public function shutdownUnusedWorkers(): int {

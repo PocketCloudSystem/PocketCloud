@@ -2,11 +2,12 @@
 
 namespace pocketcloud\server\utils;
 
-use pocketcloud\config\DefaultConfig;
+use pocketcloud\config\impl\DefaultConfig;
+use pocketcloud\config\type\ConfigTypes;
 use pocketcloud\server\CloudServer;
 use pocketcloud\template\Template;
 use pocketcloud\template\TemplateType;
-use pocketcloud\util\Config;
+use pocketcloud\config\Config;
 use pocketcloud\util\Utils;
 
 class PropertiesMaker {
@@ -96,7 +97,7 @@ class PropertiesMaker {
     public static function makeProperties(Template $template): void {
         $fileName = ($template->getTemplateType() === TemplateType::SERVER() ? "server.properties" : "config.yml");
         if ($fileName == "server.properties") {
-            $config = new Config($template->getPath() . $fileName, Config::PROPERTIES);
+            $config = new Config($template->getPath() . $fileName, ConfigTypes::PROPERTIES());
             foreach (self::KEYS[$template->getTemplateType()->getName()] as $key => $value) $config->set($key, $value);
             $config->save();
         } else {
@@ -131,6 +132,6 @@ class PropertiesMaker {
     public static function getProperties(Template $template): Config {
         $fileName = ($template->getTemplateType() === TemplateType::SERVER() ? "server.properties" : "config.yml");
         if (!file_exists($template->getPath() . $fileName)) self::makeProperties($template);
-        return new Config($template->getPath() . $fileName, ($fileName == "server.properties" ? 0 : 2));
+        return new Config($template->getPath() . $fileName, ($fileName == "server.properties" ? ConfigTypes::PROPERTIES() : ConfigTypes::YAML()));
     }
 }

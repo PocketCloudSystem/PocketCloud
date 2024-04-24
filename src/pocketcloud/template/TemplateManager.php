@@ -2,7 +2,8 @@
 
 namespace pocketcloud\template;
 
-use pocketcloud\config\MaintenanceList;
+use pocketcloud\config\impl\MaintenanceList;
+use pocketcloud\config\type\ConfigTypes;
 use pocketcloud\event\impl\template\TemplateCreateEvent;
 use pocketcloud\event\impl\template\TemplateDeleteEvent;
 use pocketcloud\event\impl\template\TemplateEditEvent;
@@ -17,7 +18,7 @@ use pocketcloud\server\CloudServerManager;
 use pocketcloud\server\status\ServerStatus;
 use pocketcloud\server\utils\PropertiesMaker;
 use pocketcloud\util\CloudLogger;
-use pocketcloud\util\Config;
+use pocketcloud\config\Config;
 use pocketcloud\util\Reloadable;
 use pocketcloud\util\SingletonTrait;
 use pocketcloud\util\Tickable;
@@ -32,7 +33,7 @@ class TemplateManager implements Reloadable, Tickable {
 
     public function __construct() {
         self::setInstance($this);
-        $this->templatesConfig = new Config(TEMPLATES_PATH . "templates.json", 1);
+        $this->templatesConfig = new Config(TEMPLATES_PATH . "templates.json", ConfigTypes::JSON());
     }
 
     public function loadTemplates(): void {
@@ -86,14 +87,14 @@ class TemplateManager implements Reloadable, Tickable {
     public function editTemplate(Template $template, ?bool $lobby, ?bool $maintenance, ?bool $static, ?int $maxPlayerCount, ?int $minServerCount, ?int $maxServerCount, ?bool $startNewWhenFull, ?bool $autoStart): void {
         $startTime = microtime(true);
         CloudLogger::get()->info(Language::current()->translate("template.edit", $template->getName()));
-        $template->setLobby(($lobby === null ? $template->isLobby() : $lobby));
-        $template->setMaintenance(($maintenance === null ? $template->isMaintenance() : $maintenance));
-        $template->setStatic(($static === null ? $template->isStatic() : $static));
-        $template->setMaxPlayerCount(($maxPlayerCount === null ? $template->getMaxPlayerCount() : $maxPlayerCount));
-        $template->setMinServerCount(($minServerCount === null ? $template->getMinServerCount() : $minServerCount));
-        $template->setMaxServerCount(($maxServerCount === null ? $template->getMaxServerCount() : $maxServerCount));
-        $template->setStartNewWhenFull(($startNewWhenFull === null ? $template->isStartNewWhenFull() : $startNewWhenFull));
-        $template->setAutoStart(($autoStart === null ? $template->isAutoStart() : $autoStart));
+        $template->getSettings()->setLobby(($lobby === null ? $template->getSettings()->isLobby() : $lobby));
+        $template->getSettings()->setMaintenance(($maintenance === null ? $template->getSettings()->isMaintenance() : $maintenance));
+        $template->getSettings()->setStatic(($static === null ? $template->getSettings()->isStatic() : $static));
+        $template->getSettings()->setMaxPlayerCount(($maxPlayerCount === null ? $template->getSettings()->getMaxPlayerCount() : $maxPlayerCount));
+        $template->getSettings()->setMinServerCount(($minServerCount === null ? $template->getSettings()->getMinServerCount() : $minServerCount));
+        $template->getSettings()->setMaxServerCount(($maxServerCount === null ? $template->getSettings()->getMaxServerCount() : $maxServerCount));
+        $template->getSettings()->setStartNewWhenFull(($startNewWhenFull === null ? $template->getSettings()->isStartNewWhenFull() : $startNewWhenFull));
+        $template->getSettings()->setAutoStart(($autoStart === null ? $template->getSettings()->isAutoStart() : $autoStart));
 
         (new TemplateEditEvent($template, $lobby, $maintenance, $static, $maxPlayerCount, $minServerCount, $maxServerCount, $startNewWhenFull, $autoStart))->call();
 
@@ -115,7 +116,14 @@ class TemplateManager implements Reloadable, Tickable {
         $this->templatesConfig->reload();
         foreach ($this->templatesConfig->getAll() as $name => $templateData) {
             if (isset($this->templates[$templateData["name"] ?? $name])) {
-                $this->templates[$templateData["name"] ?? $name]->apply($templateData);
+                ($template = $this->templates[$templateData["name"]])->getSettings()->setLobby($templateData["lobby"]);
+                $template->getSettings()->setMaintenance($templateData["maintenance"]);
+                $template->getSettings()->setStatic($templateData["static"]);
+                $template->getSettings()->setMaxPlayerCount($templateData["maxPlayerCount"]);
+                $template->getSettings()->setMinServerCount($templateData["minServerCount"]);
+                $template->getSettings()->setMaxServerCount($templateData["maxServerCount"]);
+                $template->getSettings()->setStartNewWhenFull($templateData["startNewWhenFull"]);
+                $template->getSettings()->setAutoStart($templateData["autoStart"]);
             } else {
                 if (($template = Template::fromArray($templateData)) !== null) {
                     $this->createTemplate($template);
@@ -124,26 +132,26 @@ class TemplateManager implements Reloadable, Tickable {
         }
 
         foreach ($this->templates as $template) {
-            if (!$this->templatesConfig->exists($template->getName())) $this->deleteTemplate($template);
+            if (!$this->templatesConfig->has($template->getName())) $this->deleteTemplate($template);
         }
         return true;
     }
 
     public function checkTemplate(string $name): bool {
-        return $this->templatesConfig->exists($name);
+        return $this->templatesConfig->has($name);
     }
 
     public function tick(int $currentTick): void {
         if (PocketCloud::getInstance()->isReloading()) return;
         foreach (TemplateManager::getInstance()->getTemplates() as $template) {
-            if ($template->isAutoStart()) {
-                if (($running = count(CloudServerManager::getInstance()->getServersByTemplate($template))) < $template->getMaxServerCount()) {
-                    CloudServerManager::getInstance()->startServer($template, ($template->getMinServerCount() - $running));
+            if ($template->getSettings()->isAutoStart()) {
+                if (($running = count(CloudServerManager::getInstance()->getServersByTemplate($template))) < $template->getSettings()->getMaxServerCount()) {
+                    CloudServerManager::getInstance()->startServer($template, ($template->getSettings()->getMinServerCount() - $running));
                 }
             }
 
-            if ($template->isStartNewWhenFull()) {
-                if (($running = count(($servers = CloudServerManager::getInstance()->getServersByTemplate($template)))) < $template->getMaxServerCount()) {
+            if ($template->getSettings()->isStartNewWhenFull()) {
+                if (($running = count(($servers = CloudServerManager::getInstance()->getServersByTemplate($template)))) < $template->getSettings()->getMaxServerCount()) {
                     if ($running > 0) {
                         $full = count(array_filter($servers, fn(CloudServer $server) => $server->getServerStatus() === ServerStatus::IN_GAME() || $server->getServerStatus() === ServerStatus::FULL()));
                         if ($full == $running) {

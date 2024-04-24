@@ -6,7 +6,6 @@ use pocketcloud\http\io\Request;
 use pocketcloud\http\io\Response;
 use pocketcloud\http\util\Router;
 use pocketcloud\http\endpoint\EndPoint;
-use pocketcloud\server\CloudServer;
 use pocketcloud\server\CloudServerManager;
 use pocketcloud\template\TemplateManager;
 

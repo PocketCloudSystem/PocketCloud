@@ -8,6 +8,7 @@ use pocketcloud\http\util\Router;
 use pocketcloud\http\endpoint\EndPoint;
 use pocketcloud\template\Template;
 use pocketcloud\template\TemplateManager;
+use pocketcloud\template\TemplateSettings;
 use pocketcloud\template\TemplateType;
 
 class CloudTemplateCreateEndPoint extends EndPoint {
@@ -18,7 +19,7 @@ class CloudTemplateCreateEndPoint extends EndPoint {
 
     public function handleRequest(Request $request, Response $response): array {
         $name = $request->data()->queries()->get("name");
-        $type = $request->data()->queries()->has("type") ? (TemplateType::getTemplateTypeByName($request->data()->queries()->get("type")) ?? TemplateType::SERVER()) : TemplateType::SERVER();
+        $type = $request->data()->queries()->has("type") ? (TemplateType::get($request->data()->queries()->get("type")) ?? TemplateType::SERVER()) : TemplateType::SERVER();
         $lobby = $this->bool($request->data()->queries()->get("lobby"));
         $maintenance = $this->bool($request->data()->queries()->get("maintenance"));
         $static = $this->bool($request->data()->queries()->get("static"));
@@ -35,7 +36,7 @@ class CloudTemplateCreateEndPoint extends EndPoint {
             return ["error" => "The template already exists!"];
         }
 
-        TemplateManager::getInstance()->createTemplate(new Template($name, $lobby, $maintenance, $static, $maxPlayerCount, $minServerCount, $maxServerCount, $startNewWhenFull, $autoStart, $type));
+        TemplateManager::getInstance()->createTemplate(Template::create($name, TemplateSettings::create($lobby, $maintenance, $static, $maxPlayerCount, $minServerCount, $maxServerCount, $startNewWhenFull, $autoStart), $type));
         return ["success" => "The template was successfully created!"];
     }
 

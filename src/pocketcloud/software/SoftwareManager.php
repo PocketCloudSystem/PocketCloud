@@ -3,7 +3,7 @@
 namespace pocketcloud\software;
 
 use JetBrains\PhpStorm\Pure;
-use pocketcloud\config\DefaultConfig;
+use pocketcloud\config\impl\DefaultConfig;
 use pocketcloud\console\log\Logger;
 use pocketcloud\util\SingletonTrait;
 use pocketcloud\util\Utils;

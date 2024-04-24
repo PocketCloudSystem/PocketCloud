@@ -22,8 +22,8 @@ class CloudPlayer {
         private readonly string $host,
         private readonly string $xboxUserId,
         private readonly string $uniqueId,
-        private ?CloudServer $currentServer = null,
-        private ?CloudServer $currentProxy = null
+        private ?string $currentServer = null,
+        private ?string $currentProxy = null
     ) {}
 
     public function getName(): string {
@@ -43,20 +43,28 @@ class CloudPlayer {
     }
 
     public function getCurrentServer(): ?CloudServer {
-        return $this->currentServer;
+        return CloudServerManager::getInstance()->getServerByName($this->currentServer);
     }
 
     public function getCurrentProxy(): ?CloudServer {
+        return CloudServerManager::getInstance()->getServerByName($this->currentProxy);
+    }
+
+    public function getCurrentServerName(): string {
+        return $this->currentServer;
+    }
+
+    public function getCurrentProxyName(): string {
         return $this->currentProxy;
     }
 
     public function setCurrentServer(?CloudServer $currentServer): void {
-        $this->currentServer = $currentServer;
+        $this->currentServer = $currentServer?->getName();
         if (CloudPlayerManager::getInstance()->getPlayerByName($this->name) !== null) Network::getInstance()->broadcastPacket(new PlayerSyncPacket($this));
     }
 
     public function setCurrentProxy(?CloudServer $currentProxy): void {
-        $this->currentProxy = $currentProxy;
+        $this->currentProxy = $currentProxy?->getName();
     }
 
     public function send(string $message, TextType $textType): void {
@@ -105,15 +113,15 @@ class CloudPlayer {
         ];
     }
 
-    public static function fromArray(array $player): ?CloudPlayer {
+    public static function fromArray(array $player): ?self {
         if (!Utils::containKeys($player, "name", "host", "xboxUserId", "uniqueId")) return null;
         return new CloudPlayer(
             $player["name"],
             $player["host"],
             $player["xboxUserId"],
             $player["uniqueId"],
-            (!isset($player["currentServer"]) ? null : CloudServerManager::getInstance()->getServerByName($player["currentServer"])),
-            (!isset($player["currentProxy"]) ? null : CloudServerManager::getInstance()->getServerByName($player["currentProxy"]))
+            (!isset($player["currentServer"]) ? null : $player["currentServer"]),
+            (!isset($player["currentProxy"]) ? null : $player["currentProxy"])
         );
     }
 }

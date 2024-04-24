@@ -2,8 +2,9 @@
 
 namespace pocketcloud\network;
 
+use Exception;
 use pmmp\thread\ThreadSafeArray;
-use pocketcloud\config\DefaultConfig;
+use pocketcloud\config\impl\DefaultConfig;
 use pocketcloud\event\impl\network\NetworkBindEvent;
 use pocketcloud\event\impl\network\NetworkCloseEvent;
 use pocketcloud\event\impl\network\NetworkPacketReceiveEvent;
@@ -15,18 +16,19 @@ use pocketcloud\network\packet\CloudPacket;
 use pocketcloud\network\packet\handler\PacketSerializer;
 use pocketcloud\network\packet\UnhandledPacketObject;
 use pocketcloud\PocketCloud;
+use pocketcloud\thread\Thread;
 use pocketcloud\util\Address;
 use pocketcloud\util\CloudLogger;
 use pocketcloud\util\SingletonTrait;
-use pocketcloud\thread\Thread;
 use pocketmine\snooze\SleeperHandlerEntry;
+use Socket;
 
 class Network extends Thread {
     use SingletonTrait;
 
     private SleeperHandlerEntry $entry;
     private ThreadSafeArray $buffer;
-    private \Socket $socket;
+    private Socket $socket;
     private bool $connected = false;
 
     public function __construct(private Address $address) {
@@ -65,7 +67,7 @@ class Network extends Thread {
                             (new NetworkPacketReceiveEvent($packet, $client))->call();
                             $packet->handle($client);
                         } else CloudLogger::get()->warn(Language::current()->translate("network.receive.unknown", $client->getAddress()->__toString()))->debug(DefaultConfig::getInstance()->isNetworkEncryptionEnabled() ? base64_decode($buffer) : $buffer);
-                    } catch (\Exception $e) {
+                    } catch (Exception $e) {
                         CloudLogger::get()->error("§cFailed to decode a packet!");
                         CloudLogger::get()->debug($buffer);
                         CloudLogger::get()->exception($e);

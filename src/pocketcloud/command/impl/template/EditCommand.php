@@ -5,6 +5,7 @@ namespace pocketcloud\command\impl\template;
 use pocketcloud\command\Command;
 use pocketcloud\command\sender\ICommandSender;
 use pocketcloud\language\Language;
+use pocketcloud\template\TemplateHelper;
 use pocketcloud\template\TemplateManager;
 
 class EditCommand extends Command {
@@ -12,8 +13,8 @@ class EditCommand extends Command {
     public function execute(ICommandSender $sender, string $label, array $args): bool {
         if (isset($args[0]) && isset($args[1]) && isset($args[2])) {
             if (($template = TemplateManager::getInstance()->getTemplateByName($args[0])) !== null) {
-                if ($template::isValidEditKey($args[1])) {
-                    if ($template::isValidEditValue($args[2], $args[1], $expected, $realValue)) {
+                if (TemplateHelper::isValidEditKey($args[1])) {
+                    if (TemplateHelper::isValidEditValue($args[2], $args[1], $expected, $realValue)) {
                         TemplateManager::getInstance()->editTemplate(
                             $template,
                             ($args[1] == "lobby" ? $realValue : null),

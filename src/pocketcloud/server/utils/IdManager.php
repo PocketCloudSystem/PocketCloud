@@ -28,7 +28,7 @@ class IdManager {
 
     public static function getFreeId(Template $template): int {
         if (!isset(self::$ids[$template->getName()])) self::$ids[$template->getName()] = [];
-        for ($i = 1; $i < ($template->getMaxServerCount() + 1); $i++) {
+        for ($i = 1; $i < ($template->getSettings()->getMaxServerCount() + 1); $i++) {
             if (!in_array($i, self::$ids[$template->getName()])) return $i;
         }
         return -1;

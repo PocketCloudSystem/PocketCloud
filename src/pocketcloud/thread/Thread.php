@@ -2,6 +2,7 @@
 
 namespace pocketcloud\thread;
 
+use Phar;
 use pocketcloud\console\log\Logger;
 use pocketcloud\util\CloudLogger;
 use pocketcloud\util\ExceptionHandler;
@@ -33,7 +34,7 @@ abstract class Thread extends NativeThread {
     abstract public function onRun(): void;
 
     public function registerClassLoader(): void {
-        if (\Phar::running()) {
+        if (Phar::running()) {
             define("CLOUD_PATH", str_replace("phar://", "", dirname(__DIR__, 4) . DIRECTORY_SEPARATOR));
         } else {
             define("CLOUD_PATH", dirname(__DIR__, 3) . DIRECTORY_SEPARATOR);

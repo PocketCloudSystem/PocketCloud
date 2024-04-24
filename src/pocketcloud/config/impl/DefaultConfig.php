@@ -1,8 +1,9 @@
 <?php
 
-namespace pocketcloud\config;
+namespace pocketcloud\config\impl;
 
 use configlib\Configuration;
+use pocketcloud\util\ExceptionHandler;
 use pocketcloud\util\Reloadable;
 use pocketcloud\util\SingletonTrait;
 use pocketcloud\util\Utils;
@@ -39,6 +40,14 @@ class DefaultConfig extends Configuration implements Reloadable {
 
         $this->load();
         $this->save();
+    }
+
+    public function load(): bool {
+        return ExceptionHandler::tryCatch(fn() => parent::load()) ?? false;
+    }
+
+    public function save(): bool {
+        return ExceptionHandler::tryCatch(fn() => parent::save()) ?? false;
     }
 
     public function reload(): bool {

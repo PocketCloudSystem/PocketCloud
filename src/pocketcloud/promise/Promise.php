@@ -2,12 +2,14 @@
 
 namespace pocketcloud\promise;
 
+use Closure;
+
 class Promise {
 
     private bool $resolved = false;
     private mixed $result = null;
-    private ?\Closure $success = null;
-    private ?\Closure $failure = null;
+    private ?Closure $success = null;
+    private ?Closure $failure = null;
 
     public function resolve(mixed $result): void {
         if ($this->resolved) return;
@@ -24,7 +26,7 @@ class Promise {
         $this->failure = null;
     }
 
-    public function then(\Closure $closure): self {
+    public function then(Closure $closure): self {
         if ($this->resolved) {
             if ($this->result !== null) ($closure)($this->result);
         } else {
@@ -33,7 +35,7 @@ class Promise {
         return $this;
     }
 
-    public function failure(\Closure $closure): self {
+    public function failure(Closure $closure): self {
         if ($this->resolved) {
             if ($this->result === null) ($closure)();
         } else {

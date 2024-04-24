@@ -7,7 +7,6 @@ use pocketcloud\command\CommandManager;
 use pocketcloud\PocketCloud;
 use pocketcloud\setup\Setup;
 use pocketcloud\thread\Thread;
-use pocketcloud\util\Utils;
 use pocketmine\snooze\SleeperHandlerEntry;
 
 class Console extends Thread {

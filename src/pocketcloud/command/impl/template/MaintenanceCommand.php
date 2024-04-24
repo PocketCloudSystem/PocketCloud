@@ -4,7 +4,7 @@ namespace pocketcloud\command\impl\template;
 
 use pocketcloud\command\Command;
 use pocketcloud\command\sender\ICommandSender;
-use pocketcloud\config\MaintenanceList;
+use pocketcloud\config\impl\MaintenanceList;
 use pocketcloud\language\Language;
 
 class MaintenanceCommand extends Command {

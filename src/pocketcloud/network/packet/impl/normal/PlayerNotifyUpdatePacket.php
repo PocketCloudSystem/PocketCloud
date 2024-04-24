@@ -2,7 +2,7 @@
 
 namespace pocketcloud\network\packet\impl\normal;
 
-use pocketcloud\config\NotifyList;
+use pocketcloud\config\impl\NotifyList;
 use pocketcloud\network\client\ServerClient;
 use pocketcloud\network\packet\CloudPacket;
 use pocketcloud\network\packet\utils\PacketData;

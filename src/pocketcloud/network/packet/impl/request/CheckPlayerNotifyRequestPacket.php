@@ -2,11 +2,11 @@
 
 namespace pocketcloud\network\packet\impl\request;
 
-use pocketcloud\config\NotifyList;
+use pocketcloud\config\impl\NotifyList;
 use pocketcloud\network\client\ServerClient;
 use pocketcloud\network\packet\impl\response\CheckPlayerNotifyResponsePacket;
-use pocketcloud\network\packet\utils\PacketData;
 use pocketcloud\network\packet\RequestPacket;
+use pocketcloud\network\packet\utils\PacketData;
 
 class CheckPlayerNotifyRequestPacket extends RequestPacket {
 

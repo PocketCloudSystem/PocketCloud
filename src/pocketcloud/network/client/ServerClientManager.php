@@ -2,6 +2,7 @@
 
 namespace pocketcloud\network\client;
 
+use Closure;
 use JetBrains\PhpStorm\Pure;
 use pocketcloud\server\CloudServer;
 use pocketcloud\server\CloudServerManager;
@@ -35,7 +36,7 @@ class ServerClientManager {
         return in_array($client, $this->clients);
     }
 
-    public function pickClients(\Closure $conditionClosure): array {
+    public function pickClients(Closure $conditionClosure): array {
         return array_filter($this->clients, $conditionClosure);
     }
 

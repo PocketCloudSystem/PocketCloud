@@ -3,6 +3,8 @@
 namespace pocketcloud\util;
 
 use pocketcloud\language\Language;
+use ReflectionClass;
+use Throwable;
 
 class ReloadableList {
 
@@ -22,12 +24,12 @@ class ReloadableList {
         foreach (self::$list as $reloadable) {
             try {
                 if ($reloadable->reload()) {
-                    CloudLogger::get()->debug("Reloaded " . (new \ReflectionClass($reloadable))->getShortName());
+                    CloudLogger::get()->debug("Reloaded " . (new ReflectionClass($reloadable))->getShortName());
                 } else {
-                    CloudLogger::get()->error(Language::current()->translate("reload.failed", (new \ReflectionClass($reloadable))->getShortName()));
+                    CloudLogger::get()->error(Language::current()->translate("reload.failed", (new ReflectionClass($reloadable))->getShortName()));
                 }
-            } catch (\Throwable $exception) {
-                CloudLogger::get()->error(Language::current()->translate("reload.failed", (new \ReflectionClass($reloadable))->getShortName()));
+            } catch (Throwable $exception) {
+                CloudLogger::get()->error(Language::current()->translate("reload.failed", (new ReflectionClass($reloadable))->getShortName()));
                 CloudLogger::get()->exception($exception);
             }
         }

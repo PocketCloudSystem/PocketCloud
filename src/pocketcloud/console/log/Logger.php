@@ -6,6 +6,8 @@ use pocketcloud\console\log\color\CloudColor;
 use pocketcloud\console\log\level\CloudLogLevel;
 use pocketcloud\setup\Setup;
 use pocketcloud\util\Utils;
+use ReflectionClass;
+use Throwable;
 
 class Logger {
 
@@ -39,13 +41,13 @@ class Logger {
         return $this;
     }
 
-    public function exception(\Throwable $throwable): self {
+    public function exception(Throwable $throwable): self {
         $this->error("§cUnhandled §e%s§c: §e%s §cwas thrown in §e%s §cat line §e%s", $throwable::class, $throwable->getMessage(), Utils::cleanPath($throwable->getFile()), $throwable->getLine());
         $i = 1;
         foreach ($throwable->getTrace() as $trace) {
             $args = implode(", ", array_map(function(mixed $argument): string {
                 if (is_object($argument)) {
-                    return (new \ReflectionClass($argument))->getShortName();
+                    return (new ReflectionClass($argument))->getShortName();
                 } else if (is_array($argument)) {
                     return "array(" . count($argument) . ")";
                 }
@@ -64,7 +66,7 @@ class Logger {
 
     public function send(CloudLogLevel $logLevel, string $message, string ...$params): self {
         $format = CloudColor::YELLOW() . date("Y-m-d H:i:s") . CloudColor::DARK_GRAY() . " | " . CloudColor::RESET() . $logLevel->getPrefix() . CloudColor::DARK_GRAY() . " » " . CloudColor::RESET() . (empty($params) ? $message : sprintf($message, ...$params)) . CloudColor::RESET();
-        $line = CloudColor::toColoredString($format, true) . "\n";
+        $line = CloudColor::toColoredString($format) . "\n";
         if (Setup::getCurrentSetup() === null) echo $line;
         else if ($this->setupMode) echo $line;
         if ($this->saveMode) {

@@ -4,6 +4,8 @@ namespace pocketcloud\network\packet;
 
 use pocketcloud\network\client\ServerClient;
 use pocketcloud\network\packet\utils\PacketData;
+use ReflectionClass;
+use RuntimeException;
 
 abstract class CloudPacket  {
 
@@ -12,9 +14,9 @@ abstract class CloudPacket  {
     public function encode(PacketData $packetData): void {
         if (!$this->encoded) {
             $this->encoded = true;
-            $packetData->write((new \ReflectionClass($this))->getShortName());
+            $packetData->write((new ReflectionClass($this))->getShortName());
             $this->encodePayload($packetData);
-        } else throw new \RuntimeException("Packet: " . (new \ReflectionClass($this))->getShortName() . " is already encoded");
+        } else throw new RuntimeException("Packet: " . (new ReflectionClass($this))->getShortName() . " is already encoded");
     }
 
     public function decode(PacketData $packetData): void {

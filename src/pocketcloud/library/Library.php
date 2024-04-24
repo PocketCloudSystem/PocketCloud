@@ -3,6 +3,7 @@
 namespace pocketcloud\library;
 
 use pocketcloud\util\Utils;
+use ZipArchive;
 
 class Library {
 
@@ -20,7 +21,7 @@ class Library {
 
     public function download(): bool {
         if (!Utils::download($this->downloadUrl, $this->fileLocation)) return false;
-        $archive = new \ZipArchive();
+        $archive = new ZipArchive();
         if ($archive->open($this->fileLocation)) {
             if (!file_exists($this->unzipLocation)) mkdir($this->unzipLocation);
             $archive->extractTo($this->unzipLocation);
