@@ -35,7 +35,7 @@ class CloudServer {
 
     public function __construct(
         private readonly int $id,
-        private readonly Template $template,
+        private readonly string $template,
         private readonly CloudServerData $cloudServerData,
         private ServerStatus $serverStatus
     ) {
@@ -45,7 +45,7 @@ class CloudServer {
     }
 
     #[Pure] public function getName(): string {
-        return $this->template->getName() . "-" . $this->id;
+        return $this->template . "-" . $this->id;
     }
 
     public function getId(): int {
@@ -53,6 +53,10 @@ class CloudServer {
     }
 
     public function getTemplate(): Template {
+        return TemplateManager::getInstance()->getTemplateByName($this->template);
+    }
+
+    public function getTemplateName(): string {
         return $this->template;
     }
 
@@ -108,7 +112,7 @@ class CloudServer {
 
     /** @return array<CloudPlayer> */
     public function getCloudPlayers(): array {
-        return array_filter(CloudPlayerManager::getInstance()->getPlayers(), fn(CloudPlayer $player) => ($this->template->getTemplateType() === TemplateType::SERVER() ? $player->getCurrentServer() === $this : $player->getCurrentProxy() === $this));
+        return array_filter(CloudPlayerManager::getInstance()->getPlayers(), fn(CloudPlayer $player) => ($this->getTemplate()->getTemplateType() === TemplateType::SERVER() ? $player->getCurrentServer() === $this : $player->getCurrentProxy() === $this));
     }
 
     #[Pure] public function getPath(): string {
@@ -143,8 +147,8 @@ class CloudServer {
             if ($this->getTemplate()->getTemplateType() === TemplateType::PROXY() && $server->getTemplate()->getTemplateType() === TemplateType::SERVER()) $packets[] = new ProxyRegisterServerPacket($server->getName(), $server->getCloudServerData()->getPort());
         }
         foreach (CloudPlayerManager::getInstance()->getPlayers() as $player) $packets[] = new PlayerSyncPacket($player);
-        if ($this->template->getTemplateType() === TemplateType::SERVER()) $packets[] = new ModuleSyncPacket();
-        if ($this->template->getTemplateType() === TemplateType::SERVER()) $packets[] = new LibrarySyncPacket();
+        if ($this->getTemplate()->getTemplateType() === TemplateType::SERVER()) $packets[] = new ModuleSyncPacket();
+        if ($this->getTemplate()->getTemplateType() === TemplateType::SERVER()) $packets[] = new LibrarySyncPacket();
 
         foreach ($packets as $packet) $this->sendPacket($packet);
     }
@@ -153,7 +157,7 @@ class CloudServer {
         return [
             "name" => $this->getName(),
             "id" => $this->id,
-            "template" => $this->template->getName(),
+            "template" => $this->template,
             "port" => $this->getCloudServerData()->getPort(),
             "maxPlayers" => $this->getCloudServerData()->getMaxPlayers(),
             "processId" => $this->getCloudServerData()->getProcessId(),
@@ -161,7 +165,7 @@ class CloudServer {
         ];
     }
 
-    public static function fromArray(array $server): ?CloudServer {
+    public static function fromArray(array $server): ?self {
         if (!Utils::containKeys($server, "name", "id", "template", "port", "maxPlayers", "processId", "serverStatus")) return null;
         if (($template = TemplateManager::getInstance()->getTemplateByName($server["template"])) === null) return null;
         return new CloudServer(
