@@ -40,7 +40,7 @@ class ListCommand extends Command {
                     "§e" . $server->getName() .
                     " §8- §rPort: §e" . $server->getCloudServerData()->getPort() . " §8| §rIPv6: §e" . $server->getCloudServerData()->getPort()+1 .
                     " §8- §rTemplate: §e" . $server->getTemplate()->getName() .
-                    " §8- §rPlayers: §e" . count($server->getCloudPlayers()) . "§8/§e" . $server->getCloudServerData()->getMaxPlayers() .
+                    " §8- §rPlayers: §e" . count($server->getCloudPlayers()) . "§8/§e" . $server->getTemplate()->getSettings()->getMaxPlayerCount() . " §8(§e" . $server->getCloudServerData()->getMaxPlayers() . "§8)" .
                     " §8- §rStatus: §e" . $server->getServerStatus()->getDisplay()
                 );
             }
