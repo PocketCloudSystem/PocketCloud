@@ -6,9 +6,17 @@ class CloudServerData {
 
     public function __construct(
         private readonly int $port,
-        private readonly int $maxPlayers,
+        private int $maxPlayers,
         private ?int $processId = null
     ) {}
+
+    public function setMaxPlayers(int $maxPlayers): void {
+        $this->maxPlayers = $maxPlayers;
+    }
+
+    public function setProcessId(?int $processId): void {
+        $this->processId = $processId;
+    }
 
     public function getPort(): int {
         return $this->port;
@@ -20,9 +28,5 @@ class CloudServerData {
 
     public function getProcessId(): ?int {
         return $this->processId;
-    }
-
-    public function setProcessId(?int $processId): void {
-        $this->processId = $processId;
     }
 }
