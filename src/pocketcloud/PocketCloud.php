@@ -39,8 +39,6 @@ use pocketmine\snooze\SleeperHandler;
 
 class PocketCloud {
 
-    //what the sigma
-
     private static self $instance;
     private bool $running = true;
     private bool $reloading = false;
