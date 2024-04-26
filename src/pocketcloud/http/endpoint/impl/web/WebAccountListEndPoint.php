@@ -16,7 +16,7 @@ class WebAccountListEndPoint extends EndPoint {
     }
 
     public function handleRequest(Request $request, Response $response): array {
-        return array_map(fn(WebAccount $account) => $account->getName(), array_values(WebAccountManager::getInstance()->getAccounts()));
+        return array_map(fn(WebAccount $account) => $account->toArray(), array_values(WebAccountManager::getInstance()->getAccounts()));
     }
 
     public function isBadRequest(Request $request): bool {

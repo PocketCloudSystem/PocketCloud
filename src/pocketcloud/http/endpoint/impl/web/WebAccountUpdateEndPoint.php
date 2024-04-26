@@ -24,13 +24,13 @@ class WebAccountUpdateEndPoint extends EndPoint {
             return ["error" => "A web account with that name doesn't exists!"];
         }
 
-        if (!in_array($account, ["role", "password"])) {
+        if (!in_array($action, ["role", "password"])) {
             return ["error" => "Please provide a valid action! (role, password)"];
         }
 
         if ($action == "password") {
-            WebAccountManager::getInstance()->updateAccount($account, password_hash($value, PASSWORD_BCRYPT), null);
-        } else if ($account == "role") {
+            WebAccountManager::getInstance()->updateAccount($account, $value, null);
+        } else {
             if (($role = WebAccountRoles::from($value)) !== null) {
                 WebAccountManager::getInstance()->updateAccount($account, null, $role);
             } else return ["error" => "Please provide a valid role! (admin, default)"];
