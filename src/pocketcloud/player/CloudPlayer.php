@@ -43,18 +43,18 @@ class CloudPlayer {
     }
 
     public function getCurrentServer(): ?CloudServer {
-        return CloudServerManager::getInstance()->getServerByName($this->currentServer);
+        return $this->currentServer === null ? null : CloudServerManager::getInstance()->getServerByName($this->currentServer);
     }
 
     public function getCurrentProxy(): ?CloudServer {
-        return CloudServerManager::getInstance()->getServerByName($this->currentProxy);
+        return $this->currentProxy === null ? null : CloudServerManager::getInstance()->getServerByName($this->currentProxy);
     }
 
-    public function getCurrentServerName(): string {
+    public function getCurrentServerName(): ?string {
         return $this->currentServer;
     }
 
-    public function getCurrentProxyName(): string {
+    public function getCurrentProxyName(): ?string {
         return $this->currentProxy;
     }
 
@@ -108,8 +108,8 @@ class CloudPlayer {
             "host" => $this->host,
             "xboxUserId" => $this->xboxUserId,
             "uniqueId" => $this->uniqueId,
-            "currentServer" => $this->getCurrentServer()?->getName(),
-            "currentProxy" => $this->getCurrentProxy()?->getName()
+            "currentServer" => $this->getCurrentServerName(),
+            "currentProxy" => $this->getCurrentProxyName()
         ];
     }
 

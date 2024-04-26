@@ -59,6 +59,7 @@ abstract class Worker extends NativeWorker {
         define("CLOUD_PLUGINS_PATH", STORAGE_PATH . "plugins/cloud/");
         define("SOFTWARE_PATH", STORAGE_PATH . "software/");
         define("IN_GAME_PATH", STORAGE_PATH . "inGame/");
+        define("WEB_PATH", STORAGE_PATH . "web/");
         define("LOG_PATH", STORAGE_PATH . "cloud.log");
         define("TEMP_PATH", CLOUD_PATH . "tmp/");
         define("TEMPLATES_PATH", CLOUD_PATH . "templates/");

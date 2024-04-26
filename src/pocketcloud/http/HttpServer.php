@@ -25,8 +25,10 @@ use Throwable;
 
 class HttpServer extends Thread implements Reloadable {
 
-    private bool $connected = false;
     public const REQUEST_READ_LENGTH = 8192;
+
+    private bool $connected = false;
+
     protected ?Socket $socket = null;
     private ThreadSafeArray $buffer;
     private SleeperHandlerEntry $entry;
@@ -83,7 +85,9 @@ class HttpServer extends Thread implements Reloadable {
                     $client = $data->getClient();
                     $buf = $data->getBuffer();
                     try {
-                        $client->write($this->handleRequest($client->getAddress(), $buf));
+                        $write = true;
+                        if (DefaultConfig::getInstance()->isHttpServerOnlyLocal() && !$client->getAddress()->isLocalHost()) $write = false;
+                        if ($write) $client->write($this->handleRequest($client->getAddress(), $buf));
                         $client->close();
                     } catch (Throwable $exception) {
                         CloudLogger::get()->warn(Language::current()->translate("httpServer.request.invalid", $client->getAddress()->__toString()));

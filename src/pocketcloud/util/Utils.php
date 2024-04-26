@@ -69,6 +69,7 @@ class Utils {
         if (!file_exists(CLOUD_PLUGINS_PATH)) mkdir(CLOUD_PLUGINS_PATH);
         if (!file_exists(SOFTWARE_PATH)) mkdir(SOFTWARE_PATH);
         if (!file_exists(IN_GAME_PATH)) mkdir(IN_GAME_PATH);
+        if (!file_exists(WEB_PATH)) mkdir(WEB_PATH);
         if (!file_exists(LOG_PATH)) file_put_contents(LOG_PATH, "");
         if (!file_exists(TEMPLATES_PATH)) mkdir(TEMPLATES_PATH);
         if (!file_exists(TEMP_PATH)) mkdir(TEMP_PATH);

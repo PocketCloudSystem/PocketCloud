@@ -283,6 +283,7 @@ class CloudServerManager implements Tickable {
         return $this->servers[$name] ?? null;
     }
 
+    /** @return array<CloudServer> */
     public function getServersByTemplate(Template $template): array {
         return array_filter($this->servers, fn(CloudServer $server) => $server->getTemplate() === $template);
     }

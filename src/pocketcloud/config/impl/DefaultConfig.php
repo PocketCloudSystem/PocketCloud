@@ -3,6 +3,7 @@
 namespace pocketcloud\config\impl;
 
 use configlib\Configuration;
+use pocketcloud\util\CloudLogger;
 use pocketcloud\util\ExceptionHandler;
 use pocketcloud\util\Reloadable;
 use pocketcloud\util\SingletonTrait;
@@ -21,13 +22,21 @@ class DefaultConfig extends Configuration implements Reloadable {
     private string $startMethod = "tmux";
     private array $network = [
         "port" => 3656,
-        "encryption" => true
+        "encryption" => true,
+        "only-local" => true
     ];
+
     private array $httpServer = [
         "enabled" => true,
         "port" => 8000,
-        "auth-key" => "123"
+        "auth-key" => "123",
+        "only-local" => true
     ];
+
+    private array $web = [
+        "enabled" => false
+    ];
+
     private array $startCommands = [
         "server" => "%CLOUD_PATH%bin/php7/bin/php %SOFTWARE_PATH%PocketMine-MP.phar --no-wizard",
         "proxy" => "java -jar %SOFTWARE_PATH%Waterdog.jar"
@@ -38,16 +47,25 @@ class DefaultConfig extends Configuration implements Reloadable {
         parent::__construct(STORAGE_PATH . "config.json", self::TYPE_JSON);
         $this->httpServer["auth-key"] = ($this->generatedKey = Utils::generateString(10));
 
+        $defaultHttp = $this->httpServer;
+        $defaultNetwork = $this->network;
+        $defaultWeb = $this->web;
+
         $this->load();
+
+        foreach (array_keys($defaultHttp) as $key) {
+            if (!isset($this->httpServer[$key])) $this->httpServer[$key] = $defaultHttp[$key];
+        }
+
+        foreach (array_keys($defaultNetwork) as $key) {
+            if (!isset($this->network[$key])) $this->network[$key] = $defaultNetwork[$key];
+        }
+
+        foreach (array_keys($defaultWeb) as $key) {
+            if (!isset($this->web[$key])) $this->web[$key] = $defaultWeb[$key];
+        }
+
         $this->save();
-    }
-
-    public function load(): bool {
-        return ExceptionHandler::tryCatch(fn() => parent::load()) ?? false;
-    }
-
-    public function save(): bool {
-        return ExceptionHandler::tryCatch(fn() => parent::save()) ?? false;
     }
 
     public function reload(): bool {
@@ -57,8 +75,9 @@ class DefaultConfig extends Configuration implements Reloadable {
         $this->updateChecks = true;
         $this->executeUpdates = true;
         $this->startMethod = "tmux";
-        $this->network = ["port" => 3656, "encryption" => true];
-        $this->httpServer = ["enabled" => true, "port" => 8000, "auth-key" => $this->generatedKey];
+        $this->network = ["port" => 3656, "encryption" => true, "only-local" => true];
+        $this->httpServer = ["enabled" => true, "port" => 8000, "auth-key" => $this->generatedKey, "only-local" => true];
+        $this->web = ["enabled" => false];
         $this->startCommands = ["server" => "bin/php/bin/php %SOFTWARE_PATH%PocketMine-MP.phar", "proxy" => "java -jar %SOFTWARE_PATH%Waterdog.jar"];
         return $this->load();
     }
@@ -96,12 +115,24 @@ class DefaultConfig extends Configuration implements Reloadable {
         $this->network["encryption"] = $value;
     }
 
+    public function setNetworkOnlyLocal(bool $value): void {
+        $this->network["onlyLocal"] = $value;
+    }
+
     public function setHttpServerEnabled(bool $value): void {
         $this->httpServer["enabled"] = $value;
     }
 
     public function setHttpServerPort(int $value): void {
         $this->httpServer["port"] = $value;
+    }
+
+    public function setHttpServerOnlyLocal(bool $value): void {
+        $this->httpServer["onlyLocal"] = $value;
+    }
+
+    public function setWebEnabled(bool $value): void {
+        $this->web["enabled"] = $value;
     }
 
     public function getLanguage(): string {
@@ -136,6 +167,10 @@ class DefaultConfig extends Configuration implements Reloadable {
         return $this->network["encryption"];
     }
 
+    public function isNetworkOnlyLocal(): bool {
+        return $this->network["only-local"] ?? true;
+    }
+
     public function isHttpServerEnabled(): bool {
         return $this->httpServer["enabled"];
     }
@@ -146,6 +181,14 @@ class DefaultConfig extends Configuration implements Reloadable {
 
     public function getHttpServerAuthKey(): string {
         return $this->httpServer["auth-key"];
+    }
+
+    public function isHttpServerOnlyLocal(): bool {
+        return $this->httpServer["only-local"] ?? true;
+    }
+
+    public function isWebEnabled(): bool {
+        return $this->web["enabled"];
     }
 
     public function getStartCommand(string $software): string {

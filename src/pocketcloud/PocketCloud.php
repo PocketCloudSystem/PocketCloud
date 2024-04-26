@@ -35,6 +35,7 @@ use pocketcloud\util\ShutdownHandler;
 use pocketcloud\util\TickableList;
 use pocketcloud\util\Utils;
 use pocketcloud\util\VersionInfo;
+use pocketcloud\web\WebAccountManager;
 use pocketmine\snooze\SleeperHandler;
 
 class PocketCloud {
@@ -114,8 +115,10 @@ class PocketCloud {
 
         $this->network->init();
 
-        if (DefaultConfig::getInstance()->isHttpServerEnabled()) {
-            $this->httpServer->init();
+        if (DefaultConfig::getInstance()->isHttpServerEnabled()) $this->httpServer->init();
+        if (DefaultConfig::getInstance()->isWebEnabled()) {
+            ReloadableList::add(WebAccountManager::getInstance());
+            WebAccountManager::getInstance()->loadAccounts();
         }
 
         if (DefaultConfig::getInstance()->isUpdateChecks()) {
@@ -239,6 +242,7 @@ define("PROXY_PLUGINS_PATH", STORAGE_PATH . "plugins/proxy/");
 define("CLOUD_PLUGINS_PATH", STORAGE_PATH . "plugins/cloud/");
 define("SOFTWARE_PATH", STORAGE_PATH . "software/");
 define("IN_GAME_PATH", STORAGE_PATH . "inGame/");
+define("WEB_PATH", STORAGE_PATH . "web/");
 define("LOG_PATH", STORAGE_PATH . "cloud.log");
 define("TEMP_PATH", CLOUD_PATH . "tmp/");
 define("TEMPLATES_PATH", CLOUD_PATH . "templates/");

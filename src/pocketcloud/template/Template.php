@@ -2,6 +2,7 @@
 
 namespace pocketcloud\template;
 
+use pocketcloud\server\CloudServerManager;
 use pocketcloud\util\Utils;
 
 class Template {
@@ -29,11 +30,16 @@ class Template {
     }
 
     public function toArray(): array {
+        $playerCount = 0;
+        $serverCount = count(CloudServerManager::getInstance()->getServersByTemplate($this));
+        foreach (CloudServerManager::getInstance()->getServersByTemplate($this) as $server) $playerCount += $server->getCloudPlayerCount();
         return [
             "name" => $this->name,
             "lobby" => $this->templateSettings->isLobby(),
             "maintenance" => $this->templateSettings->isMaintenance(),
             "static" => $this->templateSettings->isStatic(),
+            "playerCount" => $playerCount,
+            "serverCount" => $serverCount,
             "maxPlayerCount" => $this->templateSettings->getMaxPlayerCount(),
             "minServerCount" => $this->templateSettings->getMinServerCount(),
             "maxServerCount" => $this->templateSettings->getMaxServerCount(),

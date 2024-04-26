@@ -115,6 +115,10 @@ class CloudServer {
         return array_filter(CloudPlayerManager::getInstance()->getPlayers(), fn(CloudPlayer $player) => ($this->getTemplate()->getTemplateType() === TemplateType::SERVER() ? $player->getCurrentServer() === $this : $player->getCurrentProxy() === $this));
     }
 
+    public function getCloudPlayerCount(): int {
+        return count($this->getCloudPlayers());
+    }
+
     #[Pure] public function getPath(): string {
         return TEMP_PATH . $this->getName() . "/";
     }
@@ -159,6 +163,7 @@ class CloudServer {
             "id" => $this->id,
             "template" => $this->template,
             "port" => $this->getCloudServerData()->getPort(),
+            "playerCount" => $this->getCloudPlayerCount(),
             "maxPlayers" => $this->getCloudServerData()->getMaxPlayers(),
             "processId" => $this->getCloudServerData()->getProcessId(),
             "serverStatus" => $this->getServerStatus()->getName()

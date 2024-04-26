@@ -18,6 +18,7 @@ use pocketcloud\command\impl\template\CreateCommand;
 use pocketcloud\command\impl\template\DeleteCommand;
 use pocketcloud\command\impl\template\EditCommand;
 use pocketcloud\command\impl\template\MaintenanceCommand;
+use pocketcloud\command\impl\web\WebAccountCommand;
 use pocketcloud\command\sender\ConsoleCommandSender;
 use pocketcloud\command\sender\ICommandSender;
 use pocketcloud\event\impl\command\CommandExecuteEvent;
@@ -54,6 +55,7 @@ class CommandManager implements Reloadable {
         $this->registerCommand(new ExecuteCommand("execute", "command.description.execute", "execute <server> <commandLine>", ["execute"]));
         $this->registerCommand(new KickCommand("kick", "command.description.kick", "kick <player> [reason]", []));
         $this->registerCommand(new ReloadCommand("reload", "command.description.reload", "reload", []));
+        $this->registerCommand(new WebAccountCommand("webaccount", "command.description.webaccount", "webaccount <create|remove|list|update>", ["webacc"]));
     }
 
     public function execute(string $line, ?ICommandSender $sender = null): void {

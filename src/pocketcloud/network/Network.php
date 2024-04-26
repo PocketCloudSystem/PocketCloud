@@ -61,7 +61,9 @@ class Network extends Thread {
                 $buffer = $object->getBuffer();
                 $address = new Address($object->getAddress(), $object->getPort());
                 $client = ServerClientManager::getInstance()->getClientByAddress($address) ?? new ServerClient($address);
-                if ($client->getAddress()->isLocalHost()) {
+                $continue = true;
+                if (DefaultConfig::getInstance()->isNetworkOnlyLocal() && !$address->isLocalHost()) $continue = false;
+                if ($continue) {
                     try {
                         if (($packet = PacketSerializer::decode($buffer)) !== null) {
                             (new NetworkPacketReceiveEvent($packet, $client))->call();
