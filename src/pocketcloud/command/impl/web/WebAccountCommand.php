@@ -27,7 +27,7 @@ class WebAccountCommand extends Command {
                 foreach ($accounts as $account) {
                     $sender->info(
                         "§e" . $account->getName() .
-                        " §8- §risInitializePassword: §c" . ($account->isInitialPassword() ? Language::current()->translate("raw.yes") : "§a" . Language::current()->translate("raw.no")) .
+                        " §8- §risInitialPassword: §c" . ($account->isInitialPassword() ? Language::current()->translate("raw.yes") : "§a" . Language::current()->translate("raw.no")) .
                         " §8- §rRole: §e" . ($account->getRole()->roleName() == "default" ? "Default" : "§cAdmin")
                     );
                 }
