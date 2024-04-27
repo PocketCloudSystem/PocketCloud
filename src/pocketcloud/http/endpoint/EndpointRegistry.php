@@ -3,6 +3,13 @@
 namespace pocketcloud\http\endpoint;
 
 use pocketcloud\http\endpoint\impl\cloud\CloudInfoEndPoint;
+use pocketcloud\http\endpoint\impl\maintenance\MaintenanceAddEndPoint;
+use pocketcloud\http\endpoint\impl\maintenance\MaintenanceGetEndPoint;
+use pocketcloud\http\endpoint\impl\maintenance\MaintenanceListEndPoint;
+use pocketcloud\http\endpoint\impl\maintenance\MaintenanceRemoveEndPoint;
+use pocketcloud\http\endpoint\impl\module\ModuleEditEndPoint;
+use pocketcloud\http\endpoint\impl\module\ModuleGetEndPoint;
+use pocketcloud\http\endpoint\impl\module\ModuleListEndPoint;
 use pocketcloud\http\endpoint\impl\player\CloudPlayerGetEndPoint;
 use pocketcloud\http\endpoint\impl\player\CloudPlayerKickEndPoint;
 use pocketcloud\http\endpoint\impl\player\CloudPlayerListEndPoint;
@@ -44,7 +51,9 @@ class EndpointRegistry {
             new CloudPlayerGetEndPoint(), new CloudPlayerTextEndPoint(), new CloudPlayerKickEndPoint(), new CloudPlayerListEndPoint(),
             new CloudPluginGetEndPoint(), new CloudPluginEnableEndPoint(), new CloudPluginDisableEndPoint(), new CloudPluginListEndPoint(),
             new CloudTemplateCreateEndPoint(), new CloudTemplateRemoveEndPoint(), new CloudTemplateGetEndPoint(), new CloudTemplateListEndPoint(), new CloudTemplateEditEndPoint(),
-            new CloudServerStartEndPoint(), new CloudServerStopEndPoint(), new CloudServerSaveEndPoint(), new CloudServerExecuteEndPoint(), new CloudServerGetEndPoint(), new CloudServerListEndPoint()
+            new CloudServerStartEndPoint(), new CloudServerStopEndPoint(), new CloudServerSaveEndPoint(), new CloudServerExecuteEndPoint(), new CloudServerGetEndPoint(), new CloudServerListEndPoint(),
+            new ModuleGetEndPoint(), new ModuleListEndPoint(), new ModuleEditEndPoint(),
+            new MaintenanceAddEndPoint(), new MaintenanceRemoveEndPoint(), new MaintenanceGetEndPoint(), new MaintenanceListEndPoint()
         ];
 
         foreach ($endPoints as $endPoint) {

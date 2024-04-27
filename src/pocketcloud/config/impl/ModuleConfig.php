@@ -21,20 +21,28 @@ class ModuleConfig extends Configuration implements Reloadable {
         if (!$this->load()) $this->save();
     }
 
-    public function load(): bool {
-        return ExceptionHandler::tryCatch(fn() => parent::load()) ?? false;
-    }
-
-    public function save(): bool {
-        return ExceptionHandler::tryCatch(fn() => parent::save()) ?? false;
-    }
-
     public function reload(): bool {
         $this->signModule = true;
         $this->npcModule = true;
         $this->globalChatModule = false;
         $this->hubCommandModule = true;
         return $this->load();
+    }
+
+    public function setSignModule(bool $signModule): void {
+        $this->signModule = $signModule;
+    }
+
+    public function setNpcModule(bool $npcModule): void {
+        $this->npcModule = $npcModule;
+    }
+
+    public function setGlobalChatModule(bool $globalChatModule): void {
+        $this->globalChatModule = $globalChatModule;
+    }
+
+    public function setHubCommandModule(bool $hubCommandModule): void {
+        $this->hubCommandModule = $hubCommandModule;
     }
 
     public function isSignModule(): bool {
