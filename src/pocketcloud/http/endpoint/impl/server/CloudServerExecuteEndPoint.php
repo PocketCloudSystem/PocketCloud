@@ -24,9 +24,10 @@ class CloudServerExecuteEndPoint extends EndPoint {
             return ["error" => "The server doesn't exists!"];
         }
 
-        if (CloudServerManager::getInstance()->sendCommand($server, $command, true, new ConsoleCommandSender())) {
+        if (CloudServerManager::getInstance()->sendCommand($server, $command)) {
             return ["success" => "The command was successfully sent to the server!"];
         }
+
         return ["error" => "The command can't be send to the server!"];
     }
 

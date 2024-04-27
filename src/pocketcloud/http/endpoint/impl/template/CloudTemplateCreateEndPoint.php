@@ -20,9 +20,9 @@ class CloudTemplateCreateEndPoint extends EndPoint {
     public function handleRequest(Request $request, Response $response): array {
         $name = $request->data()->queries()->get("name");
         $type = $request->data()->queries()->has("type") ? (TemplateType::get($request->data()->queries()->get("type")) ?? TemplateType::SERVER()) : TemplateType::SERVER();
-        $lobby = $this->bool($request->data()->queries()->get("lobby"));
-        $maintenance = $this->bool($request->data()->queries()->get("maintenance"));
-        $static = $this->bool($request->data()->queries()->get("static"));
+        $lobby = $this->bool($request->data()->queries()->get("lobby", "no"));
+        $maintenance = $this->bool($request->data()->queries()->get("maintenance", "yes"));
+        $static = $this->bool($request->data()->queries()->get("static", "no"));
         $maxPlayerCount = ($request->data()->queries()->has("maxPlayerCount") ? intval($request->data()->queries()->get("maxPlayerCount")) : 20);
         $minServerCount = ($request->data()->queries()->has("minServerCount") ? intval($request->data()->queries()->get("minServerCount")) : 0);
         $maxServerCount = ($request->data()->queries()->has("maxServerCount") ? intval($request->data()->queries()->get("maxServerCount")) : 2);
