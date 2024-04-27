@@ -118,8 +118,8 @@ class HttpServer extends Thread implements Reloadable {
     public function close(): void {
         if (!$this->connected) return;
         $this->connected = false;
-        socket_shutdown($this->socket);
-        socket_close($this->socket);
+        @socket_shutdown($this->socket);
+        @socket_close($this->socket);
     }
 
     public function reload(): bool {

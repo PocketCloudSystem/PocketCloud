@@ -24,12 +24,12 @@ class SocketClient extends ThreadSafe {
     }
 
     public function write(string $buffer): bool {
-        return (socket_write($this->socket, $buffer) === strlen($buffer));
+        return (@socket_write($this->socket, $buffer) === strlen($buffer));
     }
 
     public function close(): void {
-        socket_shutdown($this->socket);
-        socket_close($this->socket);
+        @socket_shutdown($this->socket);
+        @socket_close($this->socket);
     }
 
     public function getAddress(): Address {
