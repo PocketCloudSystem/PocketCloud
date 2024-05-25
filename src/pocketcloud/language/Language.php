@@ -72,7 +72,6 @@ final class Language {
                     CloudLogger::get()->info("Incomplete language file found: %s, completed the file with the missing lang keys.", $this->filePath);
                     file_put_contents($this->filePath, yaml_emit($this->messages, YAML_UTF8_ENCODING));
                 }
-
             } catch (Throwable $exception) {
                 $this->messages = $defaultMessages;
                 CloudLogger::get()->exception($exception);

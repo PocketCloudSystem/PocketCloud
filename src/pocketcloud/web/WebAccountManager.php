@@ -39,6 +39,7 @@ class WebAccountManager implements Reloadable {
 
     public function createAccount(WebAccount $account): void {
         if (!DefaultConfig::getInstance()->isWebEnabled()) return;
+        $this->accounts[$account->getName()] = $account;
         $this->accountsConfig->set($account->getName(), $account->toArray());
         $this->accountsConfig->save();
     }
