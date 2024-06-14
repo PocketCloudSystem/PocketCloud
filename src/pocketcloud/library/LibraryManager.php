@@ -3,6 +3,7 @@
 namespace pocketcloud\library;
 
 use pocketcloud\console\log\Logger;
+use pocketcloud\PocketCloud;
 use pocketcloud\util\SingletonTrait;
 use pocketcloud\util\Utils;
 use Throwable;
@@ -20,9 +21,11 @@ class LibraryManager {
             "https://github.com/pmmp/Snooze/archive/refs/heads/master.zip",
             LIBRARY_PATH . "snooze.zip",
             LIBRARY_PATH . "snooze/",
+            "pocketmine\\snooze\\",
+            LIBRARY_PATH . "snooze/pocketmine/snooze/",
             ["composer.json", "README.md"],
             LIBRARY_PATH . "snooze/Snooze-master/src/",
-            LIBRARY_PATH . "snooze/",
+            LIBRARY_PATH . "snooze/pocketmine/snooze/",
             LIBRARY_PATH . "snooze/Snooze-master/"
         ));
 
@@ -31,6 +34,8 @@ class LibraryManager {
             "https://github.com/r3pt1s/configlib/archive/refs/heads/main.zip",
             LIBRARY_PATH . "configlib.zip",
             LIBRARY_PATH . "config/",
+            "configlib\\",
+            LIBRARY_PATH . "config/configlib/",
             ["README.md"],
             LIBRARY_PATH . "config/configlib-main/src/",
             LIBRARY_PATH . "config/",
@@ -42,6 +47,8 @@ class LibraryManager {
             "https://github.com/dktapps-pm-pl/pmforms/archive/refs/heads/master.zip",
             LIBRARY_PATH . "pmforms.zip",
             LIBRARY_PATH . "pmforms/",
+            null,
+            null,
             ["README.md", "virion.yml", ".github/"],
             LIBRARY_PATH . "pmforms/pmforms-master/src/",
             LIBRARY_PATH . "pmforms/",
@@ -67,7 +74,7 @@ class LibraryManager {
                 }
             }
 
-            if (!$library->isCloudBridgeOnly()) Utils::requireDirectory($library->getUnzipLocation());
+            if ($library->canBeLoaded()) PocketCloud::getInstance()->getClassLoader()->addPath($library->getClassLoadFolder(), $library->getClassLoadPath());
         }
     }
 

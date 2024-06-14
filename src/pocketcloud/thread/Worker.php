@@ -4,6 +4,8 @@ namespace pocketcloud\thread;
 
 use Phar;
 use pocketcloud\console\log\Logger;
+use pocketcloud\PocketCloud;
+use pocketcloud\util\ClassLoader;
 use pocketcloud\util\CloudLogger;
 use pocketcloud\util\ExceptionHandler;
 use pmmp\thread\Worker as NativeWorker;
@@ -11,8 +13,10 @@ use pmmp\thread\Worker as NativeWorker;
 abstract class Worker extends NativeWorker {
 
     private bool $running = false;
+    private ?ClassLoader $classLoader = null;
 
     public function start(int $options = self::INHERIT_NONE): bool {
+        $this->setClassLoader(PocketCloud::getInstance()->getClassLoader());
         $this->running = true;
         ThreadManager::getInstance()->add($this);
         return parent::start($options);
@@ -43,7 +47,9 @@ abstract class Worker extends NativeWorker {
     }
 
     public function registerClassLoader(): void {
-        if (Phar::running()) {
+        define("IS_PHAR", Phar::running() !== "");
+
+        if (IS_PHAR) {
             define("CLOUD_PATH", str_replace("phar://", "", dirname(__DIR__, 4) . DIRECTORY_SEPARATOR));
         } else {
             define("CLOUD_PATH", dirname(__DIR__, 3) . DIRECTORY_SEPARATOR);
@@ -65,13 +71,11 @@ abstract class Worker extends NativeWorker {
         define("TEMPLATES_PATH", CLOUD_PATH . "templates/");
         define("FIRST_RUN", !file_exists(STORAGE_PATH));
 
-        spl_autoload_register(function (string $class): void {
-            if (str_starts_with($class, "pocketcloud\\")) {
-                if (!class_exists($class)) require str_replace("\\", DIRECTORY_SEPARATOR, __DIR__ . DIRECTORY_SEPARATOR . ".." . DIRECTORY_SEPARATOR . substr($class, strlen("pocketcloud\\"), strlen($class))) . ".php";
-            } else if (str_starts_with($class, "pocketmine\\snooze\\")) {
-                if (!class_exists($class)) require LIBRARY_PATH . "snooze/" . substr($class, strlen("pocketmine\\snooze\\"), strlen($class)) . ".php";
-            }
-        });
+        if ($this->classLoader !== null) $this->classLoader->init();
+    }
+
+    public function setClassLoader(ClassLoader $classLoader): void {
+        $this->classLoader = $classLoader;
     }
 
     public function isRunning(): bool {

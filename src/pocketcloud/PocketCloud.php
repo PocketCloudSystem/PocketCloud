@@ -28,6 +28,7 @@ use pocketcloud\template\TemplateManager;
 use pocketcloud\thread\ThreadManager;
 use pocketcloud\update\UpdateChecker;
 use pocketcloud\util\Address;
+use pocketcloud\util\ClassLoader;
 use pocketcloud\util\CloudLogger;
 use pocketcloud\util\ExceptionHandler;
 use pocketcloud\util\ReloadableList;
@@ -49,7 +50,7 @@ class PocketCloud {
     private Network $network;
     private HttpServer $httpServer;
 
-    public function __construct() {
+    public function __construct(private readonly ClassLoader $classLoader) {
         self::$instance = $this;
 
         ExceptionHandler::set();
@@ -190,6 +191,10 @@ class PocketCloud {
         }
     }
 
+    public function getClassLoader(): ClassLoader {
+        return $this->classLoader;
+    }
+
     public function getHttpServer(): HttpServer {
         return $this->httpServer;
     }
@@ -223,11 +228,14 @@ class PocketCloud {
     }
 }
 
+require_once "util/ClassLoader.php";
 require_once "PocketCloud.php";
 
+define("IS_PHAR", Phar::running() !== "");
 define("SOURCE_PATH", __DIR__ . "/");
 
-if (Phar::running()) {
+
+if (IS_PHAR) {
     define("CLOUD_PATH", str_replace("phar://", "", dirname(__DIR__, 3) . DIRECTORY_SEPARATOR));
 } else {
     define("CLOUD_PATH", dirname(__DIR__, 2) . DIRECTORY_SEPARATOR);
@@ -248,10 +256,7 @@ define("TEMP_PATH", CLOUD_PATH . "tmp/");
 define("TEMPLATES_PATH", CLOUD_PATH . "templates/");
 define("FIRST_RUN", !file_exists(STORAGE_PATH . "config.json"));
 
-spl_autoload_register(function($class) {
-    if (str_starts_with($class, "pocketcloud\\")) $file = __DIR__ . DIRECTORY_SEPARATOR . str_replace(["\\", "\\\\", "/", "//"], DIRECTORY_SEPARATOR, str_replace("pocketcloud\\", "", $class)) . ".php";
-    else $file = __DIR__ . str_replace(["\\", "\\\\", "/", "//"], DIRECTORY_SEPARATOR, $class) . ".php";
-    if (!class_exists($class) and file_exists($file)) require_once $file;
-});
+$classLoader = new ClassLoader();
+$classLoader->init();
 
-new PocketCloud();
+new PocketCloud($classLoader);

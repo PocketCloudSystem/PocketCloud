@@ -100,11 +100,18 @@ class Utils {
         }
     }
 
+    public static function createDir(string $path): bool {
+        if (is_dir($path)) return true;
+        $previousPath = substr($path, 0, strrpos($path, DIRECTORY_SEPARATOR, -2) + 1);
+        $return = self::createDir($previousPath);
+        return $return && is_writable($previousPath) && mkdir($path);
+    }
+
     public static function copyDir(string $src, string $dst): void {
         $src = rtrim($src, DIRECTORY_SEPARATOR);
         $dst = rtrim($dst, DIRECTORY_SEPARATOR);
-        if (!file_exists($src)) mkdir($src);
-        if (!file_exists($dst)) mkdir($dst);
+        self::createDir($src);
+        self::createDir($dst);
 
         foreach (array_diff(scandir($src), [".", ".."]) as $file) {
             try {

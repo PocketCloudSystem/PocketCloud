@@ -12,6 +12,8 @@ class Library {
         private readonly string $downloadUrl,
         private readonly string $fileLocation,
         private readonly string $unzipLocation,
+        private readonly ?string $classLoadFolder,
+        private readonly ?string $classLoadPath,
         private readonly array $excludedFiles = [],
         private readonly string $copySource = "",
         private readonly string $copyDestination = "",
@@ -44,7 +46,9 @@ class Library {
 
     public function exists(): bool {
         $exists = false;
-        if (file_exists($this->unzipLocation)) $exists = count(array_diff(scandir($this->unzipLocation), [".", ".."])) > 0;
+        if (@file_exists($this->unzipLocation)) $exists = count(array_diff(scandir($this->unzipLocation), [".", ".."])) > 0;
+        if (@file_exists($this->copyDestination)) $exists = count(array_diff(scandir($this->copyDestination), [".", ".."])) > 0;
+        else $exists = false;
         return $exists;
     }
 
@@ -64,6 +68,14 @@ class Library {
         return $this->unzipLocation;
     }
 
+    public function getClassLoadFolder(): ?string {
+        return $this->classLoadFolder;
+    }
+
+    public function getClassLoadPath(): ?string {
+        return $this->classLoadPath;
+    }
+
     public function getExcludedFiles(): array {
         return $this->excludedFiles;
     }
@@ -76,7 +88,15 @@ class Library {
         return $this->copyDestination;
     }
 
+    public function getDeletionDir(): ?string {
+        return $this->deletionDir;
+    }
+
     public function isCloudBridgeOnly(): bool {
         return $this->cloudBridgeOnly;
+    }
+
+    public function canBeLoaded(): bool {
+        return !$this->cloudBridgeOnly && ($this->classLoadFolder !== null && $this->classLoadPath !== null);
     }
 }
