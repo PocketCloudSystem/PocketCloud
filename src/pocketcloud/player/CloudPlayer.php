@@ -13,6 +13,7 @@ use pocketcloud\network\packet\impl\types\TextType;
 use pocketcloud\server\CloudServer;
 use pocketcloud\server\CloudServerManager;
 use pocketcloud\template\TemplateType;
+use pocketcloud\util\ActionResult;
 use pocketcloud\util\Utils;
 
 class CloudPlayer {
@@ -67,39 +68,40 @@ class CloudPlayer {
         $this->currentProxy = $currentProxy?->getName();
     }
 
-    public function send(string $message, TextType $textType): void {
-        Network::getInstance()->broadcastPacket(new PlayerTextPacket($this->getName(), $message, $textType), ...ServerClientManager::getInstance()->pickClients(fn(ServerClient $client) => $client->getServer() !== null && $client->getServer()->getTemplate()->getTemplateType() === TemplateType::PROXY()));
+    public function send(string $message, TextType $textType): ActionResult {
+        return Network::getInstance()->broadcastPacket(new PlayerTextPacket($this->getName(), $message, $textType), ...ServerClientManager::getInstance()->pickClients(fn(ServerClient $client) => $client->getServer() !== null && $client->getServer()->getTemplate()->getTemplateType() === TemplateType::PROXY()))->isEveryActionSuccessful() ?
+            ActionResult::success() : ActionResult::failure();
     }
 
-    public function sendMessage(string $message): void {
-        $this->send($message, TextType::MESSAGE());
+    public function sendMessage(string $message): ActionResult {
+        return $this->send($message, TextType::MESSAGE());
     }
 
-    public function sendPopup(string $message): void {
-        $this->send($message, TextType::POPUP());
+    public function sendPopup(string $message): ActionResult {
+        return $this->send($message, TextType::POPUP());
     }
 
-    public function sendTip(string $message): void {
-        $this->send($message, TextType::TIP());
+    public function sendTip(string $message): ActionResult {
+        return $this->send($message, TextType::TIP());
     }
 
-    public function sendTitle(string $message): void {
-        $this->send($message, TextType::TITLE());
+    public function sendTitle(string $message): ActionResult {
+        return $this->send($message, TextType::TITLE());
     }
 
-    public function sendActionBarMessage(string $message): void {
-        $this->send($message, TextType::ACTION_BAR());
+    public function sendActionBarMessage(string $message): ActionResult {
+        return $this->send($message, TextType::ACTION_BAR());
     }
 
-    public function sendToastNotification(string $title, string $body): void {
-        $this->send($title . "\n" .  $body, TextType::TOAST_NOTIFICATION());
+    public function sendToastNotification(string $title, string $body): ActionResult {
+        return $this->send($title . "\n" .  $body, TextType::TOAST_NOTIFICATION());
     }
 
-    public function kick(string $reason = ""): void {
+    public function kick(string $reason = ""): ActionResult {
         ($ev = new PlayerKickEvent($this, $reason))->call();
-        if ($ev->isCancelled()) return;
-        if ($this->getCurrentProxy() === null) $this->getCurrentServer()?->sendPacket(new PlayerKickPacket($this->getName(), $reason));
-        else $this->getCurrentProxy()->sendPacket(new PlayerKickPacket($this->getName(), $reason));
+        if ($ev->isCancelled()) return ActionResult::failure("Event cancelled");
+        if ($this->getCurrentProxy() === null) return $this->getCurrentServer()?->sendPacket(new PlayerKickPacket($this->getName(), $reason));
+        return $this->getCurrentProxy()->sendPacket(new PlayerKickPacket($this->getName(), $reason));
     }
 
     public function toArray(): array {

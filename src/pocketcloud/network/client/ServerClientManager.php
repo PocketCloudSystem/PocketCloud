@@ -20,9 +20,7 @@ class ServerClientManager {
     }
 
     public function addClient(CloudServer $server, ServerClient $client): void {
-        if (!$this->issetClient($client)) {
-            $this->clients[$server->getName()] = $client;
-        }
+        if (!$this->issetClient($client)) $this->clients[$server->getName()] = $client;
     }
 
     public function removeClient(ServerClient|CloudServer $client): void {

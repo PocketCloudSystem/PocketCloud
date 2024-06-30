@@ -5,13 +5,14 @@ namespace pocketcloud\network\client;
 use pocketcloud\network\Network;
 use pocketcloud\network\packet\CloudPacket;
 use pocketcloud\server\CloudServer;
+use pocketcloud\util\ActionResult;
 use pocketcloud\util\Address;
 
 class ServerClient {
 
     public function __construct(private readonly Address $address) {}
 
-    public function sendPacket(CloudPacket $packet): bool {
+    public function sendPacket(CloudPacket $packet): ActionResult {
         return Network::getInstance()->sendPacket($packet, $this);
     }
 

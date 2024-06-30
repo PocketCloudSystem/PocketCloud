@@ -31,7 +31,9 @@ use pocketcloud\server\utils\PortManager;
 use pocketcloud\server\utils\PropertiesMaker;
 use pocketcloud\template\Template;
 use pocketcloud\template\TemplateType;
+use pocketcloud\util\ActionResult;
 use pocketcloud\util\CloudLogger;
+use pocketcloud\util\MultipleActionsResult;
 use pocketcloud\util\SingletonTrait;
 use pocketcloud\util\Tickable;
 use pocketcloud\util\Utils;
@@ -46,10 +48,11 @@ class CloudServerManager implements Tickable {
         self::setInstance($this);
     }
 
-    public function startServer(Template $template, int $count = 1): ?array {
-        $servers = [];
+    public function startServer(Template $template, int $count = 1): MultipleActionsResult|ActionResult {
+        $actionsResult = new MultipleActionsResult();
         if (count($this->getServersByTemplate($template)) >= $template->getSettings()->getMaxServerCount()) {
             CloudLogger::get()->info(Language::current()->translate("server.max.reached", $template->getName()));
+            return ActionResult::failure();
         } else {
             for ($i = 0; $i < $count; $i++) {
                 if (count($this->getServersByTemplate($template)) >= $template->getSettings()->getMaxServerCount()) break;
@@ -57,42 +60,19 @@ class CloudServerManager implements Tickable {
                 if ($id !== -1) {
                     $port = ($template->getTemplateType() === TemplateType::SERVER() ? PortManager::getFreePort() : PortManager::getFreeProxyPort());
                     if ($port !== 0) {
-                        $servers[] = $server = new CloudServer($id, $template->getName(), new CloudServerData($port, $template->getSettings()->getMaxPlayerCount(), 0), ServerStatus::STARTING());
-
-                        if (file_exists($server->getPath()) && !$template->getSettings()->isStatic()) Utils::deleteDir($server->getPath());
-                        Utils::copyDir($template->getPath(), $server->getPath());
-
-                        if ($template->getTemplateType() === TemplateType::SERVER()) Utils::copyDir(SERVER_PLUGINS_PATH, $server->getPath() . "plugins/");
-                        else Utils::copyDir(PROXY_PLUGINS_PATH, $server->getPath() . "plugins/");
-
-                        PropertiesMaker::copyProperties($server);
-
-                        $this->addServer($server);
-
-                        (new ServerStartEvent($server))->call();
-                        CloudLogger::get()->info(Language::current()->translate("server.starting", $server->getName()));
-                        NotifyType::STARTING()->notify(["%server%" => $server->getName()]);
-                        Utils::executeWithStartCommand($server->getPath(), $server->getName(), $template->getTemplateType()->getSoftware()->getStartCommand());
+                        $server = new CloudServer($id, $template->getName(), new CloudServerData($port, $template->getSettings()->getMaxPlayerCount(), 0), ServerStatus::STARTING());
+                        $server->prepare();
+                        $actionsResult->addResult($server->getName(), $server->getStartActionResult());
                     }
                 }
             }
-            return $servers;
+            return $actionsResult;
         }
-        return null;
     }
 
-    public function stopServer(CloudServer $server, bool $force = false): void {
-        (new ServerStopEvent($server, $force))->call();
-        CloudLogger::get()->info(Language::current()->translate("server.stopping", $server->getName()));
-        NotifyType::STOPPING()->notify(["%server%" => $server->getName()]);
-        $server->setServerStatus(ServerStatus::STOPPING());
-        $server->setStopTime(time());
-        if ($force) {
-            if ($server->getCloudServerData()->getProcessId() !== 0) Utils::kill($server->getCloudServerData()->getProcessId());
-            if (!$server->getTemplate()->getSettings()->isStatic()) Utils::deleteDir($server->getPath());
-        } else {
-            $server->sendPacket(new DisconnectPacket(DisconnectReason::SERVER_SHUTDOWN()));
-        }
+    public function stopServer(CloudServer|string $server, bool $force = false): void {
+        $server = $server instanceof CloudServer ? $server : $this->getServerByName($server);
+        if ($server !== null) $server->stop($force);
     }
 
     public function stopTemplate(Template $template, bool $force = false): void {
@@ -108,21 +88,24 @@ class CloudServerManager implements Tickable {
         foreach ($this->getServers() as $server) $this->stopServer($server, $force);
     }
 
-    public function saveServer(CloudServer $server): void {
+    public function saveServer(CloudServer $server): ActionResult {
         $ev = new ServerSaveEvent($server);
         $ev->call();
 
         if ($ev->isCancelled()) {
             CloudLogger::get()->info(Language::current()->translate("server.saving.failed", $server->getName()));
-            return;
+            return ActionResult::failure();
         }
 
+        $actionResult = ActionResult::waiting();
         CloudLogger::get()->info(Language::current()->translate("server.saving", $server->getName()));
         $startTime = microtime(true);
-        $this->sendCommand($server, "save-all")->then(function() use($startTime, $server): void {
+        $this->sendCommand($server, "save-all")->then(function() use($startTime, $server, $actionResult): void {
             $this->instantSave($server);
             CloudLogger::get()->info(Language::current()->translate("server.saved", $server->getName(), number_format(microtime(true) - $startTime, 3)));
-        });
+            $actionResult->markAsSuccess();
+        })->failure(fn() => $actionResult->markAsFailure());
+        return $actionResult;
     }
 
     public function instantSave(CloudServer $server): void {
@@ -208,11 +191,13 @@ class CloudServerManager implements Tickable {
                     ServerClientManager::getInstance()->removeClient($server);
                     if (CrashChecker::checkCrashed($server, $crashData)) {
                         CloudLogger::get()->info(Language::current()->translate("server.starting.failed.crashed", $server->getName()));
+                        $server->getStartActionResult()?->markAsFailure(CloudServer::ACTION_RESULT_FAILURE_REASON_CRASHED);
                         $this->printServerStackTrace($server->getName(), $crashData);
                         (new ServerCrashEvent($server, $crashData))->call();
                         CrashChecker::writeCrashFile($server, $crashData);
                     } else {
                         CloudLogger::get()->info(Language::current()->translate("server.starting.failed", $server->getName()));
+                        $server->getStartActionResult()?->markAsFailure();
                         if ($server->getTemplate()->getTemplateType() === TemplateType::PROXY()) Utils::copyFile($server->getPath() . "logs/server.log", $server->getTemplate()->getPath() . "logs/server.log");
                         else Utils::copyFile($server->getPath() . "server.log", $server->getTemplate()->getPath() . "server.log");
                     }
@@ -227,11 +212,13 @@ class CloudServerManager implements Tickable {
                     ServerClientManager::getInstance()->removeClient($server);
                     if (CrashChecker::checkCrashed($server, $crashData)) {
                         CloudLogger::get()->info(Language::current()->translate("server.crashed", $server->getName()));
+                        $server->getStopActionResult()?->markAsFailure(CloudServer::ACTION_RESULT_FAILURE_REASON_CRASHED);
                         $this->printServerStackTrace($server->getName(), $crashData);
                         (new ServerCrashEvent($server, $crashData))->call();
                         CrashChecker::writeCrashFile($server, $crashData);
                         NotifyType::CRASHED()->notify(["%server%" => $server->getName()]);
                     } else {
+                        $server->getStopActionResult()?->markAsFailure(CloudServer::ACTION_RESULT_FAILURE_REASON_TIMED);
                         CloudLogger::get()->info(Language::current()->translate("server.timed", $server->getName()));
                         NotifyType::TIMED()->notify(["%server%" => $server->getName()]);
                         if ($server->getTemplate()->getTemplateType() === TemplateType::PROXY()) Utils::copyFile($server->getPath() . "logs/server.log", $server->getTemplate()->getPath() . "logs/server.log");

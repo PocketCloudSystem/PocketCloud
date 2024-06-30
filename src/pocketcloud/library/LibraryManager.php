@@ -5,7 +5,6 @@ namespace pocketcloud\library;
 use pocketcloud\console\log\Logger;
 use pocketcloud\PocketCloud;
 use pocketcloud\util\SingletonTrait;
-use pocketcloud\util\Utils;
 use Throwable;
 
 class LibraryManager {

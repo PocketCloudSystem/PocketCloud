@@ -40,6 +40,7 @@ class LoginRequestPacket extends RequestPacket {
         if (($server = CloudServerManager::getInstance()->getServerByName($this->serverName)) !== null) {
             ServerClientManager::getInstance()->addClient($server, $client);
             CloudLogger::get()->info(Language::current()->translate("server.started", $server->getName()));
+            $server->getStartActionResult()->markAsSuccess();
             $server->getCloudServerData()->setMaxPlayers($this->maxPlayers);
             $server->getCloudServerData()->setProcessId($this->processId);
             $server->setVerifyStatus(VerifyStatus::VERIFIED());
