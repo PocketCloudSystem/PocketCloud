@@ -8,6 +8,7 @@ use pocketcloud\network\packet\impl\normal\CommandSendPacket;
 use pocketcloud\network\packet\impl\normal\ConsoleTextPacket;
 use pocketcloud\network\packet\impl\normal\LibrarySyncPacket;
 use pocketcloud\network\packet\impl\normal\ModuleSyncPacket;
+use pocketcloud\network\packet\impl\normal\PlayerTransferPacket;
 use pocketcloud\util\Utils;
 use pocketcloud\network\packet\CloudPacket;
 use pocketcloud\network\packet\impl\normal\CloudServerSavePacket;
@@ -65,6 +66,7 @@ class PacketPool {
         $this->registerPacket(TemplateSyncPacket::class);
         $this->registerPacket(ServerSyncPacket::class);
         $this->registerPacket(PlayerSyncPacket::class);
+        $this->registerPacket(PlayerTransferPacket::class);
         $this->registerPacket(CloudServerStartRequestPacket::class);
         $this->registerPacket(CloudServerStartResponsePacket::class);
         $this->registerPacket(CloudServerStopRequestPacket::class);
