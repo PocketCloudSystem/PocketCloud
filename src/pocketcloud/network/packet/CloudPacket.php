@@ -12,11 +12,10 @@ abstract class CloudPacket  {
     private bool $encoded = false;
 
     public function encode(PacketData $packetData): void {
-        if (!$this->encoded) {
-            $this->encoded = true;
-            $packetData->write((new ReflectionClass($this))->getShortName());
-            $this->encodePayload($packetData);
-        } else throw new RuntimeException("Packet: " . (new ReflectionClass($this))->getShortName() . " is already encoded");
+        if ($this->encoded) throw new RuntimeException("Packet: " . (new ReflectionClass($this))->getShortName() . " is already encoded");
+        $this->encoded = true;
+        $packetData->write((new ReflectionClass($this))->getShortName());
+        $this->encodePayload($packetData);
     }
 
     public function decode(PacketData $packetData): void {

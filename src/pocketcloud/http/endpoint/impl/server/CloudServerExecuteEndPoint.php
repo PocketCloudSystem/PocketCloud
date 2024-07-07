@@ -2,7 +2,6 @@
 
 namespace pocketcloud\http\endpoint\impl\server;
 
-use pocketcloud\command\sender\ConsoleCommandSender;
 use pocketcloud\http\io\Request;
 use pocketcloud\http\io\Response;
 use pocketcloud\http\util\Router;

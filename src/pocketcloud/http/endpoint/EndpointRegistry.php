@@ -29,16 +29,10 @@ use pocketcloud\http\endpoint\impl\template\CloudTemplateEditEndPoint;
 use pocketcloud\http\endpoint\impl\template\CloudTemplateGetEndPoint;
 use pocketcloud\http\endpoint\impl\template\CloudTemplateListEndPoint;
 use pocketcloud\http\endpoint\impl\template\CloudTemplateRemoveEndPoint;
-use pocketcloud\http\endpoint\impl\web\WebAccountCreateEndPoint;
-use pocketcloud\http\endpoint\impl\web\WebAccountGetEndPoint;
-use pocketcloud\http\endpoint\impl\web\WebAccountListEndPoint;
-use pocketcloud\http\endpoint\impl\web\WebAccountRemoveEndPoint;
-use pocketcloud\http\endpoint\impl\web\WebAccountUpdateEndPoint;
 use pocketcloud\http\io\Request;
 use pocketcloud\http\io\Response;
 use pocketcloud\http\util\Router;
 use pocketcloud\language\Language;
-use pocketcloud\util\ActionResult;
 use pocketcloud\util\CloudLogger;
 
 class EndpointRegistry {
@@ -62,7 +56,7 @@ class EndpointRegistry {
         }
     }
 
-    public static function addEndPoint(EndPoint $endPoint): ActionResult {
+    public static function addEndPoint(EndPoint $endPoint): void {
         if (in_array(strtoupper($endPoint->getRequestMethod()), Request::SUPPORTED_REQUEST_METHODS)) {
             self::$endPoints[$endPoint->getPath()] = $endPoint;
             Router::getInstance()->{strtolower($endPoint->getRequestMethod())}($endPoint->getPath(), function(Request $request, Response $response) use ($endPoint): void {
@@ -80,17 +74,11 @@ class EndpointRegistry {
 
                 $response->body($endPoint->handleRequest($request, $response));
             });
-            return ActionResult::success();
         } else CloudLogger::get()->error(Language::current()->translate("httpServer.endPoint.add.failed", $endPoint->getPath(), implode("§8, §e", Request::SUPPORTED_REQUEST_METHODS)));
-        return ActionResult::failure();
     }
 
-    public static function removeEndPoint(EndPoint $endPoint): ActionResult {
-        if (isset(self::$endPoints[$endPoint->getPath()])) {
-            unset(self::$endPoints[$endPoint->getPath()]);
-            return ActionResult::success();
-        }
-        return ActionResult::failure();
+    public static function removeEndPoint(EndPoint $endPoint): void {
+        if (isset(self::$endPoints[$endPoint->getPath()])) unset(self::$endPoints[$endPoint->getPath()]);
     }
 
     public static function getEndPoint(string $path): ?EndPoint {

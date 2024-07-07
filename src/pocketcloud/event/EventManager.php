@@ -4,7 +4,6 @@ namespace pocketcloud\event;
 
 use Closure;
 use pocketcloud\plugin\CloudPlugin;
-use pocketcloud\util\ActionResult;
 use pocketcloud\util\SingletonTrait;
 use ReflectionClass;
 
@@ -17,36 +16,22 @@ class EventManager {
         self::setInstance($this);
     }
 
-    public function registerEvent(string $eventClass, Closure $closure, CloudPlugin $plugin): ActionResult {
-        if (is_subclass_of($eventClass, Event::class)) {
-            $this->handlers[$plugin->getDescription()->getFullName()][$eventClass][] = $closure;
-            return ActionResult::success();
-        }
-        return ActionResult::failure();
+    public function registerEvent(string $eventClass, Closure $closure, CloudPlugin $plugin): void {
+        if (is_subclass_of($eventClass, Event::class)) $this->handlers[$plugin->getDescription()->getFullName()][$eventClass][] = $closure;
     }
 
-    public function registerListener(Listener $listener, CloudPlugin $plugin): ActionResult {
+    public function registerListener(Listener $listener, CloudPlugin $plugin): void {
         $reflection = new ReflectionClass($listener);
-        $i = 0;
         foreach ($reflection->getMethods() as $method) {
             if (!$method->isAbstract() && !$method->isStatic() && $method->isPublic() && $method->getNumberOfParameters() == 1) {
                 $event = $method->getParameters()[0]->getType()->getName();
-                if (is_subclass_of($event, Event::class)) {
-                    $i++;
-                    $this->handlers[$plugin->getDescription()->getFullName()][$event][] = $method->getClosure($listener);
-                }
+                if (is_subclass_of($event, Event::class)) $this->handlers[$plugin->getDescription()->getFullName()][$event][] = $method->getClosure($listener);
             }
         }
-
-        return $i > 0 ? ActionResult::success() : ActionResult::failure();
     }
 
-    public function removeHandlers(CloudPlugin $plugin): ActionResult {
-        if (isset($this->handlers[$plugin->getDescription()->getFullName()])) {
-            unset($this->handlers[$plugin->getDescription()->getFullName()]);
-            return ActionResult::success();
-        }
-        return ActionResult::failure();
+    public function removeHandlers(CloudPlugin $plugin): void {
+        if (isset($this->handlers[$plugin->getDescription()->getFullName()])) unset($this->handlers[$plugin->getDescription()->getFullName()]);
     }
 
     public function removeAll(): void {

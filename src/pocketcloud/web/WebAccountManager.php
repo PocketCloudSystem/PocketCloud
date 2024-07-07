@@ -67,13 +67,12 @@ class WebAccountManager implements Reloadable {
     }
 
     public function reload(): bool {
+        $this->accounts = [];
         if (DefaultConfig::getInstance()->isWebEnabled()) {
-            $this->accounts = [];
             $this->accountsConfig->reload();
             $this->loadAccounts();
             foreach ([new WebAccountCreateEndPoint(), new WebAccountRemoveEndPoint(), new WebAccountGetEndPoint(), new WebAccountUpdateEndPoint(), new WebAccountListEndPoint()] as $endPoint) EndpointRegistry::addEndPoint($endPoint);
         } else {
-            $this->accounts = [];
             unset($this->accountsConfig);
             foreach ([new WebAccountCreateEndPoint(), new WebAccountRemoveEndPoint(), new WebAccountGetEndPoint(), new WebAccountUpdateEndPoint(), new WebAccountListEndPoint()] as $endPoint) EndpointRegistry::removeEndPoint($endPoint);
         }

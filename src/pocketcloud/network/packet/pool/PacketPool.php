@@ -8,7 +8,6 @@ use pocketcloud\network\packet\impl\normal\CommandSendPacket;
 use pocketcloud\network\packet\impl\normal\ConsoleTextPacket;
 use pocketcloud\network\packet\impl\normal\LibrarySyncPacket;
 use pocketcloud\network\packet\impl\normal\ModuleSyncPacket;
-use pocketcloud\util\ActionResult;
 use pocketcloud\util\Utils;
 use pocketcloud\network\packet\CloudPacket;
 use pocketcloud\network\packet\impl\normal\CloudServerSavePacket;
@@ -79,10 +78,9 @@ class PacketPool {
         $this->registerPacket(LibrarySyncPacket::class);
     }
 
-    public function registerPacket(string $packetClass): ActionResult {
-        if (!is_subclass_of($packetClass, CloudPacket::class)) return ActionResult::failure();
+    public function registerPacket(string $packetClass): void {
+        if (!is_subclass_of($packetClass, CloudPacket::class)) return;
         $this->packets[Utils::cleanPath($packetClass, true)] = $packetClass;
-        return ActionResult::success();
     }
 
     public function getPacketById(string $pid): ?CloudPacket {

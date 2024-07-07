@@ -63,7 +63,7 @@ abstract class Thread extends NativeThread {
         define("TEMPLATES_PATH", CLOUD_PATH . "templates/");
         define("FIRST_RUN", !file_exists(STORAGE_PATH));
 
-        if ($this->classLoader !== null) $this->classLoader->init();
+        $this->classLoader?->init();
     }
 
     public function setClassLoader(ClassLoader $classLoader): void {

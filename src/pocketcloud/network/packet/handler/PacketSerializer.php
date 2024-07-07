@@ -14,8 +14,8 @@ use ReflectionClass;
 class PacketSerializer {
 
     public static function encode(CloudPacket $packet): string {
-        $packet->encode($buffer = new PacketData());
         try {
+            $packet->encode($buffer = new PacketData());
             return DefaultConfig::getInstance()->isNetworkEncryptionEnabled() ? base64_encode(json_encode($buffer, JSON_THROW_ON_ERROR)) : json_encode($buffer, JSON_THROW_ON_ERROR);
         } catch (Exception $exception) {
             CloudLogger::get()->error("§cFailed to encode packet: §e" . (new ReflectionClass($packet))->getShortName());

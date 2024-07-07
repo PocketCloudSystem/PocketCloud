@@ -7,19 +7,15 @@ use pocketcloud\event\impl\server\ServerCantStartEvent;
 use pocketcloud\event\impl\server\ServerCrashEvent;
 use pocketcloud\event\impl\server\ServerSaveEvent;
 use pocketcloud\event\impl\server\ServerSendCommandEvent;
-use pocketcloud\event\impl\server\ServerStartEvent;
-use pocketcloud\event\impl\server\ServerStopEvent;
 use pocketcloud\event\impl\server\ServerTimeOutEvent;
 use pocketcloud\language\Language;
 use pocketcloud\network\client\ServerClientManager;
 use pocketcloud\network\Network;
 use pocketcloud\network\packet\impl\normal\CommandSendPacket;
-use pocketcloud\network\packet\impl\normal\DisconnectPacket;
 use pocketcloud\network\packet\impl\normal\ProxyRegisterServerPacket;
 use pocketcloud\network\packet\impl\normal\ProxyUnregisterServerPacket;
 use pocketcloud\network\packet\impl\normal\ServerSyncPacket;
 use pocketcloud\network\packet\impl\types\CommandExecutionResult;
-use pocketcloud\network\packet\impl\types\DisconnectReason;
 use pocketcloud\network\packet\impl\types\NotifyType;
 use pocketcloud\PocketCloud;
 use pocketcloud\promise\Promise;
@@ -31,9 +27,7 @@ use pocketcloud\server\utils\PortManager;
 use pocketcloud\server\utils\PropertiesMaker;
 use pocketcloud\template\Template;
 use pocketcloud\template\TemplateType;
-use pocketcloud\util\ActionResult;
 use pocketcloud\util\CloudLogger;
-use pocketcloud\util\MultipleActionsResult;
 use pocketcloud\util\SingletonTrait;
 use pocketcloud\util\Tickable;
 use pocketcloud\util\Utils;
@@ -48,11 +42,11 @@ class CloudServerManager implements Tickable {
         self::setInstance($this);
     }
 
-    public function startServer(Template $template, int $count = 1): MultipleActionsResult|ActionResult {
-        $actionsResult = new MultipleActionsResult();
+    public function startServer(Template $template, int $count = 1): ?array {
+        $startedServers = [];
         if (count($this->getServersByTemplate($template)) >= $template->getSettings()->getMaxServerCount()) {
             CloudLogger::get()->info(Language::current()->translate("server.max.reached", $template->getName()));
-            return ActionResult::failure();
+            return null;
         } else {
             for ($i = 0; $i < $count; $i++) {
                 if (count($this->getServersByTemplate($template)) >= $template->getSettings()->getMaxServerCount()) break;
@@ -62,17 +56,18 @@ class CloudServerManager implements Tickable {
                     if ($port !== 0) {
                         $server = new CloudServer($id, $template->getName(), new CloudServerData($port, $template->getSettings()->getMaxPlayerCount(), 0), ServerStatus::STARTING());
                         $server->prepare();
-                        $actionsResult->addResult($server->getName(), $server->getStartActionResult());
+                        $server->start();
+                        $startedServers[] = $server->getName();
                     }
                 }
             }
-            return $actionsResult;
         }
+        return $startedServers;
     }
 
     public function stopServer(CloudServer|string $server, bool $force = false): void {
         $server = $server instanceof CloudServer ? $server : $this->getServerByName($server);
-        if ($server !== null) $server->stop($force);
+        $server?->stop($force);
     }
 
     public function stopTemplate(Template $template, bool $force = false): void {
@@ -88,24 +83,21 @@ class CloudServerManager implements Tickable {
         foreach ($this->getServers() as $server) $this->stopServer($server, $force);
     }
 
-    public function saveServer(CloudServer $server): ActionResult {
+    public function saveServer(CloudServer $server): void {
         $ev = new ServerSaveEvent($server);
         $ev->call();
 
         if ($ev->isCancelled()) {
             CloudLogger::get()->info(Language::current()->translate("server.saving.failed", $server->getName()));
-            return ActionResult::failure();
+            return;
         }
 
-        $actionResult = ActionResult::waiting();
         CloudLogger::get()->info(Language::current()->translate("server.saving", $server->getName()));
         $startTime = microtime(true);
-        $this->sendCommand($server, "save-all")->then(function() use($startTime, $server, $actionResult): void {
+        $this->sendCommand($server, "save-all")->then(function() use($startTime, $server): void {
             $this->instantSave($server);
             CloudLogger::get()->info(Language::current()->translate("server.saved", $server->getName(), number_format(microtime(true) - $startTime, 3)));
-            $actionResult->markAsSuccess();
-        })->failure(fn() => $actionResult->markAsFailure());
-        return $actionResult;
+        });
     }
 
     public function instantSave(CloudServer $server): void {
@@ -191,13 +183,11 @@ class CloudServerManager implements Tickable {
                     ServerClientManager::getInstance()->removeClient($server);
                     if (CrashChecker::checkCrashed($server, $crashData)) {
                         CloudLogger::get()->info(Language::current()->translate("server.starting.failed.crashed", $server->getName()));
-                        $server->getStartActionResult()?->markAsFailure(CloudServer::ACTION_RESULT_FAILURE_REASON_CRASHED);
                         $this->printServerStackTrace($server->getName(), $crashData);
                         (new ServerCrashEvent($server, $crashData))->call();
                         CrashChecker::writeCrashFile($server, $crashData);
                     } else {
                         CloudLogger::get()->info(Language::current()->translate("server.starting.failed", $server->getName()));
-                        $server->getStartActionResult()?->markAsFailure();
                         if ($server->getTemplate()->getTemplateType() === TemplateType::PROXY()) Utils::copyFile($server->getPath() . "logs/server.log", $server->getTemplate()->getPath() . "logs/server.log");
                         else Utils::copyFile($server->getPath() . "server.log", $server->getTemplate()->getPath() . "server.log");
                     }
@@ -212,13 +202,11 @@ class CloudServerManager implements Tickable {
                     ServerClientManager::getInstance()->removeClient($server);
                     if (CrashChecker::checkCrashed($server, $crashData)) {
                         CloudLogger::get()->info(Language::current()->translate("server.crashed", $server->getName()));
-                        $server->getStopActionResult()?->markAsFailure(CloudServer::ACTION_RESULT_FAILURE_REASON_CRASHED);
                         $this->printServerStackTrace($server->getName(), $crashData);
                         (new ServerCrashEvent($server, $crashData))->call();
                         CrashChecker::writeCrashFile($server, $crashData);
                         NotifyType::CRASHED()->notify(["%server%" => $server->getName()]);
                     } else {
-                        $server->getStopActionResult()?->markAsFailure(CloudServer::ACTION_RESULT_FAILURE_REASON_TIMED);
                         CloudLogger::get()->info(Language::current()->translate("server.timed", $server->getName()));
                         NotifyType::TIMED()->notify(["%server%" => $server->getName()]);
                         if ($server->getTemplate()->getTemplateType() === TemplateType::PROXY()) Utils::copyFile($server->getPath() . "logs/server.log", $server->getTemplate()->getPath() . "logs/server.log");

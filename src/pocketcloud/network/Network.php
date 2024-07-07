@@ -17,10 +17,8 @@ use pocketcloud\network\packet\handler\PacketSerializer;
 use pocketcloud\network\packet\UnhandledPacketObject;
 use pocketcloud\PocketCloud;
 use pocketcloud\thread\Thread;
-use pocketcloud\util\ActionResult;
 use pocketcloud\util\Address;
 use pocketcloud\util\CloudLogger;
-use pocketcloud\util\MultipleActionsResult;
 use pocketcloud\util\SingletonTrait;
 use pocketmine\snooze\SleeperHandlerEntry;
 use Socket;
@@ -112,23 +110,19 @@ class Network extends Thread {
         }
     }
 
-    public function sendPacket(CloudPacket $packet, ServerClient $client): ActionResult {
+    public function sendPacket(CloudPacket $packet, ServerClient $client): bool {
         $buffer = PacketSerializer::encode($packet);
         $success = $this->write($buffer, $client->getAddress());
         (new NetworkPacketSendEvent($packet, $client, $success))->call();
-        return $success ? ActionResult::success() : ActionResult::failure();
+        return $success;
     }
 
-    public function broadcastPacket(CloudPacket $packet, ServerClient... $excluded): MultipleActionsResult {
-        $actionsResult = new MultipleActionsResult();
+    public function broadcastPacket(CloudPacket $packet, ServerClient... $excluded): void {
         foreach (ServerClientManager::getInstance()->getClients() as $client) {
             if (!in_array($client, $excluded)) {
-                $actionsResult->addResult($client->getServer()?->getName() ?? $client->getAddress(), (
-                    $this->sendPacket($packet, $client)->wasSuccessful() ? ActionResult::success() : ActionResult::failure()
-                ));
+                $this->sendPacket(clone $packet, $client);
             }
         }
-        return $actionsResult;
     }
 
     public function isConnected(): bool {

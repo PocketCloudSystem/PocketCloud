@@ -45,7 +45,6 @@ class Library {
     }
 
     public function exists(): bool {
-        if (@file_exists($this->unzipLocation)) $exists = count(array_diff(scandir($this->unzipLocation), [".", ".."])) > 0;
         if (@file_exists($this->copyDestination)) $exists = count(array_diff(scandir($this->copyDestination), [".", ".."])) > 0;
         else $exists = false;
         return $exists;

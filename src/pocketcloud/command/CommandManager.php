@@ -25,7 +25,6 @@ use pocketcloud\event\impl\command\CommandExecuteEvent;
 use pocketcloud\event\impl\command\CommandRegisterEvent;
 use pocketcloud\event\impl\command\CommandUnregisterCommand;
 use pocketcloud\language\Language;
-use pocketcloud\util\ActionResult;
 use pocketcloud\util\CloudLogger;
 use pocketcloud\util\Reloadable;
 use pocketcloud\util\SingletonTrait;
@@ -74,19 +73,17 @@ class CommandManager implements Reloadable {
         if (!$command->execute($sender, $label, $args)) CloudLogger::get()->error($command->getUsage());
     }
 
-    public function registerCommand(Command $command): ActionResult {
+    public function registerCommand(Command $command): void {
         if (!isset($this->commands[strtolower($command->getName())])) {
             (new CommandRegisterEvent($command))->call();
             $this->commands[strtolower($command->getName())] = $command;
             if (count($command->getAliases()) > 0) {
                 foreach ($command->getAliases() as $alias) $this->knownAliases[strtolower($alias)] = $command;
             }
-            return ActionResult::success();
         }
-        return ActionResult::failure();
     }
 
-    public function unregisterCommand(Command|string $command): ActionResult {
+    public function unregisterCommand(Command|string $command): void {
         $command = $command instanceof Command ? strtolower($command->getName()) : strtolower($command);
         if (isset($this->commands[$command])) {
             (new CommandUnregisterCommand($commandClass = $this->commands[$command]))->call();
@@ -94,9 +91,7 @@ class CommandManager implements Reloadable {
             foreach ($commandClass->getAliases() as $alias) {
                 if (isset($this->knownAliases[strtolower($alias)])) unset($this->knownAliases[strtolower($alias)]);
             }
-            return ActionResult::success();
         }
-        return ActionResult::failure();
     }
 
     public function reload(): bool {

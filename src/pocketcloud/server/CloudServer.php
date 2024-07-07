@@ -28,14 +28,11 @@ use pocketcloud\server\utils\PropertiesMaker;
 use pocketcloud\template\Template;
 use pocketcloud\template\TemplateManager;
 use pocketcloud\template\TemplateType;
-use pocketcloud\util\ActionResult;
 use pocketcloud\util\CloudLogger;
 use pocketcloud\util\Utils;
 
 class CloudServer {
 
-    public const ACTION_RESULT_FAILURE_REASON_CRASHED = "crashed";
-    public const ACTION_RESULT_FAILURE_REASON_TIMED = "timedOut";
     public const TIMEOUT = 20;
 
     private CloudServerStorage $cloudServerStorage;
@@ -43,9 +40,6 @@ class CloudServer {
     private int $lastCheckTime;
     private int $startTime;
     private int $stopTime = 0;
-
-    private ?ActionResult $startActionResult = null;
-    private ?ActionResult $stopActionResult = null;
 
     public function __construct(
         private readonly int $id,
@@ -68,17 +62,16 @@ class CloudServer {
         PropertiesMaker::copyProperties($this);
     }
 
-    public function start(): ActionResult {
+    public function start(): void {
         CloudServerManager::getInstance()->addServer($this);
 
         (new ServerStartEvent($this))->call();
         CloudLogger::get()->info(Language::current()->translate("server.starting", $this->getName()));
         NotifyType::STARTING()->notify(["%server%" => $this->getName()]);
         Utils::executeWithStartCommand($this->getPath(), $this->getName(), $this->getTemplate()->getTemplateType()->getSoftware()->getStartCommand());
-        return $this->startActionResult = ActionResult::waiting();
     }
 
-    public function stop(bool $force = false): ActionResult {
+    public function stop(bool $force = false): void {
         (new ServerStopEvent($this, $force))->call();
         CloudLogger::get()->info(Language::current()->translate("server.stopping", $this->getName()));
         NotifyType::STOPPING()->notify(["%server%" => $this->getName()]);
@@ -90,7 +83,6 @@ class CloudServer {
         } else {
             $this->sendPacket(new DisconnectPacket(DisconnectReason::SERVER_SHUTDOWN()));
         }
-        return $this->stopActionResult = ActionResult::waiting();
     }
 
     #[Pure] public function getName(): string {
@@ -136,14 +128,6 @@ class CloudServer {
         return $this->stopTime;
     }
 
-    public function getStartActionResult(): ?ActionResult {
-        return $this->startActionResult;
-    }
-
-    public function getStopActionResult(): ?ActionResult {
-        return $this->stopActionResult;
-    }
-
     public function setServerStatus(ServerStatus $serverStatus): void {
         $this->serverStatus = $serverStatus;
         Network::getInstance()->broadcastPacket(new ServerSyncPacket($this));
@@ -157,9 +141,8 @@ class CloudServer {
         $this->stopTime = $stopTime;
     }
 
-    public function sendPacket(CloudPacket $packet): ActionResult {
-        if (($client = ServerClientManager::getInstance()->getClientOfServer($this)) !== null) return $client->sendPacket($packet);
-        return ActionResult::failure();
+    public function sendPacket(CloudPacket $packet): bool {
+        return ServerClientManager::getInstance()->getClientOfServer($this)?->sendPacket($packet) ?? false;
     }
 
     public function getCloudPlayer(string $name): ?CloudPlayer {

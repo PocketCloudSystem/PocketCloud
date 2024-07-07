@@ -3,8 +3,6 @@
 namespace pocketcloud\config\impl;
 
 use configlib\Configuration;
-use pocketcloud\util\CloudLogger;
-use pocketcloud\util\ExceptionHandler;
 use pocketcloud\util\Reloadable;
 use pocketcloud\util\SingletonTrait;
 use pocketcloud\util\Utils;
