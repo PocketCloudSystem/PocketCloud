@@ -36,10 +36,6 @@ class ModuleConfig extends Configuration implements Reloadable {
         $this->npcModule = $npcModule;
     }
 
-    public function setGlobalChatModule(bool $globalChatModule): void {
-        $this->globalChatModule = $globalChatModule;
-    }
-
     public function setHubCommandModule(bool $hubCommandModule): void {
         $this->hubCommandModule = $hubCommandModule;
     }
@@ -50,10 +46,6 @@ class ModuleConfig extends Configuration implements Reloadable {
 
     public function isNpcModule(): bool {
         return $this->npcModule;
-    }
-
-    public function isGlobalChatModule(): bool {
-        return $this->globalChatModule;
     }
 
     public function isHubCommandModule(): bool {

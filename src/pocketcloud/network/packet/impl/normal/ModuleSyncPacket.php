@@ -15,7 +15,6 @@ class ModuleSyncPacket extends CloudPacket {
         $this->data = [
             "sign" => ["enabled" => ModuleConfig::getInstance()->isSignModule()],
             "npc" => ["enabled" => ModuleConfig::getInstance()->isNpcModule()],
-            "global_chat" => ["enabled" => ModuleConfig::getInstance()->isGlobalChatModule()],
             "hub_command" => ["enabled" => ModuleConfig::getInstance()->isHubCommandModule()],
         ];
     }

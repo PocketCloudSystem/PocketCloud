@@ -31,11 +31,6 @@ class ModuleEditEndPoint extends EndPoint {
             ModuleConfig::getInstance()->save();
             $this->sync();
             return ["success" => "The module state has been changed!"];
-        } else if (in_array($module, ["globalchat", "globalchatmodule"])) {
-            ModuleConfig::getInstance()->setGlobalChatModule($value);
-            ModuleConfig::getInstance()->save();
-            $this->sync();
-            return ["success" => "The module state has been changed!"];
         } else if (in_array($module, ["hub", "hubcommand", "hubcommandmodule"])) {
             ModuleConfig::getInstance()->setHubCommandModule($value);
             ModuleConfig::getInstance()->save();

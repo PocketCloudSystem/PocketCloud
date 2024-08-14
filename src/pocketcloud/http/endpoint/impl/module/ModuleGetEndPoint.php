@@ -21,8 +21,6 @@ class ModuleGetEndPoint extends EndPoint {
             return ["module" => "signModule", "enabled" => ModuleConfig::getInstance()->isSignModule()];
         } else if (in_array($module, ["npc", "npcmodule", "cloudnpcs"])) {
             return ["module" => "npcModule", "enabled" => ModuleConfig::getInstance()->isNpcModule()];
-        } else if (in_array($module, ["globalchat", "globalchatmodule"])) {
-            return ["module" => "globalChatModule", "enabled" => ModuleConfig::getInstance()->isGlobalChatModule()];
         } else if (in_array($module, ["hub", "hubcommand", "hubcommandmodule"])) {
             return ["module" => "hubCommandModule", "enabled" => ModuleConfig::getInstance()->isHubCommandModule()];
         }
