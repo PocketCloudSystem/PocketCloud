@@ -11,7 +11,6 @@ class ModuleConfig extends Configuration implements Reloadable {
 
     private bool $signModule = true;
     private bool $npcModule = true;
-    private bool $globalChatModule = false;
     private bool $hubCommandModule = true;
 
     public function __construct() {
@@ -23,7 +22,6 @@ class ModuleConfig extends Configuration implements Reloadable {
     public function reload(): bool {
         $this->signModule = true;
         $this->npcModule = true;
-        $this->globalChatModule = false;
         $this->hubCommandModule = true;
         return $this->load();
     }

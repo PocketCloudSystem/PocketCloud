@@ -14,7 +14,7 @@ class ModuleListEndPoint extends EndPoint {
     }
 
     public function handleRequest(Request $request, Response $response): array {
-        return ["signModule", "npcModule", "globalChatModule", "hubCommandModule"];
+        return ["signModule", "npcModule", "hubCommandModule"];
     }
 
     public function isBadRequest(Request $request): bool {
