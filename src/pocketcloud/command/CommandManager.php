@@ -6,6 +6,7 @@ use pocketcloud\command\impl\general\ExitCommand;
 use pocketcloud\command\impl\general\HelpCommand;
 use pocketcloud\command\impl\general\ListCommand;
 use pocketcloud\command\impl\general\ReloadCommand;
+use pocketcloud\command\impl\general\VersionCommand;
 use pocketcloud\command\impl\player\KickCommand;
 use pocketcloud\command\impl\plugin\DisableCommand;
 use pocketcloud\command\impl\plugin\EnableCommand;
@@ -56,6 +57,7 @@ class CommandManager implements Reloadable {
         $this->registerCommand(new KickCommand("kick", "command.description.kick", "kick <player> [reason]", []));
         $this->registerCommand(new ReloadCommand("reload", "command.description.reload", "reload", []));
         $this->registerCommand(new WebAccountCommand("webaccount", "command.description.webaccount", "webaccount <create|remove|list|update>", ["webacc"]));
+        $this->registerCommand(new VersionCommand("version", "command.description.version", "version", ["ver"]));
     }
 
     public function execute(string $line, ?ICommandSender $sender = null): void {
