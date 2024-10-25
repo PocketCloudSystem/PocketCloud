@@ -4,7 +4,7 @@ namespace pocketcloud\util;
 
 use pocketcloud\PocketCloud;
 
-class ShutdownHandler {
+final class ShutdownHandler {
 
     public static function register(): void {
         register_shutdown_function(fn() => self::shutdown());

@@ -32,7 +32,7 @@ use pocketcloud\util\SingletonTrait;
 use pocketcloud\util\Tickable;
 use pocketcloud\util\Utils;
 
-class CloudServerManager implements Tickable {
+final class CloudServerManager implements Tickable {
     use SingletonTrait;
 
     /** @var array<CloudServer> */

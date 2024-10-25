@@ -2,7 +2,7 @@
 
 namespace pocketcloud\server\utils;
 
-class PortManager {
+final class PortManager {
 
     private static array $usedPorts = [];
 

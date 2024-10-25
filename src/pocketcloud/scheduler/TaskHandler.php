@@ -4,7 +4,7 @@ namespace pocketcloud\scheduler;
 
 use pocketcloud\plugin\CloudPlugin;
 
-class TaskHandler {
+final class TaskHandler {
 
     private int $id;
     private bool $cancelled = false;

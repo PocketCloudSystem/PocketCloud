@@ -9,7 +9,7 @@ use pocketcloud\server\CloudServerManager;
 use pocketcloud\util\Address;
 use pocketcloud\util\SingletonTrait;
 
-class ServerClientManager {
+final class ServerClientManager {
     use SingletonTrait;
 
     /** @var array<ServerClient> */

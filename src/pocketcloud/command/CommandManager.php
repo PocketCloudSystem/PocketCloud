@@ -30,7 +30,7 @@ use pocketcloud\util\CloudLogger;
 use pocketcloud\util\Reloadable;
 use pocketcloud\util\SingletonTrait;
 
-class CommandManager implements Reloadable {
+final class CommandManager implements Reloadable {
     use SingletonTrait;
 
     /** @var array<string, Command> */

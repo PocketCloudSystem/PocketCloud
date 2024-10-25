@@ -9,7 +9,7 @@ use pocketcloud\util\Tickable;
 use pocketmine\snooze\SleeperHandler;
 use SplQueue;
 
-class AsyncPool implements Tickable {
+final class AsyncPool implements Tickable {
     use SingletonTrait;
 
     private int $size = 10;

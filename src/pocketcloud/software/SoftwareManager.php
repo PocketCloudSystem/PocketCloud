@@ -8,7 +8,7 @@ use pocketcloud\console\log\Logger;
 use pocketcloud\util\SingletonTrait;
 use pocketcloud\util\Utils;
 
-class SoftwareManager {
+final class SoftwareManager {
     use SingletonTrait;
 
     /** @var array<Software> */

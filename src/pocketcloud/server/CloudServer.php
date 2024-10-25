@@ -31,7 +31,7 @@ use pocketcloud\template\TemplateType;
 use pocketcloud\util\CloudLogger;
 use pocketcloud\util\Utils;
 
-class CloudServer {
+final class CloudServer {
 
     public const TIMEOUT = 20;
 

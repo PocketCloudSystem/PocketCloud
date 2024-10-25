@@ -6,7 +6,7 @@ use Closure;
 use ErrorException;
 use Throwable;
 
-class ExceptionHandler {
+final class ExceptionHandler {
 
     public static function handle(Throwable $throwable): void {
         $send = true;

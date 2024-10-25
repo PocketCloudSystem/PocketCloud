@@ -11,7 +11,7 @@ use pocketcloud\util\CloudLogger;
 use pocketcloud\util\ExceptionHandler;
 use ReflectionClass;
 
-class PacketSerializer {
+final class PacketSerializer {
 
     public static function encode(CloudPacket $packet): string {
         try {

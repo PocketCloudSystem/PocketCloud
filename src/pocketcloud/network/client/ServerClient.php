@@ -7,9 +7,9 @@ use pocketcloud\network\packet\CloudPacket;
 use pocketcloud\server\CloudServer;
 use pocketcloud\util\Address;
 
-class ServerClient {
+readonly class ServerClient {
 
-    public function __construct(private readonly Address $address) {}
+    public function __construct(private Address $address) {}
 
     public function sendPacket(CloudPacket $packet): bool {
         return Network::getInstance()->sendPacket($packet, $this);

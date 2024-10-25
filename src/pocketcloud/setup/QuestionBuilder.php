@@ -6,7 +6,7 @@ use Closure;
 use JetBrains\PhpStorm\Pure;
 use LogicException;
 
-class QuestionBuilder {
+final class QuestionBuilder {
 
     private ?string $key = null;
     private ?string $question = null;

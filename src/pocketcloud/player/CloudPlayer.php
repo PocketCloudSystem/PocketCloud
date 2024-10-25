@@ -15,7 +15,7 @@ use pocketcloud\server\CloudServerManager;
 use pocketcloud\template\TemplateType;
 use pocketcloud\util\Utils;
 
-class CloudPlayer {
+final class CloudPlayer {
 
     public function __construct(
         private readonly string $name,

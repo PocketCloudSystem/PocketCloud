@@ -14,7 +14,7 @@ use pocketcloud\server\CloudServer;
 use pocketcloud\server\status\ServerStatus;
 use pocketcloud\template\Template;
 
-class PacketData implements JsonSerializable {
+final class PacketData implements JsonSerializable {
 
     public function __construct(private array $data = []) {}
 

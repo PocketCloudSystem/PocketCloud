@@ -7,7 +7,7 @@ use pocketcloud\plugin\CloudPlugin;
 use pocketcloud\util\SingletonTrait;
 use ReflectionClass;
 
-class EventManager {
+final class EventManager {
     use SingletonTrait;
 
     private array $handlers = [];

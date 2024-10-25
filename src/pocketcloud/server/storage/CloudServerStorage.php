@@ -4,7 +4,7 @@ namespace pocketcloud\server\storage;
 
 use pocketcloud\server\CloudServer;
 
-class CloudServerStorage {
+final class CloudServerStorage {
 
     public function __construct(
         private readonly CloudServer $server,

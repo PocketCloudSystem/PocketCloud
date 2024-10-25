@@ -7,7 +7,7 @@ use pmmp\thread\ThreadSafeArray;
 use pocketcloud\util\SingletonTrait;
 use Throwable;
 
-class ThreadManager extends ThreadSafe {
+final class ThreadManager extends ThreadSafe {
     use SingletonTrait;
 
     private ThreadSafeArray $threads;

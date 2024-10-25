@@ -4,7 +4,7 @@ namespace pocketcloud\promise;
 
 use Closure;
 
-class Promise {
+final class Promise {
 
     private bool $resolved = false;
     private mixed $result = null;
@@ -15,6 +15,7 @@ class Promise {
         if ($this->resolved) return;
         $this->result = $result;
         if ($this->success !== null) ($this->success)($this->result);
+
         $this->success = null;
         $this->failure = null;
     }
@@ -22,6 +23,7 @@ class Promise {
     public function reject(): void {
         if ($this->resolved) return;
         if ($this->failure !== null) ($this->failure)();
+
         $this->success = null;
         $this->failure = null;
     }
@@ -32,6 +34,7 @@ class Promise {
         } else {
             $this->success = $closure;
         }
+
         return $this;
     }
 
@@ -41,6 +44,7 @@ class Promise {
         } else {
             $this->failure = $closure;
         }
+
         return $this;
     }
 

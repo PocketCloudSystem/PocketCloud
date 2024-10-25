@@ -11,7 +11,7 @@ use pocketcloud\template\TemplateManager;
 use pocketcloud\template\TemplateType;
 use pocketcloud\util\CloudLogger;
 
-class TemplateSetup extends Setup {
+final class TemplateSetup extends Setup {
 
     public function onStart(): void {
         $this->getLogger()->info(Language::current()->translate("setup.template.welcome"));

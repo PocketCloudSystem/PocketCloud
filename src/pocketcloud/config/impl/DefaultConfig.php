@@ -7,7 +7,7 @@ use pocketcloud\util\Reloadable;
 use pocketcloud\util\SingletonTrait;
 use pocketcloud\util\Utils;
 
-class DefaultConfig extends Configuration implements Reloadable {
+final class DefaultConfig extends Configuration implements Reloadable {
     use SingletonTrait;
 
     /** @ignored */

@@ -4,7 +4,7 @@ namespace pocketcloud\server\utils;
 
 use pocketcloud\template\Template;
 
-class IdManager {
+final class IdManager {
 
     private static array $ids = [];
 

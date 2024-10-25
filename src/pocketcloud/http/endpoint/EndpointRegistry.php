@@ -35,7 +35,7 @@ use pocketcloud\http\util\Router;
 use pocketcloud\language\Language;
 use pocketcloud\util\CloudLogger;
 
-class EndpointRegistry {
+final class EndpointRegistry {
 
     /** @var array<EndPoint> */
     private static array $endPoints = [];

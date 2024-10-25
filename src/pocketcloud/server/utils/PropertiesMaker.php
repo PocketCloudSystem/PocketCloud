@@ -10,7 +10,7 @@ use pocketcloud\template\TemplateType;
 use pocketcloud\config\Config;
 use pocketcloud\util\Utils;
 
-class PropertiesMaker {
+final class PropertiesMaker {
 
     private const KEYS = [
         "SERVER" => [

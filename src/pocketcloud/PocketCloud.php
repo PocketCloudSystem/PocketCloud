@@ -39,7 +39,7 @@ use pocketcloud\util\VersionInfo;
 use pocketcloud\web\WebAccountManager;
 use pocketmine\snooze\SleeperHandler;
 
-class PocketCloud {
+final class PocketCloud {
 
     private static self $instance;
     private bool $running = true;

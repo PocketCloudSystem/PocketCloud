@@ -14,7 +14,7 @@ use pocketcloud\util\SingletonTrait;
 use pocketcloud\util\Utils;
 use pocketcloud\util\VersionInfo;
 
-class UpdateChecker {
+final class UpdateChecker {
     use SingletonTrait;
 
     private array $data = [];

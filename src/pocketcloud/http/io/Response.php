@@ -12,7 +12,7 @@ use function is_array;
 use function json_encode;
 use function strlen;
 
-class Response {
+final class Response {
 	
 	private string $body = "";
 	private ?string $customResponseCodeMessage = null;

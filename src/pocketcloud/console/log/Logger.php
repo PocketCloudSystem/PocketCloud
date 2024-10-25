@@ -9,7 +9,7 @@ use pocketcloud\util\Utils;
 use ReflectionClass;
 use Throwable;
 
-class Logger {
+final class Logger {
 
     private mixed $cloudLogFile = null;
     private bool $closed = false;

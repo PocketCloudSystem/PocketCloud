@@ -6,7 +6,7 @@ use pocketcloud\config\impl\DefaultConfig;
 use pocketcloud\console\log\Logger;
 use Throwable;
 
-class Utils {
+final class Utils {
 
     private static mixed $lockFileHandle = null;
     private static string $startCommand = "";

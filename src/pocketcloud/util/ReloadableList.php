@@ -6,7 +6,7 @@ use pocketcloud\language\Language;
 use ReflectionClass;
 use Throwable;
 
-class ReloadableList {
+final class ReloadableList {
 
     /** @var array<Reloadable> */
     private static array $list = [];

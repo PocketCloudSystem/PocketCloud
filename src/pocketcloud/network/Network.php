@@ -23,7 +23,7 @@ use pocketcloud\util\SingletonTrait;
 use pocketmine\snooze\SleeperHandlerEntry;
 use Socket;
 
-class Network extends Thread {
+final class Network extends Thread {
     use SingletonTrait;
 
     private SleeperHandlerEntry $entry;

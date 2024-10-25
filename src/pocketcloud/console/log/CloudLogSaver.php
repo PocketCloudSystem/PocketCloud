@@ -2,7 +2,7 @@
 
 namespace pocketcloud\console\log;
 
-class CloudLogSaver {
+final class CloudLogSaver {
 
     private static array $savedLines = [];
 

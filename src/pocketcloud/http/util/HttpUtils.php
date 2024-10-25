@@ -8,7 +8,7 @@ use pocketcloud\http\io\Request;
 use pocketcloud\util\Address;
 use UnexpectedValueException;
 
-class HttpUtils {
+final class HttpUtils {
 	
 	private const LOCALHOST_PREFIX = "http://localhost";
 	

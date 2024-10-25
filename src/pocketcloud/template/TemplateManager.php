@@ -24,7 +24,7 @@ use pocketcloud\util\SingletonTrait;
 use pocketcloud\util\Tickable;
 use pocketcloud\util\Utils;
 
-class TemplateManager implements Reloadable, Tickable {
+final class TemplateManager implements Reloadable, Tickable {
     use SingletonTrait;
 
     /** @var array<Template> */

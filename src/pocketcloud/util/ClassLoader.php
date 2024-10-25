@@ -7,7 +7,7 @@ use Phar;
 use pmmp\thread\ThreadSafe;
 use pmmp\thread\ThreadSafeArray;
 
-class ClassLoader extends ThreadSafe {
+final class ClassLoader extends ThreadSafe {
 
     private ThreadSafeArray $paths;
 

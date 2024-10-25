@@ -14,7 +14,7 @@ use pocketcloud\http\endpoint\impl\web\WebAccountUpdateEndPoint;
 use pocketcloud\util\Reloadable;
 use pocketcloud\util\SingletonTrait;
 
-class WebAccountManager implements Reloadable {
+final class WebAccountManager implements Reloadable {
     use SingletonTrait;
 
     /** @var array<WebAccount> */

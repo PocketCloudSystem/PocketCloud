@@ -4,7 +4,7 @@ namespace pocketcloud\server\crash;
 
 use RuntimeException;
 
-class CrashDumpReader {
+final class CrashDumpReader {
 
     private string $filePath;
     private ?array $data = null;

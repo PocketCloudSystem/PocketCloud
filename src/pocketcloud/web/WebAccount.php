@@ -4,7 +4,7 @@ namespace pocketcloud\web;
 
 use pocketcloud\util\Utils;
 
-class WebAccount {
+final class WebAccount {
 
     public function __construct(
         private readonly string $name,

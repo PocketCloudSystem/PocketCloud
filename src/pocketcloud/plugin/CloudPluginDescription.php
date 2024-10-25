@@ -5,14 +5,14 @@ namespace pocketcloud\plugin;
 use JetBrains\PhpStorm\ArrayShape;
 use pocketcloud\util\Utils;
 
-class CloudPluginDescription {
+readonly class CloudPluginDescription {
 
     public function __construct(
-        private readonly string $name,
-        private readonly string $main,
-        private readonly string $version,
-        private readonly array $authors = [],
-        private readonly ?string $description = null
+        private string $name,
+        private string $main,
+        private string $version,
+        private array $authors = [],
+        private ?string $description = null
     ) {}
 
     public function getName(): string {

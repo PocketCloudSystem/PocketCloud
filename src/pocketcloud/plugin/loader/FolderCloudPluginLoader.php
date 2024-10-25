@@ -4,9 +4,10 @@ namespace pocketcloud\plugin\loader;
 
 use pocketcloud\plugin\CloudPlugin;
 use pocketcloud\plugin\CloudPluginDescription;
+use pocketcloud\PocketCloud;
 use pocketcloud\util\Utils;
 
-class FolderCloudPluginLoader implements CloudPluginLoader {
+final class FolderCloudPluginLoader implements CloudPluginLoader {
 
     public function canLoad(string $path): bool {
         return is_dir($path) && file_exists($path . "/plugin.yml") && file_exists($path . "/src/");
@@ -18,7 +19,8 @@ class FolderCloudPluginLoader implements CloudPluginLoader {
         $pluginYml = CloudPluginDescription::fromArray($pluginYml);
         if ($pluginYml === null) return "Incorrect plugin.yml";
 
-        Utils::requireDirectory($path . "/src");
+        PocketCloud::getInstance()->getClassLoader()->addPath("", $path . "/src/");
+        #Utils::requireDirectory($path . "/src");
         $plugin = new ($pluginYml->getMain())($pluginYml);
         if (!is_subclass_of($plugin, CloudPlugin::class)) return "Is not a valid CloudPlugin";
         return $plugin;

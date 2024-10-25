@@ -6,7 +6,7 @@ use pocketcloud\config\impl\DefaultConfig;
 use pocketcloud\http\io\data\RequestData;
 use stdClass;
 
-class Request extends stdClass {
+final class Request extends stdClass {
 
 	public const SUPPORTED_REQUEST_METHODS = ["GET", "POST", "PUT", "DELETE", "PATCH"];
 

@@ -23,7 +23,7 @@ use pocketmine\snooze\SleeperHandlerEntry;
 use Socket;
 use Throwable;
 
-class HttpServer extends Thread implements Reloadable {
+final class HttpServer extends Thread implements Reloadable {
 
     public const REQUEST_READ_LENGTH = 8192;
 

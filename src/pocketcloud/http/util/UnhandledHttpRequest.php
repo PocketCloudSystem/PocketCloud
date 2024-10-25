@@ -5,7 +5,7 @@ namespace pocketcloud\http\util;
 use pmmp\thread\ThreadSafe;
 use pocketcloud\http\network\SocketClient;
 
-class UnhandledHttpRequest extends ThreadSafe {
+final class UnhandledHttpRequest extends ThreadSafe {
 
     public function __construct(
         private readonly string $buffer,

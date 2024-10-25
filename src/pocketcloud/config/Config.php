@@ -6,7 +6,7 @@ use InvalidArgumentException;
 use pocketcloud\config\type\ConfigType;
 use pocketcloud\util\ExceptionHandler;
 
-class Config {
+final class Config {
 
     private array $content = [];
     private bool $changed = false;

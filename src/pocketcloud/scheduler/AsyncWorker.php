@@ -5,7 +5,7 @@ namespace pocketcloud\scheduler;
 use pocketcloud\thread\Worker;
 use pocketmine\snooze\SleeperHandlerEntry;
 
-class AsyncWorker extends Worker {
+final class AsyncWorker extends Worker {
 
     public function __construct(
         private readonly int $id,

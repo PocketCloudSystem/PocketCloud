@@ -6,7 +6,7 @@ use pmmp\thread\ThreadSafe;
 use pocketcloud\util\Address;
 use Socket;
 
-class SocketClient extends ThreadSafe {
+final class SocketClient extends ThreadSafe {
 
     protected ?Socket $socket = null;
 

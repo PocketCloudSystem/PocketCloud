@@ -4,17 +4,17 @@ namespace pocketcloud\setup;
 
 use Closure;
 
-class Question {
+readonly class Question {
 
     public function __construct(
-        private readonly string   $key,
-        private readonly string   $question,
-        private readonly bool     $canSkipped,
-        private readonly array    $possibleAnswers,
-        private readonly ?string  $default,
-        private readonly ?string  $recommendation,
-        private readonly Closure  $parser,
-        private readonly ?Closure $resultHandler
+        private string $key,
+        private string $question,
+        private bool $canSkipped,
+        private array $possibleAnswers,
+        private ?string $default,
+        private ?string $recommendation,
+        private Closure $parser,
+        private ?Closure $resultHandler
     ) {}
 
     public function getKey(): string {

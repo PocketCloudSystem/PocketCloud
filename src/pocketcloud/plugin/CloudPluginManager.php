@@ -16,7 +16,7 @@ use pocketcloud\util\SingletonTrait;
 use pocketcloud\util\Tickable;
 use Throwable;
 
-class CloudPluginManager implements Tickable, Reloadable {
+final class CloudPluginManager implements Tickable, Reloadable {
     use SingletonTrait;
 
     /** @var array<CloudPlugin> */

@@ -2,7 +2,7 @@
 
 namespace pocketcloud\util;
 
-class TickableList {
+final class TickableList {
 
     /** @var array<Tickable> */
     private static array $list = [];

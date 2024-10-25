@@ -38,7 +38,7 @@ use pocketcloud\network\packet\impl\response\CloudServerStopResponsePacket;
 use pocketcloud\network\packet\impl\response\LoginResponsePacket;
 use pocketcloud\util\SingletonTrait;
 
-class PacketPool {
+final class PacketPool {
     use SingletonTrait;
 
     /** @var array<CloudPacket> */

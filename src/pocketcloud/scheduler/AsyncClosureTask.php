@@ -5,10 +5,10 @@ namespace pocketcloud\scheduler;
 use Closure;
 use JetBrains\PhpStorm\Pure;
 
-class AsyncClosureTask extends AsyncTask {
+final class AsyncClosureTask extends AsyncTask {
 
     public function __construct(
-        private readonly Closure  $closure,
+        private readonly Closure $closure,
         private readonly ?Closure $completion = null
     ) {}
 

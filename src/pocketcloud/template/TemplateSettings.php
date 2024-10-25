@@ -4,7 +4,7 @@ namespace pocketcloud\template;
 
 use pocketcloud\util\Utils;
 
-class TemplateSettings {
+final class TemplateSettings {
 
     public function __construct(
         private bool $lobby,

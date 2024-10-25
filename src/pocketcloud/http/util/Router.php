@@ -7,7 +7,7 @@ use pocketcloud\http\io\Request;
 use pocketcloud\http\io\Response;
 use pocketcloud\util\SingletonTrait;
 
-class Router {
+final class Router {
     use SingletonTrait;
 
     public const GET = "GET";

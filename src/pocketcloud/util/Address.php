@@ -5,7 +5,7 @@ namespace pocketcloud\util;
 use JetBrains\PhpStorm\Pure;
 use pmmp\thread\ThreadSafe;
 
-class Address extends ThreadSafe {
+final class Address extends ThreadSafe {
 
     public function __construct(
         private readonly string $address,

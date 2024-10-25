@@ -6,7 +6,7 @@ use configlib\Configuration;
 use pocketcloud\util\Reloadable;
 use pocketcloud\util\SingletonTrait;
 
-class ModuleConfig extends Configuration implements Reloadable {
+final class ModuleConfig extends Configuration implements Reloadable {
     use SingletonTrait;
 
     private bool $signModule = true;

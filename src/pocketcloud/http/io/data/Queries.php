@@ -2,9 +2,9 @@
 
 namespace pocketcloud\http\io\data;
 
-class Queries {
+readonly class Queries {
 
-    public function __construct(private readonly array $queries) {}
+    public function __construct(private array $queries) {}
 
     public function get(string $key, mixed $default = null): mixed {
         return $this->queries[$key] ?? $default;

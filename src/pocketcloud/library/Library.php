@@ -5,20 +5,20 @@ namespace pocketcloud\library;
 use pocketcloud\util\Utils;
 use ZipArchive;
 
-class Library {
+readonly class Library {
 
     public function __construct(
-        private readonly string $name,
-        private readonly string $downloadUrl,
-        private readonly string $fileLocation,
-        private readonly string $unzipLocation,
-        private readonly ?string $classLoadFolder,
-        private readonly ?string $classLoadPath,
-        private readonly array $excludedFiles = [],
-        private readonly string $copySource = "",
-        private readonly string $copyDestination = "",
-        private readonly ?string $deletionDir = null,
-        private readonly bool $cloudBridgeOnly = false
+        private string $name,
+        private string $downloadUrl,
+        private string $fileLocation,
+        private string $unzipLocation,
+        private ?string $classLoadFolder,
+        private ?string $classLoadPath,
+        private array $excludedFiles = [],
+        private string $copySource = "",
+        private string $copyDestination = "",
+        private ?string $deletionDir = null,
+        private bool $cloudBridgeOnly = false
     ) {}
 
     public function download(): bool {

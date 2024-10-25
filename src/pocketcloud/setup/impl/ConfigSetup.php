@@ -9,7 +9,7 @@ use pocketcloud\setup\Setup;
 use pocketcloud\util\CloudLogger;
 use pocketcloud\util\Utils;
 
-class ConfigSetup extends Setup {
+final class ConfigSetup extends Setup {
 
     public function onStart(): void {
         CloudLogger::get()->info("Welcome to the §bPocket§3Cloud§r-Setup!");

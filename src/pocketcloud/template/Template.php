@@ -5,12 +5,12 @@ namespace pocketcloud\template;
 use pocketcloud\server\CloudServerManager;
 use pocketcloud\util\Utils;
 
-class Template {
+readonly class Template {
 
     public function __construct(
-        private readonly string $name,
-        private readonly TemplateSettings $templateSettings,
-        private readonly TemplateType $templateType
+        private string $name,
+        private TemplateSettings $templateSettings,
+        private TemplateType $templateType
     ) {}
 
     public function getName(): string {

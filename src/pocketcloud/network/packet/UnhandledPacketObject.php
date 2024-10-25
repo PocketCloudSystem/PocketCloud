@@ -4,7 +4,7 @@ namespace pocketcloud\network\packet;
 
 use pmmp\thread\ThreadSafe;
 
-class UnhandledPacketObject extends ThreadSafe {
+final class UnhandledPacketObject extends ThreadSafe {
 
     public function __construct(
         private readonly string $buffer,

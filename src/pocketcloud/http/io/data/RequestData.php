@@ -4,13 +4,13 @@ namespace pocketcloud\http\io\data;
 
 use pocketcloud\util\Address;
 
-class RequestData {
+readonly class RequestData {
 	
 	public function __construct(
-        private readonly Address $requestAddress,
-        private readonly string $method,
-        private readonly string $path,
-        private readonly Queries $queries
+        private Address $requestAddress,
+        private string $method,
+        private string $path,
+        private Queries $queries
     ) {}
 
 	public function address(): Address {

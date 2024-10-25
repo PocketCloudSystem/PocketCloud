@@ -6,7 +6,7 @@ use pocketcloud\config\Config;
 use pocketcloud\config\type\ConfigTypes;
 use pocketcloud\util\Reloadable;
 
-class NotifyList implements Reloadable {
+final class NotifyList implements Reloadable {
 
     private static ?Config $config = null;
 

@@ -9,7 +9,7 @@ use pocketcloud\setup\Setup;
 use pocketcloud\thread\Thread;
 use pocketmine\snooze\SleeperHandlerEntry;
 
-class Console extends Thread {
+final class Console extends Thread {
 
     private ThreadSafeArray $buffer;
     private SleeperHandlerEntry $entry;

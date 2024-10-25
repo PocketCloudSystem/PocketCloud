@@ -9,7 +9,7 @@ use pocketcloud\network\packet\impl\normal\PlayerSyncPacket;
 use pocketcloud\util\CloudLogger;
 use pocketcloud\util\SingletonTrait;
 
-class CloudPlayerManager {
+final class CloudPlayerManager {
     use SingletonTrait;
 
     /** @var array<CloudPlayer> */

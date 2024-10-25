@@ -6,7 +6,7 @@ use pocketcloud\config\Config;
 use pocketcloud\config\type\ConfigTypes;
 use pocketcloud\util\Reloadable;
 
-class MaintenanceList implements Reloadable {
+final class MaintenanceList implements Reloadable {
 
     private static ?Config $config = null;
 

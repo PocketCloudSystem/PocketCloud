@@ -5,7 +5,7 @@ namespace pocketcloud\scheduler;
 use Closure;
 use JetBrains\PhpStorm\Pure;
 
-class ClosureTask extends Task {
+final class ClosureTask extends Task {
 
 	public function __construct(private readonly Closure $closure) {}
 	

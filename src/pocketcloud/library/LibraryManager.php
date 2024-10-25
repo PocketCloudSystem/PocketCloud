@@ -7,7 +7,7 @@ use pocketcloud\PocketCloud;
 use pocketcloud\util\SingletonTrait;
 use Throwable;
 
-class LibraryManager {
+final class LibraryManager {
     use SingletonTrait;
 
     /** @var array<Library> */

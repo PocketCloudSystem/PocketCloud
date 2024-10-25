@@ -6,7 +6,7 @@ use JetBrains\PhpStorm\Pure;
 use pocketcloud\plugin\CloudPlugin;
 use pocketcloud\util\Tickable;
 
-class TaskScheduler implements Tickable {
+final class TaskScheduler implements Tickable {
 
     /** @var array<TaskHandler> */
     private array $tasks = [];

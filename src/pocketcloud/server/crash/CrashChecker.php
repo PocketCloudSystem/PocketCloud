@@ -4,7 +4,7 @@ namespace pocketcloud\server\crash;
 
 use pocketcloud\server\CloudServer;
 
-class CrashChecker {
+final class CrashChecker {
 
     public static function checkCrashed(CloudServer $server, ?array &$crashData = null): bool {
         $filePath = "";
