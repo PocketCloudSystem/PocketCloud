@@ -2,6 +2,8 @@
 
 namespace pocketcloud\server\storage;
 
+use pocketcloud\network\Network;
+use pocketcloud\network\packet\impl\normal\CloudSyncStoragesPacket;
 use pocketcloud\server\CloudServer;
 
 final class CloudServerStorage {
@@ -11,13 +13,24 @@ final class CloudServerStorage {
         private array $storage = []
     ) {}
 
+    /** @internal  */
+    public function sync(array $data): void {
+        $this->storage = $data;
+    }
+
     public function put(string $k, mixed $v): self {
-        if (!isset($this->storage[$k])) $this->storage[$k] = $v;
+        if (!isset($this->storage[$k])) {
+            $this->storage[$k] = $v;
+            Network::getInstance()->broadcastPacket(new CloudSyncStoragesPacket());
+        }
         return $this;
     }
 
     public function remove(string $k): self {
-        if (isset($this->storage[$k])) unset($this->storage[$k]);
+        if (isset($this->storage[$k])) {
+            unset($this->storage[$k]);
+            Network::getInstance()->broadcastPacket(new CloudSyncStoragesPacket());
+        }
         return $this;
     }
 
@@ -30,13 +43,21 @@ final class CloudServerStorage {
     }
 
     public function replace(string $k, mixed $v): self {
-        if (isset($this->storage[$k])) $this->storage[$k] = $v;
+        if (isset($this->storage[$k])) {
+            $this->storage[$k] = $v;
+            Network::getInstance()->broadcastPacket(new CloudSyncStoragesPacket());
+        }
         return $this;
     }
 
     public function clear(): self {
         $this->storage = [];
+        Network::getInstance()->broadcastPacket(new CloudSyncStoragesPacket());
         return $this;
+    }
+
+    public function empty(): bool {
+        return empty($this->storage);
     }
 
     public function getServer(): CloudServer {
