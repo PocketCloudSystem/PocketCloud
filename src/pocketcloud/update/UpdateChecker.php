@@ -30,7 +30,7 @@ final class UpdateChecker {
     }
 
     private function checkCloud(): void {
-        AsyncExecutor::execute(function(): false|string {
+        AsyncExecutor::execute(function(): false|string|null {
             try {
                 $ch = curl_init("https://api.github.com/repos/PocketCloudSystem/PocketCloud/releases/latest");
                 curl_setopt_array($ch, [
@@ -47,6 +47,7 @@ final class UpdateChecker {
                 if ($data === false || $data === null) {
                     return false;
                 } else {
+                    if (isset($data["message"]) && str_contains($data["message"], "API rate limit")) return null;
                     return $data["tag_name"] ?? false;
                 }
             } catch (JsonException $e) {
@@ -54,9 +55,12 @@ final class UpdateChecker {
                 return false;
             }
         }, function(null|string|false $result): void {
-            if ($result === false || $result === null) {
+            if ($result === false) {
                 if (Language::current() === Language::ENGLISH()) CloudLogger::get()->error("§cError occurred while checking for new updates!");
                 else CloudLogger::get()->error("§cEin Fehler ist während der Überprüfung von neuen Updates aufgetreten!");
+            } else if ($result === null) {
+                if (Language::current() === Language::ENGLISH()) CloudLogger::get()->error("§cThe API rate limit was exceeded for this IP address while checking for new updates!");
+                else CloudLogger::get()->error("§cDas API Rate Limit wurde von dieser IP-Adresse während der Überprüfung von neuen Updates überschritten!");
             } else {
                 $current = explode(".", UpdateChecker::getInstance()->getCurrentVersion());
                 $latest = explode(".", $result);

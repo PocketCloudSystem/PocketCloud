@@ -36,7 +36,7 @@ final class ClassLoader extends ThreadSafe {
             foreach ($p as $key) {
                 if (!$src) {
                     if (file_exists(($path = $key . $class . ".php"))) return $path;
-                    return null;
+                    continue;
                 }
 
                 if (str_contains($class, $src)) return self::replaceLast($src, $class . ".php", $key);
