@@ -15,7 +15,7 @@ class StartCommand extends Command {
             if (($template = TemplateManager::getInstance()->getTemplateByName($args[0])) !== null) {
                 $count = 1;
                 if (isset($args[1])) {
-                    if (is_numeric($args[1] && intval($args[1])) > 0) {
+                    if (is_numeric($args[1]) && intval($args[1]) > 0) {
                         $count = intval($args[1]);
                         if (isset($args[2])) {
                             foreach (array_slice($args, 2) as $arg) {
