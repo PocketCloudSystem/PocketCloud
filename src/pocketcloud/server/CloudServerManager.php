@@ -101,14 +101,21 @@ final class CloudServerManager implements Tickable {
     }
 
     public function instantSave(CloudServer $server): void {
-        Utils::copyDir($server->getPath() . "players/", $server->getTemplate()->getPath() . "players/");
-        Utils::copyDir($server->getPath() . "plugin_data/", $server->getTemplate()->getPath() . "plugin_data/");
-        Utils::copyDir($server->getPath() . "worlds/", $server->getTemplate()->getPath() . "worlds/");
-        Utils::copyFile($server->getPath() . "ops.txt", $server->getTemplate()->getPath() . "ops.txt");
-        Utils::copyFile($server->getPath() . "banned-players.txt", $server->getTemplate()->getPath() . "banned-players.txt");
-        Utils::copyFile($server->getPath() . "banned-ips.txt", $server->getTemplate()->getPath() . "banned-ips.txt");
-        Utils::copyFile($server->getPath() . "pocketmine.yml", $server->getTemplate()->getPath() . "pocketmine.yml");
-        Utils::copyFile($server->getPath() . "white-list.txt", $server->getTemplate()->getPath() . "white-list.txt");
+        CloudLogger::get()->debug("Copying files from " . $server->getPath() . " to " . $server->getTemplate()->getPath() . "...");
+
+        if ($server->getTemplate()->getTemplateType() === TemplateType::SERVER()) {
+            Utils::copyDir($server->getPath() . "players/", $server->getTemplate()->getPath() . "players/");
+            Utils::copyDir($server->getPath() . "plugin_data/", $server->getTemplate()->getPath() . "plugin_data/");
+            Utils::copyDir($server->getPath() . "worlds/", $server->getTemplate()->getPath() . "worlds/");
+            Utils::copyFile($server->getPath() . "ops.txt", $server->getTemplate()->getPath() . "ops.txt");
+            Utils::copyFile($server->getPath() . "banned-players.txt", $server->getTemplate()->getPath() . "banned-players.txt");
+            Utils::copyFile($server->getPath() . "banned-ips.txt", $server->getTemplate()->getPath() . "banned-ips.txt");
+            Utils::copyFile($server->getPath() . "pocketmine.yml", $server->getTemplate()->getPath() . "pocketmine.yml");
+            Utils::copyFile($server->getPath() . "white-list.txt", $server->getTemplate()->getPath() . "white-list.txt");
+        } else {
+            Utils::copyDir($server->getPath() . "config.yml", $server->getTemplate()->getPath() . "config.yml");
+            Utils::copyDir($server->getPath() . "lang.ini", $server->getTemplate()->getPath() . "lang.ini");
+        }
     }
 
     public function sendCommand(CloudServer $server, string $commandLine, bool $internal = false, ?ICommandSender $internalSender = null): ?Promise {

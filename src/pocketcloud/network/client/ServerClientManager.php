@@ -7,6 +7,7 @@ use JetBrains\PhpStorm\Pure;
 use pocketcloud\server\CloudServer;
 use pocketcloud\server\CloudServerManager;
 use pocketcloud\util\Address;
+use pocketcloud\util\CloudLogger;
 use pocketcloud\util\SingletonTrait;
 
 final class ServerClientManager {
@@ -20,13 +21,19 @@ final class ServerClientManager {
     }
 
     public function addClient(CloudServer $server, ServerClient $client): void {
-        if (!$this->issetClient($client)) $this->clients[$server->getName()] = $client;
+        if (!$this->issetClient($client)) {
+            CloudLogger::get()->debug("Adding client " . $client->getAddress() . " => " . $server->getName());
+            $this->clients[$server->getName()] = $client;
+        }
     }
 
     public function removeClient(ServerClient|CloudServer $client): void {
         $client = $client instanceof CloudServer ? $this->getClientOfServer($client) : $client;
         if ($client !== null) {
-            if ($this->issetClient($client)) unset($this->clients[array_search($client, $this->clients)]);
+            if ($this->issetClient($client)) {
+                CloudLogger::get()->debug("Removing client " . $client->getAddress());
+                unset($this->clients[array_search($client, $this->clients)]);
+            }
         }
     }
 

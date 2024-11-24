@@ -42,6 +42,7 @@ final class HttpServer extends Thread implements Reloadable {
         while ($this->connected) {
             if ($c = $this->accept()) {
                 if ($buffer = $c->read(self::REQUEST_READ_LENGTH)) {
+                    CloudLogger::get()->debug("Received incoming HTTP request...");
                     $this->buffer[] = new UnhandledHttpRequest($buffer, $c);
                     $this->entry->createNotifier()->wakeupSleeper();
                 }
@@ -55,8 +56,14 @@ final class HttpServer extends Thread implements Reloadable {
 
     private function handleRequest(Address $address, string $request): string {
         $request = HttpUtils::parseRequest($address, $request);
-        if (!$request instanceof Request) return new Response(500);
+        CloudLogger::get()->debug("Parsing HTTP request from " . $address . "...");
+        if (!$request instanceof Request) {
+            CloudLogger::get()->debug("HTTP request from " . $address . " could not be parsed, sending response with code 500...");
+            return new Response(500);
+        }
+
         if (Router::getInstance()->isRegistered($request)) return Router::getInstance()->execute($request);
+        CloudLogger::get()->debug("No route found for " . $request->data()->method() . " HTTP request from " . $request->data()->address() . ", sending 404 response...");
         $response = new Response(404);
         if ($this->invalidUrlHandler !== null) ($this->invalidUrlHandler)($request, $response);
         return $response;
@@ -87,6 +94,7 @@ final class HttpServer extends Thread implements Reloadable {
                     try {
                         $write = true;
                         if (DefaultConfig::getInstance()->isHttpServerOnlyLocal() && !$client->getAddress()->isLocalHost()) $write = false;
+                        CloudLogger::get()->debug(!$write ? "Can't handle HTTP request from " . $client->getAddress() . "..." : "Handling HTTP request from " . $client->getAddress() . "...");
                         if ($write) $client->write($this->handleRequest($client->getAddress(), $buf));
                         $client->close();
                     } catch (Throwable $exception) {

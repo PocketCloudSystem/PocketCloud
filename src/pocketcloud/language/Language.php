@@ -17,6 +17,7 @@ final class Language {
     public const FALLBACK = "en";
 
     protected static function init(): void {
+        CloudLogger::get()->debug("Initializing languages...");
         self::register("german", new Language(
             "German",
             STORAGE_PATH . "de_DE.yml",

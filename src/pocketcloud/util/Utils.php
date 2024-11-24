@@ -202,6 +202,7 @@ final class Utils {
     }
 
     public static function download(string $url, string $fileLocation): bool {
+        CloudLogger::get()->debug("Downloading from " . $url . ", pasting into " . $fileLocation . "...");
         $ch = curl_init();
         $fp = fopen($fileLocation, 'wb');
 

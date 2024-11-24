@@ -13,6 +13,7 @@ use pocketcloud\network\packet\impl\types\TextType;
 use pocketcloud\server\CloudServer;
 use pocketcloud\server\CloudServerManager;
 use pocketcloud\template\TemplateType;
+use pocketcloud\util\CloudLogger;
 use pocketcloud\util\Utils;
 
 final class CloudPlayer {
@@ -59,15 +60,18 @@ final class CloudPlayer {
     }
 
     public function setCurrentServer(?CloudServer $currentServer): void {
+        CloudLogger::get()->debug("Changing current server of " . $this->name . " to " . ($currentServer?->getName() ?? "NULL"));
         $this->currentServer = $currentServer?->getName();
         if (CloudPlayerManager::getInstance()->getPlayerByName($this->name) !== null) Network::getInstance()->broadcastPacket(new PlayerSyncPacket($this));
     }
 
     public function setCurrentProxy(?CloudServer $currentProxy): void {
+        CloudLogger::get()->debug("Changing current proxy of " . $this->name . " to " . ($currentProxy?->getName() ?? "NULL"));
         $this->currentProxy = $currentProxy?->getName();
     }
 
     public function send(string $message, TextType $textType): void {
+        CloudLogger::get()->debug("Sending text (" . $textType->getName() . ") to  " . $this->name);
         Network::getInstance()->broadcastPacket(new PlayerTextPacket($this->getName(), $message, $textType), ...ServerClientManager::getInstance()->pickClients(fn(ServerClient $client) => $client->getServer() !== null && $client->getServer()->getTemplate()->getTemplateType() === TemplateType::PROXY()));
     }
 
@@ -96,6 +100,7 @@ final class CloudPlayer {
     }
 
     public function kick(string $reason = ""): void {
+        CloudLogger::get()->debug("Kicking " . $this->name . " from the network, reason: " . ($reason == "" ? "NULL" : $reason));
         ($ev = new PlayerKickEvent($this, $reason))->call();
         if ($ev->isCancelled()) return;
         if ($this->getCurrentProxy() === null) $this->getCurrentServer()?->sendPacket(new PlayerKickPacket($this->getName(), $reason));

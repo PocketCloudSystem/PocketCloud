@@ -5,6 +5,7 @@ namespace pocketcloud\http\util;
 use Closure;
 use pocketcloud\http\io\Request;
 use pocketcloud\http\io\Response;
+use pocketcloud\util\CloudLogger;
 use pocketcloud\util\SingletonTrait;
 
 final class Router {
@@ -56,6 +57,7 @@ final class Router {
         $d = $this->pickRoute($request->data()->method(), $request->data()->path());
         if ($d !== null) {
             [$expectedPath, $closure] = $d;
+            CloudLogger::get()->debug("Choosing route " . $expectedPath . " for " . $request->data()->method() . " HTTP request to proceed, received from " . $request->data()->address());
             HttpUtils::fillRequest($request, $expectedPath);
             $closure($request, $response);
         }

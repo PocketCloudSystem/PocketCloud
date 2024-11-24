@@ -11,6 +11,7 @@ use pocketcloud\network\packet\impl\normal\ConsoleTextPacket;
 use pocketcloud\network\packet\impl\normal\LibrarySyncPacket;
 use pocketcloud\network\packet\impl\normal\ModuleSyncPacket;
 use pocketcloud\network\packet\impl\normal\PlayerTransferPacket;
+use pocketcloud\util\CloudLogger;
 use pocketcloud\util\Utils;
 use pocketcloud\network\packet\CloudPacket;
 use pocketcloud\network\packet\impl\normal\CloudServerSavePacket;
@@ -48,6 +49,7 @@ final class PacketPool {
 
     public function __construct() {
         self::setInstance($this);
+        CloudLogger::get()->debug("Registering all packet...");
         $this->registerPacket(LoginRequestPacket::class);
         $this->registerPacket(LoginResponsePacket::class);
         $this->registerPacket(DisconnectPacket::class);
