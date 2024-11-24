@@ -68,7 +68,7 @@ final class Network extends Thread {
                         if (($packet = PacketSerializer::decode($buffer)) !== null) {
                             (new NetworkPacketReceiveEvent($packet, $client))->call();
                             $packet->handle($client);
-                        } else CloudLogger::get()->warn(Language::current()->translate("network.receive.unknown", $client->getAddress()->__toString()))->debug(DefaultConfig::getInstance()->isNetworkEncryptionEnabled() ? base64_decode($buffer) : $buffer);
+                        } else CloudLogger::get()->warn(Language::current()->translate("network.receive.unknown",  $client->getAddress()->__toString() . "/" . ($client->getServer()?->getName() ?? "NULL")))->debug(DefaultConfig::getInstance()->isNetworkEncryptionEnabled() ? base64_decode($buffer) : $buffer);
                     } catch (Exception $e) {
                         CloudLogger::get()->error("§cFailed to decode a packet!");
                         CloudLogger::get()->debug($buffer);
