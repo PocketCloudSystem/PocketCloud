@@ -60,6 +60,7 @@ final class Router {
             CloudLogger::get()->debug("Choosing route " . $expectedPath . " for " . $request->data()->method() . " HTTP request to proceed, received from " . $request->data()->address());
             HttpUtils::fillRequest($request, $expectedPath);
             $closure($request, $response);
+            CloudLogger::get()->debug("Successfully handled " . $request->data()->method() . " HTTP request, sending " . $response->getStatusCode() . " (" . ($response->getCustomResponseCodeMessage() ?? (StatusCodes::RESPOND_CODES[$response->getStatusCode()] ?? "Unknown")) . ") response to " . $request->data()->address() . "...");
         }
         return $response;
     }

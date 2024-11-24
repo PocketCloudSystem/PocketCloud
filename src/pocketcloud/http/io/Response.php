@@ -48,6 +48,14 @@ final class Response {
 	public function customResponseCodeMessage(string $message): void {
 		$this->customResponseCodeMessage = $message;
 	}
+
+    public function getStatusCode(): int {
+        return $this->statusCode;
+    }
+
+    public function getCustomResponseCodeMessage(): ?string {
+        return $this->customResponseCodeMessage;
+    }
 	
 	public function __toString(): string {
 		$this->headers += $this->getOverwriteHeaders();
