@@ -18,7 +18,7 @@ class ListCommand extends Command {
 
         if ($type == "templates") {
             $sender->info("Templates §8(§e" . count(TemplateManager::getInstance()->getTemplates()) . "§8)§r:");
-            if (empty(TemplateManager::getInstance()->getTemplates())) $sender->info("§cNo templates available.");
+            if (empty(TemplateManager::getInstance()->getTemplates())) $sender->info("§c/");
             foreach (TemplateManager::getInstance()->getTemplates() as $template) {
                 $sender->info(
                     "§e" . $template->getName() .
@@ -34,7 +34,7 @@ class ListCommand extends Command {
             }
         } else if ($type == "servers") {
             $sender->info("Servers §8(§e" . count(CloudServerManager::getInstance()->getServers()) . "§8)§r:");
-            if (empty(CloudServerManager::getInstance()->getServers())) $sender->info("§cNo servers available.");
+            if (empty(CloudServerManager::getInstance()->getServers())) $sender->info("§c/");
             foreach (CloudServerManager::getInstance()->getServers() as $server) {
                 $sender->info(
                     "§e" . $server->getName() .
@@ -46,7 +46,7 @@ class ListCommand extends Command {
             }
         } else if ($type == "players") {
             $sender->info("Players §8(§e" . count(CloudPlayerManager::getInstance()->getPlayers()) . "§8)§r:");
-            if (empty(CloudPlayerManager::getInstance()->getPlayers())) $sender->info("§cNo players are online.");
+            if (empty(CloudPlayerManager::getInstance()->getPlayers())) $sender->info("§c/");
             foreach (CloudPlayerManager::getInstance()->getPlayers() as $player) {
                 $sender->info(
                     "§e" . $player->getName() .

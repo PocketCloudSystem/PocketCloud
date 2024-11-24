@@ -2,6 +2,7 @@
 
 namespace pocketcloud\command;
 
+use pocketcloud\command\impl\general\DebugCommand;
 use pocketcloud\command\impl\general\ExitCommand;
 use pocketcloud\command\impl\general\HelpCommand;
 use pocketcloud\command\impl\general\ListCommand;
@@ -58,6 +59,7 @@ final class CommandManager implements Reloadable {
         $this->registerCommand(new ReloadCommand("reload", "command.description.reload", "reload", []));
         $this->registerCommand(new WebAccountCommand("webaccount", "command.description.webaccount", "webaccount <create|remove|list|update>", ["webacc"]));
         $this->registerCommand(new VersionCommand("version", "command.description.version", "version", ["ver"]));
+        $this->registerCommand(new DebugCommand("debug", "command.description.debug", "debug", ["deb"]));
     }
 
     public function execute(string $line, ?ICommandSender $sender = null): void {

@@ -7,7 +7,7 @@ use pocketcloud\command\sender\ICommandSender;
 use pocketcloud\language\Language;
 use pocketcloud\PocketCloud;
 
-class ExitCommand extends Command {
+final class ExitCommand extends Command {
 
     public function execute(ICommandSender $sender, string $label, array $args): bool {
         if (isset($args[0])) {

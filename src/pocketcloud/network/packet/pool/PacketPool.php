@@ -49,7 +49,6 @@ final class PacketPool {
 
     public function __construct() {
         self::setInstance($this);
-        CloudLogger::get()->debug("Registering all packet...");
         $this->registerPacket(LoginRequestPacket::class);
         $this->registerPacket(LoginResponsePacket::class);
         $this->registerPacket(DisconnectPacket::class);
@@ -88,6 +87,7 @@ final class PacketPool {
 
     public function registerPacket(string $packetClass): void {
         if (!is_subclass_of($packetClass, CloudPacket::class)) return;
+        CloudLogger::get()->debug("Registering packet " . Utils::cleanPath($packetClass, true) . " (" . $packetClass . ")");
         $this->packets[Utils::cleanPath($packetClass, true)] = $packetClass;
     }
 

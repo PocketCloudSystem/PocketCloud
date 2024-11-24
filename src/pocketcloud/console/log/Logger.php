@@ -2,6 +2,7 @@
 
 namespace pocketcloud\console\log;
 
+use pocketcloud\config\impl\DefaultConfig;
 use pocketcloud\console\log\color\CloudColor;
 use pocketcloud\console\log\level\CloudLogLevel;
 use pocketcloud\setup\Setup;
@@ -16,9 +17,9 @@ final class Logger {
 
     public function __construct(
         private readonly ?string $cloudLogPath = null,
-        private bool $debugMode = true,
         private bool $saveMode = true,
-        private bool $setupMode = false
+        private bool $setupMode = false,
+        private bool $forceDebug = false
     ) {
         if ($this->setupMode) $this->saveMode = false;
         if ($this->saveMode) $this->cloudLogFile = fopen($this->cloudLogPath ?? LOG_PATH, "ab");
@@ -98,8 +99,8 @@ final class Logger {
         }
     }
 
-    public function setDebugMode(bool $debugMode): self {
-        $this->debugMode = $debugMode;
+    public function setForceDebug(bool $forceDebug): self {
+        $this->forceDebug = $forceDebug;
         return $this;
     }
 
@@ -115,7 +116,7 @@ final class Logger {
     }
 
     public function isDebugMode(): bool {
-        return $this->debugMode;
+        return $this->forceDebug || DefaultConfig::getInstance()->isDebugMode();
     }
 
     public function isSaveMode(): bool {

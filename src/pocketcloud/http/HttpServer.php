@@ -42,7 +42,6 @@ final class HttpServer extends Thread implements Reloadable {
         while ($this->connected) {
             if ($c = $this->accept()) {
                 if ($buffer = $c->read(self::REQUEST_READ_LENGTH)) {
-                    CloudLogger::get()->debug("Received incoming HTTP request...");
                     $this->buffer[] = new UnhandledHttpRequest($buffer, $c);
                     $this->entry->createNotifier()->wakeupSleeper();
                 }
@@ -91,6 +90,9 @@ final class HttpServer extends Thread implements Reloadable {
                 while (($data = $this->buffer->shift()) !== null) {
                     $client = $data->getClient();
                     $buf = $data->getBuffer();
+
+                    CloudLogger::get()->debug("Received incoming HTTP request from " . $client->getAddress() . "...");
+
                     try {
                         $write = true;
                         if (DefaultConfig::getInstance()->isHttpServerOnlyLocal() && !$client->getAddress()->isLocalHost()) $write = false;

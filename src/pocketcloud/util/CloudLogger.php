@@ -16,9 +16,9 @@ final class CloudLogger {
 
     public static function get(): Logger {
         try {
-            if (self::$logger === null) self::set(new Logger(LOG_PATH, DefaultConfig::getInstance()->isDebugMode()));
+            if (self::$logger === null) self::set(new Logger(LOG_PATH));
         } catch (Throwable) {
-            self::set(new Logger(LOG_PATH, true));
+            self::set(new Logger(LOG_PATH, forceDebug: true));
         }
         return self::$logger;
     }
