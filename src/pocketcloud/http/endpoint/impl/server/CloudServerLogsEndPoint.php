@@ -31,7 +31,7 @@ class CloudServerLogsEndPoint extends EndPoint {
     }
 
     public static function getServerLogs(string $server, int $type = 0): ?array {
-        $basePath = CLOUD_PATH . "/tmp/" . $server . "/";
+        $basePath = CLOUD_PATH . "tmp/" . $server . "/";
         $logFile = $type === 0 ? "server.log" : "logs/server.log";
 
         if (file_exists($basePath . $logFile)) {
