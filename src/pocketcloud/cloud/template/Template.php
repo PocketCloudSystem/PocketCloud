@@ -29,16 +29,11 @@ readonly class Template {
     }
 
     public function toArray(): array {
-        $playerCount = 0;
-        $serverCount = 0; #count(CloudServerManager::getInstance()->getServersByTemplate($this));
-        #foreach (CloudServerManager::getInstance()->getServersByTemplate($this) as $server) $playerCount += $server->getCloudPlayerCount();
         return [
             "name" => $this->name,
             "lobby" => $this->templateSettings->isLobby(),
             "maintenance" => $this->templateSettings->isMaintenance(),
             "static" => $this->templateSettings->isStatic(),
-            "playerCount" => $playerCount,
-            "serverCount" => $serverCount,
             "maxPlayerCount" => $this->templateSettings->getMaxPlayerCount(),
             "minServerCount" => $this->templateSettings->getMinServerCount(),
             "maxServerCount" => $this->templateSettings->getMaxServerCount(),
@@ -46,6 +41,13 @@ readonly class Template {
             "autoStart" => $this->templateSettings->isAutoStart(),
             "templateType" => $this->templateType->getName()
         ];
+    }
+
+    public function toDetailedArray(): array {
+        //todo: add server & player count
+        return array_merge($this->toArray(), [
+
+        ]);
     }
 
     public static function create(string $name, TemplateSettings $templateSettings, TemplateType $templateType): self {
