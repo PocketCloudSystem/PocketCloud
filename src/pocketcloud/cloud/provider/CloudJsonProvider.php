@@ -10,9 +10,15 @@ use pocketcloud\cloud\util\promise\Promise;
 final class CloudJsonProvider extends CloudProvider {
 
     private Config $templatesConfig;
+    private Config $modulesConfig;
+    private Config $notificationsList;
+    private Config $maintenanceList;
 
     public function __construct() {
         $this->templatesConfig = new Config(TEMPLATES_PATH . "templates.json", ConfigTypes::JSON());
+        $this->modulesConfig = new Config(IN_GAME_PATH . "modules.json", ConfigTypes::JSON());
+        $this->notificationsList = new Config(IN_GAME_PATH . "notifications.json", ConfigTypes::JSON());
+        $this->maintenanceList = new Config(IN_GAME_PATH . "maintenanceList.json", ConfigTypes::JSON());
     }
 
     public function addTemplate(Template $template): void {
@@ -52,6 +58,49 @@ final class CloudJsonProvider extends CloudProvider {
         }
 
         $promise->resolve($templates);
+        return $promise;
+    }
+
+    public function setModuleState(string $module, bool $enabled): void {
+        $this->modulesConfig->set($module, $enabled);
+        $this->modulesConfig->save();
+    }
+
+    public function getModuleState(string $module): Promise {
+        $promise = new Promise();
+        $promise->resolve($this->modulesConfig->get($module, false));
+        return $promise;
+    }
+
+    public function enablePlayerNotifications(string $player): void {
+        $this->notificationsList->set($player, true);
+        $this->notificationsList->save();
+    }
+
+    public function disablePlayerNotifications(string $player): void {
+        $this->notificationsList->remove($player);
+        $this->notificationsList->save();
+    }
+
+    public function hasNotificationsEnabled(string $player): Promise {
+        $promise = new Promise();
+        $promise->resolve($this->notificationsList->get($player, false));
+        return $promise;
+    }
+
+    public function addToWhitelist(string $player): void {
+        $this->maintenanceList->set($player, true);
+        $this->maintenanceList->save();
+    }
+
+    public function removeFromWhitelist(string $player): void {
+        $this->maintenanceList->remove($player);
+        $this->maintenanceList->save();
+    }
+
+    public function isOnWhitelist(string $player): Promise {
+        $promise = new Promise();
+        $promise->resolve($this->maintenanceList->get($player, false));
         return $promise;
     }
 

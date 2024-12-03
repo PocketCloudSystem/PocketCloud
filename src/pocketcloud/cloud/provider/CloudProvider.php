@@ -20,6 +20,22 @@ abstract class CloudProvider {
 
     abstract public function getTemplates(): Promise;
 
+    abstract public function setModuleState(string $module, bool $enabled): void;
+
+    abstract public function getModuleState(string $module): Promise;
+
+    abstract public function enablePlayerNotifications(string $player): void;
+
+    abstract public function disablePlayerNotifications(string $player): void;
+
+    abstract public function hasNotificationsEnabled(string $player): Promise;
+
+    abstract public function addToWhitelist(string $player): void;
+
+    abstract public function removeFromWhitelist(string $player): void;
+
+    abstract public function isOnWhitelist(string $player): Promise;
+
     protected static function select(): void {
         self::$current = match (MainConfig::getInstance()->getProvider()) {
             "mysql" => new CloudMySqlProvider(),

@@ -88,6 +88,53 @@ final class CloudMySqlProvider extends CloudProvider {
         return $promise;
     }
 
+    public function setModuleState(string $module, bool $enabled): void {
+        DatabaseQueries::setModuleState($module, $enabled)->execute();
+    }
+
+    public function getModuleState(string $module): Promise {
+        $promise = new Promise();
+
+        DatabaseQueries::getModuleState($module)
+            ->execute(fn(bool $enabled) => $promise->resolve($enabled));
+
+        return $promise;
+    }
+
+    public function enablePlayerNotifications(string $player): void {
+        DatabaseQueries::enablePlayerNotifications($player)->execute();
+    }
+
+    public function disablePlayerNotifications(string $player): void {
+        DatabaseQueries::disablePlayerNotifications($player)->execute();
+    }
+
+    public function hasNotificationsEnabled(string $player): Promise {
+        $promise = new Promise();
+
+        DatabaseQueries::hasNotificationsEnabled($player)
+            ->execute(fn(bool $enabled) => $promise->resolve($enabled));
+
+        return $promise;
+    }
+
+    public function addToWhitelist(string $player): void {
+        DatabaseQueries::addToWhitelist($player)->execute();
+    }
+
+    public function removeFromWhitelist(string $player): void {
+        DatabaseQueries::removeFromWhitelist($player)->execute();
+    }
+
+    public function isOnWhitelist(string $player): Promise {
+        $promise = new Promise();
+
+        DatabaseQueries::isOnWhitelist($player)
+            ->execute(fn(bool $enabled) => $promise->resolve($enabled));
+
+        return $promise;
+    }
+
     public function getConnectionPool(): ?ConnectionPool {
         return $this->connectionPool;
     }
