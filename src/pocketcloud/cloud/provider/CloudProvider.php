@@ -10,7 +10,7 @@ abstract class CloudProvider {
 
     private static ?self $current = null;
 
-    abstract public function createTemplate(Template $template): void;
+    abstract public function addTemplate(Template $template): void;
 
     abstract public function removeTemplate(Template $template): void;
 
