@@ -55,4 +55,11 @@ final class Utils {
         if ($removePath) return ($explode = explode(DIRECTORY_SEPARATOR, str_replace(["\\", "//", "/"], DIRECTORY_SEPARATOR, $path)))[count($explode) - 1];
         return str_replace(CLOUD_PATH, rtrim(str_replace("pocketcloud", "pcsrc", basename(CLOUD_PATH)), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR, $path);
     }
+
+    public static function generateString(int $length = 5): string {
+        $characters = "1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        $string = "";
+        for ($i = 0; $i < $length; $i++) $string .= $characters[mt_rand(0, (strlen($characters) - 1))];
+        return $string;
+    }
 }

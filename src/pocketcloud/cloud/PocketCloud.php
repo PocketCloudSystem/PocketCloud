@@ -6,13 +6,17 @@ use Phar;
 use pocketcloud\cloud\exception\ExceptionHandler;
 use pocketcloud\cloud\library\LibraryManager;
 use pocketcloud\cloud\loader\ClassLoader;
+use pocketcloud\cloud\provider\database\DatabaseQueries;
+use pocketcloud\cloud\software\SoftwareManager;
 use pocketcloud\cloud\terminal\log\CloudLogger;
 use pocketcloud\cloud\terminal\log\handler\ShutdownHandler;
 use pocketcloud\cloud\terminal\log\logger\LoggingCache;
 use pocketcloud\cloud\terminal\Terminal;
 use pocketcloud\cloud\thread\ThreadManager;
 use pocketcloud\cloud\util\terminal\TerminalUtils;
+use pocketcloud\cloud\util\tick\TickableList;
 use pocketcloud\cloud\util\Utils;
+use pocketcloud\cloud\util\VersionInfo;
 use pocketmine\snooze\SleeperHandler;
 
 final class PocketCloud {
@@ -29,7 +33,6 @@ final class PocketCloud {
         private readonly ClassLoader $classLoader
     ) {
         self::$instance = $this;
-
         $this->startUp();
 
         $this->sleeperHandler = new SleeperHandler();
@@ -51,7 +54,12 @@ final class PocketCloud {
         ShutdownHandler::register();
 
         LibraryManager::getInstance()->load();
+        SoftwareManager::getInstance()->downloadAll();
         TerminalUtils::clear();
+
+        CloudLogger::get()->info("§bPocket§3Cloud §8(§ev" . VersionInfo::VERSION . (VersionInfo::BETA ? "§c@BETA" : "") . "§8) - §rdeveloped by §e" . implode("§8, §e", VersionInfo::DEVELOPERS));
+        CloudLogger::get()->info("You can join our discord for information: §ehttps://discord.gg/3HbPEpaE3T");
+        CloudLogger::get()->emptyLine();
     }
 
     public function tick(): void {
@@ -60,10 +68,13 @@ final class PocketCloud {
             $this->sleeperHandler->sleepUntil($start);
             usleep(50 * 1000);
             $this->tick++;
+            TickableList::tick($this->tick);
         }
     }
 
     public function shutdown(): void {
+        if (!$this->running) return;
+        $this->running = false;
         ShutdownHandler::unregister();
         ThreadManager::getInstance()->stopAll();
         Utils::deleteLockFile();

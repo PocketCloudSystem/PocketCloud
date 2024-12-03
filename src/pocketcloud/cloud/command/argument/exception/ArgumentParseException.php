@@ -2,4 +2,6 @@
 
 namespace pocketcloud\cloud\command\argument\exception;
 
-class ArgumentParseException extends \Exception {}
+use Exception;
+
+class ArgumentParseException extends Exception {}

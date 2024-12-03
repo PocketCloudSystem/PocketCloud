@@ -8,6 +8,7 @@ use pocketcloud\cloud\thread\Thread;
 use pocketcloud\cloud\thread\Worker;
 use pocketcloud\cloud\util\Utils;
 use ReflectionClass;
+use ReflectionException;
 use Throwable;
 
 final class Logger {
@@ -46,7 +47,11 @@ final class Logger {
         foreach ($throwable->getTrace() as $trace) {
             $args = implode(", ", array_map(function(mixed $argument): string {
                 if (is_object($argument)) {
-                    return (new ReflectionClass($argument))->getShortName();
+                    try {
+                        return (new ReflectionClass($argument))->getShortName();
+                    } catch (ReflectionException) {
+                        return get_class($argument);
+                    }
                 } else if (is_array($argument)) {
                     return "array(" . count($argument) . ")";
                 }
@@ -64,12 +69,14 @@ final class Logger {
     }
 
     public function send(CloudLogLevel $logLevel, string $message, string ...$params): self {
-        $threadName = "Cloud";
-        if (Thread::getCurrentThread() !== null) {
-            $threadName = (new ReflectionClass(Thread::getCurrentThread()))->getShortName();
-        }
+        $threadName = "";
+        try {
+            if (Thread::getCurrentThread() !== null) {
+                $threadName = "§8[§c" . (new ReflectionClass(Thread::getCurrentThread()))->getShortName() . "§8] ";
+            }
+        } catch (ReflectionException) {}
 
-        $format = "§8[§c" . $threadName . " §8- §e" . date("Y-m-d H:i:s") . "§7/§r" . $logLevel->getPrefix() . "§r§8] §r" . (empty($params) ? $message : sprintf($message, ...$params)) . CloudColor::RESET();
+        $format = $threadName . "§8[§e" . date("Y-m-d H:i:s") . "§7/§r" . $logLevel->getPrefix() . "§r§8] §r" . (empty($params) ? $message : sprintf($message, ...$params)) . CloudColor::RESET();
         $line = CloudColor::toColoredString($format) . "\n";
 
         echo $line;

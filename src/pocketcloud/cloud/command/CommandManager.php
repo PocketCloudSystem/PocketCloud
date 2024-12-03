@@ -3,16 +3,19 @@
 namespace pocketcloud\cloud\command;
 
 use pocketcloud\cloud\command\impl\ExitCommand;
+use pocketcloud\cloud\command\impl\HelpCommand;
 use pocketcloud\cloud\util\SingletonTrait;
 
 final class CommandManager {
     use SingletonTrait;
 
+    /** @var array<Command> */
     private array $commands = [];
 
     public function __construct() {
         self::setInstance($this);
         $this->register(new ExitCommand());
+        $this->register(new HelpCommand());
     }
 
     public function handleInput(string $input): bool {
@@ -35,5 +38,9 @@ final class CommandManager {
 
     public function get(string $name): ?Command {
         return $this->commands[$name] ?? null;
+    }
+
+    public function getAll(): array {
+        return $this->commands;
     }
 }

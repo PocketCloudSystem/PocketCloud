@@ -1,21 +1,18 @@
 <?php
 
-namespace pocketcloud\cloud\util;
+namespace pocketcloud\cloud\util\enum;
 
-trait EnumTrait {
+use Closure;
+
+trait ParameterEnumTrait {
 
     /** @ignored */
     protected static ?array $members = null;
 
-    final public static function register(string $name, mixed $member): void {
+    final public static function register(string $name, Closure $onCreate): void {
         if (self::$members !== null) {
-            self::$members[strtoupper($name)] = $member;
+            self::$members[strtoupper($name)] = $onCreate;
         }
-    }
-
-    final public static function getAll(): array {
-        self::check();
-        return self::$members;
     }
 
     private static function check(): void {
@@ -29,7 +26,7 @@ trait EnumTrait {
 
     public static function __callStatic(string $name, array $arguments) {
         self::check();
-        if (isset(self::$members[strtoupper($name)])) return self::$members[strtoupper($name)];
+        if (isset(self::$members[strtoupper($name)])) return (self::$members[strtoupper($name)])(...$arguments);
         return null;
     }
 }

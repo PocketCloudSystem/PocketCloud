@@ -5,6 +5,7 @@ namespace pocketcloud\cloud\library;
 use pocketcloud\cloud\PocketCloud;
 use pocketcloud\cloud\terminal\log\CloudLogger;
 use pocketcloud\cloud\util\SingletonTrait;
+use Throwable;
 
 final class LibraryManager {
     use SingletonTrait;
@@ -41,6 +42,19 @@ final class LibraryManager {
         ));
 
         $this->addLibrary(new Library(
+            "mysql",
+            "https://github.com/PocketCloudSystem/mysqllib/archive/refs/heads/main.zip",
+            LIBRARY_PATH . "mysqllib.zip",
+            LIBRARY_PATH . "mysql/",
+            "r3pt1s\\mysql\\",
+            LIBRARY_PATH . "mysql/r3pt1s/mysql/",
+            ["README.md"],
+            LIBRARY_PATH . "mysql/mysqllib-main/src/",
+            LIBRARY_PATH . "mysql/",
+            LIBRARY_PATH . "mysql/mysqllib-main/",
+        ));
+
+        $this->addLibrary(new Library(
             "pmforms",
             "https://github.com/dktapps-pm-pl/pmforms/archive/refs/heads/master.zip",
             LIBRARY_PATH . "pmforms.zip",
@@ -66,7 +80,7 @@ final class LibraryManager {
                     } else {
                         $temporaryLogger->warn("Failed to downloaded library: %s", $library->getName());
                     }
-                } catch (\Throwable $exception) {
+                } catch (Throwable $exception) {
                     $temporaryLogger->warn("Failed to downloaded library: %s", $library->getName());
                     $temporaryLogger->exception($exception);
                 }

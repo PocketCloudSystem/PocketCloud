@@ -2,12 +2,9 @@
 
 namespace pocketcloud\cloud\util\net;
 
-use pocketcloud\cloud\terminal\log\CloudLogger;
-
 final class NetUtils {
 
     public static function download(string $url, string $fileLocation): bool {
-        CloudLogger::get()->debug("Downloading from " . $url . ", pasting into " . $fileLocation . "...", true);
         $ch = curl_init();
         $fp = fopen($fileLocation, 'wb');
 

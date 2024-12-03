@@ -2,7 +2,7 @@
 
 namespace pocketcloud\cloud\terminal\log\level;
 
-use pocketcloud\cloud\util\EnumTrait;
+use pocketcloud\cloud\util\enum\EnumTrait;
 
 /**
  * @method static CloudLogLevel INFO()

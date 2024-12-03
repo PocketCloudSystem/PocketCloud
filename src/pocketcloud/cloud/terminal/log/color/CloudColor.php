@@ -2,7 +2,7 @@
 
 namespace pocketcloud\cloud\terminal\log\color;
 
-use pocketcloud\cloud\util\EnumTrait;
+use pocketcloud\cloud\util\enum\EnumTrait;
 
 /**
  * @method static CloudColor BLACK()
