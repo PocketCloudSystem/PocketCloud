@@ -7,7 +7,6 @@ use Throwable;
 final class Utils {
 
     private static mixed $lockFileHandle = null;
-    private static string $startCommand = "";
 
     public static function checkRunning(?int &$pid = null): bool {
         if (!file_exists(STORAGE_PATH)) return false;

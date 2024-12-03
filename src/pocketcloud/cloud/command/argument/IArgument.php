@@ -10,4 +10,8 @@ interface IArgument {
 
     /** @throws ArgumentParseException */
     public function parseValue(string $input): mixed;
+
+    public function isOptional(): bool;
+
+    public function getType(): string;
 }

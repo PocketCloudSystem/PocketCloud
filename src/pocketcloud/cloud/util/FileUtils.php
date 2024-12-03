@@ -3,8 +3,24 @@
 namespace pocketcloud\cloud\util;
 
 use pocketcloud\cloud\exception\ExceptionHandler;
+use pocketcloud\cloud\terminal\log\CloudLogger;
+use Throwable;
 
 final class FileUtils {
+
+    public static function createDir(string $path): bool {
+        return ExceptionHandler::tryCatch(
+            function (string $path): bool {
+                if (is_dir($path)) return true;
+                $previousPath = substr($path, 0, strrpos($path, DIRECTORY_SEPARATOR, -2) + 1);
+                $return = self::createDir($previousPath);
+                return $return && is_writable($previousPath) && mkdir($path);
+            },
+            "Failed to create directory: " . $path,
+            null,
+            $path
+        ) ?? false;
+    }
 
     public static function filePutContents(string $filePath, string $content): int|false {
         return ExceptionHandler::tryCatch(
@@ -27,30 +43,32 @@ final class FileUtils {
         );
     }
 
-    public static function copyDirectory(string $sourceLocation, string $destinationLocation): bool {
+    public static function copyDirectory(string $src, string $dst): bool {
         return ExceptionHandler::tryCatch(
-            function (string $srcLocation, string $dstLocation): bool {
-                $srcLocation = rtrim($srcLocation, "/");
-                $dstLocation = rtrim($dstLocation, "/");
-                if (@is_dir($srcLocation)) {
-                    $dir = opendir($srcLocation);
-                    @mkdir($dstLocation);
-                    while ($file = readdir($dir)) {
-                        if (($file != ".") && ($file != "..")) {
-                            if (is_dir($srcLocation . "/" . $file))  {
-                                self::copyDirectory($srcLocation . "/" . $file, $dstLocation . "/" . $file);
-                            } else {
-                                copy($srcLocation . "/" . $file, $dstLocation . "/" . $file);
+            function (string $src, string $dst): bool {
+                $src = rtrim($src, DIRECTORY_SEPARATOR);
+                $dst = rtrim($dst, DIRECTORY_SEPARATOR);
+                self::createDir($src);
+                self::createDir($dst);
+
+                foreach (array_diff(scandir($src), [".", ".."]) as $file) {
+                    try {
+                        if (filetype($src . DIRECTORY_SEPARATOR . $file) == "dir") {
+                            self::copyDirectory($src . DIRECTORY_SEPARATOR . $file, $dst . DIRECTORY_SEPARATOR . $file);
+                        } else {
+                            try {
+                                copy($src . DIRECTORY_SEPARATOR . $file, $dst . DIRECTORY_SEPARATOR . $file);
+                            } catch (Throwable) {
+                                CloudLogger::get()->debug("Can't copy file from: " . $src . DIRECTORY_SEPARATOR . $file . " to " . $dst . DIRECTORY_SEPARATOR . $file);
                             }
                         }
-                    }
-                    closedir($dir);
+                    } catch (Throwable) {}
                 }
                 return false;
             },
             null,
             null,
-            $sourceLocation, $destinationLocation
+            $src, $dst
         );
     }
 

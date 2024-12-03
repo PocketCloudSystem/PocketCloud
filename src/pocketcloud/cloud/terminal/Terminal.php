@@ -3,7 +3,9 @@
 namespace pocketcloud\cloud\terminal;
 
 use pmmp\thread\ThreadSafeArray;
+use pocketcloud\cloud\command\CommandManager;
 use pocketcloud\cloud\PocketCloud;
+use pocketcloud\cloud\terminal\log\CloudLogger;
 use pocketcloud\cloud\thread\Thread;
 use pocketmine\snooze\SleeperHandlerEntry;
 
@@ -17,7 +19,9 @@ final class Terminal extends Thread {
 
         $this->entry = PocketCloud::getInstance()->getSleeperHandler()->addNotifier(function (): void {
             while (($line = $this->buffer->shift()) !== null) {
-                //TODO: handle command input
+                if (!CommandManager::getInstance()->handleInput($line)) {
+                    CloudLogger::get()->error("The §bcommand §rdoesn't exists!");
+                }
             }
         });
     }

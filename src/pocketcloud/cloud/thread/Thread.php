@@ -35,7 +35,6 @@ abstract class Thread extends NativeThread {
 
     abstract public function onRun(): void;
 
-
     public function registerClassLoader(): void {
         define("IS_PHAR", Phar::running() !== "");
 

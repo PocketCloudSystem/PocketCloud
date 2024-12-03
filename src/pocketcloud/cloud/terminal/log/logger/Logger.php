@@ -4,6 +4,8 @@ namespace pocketcloud\cloud\terminal\log\logger;
 
 use pocketcloud\cloud\terminal\log\color\CloudColor;
 use pocketcloud\cloud\terminal\log\level\CloudLogLevel;
+use pocketcloud\cloud\thread\Thread;
+use pocketcloud\cloud\thread\Worker;
 use pocketcloud\cloud\util\Utils;
 use ReflectionClass;
 use Throwable;
@@ -12,6 +14,7 @@ final class Logger {
 
     private mixed $cloudLogFile;
     private bool $closed = false;
+    private bool $saveLogs = true;
 
     public function __construct(
         private readonly ?string $cloudLogPath = null,
@@ -61,12 +64,19 @@ final class Logger {
     }
 
     public function send(CloudLogLevel $logLevel, string $message, string ...$params): self {
-        $format = CloudColor::YELLOW() . date("Y-m-d H:i:s") . CloudColor::DARK_GRAY() . " | " . CloudColor::RESET() . $logLevel->getPrefix() . CloudColor::DARK_GRAY() . " » " . CloudColor::RESET() . (empty($params) ? $message : sprintf($message, ...$params)) . CloudColor::RESET();
+        $threadName = "Cloud";
+        if (Thread::getCurrentThread() !== null) {
+            $threadName = (new ReflectionClass(Thread::getCurrentThread()))->getShortName();
+        }
+
+        $format = "§8[§c" . $threadName . " §8- §e" . date("Y-m-d H:i:s") . "§7/§r" . $logLevel->getPrefix() . "§r§8] §r" . (empty($params) ? $message : sprintf($message, ...$params)) . CloudColor::RESET();
         $line = CloudColor::toColoredString($format) . "\n";
 
         echo $line;
-        LoggingCache::save($line);
-        $this->write($format . "\n");
+        if ($this->saveLogs) {
+            LoggingCache::save($line);
+            $this->write($format . "\n");
+        }
 
         return $this;
     }
@@ -95,5 +105,13 @@ final class Logger {
 
     public function isDebugMode(): bool {
         return $this->debugMode;
+    }
+
+    public function setSaveLogs(bool $saveLogs): void {
+        $this->saveLogs = $saveLogs;
+    }
+
+    public function isSaveLogs(): bool {
+        return $this->saveLogs;
     }
 }

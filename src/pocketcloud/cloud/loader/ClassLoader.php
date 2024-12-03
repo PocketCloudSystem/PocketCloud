@@ -16,7 +16,7 @@ final class ClassLoader extends ThreadSafe {
     }
 
     public function init(): void {
-        $this->addPath("pocketcloud\\", SOURCE_PATH);
+        $this->addPath("pocketcloud\\cloud\\", SOURCE_PATH);
         spl_autoload_register(function (string $class): void {
             if (($path = $this->getFullPath(self::validate($class))) !== null) {
                 if (file_exists($path) || (IS_PHAR && file_exists($path = Phar::running() . "/src/" . self::validate($class) . ".php")) && !class_exists($class)) {
