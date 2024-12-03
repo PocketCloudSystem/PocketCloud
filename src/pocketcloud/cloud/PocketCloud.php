@@ -3,10 +3,14 @@
 namespace pocketcloud\cloud;
 
 use Phar;
+use pocketcloud\cloud\exception\ExceptionHandler;
 use pocketcloud\cloud\library\LibraryManager;
 use pocketcloud\cloud\loader\ClassLoader;
 use pocketcloud\cloud\terminal\log\CloudLogger;
+use pocketcloud\cloud\terminal\log\handler\ShutdownHandler;
+use pocketcloud\cloud\terminal\log\logger\LoggingCache;
 use pocketcloud\cloud\terminal\Terminal;
+use pocketcloud\cloud\thread\ThreadManager;
 use pocketcloud\cloud\util\terminal\TerminalUtils;
 use pocketcloud\cloud\util\Utils;
 use pocketmine\snooze\SleeperHandler;
@@ -41,6 +45,11 @@ final class PocketCloud {
             exit(1);
         }
 
+        Utils::createLockFile();
+
+        ExceptionHandler::set();
+        ShutdownHandler::register();
+
         LibraryManager::getInstance()->load();
         TerminalUtils::clear();
     }
@@ -52,6 +61,15 @@ final class PocketCloud {
             usleep(50 * 1000);
             $this->tick++;
         }
+    }
+
+    public function shutdown(): void {
+        ShutdownHandler::unregister();
+        ThreadManager::getInstance()->stopAll();
+        Utils::deleteLockFile();
+        CloudLogger::close();
+        LoggingCache::clear();
+        TerminalUtils::kill(getmypid());
     }
 
     public function getTerminal(): Terminal {
