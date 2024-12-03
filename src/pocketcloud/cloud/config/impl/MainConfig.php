@@ -12,7 +12,6 @@ final class MainConfig extends Configuration {
 
     /** @ignored */
     private string $generatedKey;
-    private string $language = "en_US";
     private int $memoryLimit = 512;
     private string $provider = "json";
     private bool $debugMode = false;
@@ -85,10 +84,6 @@ final class MainConfig extends Configuration {
         }, "Failed to load main config", null, $defaultHttp, $defaultNetwork, $defaultWeb, $defaultMySql);
     }
 
-    public function setLanguage(string $language): void {
-        $this->language = $language;
-    }
-
     public function setMemoryLimit(int $memoryLimit): void {
         $this->memoryLimit = $memoryLimit;
         ini_set("memory_limit", ($memoryLimit < 0 ? "-1" : $memoryLimit . "M"));
@@ -136,10 +131,6 @@ final class MainConfig extends Configuration {
 
     public function setWebEnabled(bool $value): void {
         $this->web["enabled"] = $value;
-    }
-
-    public function getLanguage(): string {
-        return $this->language;
     }
 
     public function getMemoryLimit(): int {
