@@ -2,6 +2,7 @@
 
 namespace pocketcloud\cloud\command;
 
+use pocketcloud\cloud\command\impl\ExitCommand;
 use pocketcloud\cloud\util\SingletonTrait;
 
 final class CommandManager {
@@ -11,6 +12,7 @@ final class CommandManager {
 
     public function __construct() {
         self::setInstance($this);
+        $this->register(new ExitCommand());
     }
 
     public function handleInput(string $input): bool {

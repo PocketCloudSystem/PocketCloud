@@ -33,18 +33,21 @@ abstract class Command {
                     $parsedArgs[$currentParameter->getName()] = $arg;
                 } catch (ArgumentParseException) {
                     CloudLogger::get()->warn($this->getUsage());
-                    break;
+                    return;
                 }
             } else {
                 if ($currentParameter->isOptional()) continue;
-                break;
+                CloudLogger::get()->warn($this->getUsage());
+                return;
             }
         }
 
-        $this->run($label, $parsedArgs);
+        if (!$this->run($label, $parsedArgs)) {
+            CloudLogger::get()->warn($this->getUsage());
+        }
     }
 
-    abstract public function run(string $label, array $args): string;
+    abstract public function run(string $label, array $args): bool;
 
     private function buildUsageMessage(): string {
         $usage = $this->getName();
