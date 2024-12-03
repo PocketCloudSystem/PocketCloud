@@ -4,6 +4,7 @@ namespace pocketcloud\cloud\command\impl;
 
 use pocketcloud\cloud\command\argument\def\BoolArgument;
 use pocketcloud\cloud\command\Command;
+use pocketcloud\cloud\command\sender\ICommandSender;
 use pocketcloud\cloud\PocketCloud;
 
 final class ExitCommand extends Command {
@@ -16,7 +17,7 @@ final class ExitCommand extends Command {
         ));
     }
 
-    public function run(string $label, array $args): bool {
+    public function run(ICommandSender $sender, string $label, array $args): bool {
         if ($args["confirmation"]) PocketCloud::getInstance()->shutdown();
         return true;
     }

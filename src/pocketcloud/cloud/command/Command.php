@@ -4,6 +4,7 @@ namespace pocketcloud\cloud\command;
 
 use pocketcloud\cloud\command\argument\exception\ArgumentParseException;
 use pocketcloud\cloud\command\argument\IArgument;
+use pocketcloud\cloud\command\sender\ICommandSender;
 use pocketcloud\cloud\terminal\log\CloudLogger;
 
 abstract class Command {
@@ -18,9 +19,9 @@ abstract class Command {
     ) {}
 
     /** @internal */
-    public function handle(string $label, array $args): void {
+    public function handle(ICommandSender $sender, string $label, array $args): void {
         if (empty($this->parameters)) {
-            $this->run($label, $args);
+            $this->run($sender, $label, $args);
             return;
         }
 
@@ -42,12 +43,12 @@ abstract class Command {
             }
         }
 
-        if (!$this->run($label, $parsedArgs)) {
+        if (!$this->run($sender, $label, $parsedArgs)) {
             CloudLogger::get()->warn($this->getUsage());
         }
     }
 
-    abstract public function run(string $label, array $args): bool;
+    abstract public function run(ICommandSender $sender, string $label, array $args): bool;
 
     private function buildUsageMessage(): string {
         $usage = $this->getName();

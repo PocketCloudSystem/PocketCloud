@@ -8,6 +8,17 @@ use Throwable;
 
 final class FileUtils {
 
+    public static function copyFile(string $src, string $dst): bool {
+        return ExceptionHandler::tryCatch(
+            function (string $src, string $dst): bool {
+                return copy($src, $dst);
+            },
+            "Failed to copy " . $src . " to " . $dst,
+            null,
+            $src, $dst
+        );
+    }
+
     public static function createDir(string $path): bool {
         return ExceptionHandler::tryCatch(
             function (string $path): bool {

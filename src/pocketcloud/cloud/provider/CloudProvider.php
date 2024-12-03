@@ -36,7 +36,7 @@ abstract class CloudProvider {
 
     abstract public function isOnWhitelist(string $player): Promise;
 
-    protected static function select(): void {
+    public static function select(): void {
         self::$current = match (MainConfig::getInstance()->getProvider()) {
             "mysql" => new CloudMySqlProvider(),
             default => new CloudJsonProvider()

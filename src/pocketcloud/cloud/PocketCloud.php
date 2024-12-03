@@ -6,7 +6,7 @@ use Phar;
 use pocketcloud\cloud\exception\ExceptionHandler;
 use pocketcloud\cloud\library\LibraryManager;
 use pocketcloud\cloud\loader\ClassLoader;
-use pocketcloud\cloud\provider\database\DatabaseQueries;
+use pocketcloud\cloud\server\util\ServerUtils;
 use pocketcloud\cloud\software\SoftwareManager;
 use pocketcloud\cloud\terminal\log\CloudLogger;
 use pocketcloud\cloud\terminal\log\handler\ShutdownHandler;
@@ -45,6 +45,30 @@ final class PocketCloud {
     public function startUp(): void {
         if (Utils::checkRunning($pid)) {
             CloudLogger::get()->error("Another instance of §bPocket§3Cloud §ris already running! (ProcessId: " . $pid . ")");
+            exit(1);
+        }
+
+        if (PHP_OS_FAMILY == "Windows") {
+            CloudLogger::get()->error("You can't use §bPocket§3Cloud §ron Windows!");
+            exit(1);
+        }
+
+        if (!ServerUtils::checkBinary()) {
+            CloudLogger::get()->error("Please install the following php binary in " . CLOUD_PATH . ":");
+            CloudLogger::get()->error("§ehttps://jenkins.pmmp.io/job/PHP-8.0-Aggregate/lastSuccessfulBuild/artifact/PHP-8.0-Linux-x86_64.tar.gz");
+            exit(1);
+        }
+
+        if (!ServerUtils::checkJava()) {
+            CloudLogger::get()->error("Please install Java 17!");
+            CloudLogger::get()->error("Your operating system: §e" . php_uname());
+            exit(1);
+        }
+
+        if (!ServerUtils::detectStartMethod()) {
+            CloudLogger::get()->error("Please install one of the following software:");
+            CloudLogger::get()->error("tmux (apt-get install tmux)");
+            CloudLogger::get()->error("Screen (apt-get install screen)");
             exit(1);
         }
 

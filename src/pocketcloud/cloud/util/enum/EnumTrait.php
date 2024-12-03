@@ -18,6 +18,11 @@ trait EnumTrait {
         return self::$members;
     }
 
+    final public static function get(string $name): mixed {
+        self::check();
+        return self::$members[strtolower($name)] ?? null;
+    }
+
     private static function check(): void {
         if (self::$members === null) {
             self::$members = [];

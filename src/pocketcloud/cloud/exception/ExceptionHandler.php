@@ -5,7 +5,6 @@ namespace pocketcloud\cloud\exception;
 use Closure;
 use ErrorException;
 use pocketcloud\cloud\terminal\log\CloudLogger;
-use pocketcloud\cloud\util\promise\Promise;
 use Throwable;
 
 final class ExceptionHandler {

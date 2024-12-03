@@ -5,6 +5,7 @@ namespace pocketcloud\cloud\provider;
 use pocketcloud\cloud\config\impl\MainConfig;
 use pocketcloud\cloud\PocketCloud;
 use pocketcloud\cloud\provider\database\DatabaseQueries;
+use pocketcloud\cloud\provider\migration\MigrationList;
 use pocketcloud\cloud\template\Template;
 use pocketcloud\cloud\terminal\log\CloudLogger;
 use pocketcloud\cloud\util\promise\Promise;
@@ -27,7 +28,11 @@ final class CloudMySqlProvider extends CloudProvider {
             CloudLogger::get()->exception($throwable);
         });
 
-        DatabaseQueries::createTables()->execute();
+        DatabaseQueries::createTables()->execute(function (): void {
+            if (MigrationList::JSON_TO_MYSQL()->checkForMigration()) {
+                MigrationList::JSON_TO_MYSQL()->migrate();
+            }
+        });
     }
 
     public function addTemplate(Template $template): void {

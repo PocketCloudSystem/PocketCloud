@@ -14,8 +14,8 @@ final class TemplateType {
     use EnumTrait;
 
     protected static function init(): void {
-        self::register("server", new TemplateType("SERVER", SoftwareManager::getInstance()->getSoftwareByName("PocketMine-MP")));
-        self::register("proxy", new TemplateType("PROXY", SoftwareManager::getInstance()->getSoftwareByName("WaterdogPE")));
+        self::register("server", new TemplateType("SERVER", SoftwareManager::getInstance()->get("PocketMine-MP")));
+        self::register("proxy", new TemplateType("PROXY", SoftwareManager::getInstance()->get("WaterdogPE")));
     }
 
     public static function get(string $name): ?TemplateType {
@@ -44,5 +44,13 @@ final class TemplateType {
 
     public function getSoftware(): Software {
         return $this->software;
+    }
+
+    public function isServer(): bool {
+        return $this === self::SERVER();
+    }
+
+    public function isProxy(): bool {
+        return $this === self::PROXY();
     }
 }

@@ -15,8 +15,8 @@ final class SoftwareManager {
 
     public function __construct() {
         self::setInstance($this);
-        $this->registerSoftware(new Software("PocketMine-MP", MainConfig::getInstance()->getStartCommand("server"), "https://github.com/pmmp/PocketMine-MP/releases/latest/download/PocketMine-MP.phar", "PocketMine-MP.phar", ["pmmp"]));
-        $this->registerSoftware(new Software("WaterdogPE", MainConfig::getInstance()->getStartCommand("proxy"), "https://github.com/WaterdogPE/WaterdogPE/releases/download/latest/Waterdog.jar", "Waterdog.jar", ["wdpe"]));
+        $this->register(new Software("PocketMine-MP", MainConfig::getInstance()->getStartCommand("server"), "https://github.com/pmmp/PocketMine-MP/releases/latest/download/PocketMine-MP.phar", "PocketMine-MP.phar", ["pmmp"]));
+        $this->register(new Software("WaterdogPE", MainConfig::getInstance()->getStartCommand("proxy"), "https://github.com/WaterdogPE/WaterdogPE/releases/download/latest/Waterdog.jar", "Waterdog.jar", ["wdpe"]));
     }
 
     public function downloadAll(): void {
@@ -43,7 +43,7 @@ final class SoftwareManager {
         return file_exists(SOFTWARE_PATH . $software->getFileName());
     }
 
-    public function registerSoftware(Software $software): bool {
+    public function register(Software $software): bool {
         if (!isset($this->software[$software->getName()])) {
             $this->software[$software->getName()] = $software;
             return true;
@@ -51,7 +51,7 @@ final class SoftwareManager {
         return false;
     }
 
-    public function unregisterSoftware(Software $software): bool {
+    public function unregister(Software $software): bool {
         if (isset($this->software[$software->getName()])) {
             unset($this->software[$software->getName()]);
             return true;
@@ -59,14 +59,14 @@ final class SoftwareManager {
         return false;
     }
 
-    public function getSoftwareByName(string $name): ?Software {
+    public function get(string $name): ?Software {
         foreach ($this->software as $software) {
             if ($software->getName() == $name || in_array($name, $software->getAliases())) return $software;
         }
         return null;
     }
 
-    public function getSoftware(): array {
+    public function getAll(): array {
         return $this->software;
     }
 }

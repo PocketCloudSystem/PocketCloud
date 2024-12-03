@@ -4,6 +4,7 @@ namespace pocketcloud\cloud\command;
 
 use pocketcloud\cloud\command\impl\ExitCommand;
 use pocketcloud\cloud\command\impl\HelpCommand;
+use pocketcloud\cloud\command\sender\ICommandSender;
 use pocketcloud\cloud\util\SingletonTrait;
 
 final class CommandManager {
@@ -18,12 +19,12 @@ final class CommandManager {
         $this->register(new HelpCommand());
     }
 
-    public function handleInput(string $input): bool {
+    public function handleInput(ICommandSender $sender, string $input): bool {
         $args = explode(" ", $input);
         $name = array_shift($args);
         if (($command = $this->get($name)) === null) return false;
 
-        $command->handle($name, $args);
+        $command->handle($sender, $name, $args);
         return true;
     }
 

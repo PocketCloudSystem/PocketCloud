@@ -15,7 +15,7 @@ final class LibraryManager {
 
     public function __construct() {
         self::setInstance($this);
-        $this->addLibrary(new Library(
+        $this->add(new Library(
             "Snooze",
             "https://github.com/pmmp/Snooze/archive/refs/heads/master.zip",
             LIBRARY_PATH . "snooze.zip",
@@ -28,7 +28,7 @@ final class LibraryManager {
             LIBRARY_PATH . "snooze/Snooze-master/"
         ));
 
-        $this->addLibrary(new Library(
+        $this->add(new Library(
             "configlib",
             "https://github.com/r3pt1s/configlib/archive/refs/heads/main.zip",
             LIBRARY_PATH . "configlib.zip",
@@ -41,7 +41,7 @@ final class LibraryManager {
             LIBRARY_PATH . "config/configlib-main/",
         ));
 
-        $this->addLibrary(new Library(
+        $this->add(new Library(
             "mysql",
             "https://github.com/PocketCloudSystem/mysqllib/archive/refs/heads/main.zip",
             LIBRARY_PATH . "mysqllib.zip",
@@ -54,7 +54,7 @@ final class LibraryManager {
             LIBRARY_PATH . "mysql/mysqllib-main/",
         ));
 
-        $this->addLibrary(new Library(
+        $this->add(new Library(
             "pmforms",
             "https://github.com/dktapps-pm-pl/pmforms/archive/refs/heads/master.zip",
             LIBRARY_PATH . "pmforms.zip",
@@ -90,19 +90,19 @@ final class LibraryManager {
         }
     }
 
-    public function addLibrary(Library $library): void {
+    public function add(Library $library): void {
         $this->libraries[$library->getName()] = $library;
     }
 
-    public function removeLibrary(Library $library): void {
+    public function remove(Library $library): void {
         if (isset($this->libraries[$library->getName()])) unset($this->libraries[$library->getName()]);
     }
 
-    public function getLibrary(string $name): ?Library {
+    public function get(string $name): ?Library {
         return $this->libraries[$name] ?? null;
     }
 
-    public function getLibraries(): array {
+    public function getAll(): array {
         return $this->libraries;
     }
 }

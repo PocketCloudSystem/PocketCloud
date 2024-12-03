@@ -5,7 +5,6 @@ namespace pocketcloud\cloud\terminal\log\logger;
 use pocketcloud\cloud\terminal\log\color\CloudColor;
 use pocketcloud\cloud\terminal\log\level\CloudLogLevel;
 use pocketcloud\cloud\thread\Thread;
-use pocketcloud\cloud\thread\Worker;
 use pocketcloud\cloud\util\Utils;
 use ReflectionClass;
 use ReflectionException;
