@@ -20,11 +20,6 @@ final class LogType {
         self::register("error", new LogType("ERROR"));
     }
 
-    public static function getTypeByName(string $name): ?LogType {
-        self::check();
-        return self::$members[strtoupper($name)] ?? null;
-    }
-
     public function __construct(private readonly string $name) {}
 
     public function getName(): string {

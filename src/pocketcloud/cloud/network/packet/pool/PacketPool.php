@@ -3,6 +3,9 @@
 namespace pocketcloud\cloud\network\packet\pool;
 
 use pocketcloud\cloud\network\packet\CloudPacket;
+use pocketcloud\cloud\network\packet\impl\normal\KeepAlivePacket;
+use pocketcloud\cloud\network\packet\impl\request\ServerHandshakeRequestPacket;
+use pocketcloud\cloud\network\packet\impl\response\ServerHandshakeResponsePacket;
 use pocketcloud\cloud\terminal\log\CloudLogger;
 use pocketcloud\cloud\util\SingletonTrait;
 use pocketcloud\cloud\util\Utils;
@@ -15,6 +18,10 @@ final class PacketPool {
 
     public function __construct() {
         self::setInstance($this);
+
+        self::registerPacket(KeepAlivePacket::class);
+        self::registerPacket(ServerHandshakeRequestPacket::class);
+        self::registerPacket(ServerHandshakeResponsePacket::class);
     }
 
     public function registerPacket(string $packetClass): void {

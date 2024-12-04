@@ -20,11 +20,6 @@ final class ErrorReason {
         self::register("server_existence", new ErrorReason("SERVER_EXISTENCE"));
     }
 
-    public static function getReasonByName(string $name): ?ErrorReason {
-        self::check();
-        return self::$members[strtoupper($name)] ?? null;
-    }
-
     public function __construct(private readonly string $name) {}
 
     public function getName(): string {

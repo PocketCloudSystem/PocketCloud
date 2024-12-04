@@ -24,11 +24,6 @@ final class TextType {
         self::register("toast_notification", new TextType("TOAST_NOTIFICATION"));
     }
 
-    public static function getTypeByName(string $name): ?TextType {
-        self::check();
-        return self::$members[strtoupper($name)] ?? null;
-    }
-
     public function __construct(private readonly string $name) {}
 
     public function getName(): string {

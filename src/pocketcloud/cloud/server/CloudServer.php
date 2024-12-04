@@ -6,6 +6,7 @@ use pocketcloud\cloud\event\impl\server\ServerStartEvent;
 use pocketcloud\cloud\event\impl\server\ServerStopEvent;
 use pocketcloud\cloud\network\client\ServerClientCache;
 use pocketcloud\cloud\network\packet\CloudPacket;
+use pocketcloud\cloud\network\packet\impl\type\VerifyStatus;
 use pocketcloud\cloud\server\data\CloudServerData;
 use pocketcloud\cloud\server\data\InternalCloudServerStorage;
 use pocketcloud\cloud\server\util\ServerStatus;
@@ -23,6 +24,7 @@ class CloudServer {
     private int $lastCheckTime;
     private int $startTime;
     private int $stopTime = 0;
+    private VerifyStatus $verifyStatus;
 
     public function __construct(
         private readonly int $id,
@@ -31,7 +33,7 @@ class CloudServer {
         private ServerStatus $serverStatus
     ) {
         $this->internalCloudServerStorage = new InternalCloudServerStorage($this);
-        //TODO: Verify Status
+        $this->verifyStatus = VerifyStatus::NOT_APPLIED();
         $this->startTime = time();
     }
 
@@ -117,6 +119,10 @@ class CloudServer {
         return $this->stopTime;
     }
 
+    public function getVerifyStatus(): VerifyStatus {
+        return $this->verifyStatus;
+    }
+
     public function setServerStatus(ServerStatus $serverStatus): void {
         $this->serverStatus = $serverStatus;
         //TODO: sync server status
@@ -128,6 +134,10 @@ class CloudServer {
 
     public function setStopTime(float $stopTime): void {
         $this->stopTime = $stopTime;
+    }
+
+    public function setVerifyStatus(VerifyStatus $verifyStatus): void {
+        $this->verifyStatus = $verifyStatus;
     }
 
     public function sendPacket(CloudPacket $packet): bool {

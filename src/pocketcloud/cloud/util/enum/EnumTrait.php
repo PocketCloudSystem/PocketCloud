@@ -4,7 +4,6 @@ namespace pocketcloud\cloud\util\enum;
 
 trait EnumTrait {
 
-    /** @ignored */
     protected static ?array $members = null;
 
     final public static function register(string $name, mixed $member): void {

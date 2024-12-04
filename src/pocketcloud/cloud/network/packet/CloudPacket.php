@@ -27,7 +27,7 @@ abstract class CloudPacket  {
 
     public function decodePayload(PacketData $packetData): void {}
 
-    abstract public function handle(ServerClient $client);
+    abstract public function handle(ServerClient $client): void;
 
     public function isEncoded(): bool {
         return $this->encoded;

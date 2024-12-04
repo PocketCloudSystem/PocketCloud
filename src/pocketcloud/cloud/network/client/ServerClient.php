@@ -4,6 +4,7 @@ namespace pocketcloud\cloud\network\client;
 
 use pocketcloud\cloud\network\Network;
 use pocketcloud\cloud\network\packet\CloudPacket;
+use pocketcloud\cloud\server\CloudServer;
 use pocketcloud\cloud\terminal\log\CloudLogger;
 use pocketcloud\cloud\util\net\Address;
 use ReflectionClass;
@@ -24,5 +25,7 @@ readonly class ServerClient {
         return $this->address;
     }
 
-    //TODO: getServer()
+    public function getServer(): ?CloudServer {
+        return ServerClientCache::getInstance()->getServer($this);
+    }
 }

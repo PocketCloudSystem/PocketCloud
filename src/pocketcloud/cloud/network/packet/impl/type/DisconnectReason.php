@@ -16,11 +16,6 @@ final class DisconnectReason {
         self::register("server_shutdown", new DisconnectReason("SERVER_SHUTDOWN"));
     }
 
-    public static function getReasonByName(string $name): ?DisconnectReason {
-        self::check();
-        return self::$members[strtoupper($name)] ?? null;
-    }
-
     public function __construct(private readonly string $name) {}
 
     public function getName(): string {
