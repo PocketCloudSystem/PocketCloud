@@ -3,26 +3,13 @@
 namespace pocketcloud\cloud\command\argument\def;
 
 use pocketcloud\cloud\command\argument\exception\ArgumentParseException;
-use pocketcloud\cloud\command\argument\IArgument;
+use pocketcloud\cloud\command\argument\CommandArgument;
 
-final readonly class IntegerArgument implements IArgument {
-
-    public function __construct(
-        private string $name,
-        private bool $optional
-    ) {}
-
-    public function getName(): string {
-        return $this->name;
-    }
+final readonly class IntegerArgument extends CommandArgument {
 
     public function parseValue(string $input): int {
         if (is_numeric($input)) return intval($input);
         return throw new ArgumentParseException();
-    }
-
-    public function isOptional(): bool {
-        return $this->optional;
     }
 
     public function getType(): string {

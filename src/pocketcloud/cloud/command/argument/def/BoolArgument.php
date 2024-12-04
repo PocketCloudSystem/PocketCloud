@@ -2,26 +2,13 @@
 
 namespace pocketcloud\cloud\command\argument\def;
 
-use pocketcloud\cloud\command\argument\IArgument;
+use pocketcloud\cloud\command\argument\CommandArgument;
 
-final readonly class BoolArgument implements IArgument {
-
-    public function __construct(
-        private string $name,
-        private bool $optional
-    ) {}
-
-    public function getName(): string {
-        return $this->name;
-    }
+final readonly class BoolArgument extends CommandArgument {
 
     public function parseValue(string $input): bool {
         if (strtolower($input) == "true" || strtolower($input) == "yes") return true;
         return false;
-    }
-
-    public function isOptional(): bool {
-        return $this->optional;
     }
 
     public function getType(): string {

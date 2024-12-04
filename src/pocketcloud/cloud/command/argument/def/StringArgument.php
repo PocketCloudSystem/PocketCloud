@@ -2,28 +2,27 @@
 
 namespace pocketcloud\cloud\command\argument\def;
 
-use pocketcloud\cloud\command\argument\IArgument;
+use pocketcloud\cloud\command\argument\CommandArgument;
 
-final readonly class StringArgument implements IArgument {
+final readonly class StringArgument extends CommandArgument {
 
     public function __construct(
-        private string $name,
-        private bool $optional
-    ) {}
-
-    public function getName(): string {
-        return $this->name;
+        string $name,
+        bool $optional,
+        private bool $multiString = false
+    ) {
+        parent::__construct($name, $optional);
     }
 
     public function parseValue(string $input): string {
         return $input;
     }
 
-    public function isOptional(): bool {
-        return $this->optional;
-    }
-
     public function getType(): string {
         return "string";
+    }
+
+    public function isMultiString(): bool {
+        return $this->multiString;
     }
 }

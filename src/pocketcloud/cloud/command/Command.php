@@ -2,14 +2,15 @@
 
 namespace pocketcloud\cloud\command;
 
+use pocketcloud\cloud\command\argument\def\StringArgument;
 use pocketcloud\cloud\command\argument\exception\ArgumentParseException;
-use pocketcloud\cloud\command\argument\IArgument;
+use pocketcloud\cloud\command\argument\CommandArgument;
 use pocketcloud\cloud\command\sender\ICommandSender;
 use pocketcloud\cloud\terminal\log\CloudLogger;
 
 abstract class Command {
 
-    /** @var array<IArgument> */
+    /** @var array<CommandArgument> */
     private array $parameters = [];
 
     public function __construct(
@@ -28,10 +29,12 @@ abstract class Command {
         $parsedArgs = [];
         for ($i = 0; $i < count($this->parameters); $i++) {
             $currentParameter = $this->parameters[$i];
+            $multiString = $currentParameter instanceof StringArgument && $currentParameter->isMultiString();
             if (isset($args[$i])) {
                 try {
-                    $arg = $currentParameter->parseValue($args[$i]);
+                    $arg = $currentParameter->parseValue($multiString ? array_slice($args, $i) : $args[$i]);
                     $parsedArgs[$currentParameter->getName()] = $arg;
+                    if ($multiString) break;
                 } catch (ArgumentParseException) {
                     CloudLogger::get()->warn($this->getUsage());
                     return;
@@ -61,7 +64,7 @@ abstract class Command {
         return $usage;
     }
 
-    public function addParameter(IArgument $argument): void {
+    public function addParameter(CommandArgument $argument): void {
         $this->parameters[] = $argument;
     }
 
