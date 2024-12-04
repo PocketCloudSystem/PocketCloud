@@ -4,6 +4,7 @@ namespace pocketcloud\cloud\provider;
 
 use pocketcloud\cloud\config\Config;
 use pocketcloud\cloud\config\type\ConfigTypes;
+use pocketcloud\cloud\module\InGameModule;
 use pocketcloud\cloud\template\Template;
 use pocketcloud\cloud\util\promise\Promise;
 
@@ -64,6 +65,7 @@ final class CloudJsonProvider extends CloudProvider {
     public function setModuleState(string $module, bool $enabled): void {
         $this->modulesConfig->set($module, $enabled);
         $this->modulesConfig->save();
+        InGameModule::setModuleState($module, $enabled);
     }
 
     public function getModuleState(string $module): Promise {

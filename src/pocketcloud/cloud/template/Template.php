@@ -2,6 +2,8 @@
 
 namespace pocketcloud\cloud\template;
 
+use pocketcloud\cloud\player\CloudPlayerManager;
+use pocketcloud\cloud\server\CloudServerManager;
 use pocketcloud\cloud\util\Utils;
 
 readonly class Template {
@@ -44,9 +46,12 @@ readonly class Template {
     }
 
     public function toDetailedArray(): array {
-        //todo: add server & player count
+        $playerCount = 0;
+        $serverCount = count(CloudServerManager::getInstance()->getAllByTemplate($this));
+        foreach (CloudServerManager::getInstance()->getAllByTemplate($this) as $server) $playerCount += $server->getCloudPlayerCount();
         return array_merge($this->toArray(), [
-
+            "playerCount" => $playerCount,
+            "serverCount" => $serverCount
         ]);
     }
 

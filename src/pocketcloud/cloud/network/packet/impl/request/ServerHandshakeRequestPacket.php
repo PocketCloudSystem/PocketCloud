@@ -4,8 +4,10 @@ namespace pocketcloud\cloud\network\packet\impl\request;
 
 use pocketcloud\cloud\network\client\ServerClient;
 use pocketcloud\cloud\network\client\ServerClientCache;
+use pocketcloud\cloud\network\Network;
 use pocketcloud\cloud\network\packet\data\PacketData;
 use pocketcloud\cloud\network\packet\impl\normal\KeepAlivePacket;
+use pocketcloud\cloud\network\packet\impl\normal\ServerSyncPacket;
 use pocketcloud\cloud\network\packet\impl\response\ServerHandshakeResponsePacket;
 use pocketcloud\cloud\network\packet\impl\type\VerifyStatus;
 use pocketcloud\cloud\network\packet\RequestPacket;
@@ -53,7 +55,7 @@ final class ServerHandshakeRequestPacket extends RequestPacket {
             $server->getCloudServerData()->setProcessId($this->processId);
             $server->setVerifyStatus(VerifyStatus::VERIFIED());
             $this->sendResponse(new ServerHandshakeResponsePacket(VerifyStatus::VERIFIED()), $client);
-            //TODO: Network::getInstance()->broadcastPacket(new ServerSyncPacket($server), $client);
+            Network::getInstance()->broadcastPacket(new ServerSyncPacket($server), $client);
             $server->sync();
             $server->setServerStatus(ServerStatus::ONLINE());
             $server->sendPacket(new KeepAlivePacket());

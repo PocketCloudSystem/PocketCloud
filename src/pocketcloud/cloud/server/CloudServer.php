@@ -6,7 +6,18 @@ use pocketcloud\cloud\event\impl\server\ServerStartEvent;
 use pocketcloud\cloud\event\impl\server\ServerStopEvent;
 use pocketcloud\cloud\network\client\ServerClientCache;
 use pocketcloud\cloud\network\packet\CloudPacket;
+use pocketcloud\cloud\network\packet\impl\normal\DisconnectPacket;
+use pocketcloud\cloud\network\packet\impl\normal\LibrarySyncPacket;
+use pocketcloud\cloud\network\packet\impl\normal\ModuleSyncPacket;
+use pocketcloud\cloud\network\packet\impl\normal\PlayerSyncPacket;
+use pocketcloud\cloud\network\packet\impl\normal\ProxyRegisterServerPacket;
+use pocketcloud\cloud\network\packet\impl\normal\ServerSyncPacket;
+use pocketcloud\cloud\network\packet\impl\normal\TemplateSyncPacket;
+use pocketcloud\cloud\network\packet\impl\type\DisconnectReason;
+use pocketcloud\cloud\network\packet\impl\type\NotifyType;
 use pocketcloud\cloud\network\packet\impl\type\VerifyStatus;
+use pocketcloud\cloud\player\CloudPlayer;
+use pocketcloud\cloud\player\CloudPlayerManager;
 use pocketcloud\cloud\server\data\CloudServerData;
 use pocketcloud\cloud\server\data\InternalCloudServerStorage;
 use pocketcloud\cloud\server\util\ServerStatus;
@@ -52,14 +63,14 @@ class CloudServer {
 
         (new ServerStartEvent($this))->call();
         CloudLogger::get()->info("§aStarting §e" . $this->getName() . "§r...");
-        //TODO: notify
+        NotifyType::STARTING()->send(["%server%" => $this->getName()]);
         ServerUtils::executeWithStartCommand($this->getPath(), $this->getName(), $this->getTemplate()->getTemplateType()->getSoftware()->getStartCommand());
     }
 
     public function stop(bool $force = false): void {
         (new ServerStopEvent($this, $force))->call();
         CloudLogger::get()->info("§cStopping §e" . $this->getName() . "§r...");
-        //TODO: Notify
+        NotifyType::STOPPING()->send(["%server%" => $this->getName()]);
         $this->setServerStatus(ServerStatus::STOPPING());
         $this->setStopTime(time());
 
@@ -67,7 +78,7 @@ class CloudServer {
             if ($this->getCloudServerData()->getProcessId() !== 0) TerminalUtils::kill($this->getCloudServerData()->getProcessId());
             if (!$this->getTemplate()->getSettings()->isStatic()) FileUtils::removeDirectory($this->getPath());
         } else {
-            //TODO: disconnect packets
+            DisconnectPacket::create(DisconnectReason::SERVER_SHUTDOWN())->sendPacket($this);
         }
     }
 
@@ -125,7 +136,7 @@ class CloudServer {
 
     public function setServerStatus(ServerStatus $serverStatus): void {
         $this->serverStatus = $serverStatus;
-        //TODO: sync server status
+        ServerSyncPacket::create($this, false)->broadcastPacket();
     }
 
     public function setLastCheckTime(float $lastCheckTime): void {
@@ -144,7 +155,19 @@ class CloudServer {
         return ServerClientCache::getInstance()->get($this)?->sendPacket($packet) ?? false;
     }
 
-    //TODO: Player stuff
+    public function getCloudPlayer(string $name): ?CloudPlayer {
+        foreach ($this->getCloudPlayers() as $player) if ($player->getName() == $name) return $player;
+        return null;
+    }
+
+    /** @return array<CloudPlayer> */
+    public function getCloudPlayers(): array {
+        return array_filter(CloudPlayerManager::getInstance()->getAll(), fn(CloudPlayer $player) => ($this->getTemplate()->getTemplateType()->isServer() ? $player->getCurrentServer() === $this : $player->getCurrentProxy() === $this));
+    }
+
+    public function getCloudPlayerCount(): int {
+        return count($this->getCloudPlayers());
+    }
 
     public function getPath(): string {
         return TEMP_PATH . $this->getName() . "/";
@@ -157,7 +180,18 @@ class CloudServer {
     public function sync(): void {
         $packets = [];
 
-        //TODO: sending sync packets
+        foreach (TemplateManager::getInstance()->getAll() as $template) $packets[] = TemplateSyncPacket::create($template, false);
+        foreach (CloudServerManager::getInstance()->getAll() as $server) {
+            $packets[] = ServerSyncPacket::create($server, false);
+            if ($this->getTemplate()->getTemplateType()->isProxy() && $server->getTemplate()->getTemplateType()->isServer()) $packets[] = ProxyRegisterServerPacket::create($server->getName(), $server->getCloudServerData()->getPort());
+        }
+
+        foreach (CloudPlayerManager::getInstance()->getAll() as $player) $packets[] = PlayerSyncPacket::create($player, false);
+
+        if ($this->getTemplate()->getTemplateType()->isServer()) {
+            $packets[] = ModuleSyncPacket::create();
+            $packets[] = LibrarySyncPacket::create();
+        }
 
         foreach ($packets as $packet) $this->sendPacket($packet);
     }

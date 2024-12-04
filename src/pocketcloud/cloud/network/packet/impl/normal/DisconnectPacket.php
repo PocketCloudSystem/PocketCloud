@@ -57,4 +57,8 @@ class DisconnectPacket extends CloudPacket {
     public function getDisconnectReason(): ?DisconnectReason {
         return $this->disconnectReason;
     }
+
+    public static function create(DisconnectReason $disconnectReason): self {
+        return new self($disconnectReason);
+    }
 }

@@ -7,6 +7,7 @@ use pocketcloud\cloud\exception\ExceptionHandler;
 use pocketcloud\cloud\loader\ClassLoader;
 use pocketcloud\cloud\PocketCloud;
 use pmmp\thread\Thread as NativeThread;
+use pocketcloud\cloud\terminal\log\CloudLogger;
 
 abstract class Thread extends NativeThread {
 
@@ -23,7 +24,7 @@ abstract class Thread extends NativeThread {
     public function run(): void {
         $this->registerClassLoader();
         error_reporting(-1);
-        //TODO: SET LOGGER
+        CloudLogger::set(CloudLogger::temp(true, false));
         ExceptionHandler::set();
         $this->onRun();
         ThreadManager::getInstance()->remove($this);

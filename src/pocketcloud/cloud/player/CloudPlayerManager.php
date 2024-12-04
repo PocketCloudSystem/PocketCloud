@@ -4,6 +4,7 @@ namespace pocketcloud\cloud\player;
 
 use pocketcloud\cloud\event\impl\player\PlayerConnectEvent;
 use pocketcloud\cloud\event\impl\player\PlayerDisconnectEvent;
+use pocketcloud\cloud\network\packet\impl\normal\PlayerSyncPacket;
 use pocketcloud\cloud\terminal\log\CloudLogger;
 use pocketcloud\cloud\util\SingletonTrait;
 
@@ -22,7 +23,7 @@ final class CloudPlayerManager {
         else CloudLogger::get()->info("Player %s is connected. (On: %s)", $player->getName(), ($player->getCurrentServer()->getName() ?? "NULL"));
 
         $this->players[$player->getName()] = $player;
-        //TODO: send player sync packet
+        PlayerSyncPacket::create($player, false)->broadcastPacket();
 
         (new PlayerConnectEvent($player, ($player->getCurrentServer() ?? $player->getCurrentProxy())))->call();
     }
@@ -37,7 +38,7 @@ final class CloudPlayerManager {
         $player->setCurrentServer(null);
         $player->setCurrentProxy(null);
 
-        //TODO: send player sync packet
+        PlayerSyncPacket::create($player, true)->broadcastPacket();
     }
 
     public function get(string $name): ?CloudPlayer {

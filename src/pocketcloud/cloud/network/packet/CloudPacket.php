@@ -3,7 +3,9 @@
 namespace pocketcloud\cloud\network\packet;
 
 use pocketcloud\cloud\network\client\ServerClient;
+use pocketcloud\cloud\network\Network;
 use pocketcloud\cloud\network\packet\data\PacketData;
+use pocketcloud\cloud\server\CloudServer;
 use ReflectionClass;
 use RuntimeException;
 
@@ -28,6 +30,15 @@ abstract class CloudPacket  {
     public function decodePayload(PacketData $packetData): void {}
 
     abstract public function handle(ServerClient $client): void;
+
+    public function sendPacket(ServerClient|CloudServer $client): bool {
+        if ($client instanceof CloudServer) return $client->sendPacket($this);
+        return Network::getInstance()->sendPacket($this, $client);
+    }
+
+    public function broadcastPacket(ServerClient ...$excluded): void {
+        Network::getInstance()->broadcastPacket($this, ...$excluded);
+    }
 
     public function isEncoded(): bool {
         return $this->encoded;

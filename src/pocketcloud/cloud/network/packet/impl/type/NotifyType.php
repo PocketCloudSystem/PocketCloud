@@ -3,6 +3,7 @@
 namespace pocketcloud\cloud\network\packet\impl\type;
 
 use pocketcloud\cloud\config\impl\MainConfig;
+use pocketcloud\cloud\network\packet\impl\normal\CloudNotifyPacket;
 use pocketcloud\cloud\util\enum\EnumTrait;
 
 /**
@@ -30,7 +31,7 @@ final class NotifyType {
 
     public function send(array $params): void {
         $message = MainConfig::getInstance()->getInGamePrefix() . str_replace(array_keys($params), array_values($params), $this->message);
-        //todo: send notify
+        CloudNotifyPacket::create($message)->broadcastPacket();
     }
 
     public function getName(): string {

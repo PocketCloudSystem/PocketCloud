@@ -3,6 +3,11 @@
 namespace pocketcloud\cloud\player;
 
 use pocketcloud\cloud\event\impl\player\PlayerKickEvent;
+use pocketcloud\cloud\network\client\ServerClient;
+use pocketcloud\cloud\network\client\ServerClientCache;
+use pocketcloud\cloud\network\packet\impl\normal\PlayerKickPacket;
+use pocketcloud\cloud\network\packet\impl\normal\PlayerSyncPacket;
+use pocketcloud\cloud\network\packet\impl\normal\PlayerTextPacket;
 use pocketcloud\cloud\network\packet\impl\type\TextType;
 use pocketcloud\cloud\server\CloudServer;
 use pocketcloud\cloud\server\CloudServerManager;
@@ -55,7 +60,7 @@ final class CloudPlayer {
     public function setCurrentServer(?CloudServer $currentServer): void {
         CloudLogger::get()->debug("Changing current server of " . $this->name . " to " . ($currentServer?->getName() ?? "NULL"));
         $this->currentServer = $currentServer?->getName();
-        //todo send sync packet
+        PlayerSyncPacket::create($this, false)->broadcastPacket();
     }
 
     public function setCurrentProxy(?CloudServer $currentProxy): void {
@@ -65,7 +70,9 @@ final class CloudPlayer {
 
     public function send(string $message, TextType $textType): void {
         CloudLogger::get()->debug("Sending text (" . $textType->getName() . ") to  " . $this->name);
-        //todo send text packet
+        PlayerTextPacket::create($this->getName(), $message, $textType)->broadcastPacket(
+            ...ServerClientCache::getInstance()->pick(fn(ServerClient $client) => $client->getServer() !== null && $client->getServer()->getTemplate()->getTemplateType()->isProxy())
+        );
     }
 
     public function sendMessage(string $message): void {
@@ -96,7 +103,7 @@ final class CloudPlayer {
         CloudLogger::get()->debug("Kicking " . $this->name . " from the network, reason: " . ($reason == "" ? "NULL" : $reason));
         ($ev = new PlayerKickEvent($this, $reason))->call();
         if ($ev->isCancelled()) return;
-        //todo send kick packet
+        PlayerKickPacket::create($this->getName(), $reason)->sendPacket($this->getCurrentProxy() ?? $this->getCurrentServer());
     }
 
     public function toArray(): array {

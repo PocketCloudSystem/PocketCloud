@@ -3,6 +3,7 @@
 namespace pocketcloud\cloud\provider;
 
 use pocketcloud\cloud\config\impl\MainConfig;
+use pocketcloud\cloud\module\InGameModule;
 use pocketcloud\cloud\PocketCloud;
 use pocketcloud\cloud\provider\database\DatabaseQueries;
 use pocketcloud\cloud\provider\migration\MigrationList;
@@ -33,6 +34,11 @@ final class CloudMySqlProvider extends CloudProvider {
                 MigrationList::JSON_TO_MYSQL()->migrate();
             }
         });
+
+        foreach (InGameModule::getAll() as $value) {
+            DatabaseQueries::getModuleState($value)
+                ->execute(fn (bool $v) => InGameModule::setModuleState($value, $v));
+        }
     }
 
     public function addTemplate(Template $template): void {
@@ -94,6 +100,7 @@ final class CloudMySqlProvider extends CloudProvider {
     }
 
     public function setModuleState(string $module, bool $enabled): void {
+        InGameModule::setModuleState($module, $enabled);
         DatabaseQueries::setModuleState($module, $enabled)->execute();
     }
 

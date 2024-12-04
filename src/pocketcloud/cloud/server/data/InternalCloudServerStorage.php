@@ -2,6 +2,7 @@
 
 namespace pocketcloud\cloud\server\data;
 
+use pocketcloud\cloud\network\packet\impl\normal\CloudSyncStoragesPacket;
 use pocketcloud\cloud\server\CloudServer;
 
 final class InternalCloudServerStorage {
@@ -16,10 +17,14 @@ final class InternalCloudServerStorage {
         $this->storage = $data;
     }
 
+    private function outgoingSync(): void {
+        CloudSyncStoragesPacket::create()->broadcastPacket();
+    }
+
     public function set(string $k, mixed $v): self {
         if (!isset($this->storage[$k])) {
             $this->storage[$k] = $v;
-            //sync
+            $this->outgoingSync();
         }
         return $this;
     }
@@ -27,7 +32,7 @@ final class InternalCloudServerStorage {
     public function remove(string $k): self {
         if (isset($this->storage[$k])) {
             unset($this->storage[$k]);
-            //sync
+            $this->outgoingSync();
         }
         return $this;
     }
@@ -42,7 +47,7 @@ final class InternalCloudServerStorage {
 
     public function clear(): self {
         $this->storage = [];
-        //TODO: sync
+        $this->outgoingSync();
         return $this;
     }
 
