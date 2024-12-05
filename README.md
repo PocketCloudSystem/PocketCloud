@@ -1,5 +1,5 @@
 # PocketCloud
-A cloud system for pocketmine users with proxy support
+A cloud system for pocketmine servers with proxy support
 
 ## [Discord](https://discord.gg/3HbPEpaE3T)
 
