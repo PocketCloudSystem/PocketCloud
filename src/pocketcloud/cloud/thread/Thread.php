@@ -24,7 +24,7 @@ abstract class Thread extends NativeThread {
     public function run(): void {
         $this->registerClassLoader();
         error_reporting(-1);
-        CloudLogger::set(CloudLogger::temp(true, false));
+        CloudLogger::set(CloudLogger::temp(true));
         ExceptionHandler::set();
         $this->onRun();
         ThreadManager::getInstance()->remove($this);
@@ -40,9 +40,9 @@ abstract class Thread extends NativeThread {
         define("IS_PHAR", Phar::running() !== "");
 
         if (IS_PHAR) {
-            define("CLOUD_PATH", str_replace("phar://", "", dirname(__DIR__, 4) . DIRECTORY_SEPARATOR));
+            define("CLOUD_PATH", str_replace("phar://", "", dirname(__DIR__, 5) . DIRECTORY_SEPARATOR));
         } else {
-            define("CLOUD_PATH", dirname(__DIR__, 3) . DIRECTORY_SEPARATOR);
+            define("CLOUD_PATH", dirname(__DIR__, 4) . DIRECTORY_SEPARATOR);
         }
 
         define("SOURCE_PATH", __DIR__ . "/");

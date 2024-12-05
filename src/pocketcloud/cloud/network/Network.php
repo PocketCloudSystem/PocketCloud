@@ -45,13 +45,13 @@ final class Network extends Thread {
     }
 
     public function init(): void {
-        CloudLogger::get()->info("Trying to bind to §e" . $this->address . "§r...");
+        CloudLogger::get()->info("Trying to bind to §b" . $this->address . "§r...");
         if (!$this->bind($this->address)) {
             CloudLogger::get()->error("§cFailed to bind to §e" . $this->address . "§c!");
             PocketCloud::getInstance()->shutdown();
             return;
         } else {
-            CloudLogger::get()->info("Successfully bound to §e" . $this->address);
+            CloudLogger::get()->info("Successfully bound to §b" . $this->address);
         }
 
         $this->entry = PocketCloud::getInstance()->getSleeperHandler()->addNotifier(function(): void {
@@ -67,13 +67,13 @@ final class Network extends Thread {
                         if (($packet = PacketSerializer::decode($buffer)) !== null) {
                             (new NetworkPacketReceiveEvent($packet, $client))->call();
                             $packet->handle($client);
-                        } else CloudLogger::get()->warn("Received an unknown packet from §e" . $address . "§r, ignoring...")->debug("Packet buffer: " . (MainConfig::getInstance()->isNetworkEncryptionEnabled() ? base64_decode($buffer) : $buffer));
+                        } else CloudLogger::get()->warn("Received an unknown packet from §b" . $address . "§r, ignoring...")->debug("Packet buffer: " . (MainConfig::getInstance()->isNetworkEncryptionEnabled() ? base64_decode($buffer) : $buffer));
                     } catch (Exception $e) {
                         CloudLogger::get()->error("§cFailed to decode a packet!");
                         CloudLogger::get()->debug($buffer);
                         CloudLogger::get()->exception($e);
                     }
-                } else CloudLogger::get()->warn("Received an external packet from §e" . $address . "§r, ignoring...")->debug("Packet buffer: " . $buffer);
+                } else CloudLogger::get()->warn("Received an external packet from §b" . $address . "§r, ignoring...")->debug("Packet buffer: " . $buffer);
             }
         });
     }
@@ -82,7 +82,7 @@ final class Network extends Thread {
         if ($this->connected) return false;
         $this->address = $address;
         $this->socket = @socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
-        if(socket_bind($this->socket, $address->getAddress(), $address->getPort()) === true) {
+        if(@socket_bind($this->socket, $address->getAddress(), $address->getPort()) === true) {
             $this->connected = true;
             (new NetworkBindEvent($this->address))->call();
             socket_set_option($this->socket, SOL_SOCKET, SO_SNDBUF, 1024 * 1024 * 8);

@@ -3,6 +3,7 @@
 namespace pocketcloud\cloud\command;
 
 use pocketcloud\cloud\command\argument\def\StringArgument;
+use pocketcloud\cloud\command\argument\def\StringEnumArgument;
 use pocketcloud\cloud\command\argument\exception\ArgumentParseException;
 use pocketcloud\cloud\command\argument\CommandArgument;
 use pocketcloud\cloud\command\sender\ICommandSender;
@@ -32,11 +33,16 @@ abstract class Command {
             $multiString = $currentParameter instanceof StringArgument && $currentParameter->isMultiString();
             if (isset($args[$i])) {
                 try {
+                    if ($currentParameter instanceof StringEnumArgument && $currentParameter->isAllowedString($args[$i])) {
+                        CloudLogger::get()->warn($currentParameter->getCustomErrorMessage() ?? $this->getUsage());
+                        return;
+                    }
+
                     $arg = $currentParameter->parseValue($multiString ? array_slice($args, $i) : $args[$i]);
                     $parsedArgs[$currentParameter->getName()] = $arg;
                     if ($multiString) break;
                 } catch (ArgumentParseException) {
-                    CloudLogger::get()->warn($this->getUsage());
+                    CloudLogger::get()->warn($currentParameter->getCustomErrorMessage() ?? $this->getUsage());
                     return;
                 }
             } else {

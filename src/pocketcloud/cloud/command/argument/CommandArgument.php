@@ -8,7 +8,8 @@ abstract readonly class CommandArgument {
 
     public function __construct(
         private string $name,
-        private bool $optional
+        private bool $optional,
+        private ?string $customErrorMessage = null
     ) {}
 
     /** @throws ArgumentParseException */
@@ -22,5 +23,9 @@ abstract readonly class CommandArgument {
 
     public function isOptional(): bool {
         return $this->optional;
+    }
+
+    public function getCustomErrorMessage(): ?string {
+        return $this->customErrorMessage;
     }
 }

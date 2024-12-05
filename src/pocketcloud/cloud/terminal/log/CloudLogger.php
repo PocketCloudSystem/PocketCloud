@@ -17,9 +17,8 @@ final class CloudLogger {
         return self::$logger;
     }
 
-    public static function temp(bool $debug, bool $saveLogs): Logger {
+    public static function temp(bool $saveLogs): Logger {
         $logger = new Logger(LOG_PATH);
-        $logger->setDebugMode($debug);
         $logger->setSaveLogs($saveLogs);
         return $logger;
     }

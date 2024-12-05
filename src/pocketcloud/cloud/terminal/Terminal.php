@@ -6,6 +6,7 @@ use pmmp\thread\ThreadSafeArray;
 use pocketcloud\cloud\command\CommandManager;
 use pocketcloud\cloud\command\sender\ConsoleCommandSender;
 use pocketcloud\cloud\PocketCloud;
+use pocketcloud\cloud\setup\Setup;
 use pocketcloud\cloud\terminal\log\CloudLogger;
 use pocketcloud\cloud\thread\Thread;
 use pocketmine\snooze\SleeperHandlerEntry;
@@ -21,8 +22,16 @@ final class Terminal extends Thread {
         $this->entry = PocketCloud::getInstance()->getSleeperHandler()->addNotifier(function (): void {
             while (($line = $this->buffer->shift()) !== null) {
                 if (trim($line) == "") return;
-                if (!CommandManager::getInstance()->handleInput(new ConsoleCommandSender(), $line)) {
-                    CloudLogger::get()->error("The §bcommand §rdoesn't exists!");
+                try {
+                    if (($setup = Setup::getCurrentSetup()) !== null) {
+                        $setup->handleInput($line);
+                    } else {
+                        if (!CommandManager::getInstance()->handleInput(new ConsoleCommandSender(), $line)) {
+                            CloudLogger::get()->error("The §bcommand §rdoesn't exists!");
+                        }
+                    }
+                } catch (\Throwable $throwable) {
+                    CloudLogger::get()->exception($throwable);
                 }
             }
         });

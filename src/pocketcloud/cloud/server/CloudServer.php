@@ -62,14 +62,14 @@ class CloudServer {
         CloudServerManager::getInstance()->add($this);
 
         (new ServerStartEvent($this))->call();
-        CloudLogger::get()->info("§aStarting §e" . $this->getName() . "§r...");
+        CloudLogger::get()->info("§aStarting §b" . $this->getName() . "§r...");
         NotifyType::STARTING()->send(["%server%" => $this->getName()]);
         ServerUtils::executeWithStartCommand($this->getPath(), $this->getName(), $this->getTemplate()->getTemplateType()->getSoftware()->getStartCommand());
     }
 
     public function stop(bool $force = false): void {
         (new ServerStopEvent($this, $force))->call();
-        CloudLogger::get()->info("§cStopping §e" . $this->getName() . "§r...");
+        CloudLogger::get()->info("§cStopping §b" . $this->getName() . "§r...");
         NotifyType::STOPPING()->send(["%server%" => $this->getName()]);
         $this->setServerStatus(ServerStatus::STOPPING());
         $this->setStopTime(time());

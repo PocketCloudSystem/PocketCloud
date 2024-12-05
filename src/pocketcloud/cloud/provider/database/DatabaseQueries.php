@@ -22,6 +22,7 @@ use r3pt1s\mysql\query\QueryBuilder;
  * @method static QueryBuilder addToWhitelist(string $player)
  * @method static QueryBuilder removeFromWhitelist(string $player)
  * @method static QueryBuilder isOnWhitelist(string $player)
+ * @method static QueryBuilder getWhitelist()
  */
 final class DatabaseQueries {
     use ParameterEnumTrait;
@@ -124,6 +125,11 @@ final class DatabaseQueries {
         self::register("isOnWhitelist", function (string $player): QueryBuilder {
             return QueryBuilder::table(DatabaseTables::MAINTENANCE_LIST)
                 ->has(["player" => $player]);
+        });
+
+        self::register("getWhitelist", function (): QueryBuilder {
+            return QueryBuilder::table(DatabaseTables::MAINTENANCE_LIST)
+                ->select(["player"], "*");
         });
     }
 }

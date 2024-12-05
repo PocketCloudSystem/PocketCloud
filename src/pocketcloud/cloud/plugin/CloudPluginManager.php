@@ -35,7 +35,7 @@ final class CloudPluginManager implements Tickable {
     }
 
     public function loadAll(): void {
-        CloudLogger::get()->info("Loading plugins...");
+        CloudLogger::get()->debug("Loading plugins...");
         foreach (array_diff(scandir(CLOUD_PLUGINS_PATH), [".", ".."]) as $file) {
             $path = CLOUD_PLUGINS_PATH . $file;
             $this->load($path);
@@ -44,12 +44,12 @@ final class CloudPluginManager implements Tickable {
         if (count($this->plugins) == 0) {
             CloudLogger::get()->info("No plugins were loaded.");
         } else {
-            CloudLogger::get()->info("Successfully loaded §e" . count($this->plugins) . " plugin" . (count($this->plugins) == 1 ? "" : "s") . "§r.");
+            CloudLogger::get()->info("Successfully loaded §b" . count($this->plugins) . " plugin" . (count($this->plugins) == 1 ? "" : "s") . "§r.");
         }
     }
 
     public function load(string $path): void {
-        CloudLogger::get()->info("Loading plugim §e" . basename($path) . "§r...");
+        CloudLogger::get()->debug("Loading plugim §b" . basename($path) . "§r...");
         foreach ($this->loaders as $loader) {
             try {
                 if ($loader->canLoad($path)) {
@@ -76,20 +76,18 @@ final class CloudPluginManager implements Tickable {
     }
 
     public function enableAll(): void {
-        CloudLogger::get()->info("Enabling plugins...");
+        CloudLogger::get()->debug("Enabling plugins...");
         foreach ($this->plugins as $plugin) {
             $this->enable($plugin);
         }
 
-        if (count($this->enabledPlugins) == 0) {
-            CloudLogger::get()->info("No plugins were enabled.");
-        } else {
-            CloudLogger::get()->info("Successfully enabled §e" . count($this->enabledPlugins) . " plugin" . (count($this->enabledPlugins) == 1 ? "" : "s") . "§r.");
+        if (count($this->enabledPlugins) > 0) {
+            CloudLogger::get()->info("Successfully enabled §b" . count($this->enabledPlugins) . " plugin" . (count($this->enabledPlugins) == 1 ? "" : "s") . "§r.");
         }
     }
 
     public function enable(CloudPlugin $plugin): void {
-        CloudLogger::get()->info("Enabling §e" . $plugin->getDescription()->getName() . "§r...");
+        CloudLogger::get()->info("Enabling §b" . $plugin->getDescription()->getName() . "§r...");
         $plugin->setEnabled(true);
         (new PluginEnableEvent($plugin))->call();
         try {
@@ -113,7 +111,7 @@ final class CloudPluginManager implements Tickable {
     }
 
     public function disable(CloudPlugin $plugin): void {
-        CloudLogger::get()->info("Disabling §e" . $plugin->getDescription()->getName() . "§r...");
+        CloudLogger::get()->info("Disabling §b" . $plugin->getDescription()->getName() . "§r...");
         (new PluginDisableEvent($plugin))->call();
         $plugin->setEnabled(false);
         $plugin->onDisable();

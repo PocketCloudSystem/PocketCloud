@@ -147,6 +147,15 @@ final class CloudMySqlProvider extends CloudProvider {
         return $promise;
     }
 
+    public function getWhitelist(): Promise {
+        $promise = new Promise();
+
+        DatabaseQueries::getWhitelist()
+            ->execute(fn(array $list) => $promise->resolve(array_map(fn(array $r) => $r["player"], $list)));
+
+        return $promise;
+    }
+
     public function getConnectionPool(): ?ConnectionPool {
         return $this->connectionPool;
     }

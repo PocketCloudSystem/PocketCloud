@@ -2,8 +2,24 @@
 
 namespace pocketcloud\cloud\command;
 
+use pocketcloud\cloud\command\impl\ConfigureCommand;
+use pocketcloud\cloud\command\impl\DebugCommand;
 use pocketcloud\cloud\command\impl\ExitCommand;
 use pocketcloud\cloud\command\impl\HelpCommand;
+use pocketcloud\cloud\command\impl\ListCommand;
+use pocketcloud\cloud\command\impl\player\KickCommand;
+use pocketcloud\cloud\command\impl\plugin\DisableCommand;
+use pocketcloud\cloud\command\impl\plugin\EnableCommand;
+use pocketcloud\cloud\command\impl\plugin\PluginsCommand;
+use pocketcloud\cloud\command\impl\server\ExecuteCommand;
+use pocketcloud\cloud\command\impl\server\SaveCommand;
+use pocketcloud\cloud\command\impl\server\StartCommand;
+use pocketcloud\cloud\command\impl\server\StopCommand;
+use pocketcloud\cloud\command\impl\template\CreateCommand;
+use pocketcloud\cloud\command\impl\template\EditCommand;
+use pocketcloud\cloud\command\impl\template\MaintenanceCommand;
+use pocketcloud\cloud\command\impl\template\RemoveCommand;
+use pocketcloud\cloud\command\impl\VersionCommand;
 use pocketcloud\cloud\command\sender\ICommandSender;
 use pocketcloud\cloud\util\SingletonTrait;
 
@@ -17,6 +33,26 @@ final class CommandManager {
         self::setInstance($this);
         $this->register(new ExitCommand());
         $this->register(new HelpCommand());
+        $this->register(new DebugCommand());
+        $this->register(new ListCommand());
+        $this->register(new VersionCommand());
+        $this->register(new ConfigureCommand());
+
+        $this->register(new StartCommand());
+        $this->register(new StopCommand());
+        $this->register(new ExecuteCommand());
+        $this->register(new SaveCommand());
+
+        $this->register(new CreateCommand());
+        $this->register(new EditCommand());
+        $this->register(new RemoveCommand());
+        $this->register(new MaintenanceCommand());
+
+        $this->register(new KickCommand());
+
+        $this->register(new EnableCommand());
+        $this->register(new DisableCommand());
+        $this->register(new PluginsCommand());
     }
 
     public function handleInput(ICommandSender $sender, string $input): bool {

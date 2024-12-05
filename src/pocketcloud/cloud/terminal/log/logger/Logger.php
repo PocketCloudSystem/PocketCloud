@@ -2,6 +2,8 @@
 
 namespace pocketcloud\cloud\terminal\log\logger;
 
+use pocketcloud\cloud\config\impl\MainConfig;
+use pocketcloud\cloud\setup\Setup;
 use pocketcloud\cloud\terminal\log\color\CloudColor;
 use pocketcloud\cloud\terminal\log\level\CloudLogLevel;
 use pocketcloud\cloud\thread\Thread;
@@ -15,10 +17,10 @@ final class Logger {
     private mixed $cloudLogFile;
     private bool $closed = false;
     private bool $saveLogs = true;
+    private bool $usePrefix = true;
 
     public function __construct(
-        private readonly ?string $cloudLogPath = null,
-        private bool $debugMode = false
+        private readonly ?string $cloudLogPath = null
     ) {
         $this->cloudLogFile = fopen($this->cloudLogPath ?? LOG_PATH, "ab");
     }
@@ -75,10 +77,12 @@ final class Logger {
             }
         } catch (ReflectionException) {}
 
-        $format = $threadName . "§8[§e" . date("Y-m-d H:i:s") . "§7/§r" . $logLevel->getPrefix() . "§r§8] §r" . (empty($params) ? $message : sprintf($message, ...$params)) . CloudColor::RESET();
+        $format = ($this->usePrefix ? $threadName . "§r" . date("H:i:s") . " §8| §r" . $logLevel->getPrefix() . " §8» §r" : "") . (empty($params) ? $message : sprintf($message, ...$params)) . CloudColor::RESET();
         $line = CloudColor::toColoredString($format) . "\n";
 
-        echo $line;
+        if (($setup = Setup::getCurrentSetup()) !== null && $setup->getLogger() === $this) echo $line;
+        else if ($setup === null) echo $line;
+
         if ($this->saveLogs) {
             LoggingCache::save($line);
             $this->write($format . "\n");
@@ -105,12 +109,8 @@ final class Logger {
         }
     }
 
-    public function setDebugMode(bool $debugMode): void {
-        $this->debugMode = $debugMode;
-    }
-
     public function isDebugMode(): bool {
-        return $this->debugMode;
+        return MainConfig::getInstance()->isDebugMode();
     }
 
     public function setSaveLogs(bool $saveLogs): void {
@@ -119,5 +119,13 @@ final class Logger {
 
     public function isSaveLogs(): bool {
         return $this->saveLogs;
+    }
+
+    public function setUsePrefix(bool $usePrefix): void {
+        $this->usePrefix = $usePrefix;
+    }
+
+    public function isUsePrefix(): bool {
+        return $this->usePrefix;
     }
 }

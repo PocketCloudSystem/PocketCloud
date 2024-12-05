@@ -22,7 +22,7 @@ final class HelpCommand extends Command {
         $commands = $command === null ? CommandManager::getInstance()->getAll() : (($tmp = CommandManager::getInstance()->get($command)) === null ? CommandManager::getInstance()->getAll() : [$tmp]);
 
         foreach ($commands as $command) {
-            $sender->info("§e" . $command->getName() . " §8- §e" . $command->getDescription() . " §8- §e" . $command->getUsage());
+            $sender->info("§b" . $command->getName() . " §8- §r" . $command->getDescription() . " §8- §b" . $command->getUsage());
         }
         return true;
     }

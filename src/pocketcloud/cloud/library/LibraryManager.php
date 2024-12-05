@@ -72,7 +72,7 @@ final class LibraryManager {
     public function load(): void {
         foreach ($this->libraries as $library) {
             if (!$library->exists()) {
-                $temporaryLogger = CloudLogger::temp(true, false);
+                $temporaryLogger = CloudLogger::temp(false);
                 try {
                     $temporaryLogger->info("Start downloading library: %s (%s)", $library->getName(), $library->getDownloadUrl());
                     if ($library->download()) {

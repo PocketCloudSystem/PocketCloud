@@ -50,7 +50,7 @@ final class ServerHandshakeRequestPacket extends RequestPacket {
     public function handle(ServerClient $client): void {
         if (($server = CloudServerManager::getInstance()->get($this->serverName)) !== null) {
             ServerClientCache::getInstance()->add($server, $client);
-            CloudLogger::get()->info("The server §e" . $server->getName() . " §rhas §aconnected §rto the cloud.");
+            CloudLogger::get()->info("The server §b" . $server->getName() . " §rhas §aconnected §rto the cloud.");
             $server->getCloudServerData()->setMaxPlayers($this->maxPlayers);
             $server->getCloudServerData()->setProcessId($this->processId);
             $server->setVerifyStatus(VerifyStatus::VERIFIED());

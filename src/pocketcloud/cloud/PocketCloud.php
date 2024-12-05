@@ -3,16 +3,28 @@
 namespace pocketcloud\cloud;
 
 use Phar;
+use pocketcloud\cloud\config\impl\MainConfig;
+use pocketcloud\cloud\event\impl\cloud\CloudStartedEvent;
 use pocketcloud\cloud\exception\ExceptionHandler;
 use pocketcloud\cloud\library\LibraryManager;
 use pocketcloud\cloud\loader\ClassLoader;
+use pocketcloud\cloud\network\Network;
+use pocketcloud\cloud\plugin\CloudPluginManager;
+use pocketcloud\cloud\scheduler\AsyncPool;
+use pocketcloud\cloud\server\CloudServerManager;
 use pocketcloud\cloud\server\util\ServerUtils;
+use pocketcloud\cloud\setup\impl\ConfigSetup;
+use pocketcloud\cloud\setup\impl\TemplateSetup;
 use pocketcloud\cloud\software\SoftwareManager;
+use pocketcloud\cloud\template\Template;
+use pocketcloud\cloud\template\TemplateManager;
 use pocketcloud\cloud\terminal\log\CloudLogger;
 use pocketcloud\cloud\terminal\log\handler\ShutdownHandler;
 use pocketcloud\cloud\terminal\log\logger\LoggingCache;
 use pocketcloud\cloud\terminal\Terminal;
 use pocketcloud\cloud\thread\ThreadManager;
+use pocketcloud\cloud\update\UpdateChecker;
+use pocketcloud\cloud\util\net\Address;
 use pocketcloud\cloud\util\terminal\TerminalUtils;
 use pocketcloud\cloud\util\tick\TickableList;
 use pocketcloud\cloud\util\Utils;
@@ -28,21 +40,16 @@ final class PocketCloud {
 
     private SleeperHandler $sleeperHandler;
     private Terminal $terminal;
+    private Network $network;
 
     public function __construct(
         private readonly ClassLoader $classLoader
     ) {
         self::$instance = $this;
         $this->startUp();
-
-        $this->sleeperHandler = new SleeperHandler();
-        $this->terminal = new Terminal();
-
-        $this->terminal->start();
-        $this->tick();
     }
 
-    public function startUp(): void {
+    protected function startUp(): void {
         if (Utils::checkRunning($pid)) {
             CloudLogger::get()->error("Another instance of §bPocket§3Cloud §ris already running! (ProcessId: " . $pid . ")");
             exit(1);
@@ -65,6 +72,8 @@ final class PocketCloud {
             exit(1);
         }
 
+        LibraryManager::getInstance()->load();
+
         if (!ServerUtils::detectStartMethod()) {
             CloudLogger::get()->error("Please install one of the following software:");
             CloudLogger::get()->error("tmux (apt-get install tmux)");
@@ -77,14 +86,76 @@ final class PocketCloud {
         ExceptionHandler::set();
         ShutdownHandler::register();
 
-        LibraryManager::getInstance()->load();
+        Utils::downloadPlugins();
         SoftwareManager::getInstance()->downloadAll();
         TerminalUtils::clear();
 
-        CloudLogger::get()->info("§bPocket§3Cloud §8(§ev" . VersionInfo::VERSION . (VersionInfo::BETA ? "§c@BETA" : "") . "§8) - §rdeveloped by §e" . implode("§8, §e", VersionInfo::DEVELOPERS));
-        CloudLogger::get()->info("You can join our discord for information: §ehttps://discord.gg/3HbPEpaE3T");
+        $this->sleeperHandler = new SleeperHandler();
+        $this->terminal = new Terminal();
+        $this->terminal->start();
+
         CloudLogger::get()->emptyLine();
+        CloudLogger::get()->setUsePrefix(false);
+        CloudLogger::get()->info("  §bPocket§3Cloud §8- §rA cloud system for pocketmine servers with proxy support §8- §b" . VersionInfo::VERSION . (VersionInfo::BETA ? "§c@BETA" : "") . " §8- §rdeveloped by §b" . implode("§8, §b", VersionInfo::DEVELOPERS));
+        CloudLogger::get()->info("  Join our discord for information: §bhttps://discord.gg/3HbPEpaE3T");
+        CloudLogger::get()->setUsePrefix(true);
+        CloudLogger::get()->emptyLine();
+
+        if (FIRST_RUN) {
+            (new ConfigSetup())->completion(function(array $results): void {
+                $this->start();
+                if ($results["defaultLobbyTemplate"] ?? true) {
+                    TemplateManager::getInstance()->create(Template::lobby("Lobby"));
+                }
+
+                if ($results["defaultProxyTemplate"] ?? true) {
+                    TemplateManager::getInstance()->create(Template::proxy("Proxy"));
+                }
+            })->startSetup();
+        } else $this->start();
+        $this->tick();
     }
+
+    public function start(): void {
+        ini_set("memory_limit", ($memory = MainConfig::getInstance()->getMemoryLimit()) > 0 ? $memory . "M" : "-1");
+        CloudLogger::get()->info("The §bCloud §ris §astarting§r...");
+        $startTime = microtime(true);
+
+        $this->network = new Network(new Address("127.0.0.1", MainConfig::getInstance()->getNetworkPort()));
+        #$this->httpServer = new HttpServer(new Address("0.0.0.0", DefaultConfig::getInstance()->getHttpServerPort()));
+
+        TemplateManager::getInstance()->load();
+        CloudPluginManager::getInstance()->loadAll();
+        CloudPluginManager::getInstance()->enableAll();
+
+        TickableList::add(CloudPluginManager::getInstance());
+        TickableList::add(AsyncPool::getInstance());
+        TickableList::add(CloudServerManager::getInstance());
+        TickableList::add(TemplateManager::getInstance());
+
+        $this->network->init();
+
+        #if (MainConfig::getInstance()->isHttpServerEnabled()) $this->httpServer->init();
+        /*if (DefaultConfig::getInstance()->isWebEnabled()) {
+            ReloadableList::add(WebAccountManager::getInstance());
+            WebAccountManager::getInstance()->loadAccounts();
+        }+*/
+
+        if (MainConfig::getInstance()->isUpdateChecks()) {
+            UpdateChecker::getInstance()->check();
+        }
+
+        $startedTime = (microtime(true) - $startTime);
+        (new CloudStartedEvent($startedTime))->call();
+        CloudLogger::get()->info("§bCloud §rhas been §astarted§r. §8(§rTook §b" . number_format($startedTime, 3) . "s§8)");
+        if (count(TemplateManager::getInstance()->getAll()) == 0 && FIRST_RUN) {
+            CloudLogger::get()->info("No templates found, starting the setup...");
+            (new TemplateSetup())->startSetup();
+        }
+
+        $this->network->start();
+    }
+
 
     public function tick(): void {
         $start = microtime(true);

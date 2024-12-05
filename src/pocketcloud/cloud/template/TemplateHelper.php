@@ -6,13 +6,13 @@ use pocketcloud\cloud\util\Utils;
 
 final class TemplateHelper {
 
-    public const KEYS = ["name", "lobby", "maintenance", "static", "maxPlayerCount", "minServerCount", "maxServerCount", "startNewWhenFull", "autoStart", "templateType"];
-    public const EDITABLE_KEYS = ["lobby", "maintenance", "static", "maxPlayerCount", "minServerCount", "maxServerCount", "startNewWhenFull", "autoStart"];
+    public const KEYS = ["name", "lobby", "maintenance", "static", "maxPlayerCount", "minServerCount", "maxServerCount", "startNewPercentage", "autoStart", "templateType"];
+    public const EDITABLE_KEYS = ["lobby", "maintenance", "static", "maxPlayerCount", "minServerCount", "maxServerCount", "startNewPercentage", "autoStart"];
 
     public const NECESSARY_KEYS = ["name", "lobby", "templateType"];
 
-    public const UNNECESSARY_KEYS = ["maintenance", "static", "maxPlayerCount", "minServerCount", "maxServerCount", "startNewWhenFull", "autoStart"];
-    public const DEFAULT_VALUES = ["maintenance" => true, "static" => false, "mayPlayerCount" => 20, "minServerCount" => 0, "maxServerCount" => 2, "startNewWhenFull" => true, "autoStart" => true];
+    public const UNNECESSARY_KEYS = ["maintenance", "static", "maxPlayerCount", "minServerCount", "maxServerCount", "startNewPercentage", "autoStart"];
+    public const DEFAULT_VALUES = ["maintenance" => true, "static" => false, "mayPlayerCount" => 20, "minServerCount" => 0, "maxServerCount" => 2, "startNewPercentage" => 100, "autoStart" => true];
 
     public static function addUnnecessaryKeys(array $data): void {
         foreach (array_filter(self::UNNECESSARY_KEYS, fn(string $key) => !isset($data[$key])) as $key) $data[$key] = self::DEFAULT_VALUES[$key];

@@ -106,6 +106,12 @@ final class CloudJsonProvider extends CloudProvider {
         return $promise;
     }
 
+    public function getWhitelist(): Promise {
+        $promise = new Promise();
+        $promise->resolve(array_filter($this->maintenanceList->getAll(true), fn(string $user) => $this->maintenanceList->get($user, false)));
+        return $promise;
+    }
+
     public function getTemplatesConfig(): ?Config {
         return $this->templatesConfig;
     }

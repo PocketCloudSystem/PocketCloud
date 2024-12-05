@@ -28,7 +28,7 @@ final class SoftwareManager {
     }
 
     public function downloadSoftware(Software $software): void {
-        $temporaryLogger = CloudLogger::temp(true, false);
+        $temporaryLogger = CloudLogger::temp(false);
         $temporaryLogger->info("Start downloading software: %s (%s)", $software->getName(), $software->getUrl());
         $result = NetUtils::download($software->getUrl(), SOFTWARE_PATH . $software->getFileName());
         if (!$result) {

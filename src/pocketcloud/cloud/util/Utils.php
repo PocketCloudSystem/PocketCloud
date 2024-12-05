@@ -2,6 +2,8 @@
 
 namespace pocketcloud\cloud\util;
 
+use pocketcloud\cloud\terminal\log\CloudLogger;
+use pocketcloud\cloud\util\net\NetUtils;
 use Throwable;
 
 final class Utils {
@@ -41,6 +43,30 @@ final class Utils {
             fclose(self::$lockFileHandle);
             unlink(STORAGE_PATH . "cloud.lock");
         } catch (Throwable) {}
+    }
+
+    public static function downloadPlugins(): void {
+        $downloadServerPlugin = false;
+        $downloadProxyPlugin = false;
+
+        if (!file_exists(SERVER_PLUGINS_PATH . "CloudBridge.phar")) $downloadServerPlugin = true;
+        if (!file_exists(PROXY_PLUGINS_PATH . "CloudBridge.jar")) $downloadProxyPlugin = true;
+
+        $temporaryLogger = CloudLogger::temp(false);
+        $serverPluginsPath = SERVER_PLUGINS_PATH;
+        $proxyPluginsPath = PROXY_PLUGINS_PATH;
+
+        if ($downloadServerPlugin) {
+            $temporaryLogger->info("Start downloading server plugin: %s", "CloudBridge.phar");
+            NetUtils::download("https://github.com/PocketCloudSystem/CloudBridge/releases/latest/download/CloudBridge.phar", $serverPluginsPath . "CloudBridge.phar");
+            $temporaryLogger->info("Successfully downloaded server plugin: %s (%s)", "CloudBridge.phar", $serverPluginsPath . "CloudBridge.phar");
+        }
+
+        if ($downloadProxyPlugin) {
+            $temporaryLogger->info("Start downloading proxy plugin: %s", "CloudBridge.jar");
+            NetUtils::download("https://github.com/PocketCloudSystem/CloudBridge-Proxy/releases/latest/download/CloudBridge.jar", $proxyPluginsPath . "CloudBridge.jar");
+            $temporaryLogger->info("Successfully downloaded proxy plugin: %s (%s)", "CloudBridge.jar", $proxyPluginsPath . "CloudBridge.jar");
+        }
     }
 
     public static function containKeys(array $array, ...$keys): bool {
