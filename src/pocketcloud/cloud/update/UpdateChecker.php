@@ -115,7 +115,7 @@ final class UpdateChecker {
                 if (isset($phar["plugin.yml"])) {
                     $yaml = yaml_parse($phar["plugin.yml"]->getContent());
                     if (isset($yaml["version"])) {
-                        if ($yaml["version"] !== $data["tag_name"]) {
+                        if ($yaml["version"] !== $data["tag_name"] && !VersionInfo::BETA) {
                             CloudLogger::get()->warn("§cYour version of the §bCloudBridge §cis outdated!");
                             if (MainConfig::getInstance()->isExecuteUpdates()) {
                                 CloudLogger::get()->warn("§bDownloading §rthe newest version...");

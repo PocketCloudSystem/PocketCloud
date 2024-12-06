@@ -274,7 +274,7 @@ final class CloudServerManager implements Tickable {
     }
 
     public function canStartMore(Template $template): bool {
-        return count($this->getAll($template)) >= $template->getSettings()->getMaxServerCount();
+        return count($this->getAll($template)) < $template->getSettings()->getMaxServerCount();
     }
 
     public function get(string $name): ?CloudServer {

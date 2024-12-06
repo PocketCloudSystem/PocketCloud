@@ -3,6 +3,9 @@
 namespace pocketcloud\cloud\network\packet\impl\type;
 
 use pocketcloud\cloud\config\impl\MainConfig;
+use pocketcloud\cloud\language\Language;
+use pocketcloud\cloud\network\client\ServerClient;
+use pocketcloud\cloud\network\client\ServerClientCache;
 use pocketcloud\cloud\network\packet\impl\normal\CloudNotifyPacket;
 use pocketcloud\cloud\util\enum\EnumTrait;
 
@@ -17,11 +20,11 @@ final class NotifyType {
     use EnumTrait;
 
     protected static function init(): void {
-        self::register("starting", new NotifyType("STARTING", "§aStarting §fthe server §b%server%§f..."));
-        self::register("stopping", new NotifyType("STOPPING", "§cStopping §fthe server §b%server%§f..."));
-        self::register("timed", new NotifyType("TIMED", "§fThe server §b%server% §fhas §ctimed out§f."));
-        self::register("crashed", new NotifyType("CRASHED", "§fThe server §b%server% §ccrashed§f."));
-        self::register("start_failed", new NotifyType("START_FAILED", "§fFailed to start the server §b%server%§f..."));
+        self::register("starting", new NotifyType("STARTING", Language::current()->translate("inGame.notify.message.starting")));
+        self::register("stopping", new NotifyType("STOPPING", Language::current()->translate("inGame.notify.message.stopping")));
+        self::register("timed", new NotifyType("TIMED", Language::current()->translate("inGame.notify.message.timed")));
+        self::register("crashed", new NotifyType("CRASHED", Language::current()->translate("inGame.notify.message.crashed")));
+        self::register("start_failed", new NotifyType("START_FAILED", Language::current()->translate("inGame.notify.message.start_failed")));
     }
 
     public function __construct(
@@ -30,8 +33,9 @@ final class NotifyType {
     ) {}
 
     public function send(array $params): void {
-        $message = MainConfig::getInstance()->getInGamePrefix() . str_replace(array_keys($params), array_values($params), $this->message);
-        CloudNotifyPacket::create($message)->broadcastPacket();
+        CloudNotifyPacket::create(str_replace(array_keys($params), array_values($params), $this->message))->broadcastPacket(
+            ...ServerClientCache::getInstance()->pick(fn(ServerClient $client) => $client->getServer() !== null && $client->getServer()->getTemplate()->getTemplateType()->isProxy())
+        );
     }
 
     public function getName(): string {
