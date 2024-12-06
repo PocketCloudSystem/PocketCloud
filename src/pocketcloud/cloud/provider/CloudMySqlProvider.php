@@ -37,12 +37,10 @@ final class CloudMySqlProvider extends CloudProvider {
         });
 
         foreach (InGameModule::getAll() as $value) {
-            DatabaseQueries::getModuleState($value)
-                ->execute(fn (bool $v) => InGameModule::setModuleState($value, $v));
+            $this->getModuleState($value)->then(fn(bool $v) => InGameModule::setModuleState($value, $v));
         }
 
-        DatabaseQueries::getWhitelist()
-            ->execute(fn(array $list) => MaintenanceList::sync($list));
+        $this->getWhitelist()->then(fn(array $list) => MaintenanceList::sync($list));
     }
 
     public function addTemplate(Template $template): void {
@@ -79,7 +77,7 @@ final class CloudMySqlProvider extends CloudProvider {
         $promise = new Promise();
 
         DatabaseQueries::checkTemplate($template)
-            ->execute(fn(bool $result) => $promise->resolve($result));
+            ->execute(fn(?bool $check) => $promise->resolve($check ?? false));
 
         return $promise;
     }
@@ -116,7 +114,7 @@ final class CloudMySqlProvider extends CloudProvider {
         $promise = new Promise();
 
         DatabaseQueries::getModuleState($module)
-            ->execute(fn(bool $enabled) => $promise->resolve($enabled));
+            ->execute(fn(?bool $enabled) => $promise->resolve($enabled ?? false));
 
         return $promise;
     }
@@ -133,7 +131,7 @@ final class CloudMySqlProvider extends CloudProvider {
         $promise = new Promise();
 
         DatabaseQueries::hasNotificationsEnabled($player)
-            ->execute(fn(bool $enabled) => $promise->resolve($enabled));
+            ->execute(fn(?bool $enabled) => $promise->resolve($enabled ?? false));
 
         return $promise;
     }
@@ -152,7 +150,7 @@ final class CloudMySqlProvider extends CloudProvider {
         $promise = new Promise();
 
         DatabaseQueries::isOnWhitelist($player)
-            ->execute(fn(bool $enabled) => $promise->resolve($enabled));
+            ->execute(fn(?bool $enabled) => $promise->resolve($enabled ?? false));
 
         return $promise;
     }
@@ -161,7 +159,7 @@ final class CloudMySqlProvider extends CloudProvider {
         $promise = new Promise();
 
         DatabaseQueries::getWhitelist()
-            ->execute(fn(array $list) => $promise->resolve(array_map(fn(array $r) => $r["player"], $list)));
+            ->execute(fn(?array $list) => $promise->resolve($list === null ? [] : array_map(fn(array $r) => $r["player"], $list)));
 
         return $promise;
     }

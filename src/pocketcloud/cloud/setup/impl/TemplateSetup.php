@@ -65,7 +65,7 @@ final class TemplateSetup extends Setup {
                 ->key("startNewPercentage")
                 ->question("How many players are required to start a new server? (in %, 0-100, 0 = none)")
                 ->parser(function(string $input): ?string {
-                    if (is_numeric($input) && ($val = floatval($input)) > 0 && $val < 100) return floatval($input);
+                    if (is_numeric($input) && ($val = floatval($input)) >= 0 && $val <= 100) return floatval($input);
                     return null;
                 })
                 ->canSkipped(true)

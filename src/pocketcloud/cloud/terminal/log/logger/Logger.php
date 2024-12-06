@@ -81,7 +81,7 @@ final class Logger {
             }
         } catch (ReflectionException) {}
 
-        $format = ($this->usePrefix ? $threadName . "§r" . date("H:i:s") . " §8| §r" . $logLevel->getPrefix() . " §8» §r" : "") . (empty($params) ? $message : sprintf($message, ...$params)) . CloudColor::RESET();
+        $format = ($this->usePrefix ? $threadName . "§r" . date("H:i:s") . " §8| §r" . $logLevel->getPrefix() . " §8» §r" : "§r") . (empty($params) ? $message : sprintf($message, ...$params)) . CloudColor::RESET();
         $line = CloudColor::toColoredString($format) . "\n";
 
         if (($setup = Setup::getCurrentSetup()) !== null && $setup->getLogger() === $this) echo $line;

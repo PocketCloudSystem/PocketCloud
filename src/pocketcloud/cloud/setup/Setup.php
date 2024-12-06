@@ -124,6 +124,7 @@ abstract class Setup {
         if (count($question->getPossibleAnswers()) > 0) {
             if (!in_array($line, $question->getPossibleAnswers())) {
                 $this->logger->error("Please provide a valid answer!");
+                echo CloudColor::toColoredString("§8» §b");
                 return null;
             }
         }
@@ -131,6 +132,7 @@ abstract class Setup {
         $result = $question->getParser()($line);
         if ($result === null) {
             $this->logger->error("Please provide a valid answer!");
+            echo CloudColor::toColoredString("§8» §b");
             return null;
         }
 
