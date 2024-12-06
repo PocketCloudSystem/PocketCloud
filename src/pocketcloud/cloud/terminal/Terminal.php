@@ -10,6 +10,7 @@ use pocketcloud\cloud\setup\Setup;
 use pocketcloud\cloud\terminal\log\CloudLogger;
 use pocketcloud\cloud\thread\Thread;
 use pocketmine\snooze\SleeperHandlerEntry;
+use Throwable;
 
 final class Terminal extends Thread {
 
@@ -30,7 +31,7 @@ final class Terminal extends Thread {
                             CloudLogger::get()->error("The §bcommand §rdoesn't exists!");
                         }
                     }
-                } catch (\Throwable $throwable) {
+                } catch (Throwable $throwable) {
                     CloudLogger::get()->exception($throwable);
                 }
             }

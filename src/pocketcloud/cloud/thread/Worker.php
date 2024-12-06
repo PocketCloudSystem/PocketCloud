@@ -50,7 +50,6 @@ abstract class Worker extends NativeWorker {
 
         if (IS_PHAR) {
             define("CLOUD_PATH", str_replace("phar://", "", dirname(__DIR__, 5) . DIRECTORY_SEPARATOR));
-            define("CLOUD_PATH", str_replace("phar://", "", dirname(__DIR__, 5) . DIRECTORY_SEPARATOR));
         } else {
             define("CLOUD_PATH", dirname(__DIR__, 4) . DIRECTORY_SEPARATOR);
         }

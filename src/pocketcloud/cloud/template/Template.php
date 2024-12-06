@@ -2,7 +2,6 @@
 
 namespace pocketcloud\cloud\template;
 
-use pocketcloud\cloud\player\CloudPlayerManager;
 use pocketcloud\cloud\server\CloudServerManager;
 use pocketcloud\cloud\util\Utils;
 

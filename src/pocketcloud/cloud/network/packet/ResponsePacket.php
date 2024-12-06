@@ -28,5 +28,5 @@ abstract class ResponsePacket extends CloudPacket {
         return $this;
     }
 
-    final public function handle(ServerClient $client) {}
+    final public function handle(ServerClient $client): void {}
 }
