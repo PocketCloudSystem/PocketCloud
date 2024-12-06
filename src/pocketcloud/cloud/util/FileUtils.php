@@ -50,7 +50,8 @@ final class FileUtils {
                 return file_get_contents($filePath);
             },
             "Failed to read file: " . $filePath,
-            params: $filePath
+            null,
+            $filePath
         );
     }
 

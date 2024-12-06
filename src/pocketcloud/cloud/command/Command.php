@@ -38,7 +38,7 @@ abstract class Command {
                         return;
                     }
 
-                    $arg = $currentParameter->parseValue($multiString ? array_slice($args, $i) : $args[$i]);
+                    $arg = $currentParameter->parseValue($multiString ? implode(" ", array_slice($args, $i)) : $args[$i]);
                     $parsedArgs[$currentParameter->getName()] = $arg;
                     if ($multiString) break;
                 } catch (ArgumentParseException) {

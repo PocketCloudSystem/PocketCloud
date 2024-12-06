@@ -8,7 +8,7 @@ final class MaintenanceList {
 
     /** @internal  */
     public static function sync(array $maintenanceList): void {
-        self::$maintenanceList = $maintenanceList;
+        foreach ($maintenanceList as $player) self::$maintenanceList[$player] = true;
     }
 
     public static function add(string $player): void {
@@ -24,6 +24,6 @@ final class MaintenanceList {
     }
 
     public static function getAll(): array {
-        return self::$maintenanceList;
+        return array_keys(self::$maintenanceList);
     }
 }
