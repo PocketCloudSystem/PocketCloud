@@ -31,7 +31,7 @@ class WebAccountUpdateEndPoint extends EndPoint {
         if ($action == "password") {
             WebAccountManager::getInstance()->update($account, $value, null);
         } else {
-            if (($role = WebAccountRoles::from($value)) !== null) {
+            if (($role = WebAccountRoles::get($value)) !== null) {
                 WebAccountManager::getInstance()->update($account, null, $role);
             } else return ["error" => "Please provide a valid role! (admin, default)"];
         }

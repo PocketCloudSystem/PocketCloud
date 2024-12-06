@@ -22,7 +22,8 @@ class StopCommand extends Command {
                 new TemplateArgument("template", false),
                 new StringEnumArgument("all", ["all"], false, false)
             ],
-            false
+            false,
+            "The server was not found."
         ));
     }
 

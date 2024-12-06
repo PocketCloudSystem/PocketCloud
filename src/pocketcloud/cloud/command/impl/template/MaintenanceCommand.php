@@ -18,7 +18,8 @@ class MaintenanceCommand extends Command {
             "action",
             ["add", "remove", "list"],
             false,
-            false
+            false,
+            "Please provide a supported action."
         ));
 
         $this->addParameter(new StringArgument(

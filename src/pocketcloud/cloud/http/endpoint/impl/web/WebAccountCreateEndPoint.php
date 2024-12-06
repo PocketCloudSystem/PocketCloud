@@ -19,7 +19,7 @@ class WebAccountCreateEndPoint extends EndPoint {
 
     public function handleRequest(Request $request, Response $response): array {
         $name = $request->data()->queries()->get("name");
-        $role = WebAccountRoles::from($request->data()->queries()->get("role", "default")) ?? WebAccountRoles::DEFAULT;
+        $role = WebAccountRoles::get($request->data()->queries()->get("role", "default")) ?? WebAccountRoles::DEFAULT;
 
         if (WebAccountManager::getInstance()->check($name)) {
             return ["error" => "A web account with that name already exists!"];

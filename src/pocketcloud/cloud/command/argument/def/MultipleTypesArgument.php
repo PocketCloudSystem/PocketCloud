@@ -15,9 +15,10 @@ final readonly class MultipleTypesArgument extends CommandArgument {
     public function __construct(
         string $name,
         private array $allowedTypes,
-        bool $optional
+        bool $optional,
+        ?string $customErrorMessage = null
     ) {
-        parent::__construct($name, $optional);
+        parent::__construct($name, $optional, $customErrorMessage);
     }
 
     public function parseValue(string $input): mixed {
@@ -25,6 +26,7 @@ final readonly class MultipleTypesArgument extends CommandArgument {
         foreach ($this->allowedTypes as $type) {
             try {
                 $result = $type->parseValue($input);
+                break;
             } catch (ArgumentParseException) {
                 continue;
             }

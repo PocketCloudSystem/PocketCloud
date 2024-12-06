@@ -18,7 +18,8 @@ class StartCommand extends Command {
 
         $this->addParameter(new TemplateArgument(
             "template",
-            false
+            false,
+            "The template was not found."
         ));
 
         $this->addParameter(new MultipleTypesArgument(

@@ -17,14 +17,16 @@ class EditCommand extends Command {
 
         $this->addParameter(new TemplateArgument(
             "template",
-            false
+            false,
+            "The template was not found."
         ));
 
         $this->addParameter(new StringEnumArgument(
             "key",
             TemplateHelper::EDITABLE_KEYS,
             true,
-            true
+            true,
+            "The key you are trying to edit was not found."
         ));
 
         $this->addParameter(new MixedArgument(

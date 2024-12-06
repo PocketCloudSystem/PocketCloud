@@ -33,7 +33,7 @@ abstract class Command {
             $multiString = $currentParameter instanceof StringArgument && $currentParameter->isMultiString();
             if (isset($args[$i])) {
                 try {
-                    if ($currentParameter instanceof StringEnumArgument && $currentParameter->isAllowedString($args[$i])) {
+                    if ($currentParameter instanceof StringEnumArgument && !$currentParameter->isAllowedString($args[$i])) {
                         CloudLogger::get()->warn($currentParameter->getCustomErrorMessage() ?? $this->getUsage());
                         return;
                     }

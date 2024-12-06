@@ -56,7 +56,7 @@ final class WebAccount {
 
     public static function fromArray(array $data): ?self {
         if (!Utils::containKeys($data, "username", "password", "initialPassword", "role")) return null;
-        if (($role = WebAccountRoles::from($data["role"])) === null) return null;
+        if (($role = WebAccountRoles::get($data["role"])) === null) return null;
         if (!is_bool($data["initialPassword"])) return null;
         return self::create($data["username"], $data["password"], $data["initialPassword"], $role);
     }

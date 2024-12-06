@@ -98,7 +98,13 @@ final class Logger {
     public function emptyLine(bool $prefix = false): self {
         if ($prefix) {
             $this->send(CloudLogLevel::INFO(), "");
-        } else echo "\r\n";
+        } else {
+            echo $line = "\r\n";
+            if ($this->saveLogs) {
+                LoggingCache::save($line);
+                $this->write($line);
+            }
+        }
         return $this;
     }
 

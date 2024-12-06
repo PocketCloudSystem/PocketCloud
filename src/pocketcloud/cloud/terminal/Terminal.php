@@ -22,11 +22,11 @@ final class Terminal extends Thread {
 
         $this->entry = PocketCloud::getInstance()->getSleeperHandler()->addNotifier(function (): void {
             while (($line = $this->buffer->shift()) !== null) {
-                if (trim($line) == "") return;
                 try {
                     if (($setup = Setup::getCurrentSetup()) !== null) {
                         $setup->handleInput($line);
                     } else {
+                        if (trim($line) == "") return;
                         if (!CommandManager::getInstance()->handleInput(new ConsoleCommandSender(), $line)) {
                             CloudLogger::get()->error("The §bcommand §rdoesn't exists!");
                         }

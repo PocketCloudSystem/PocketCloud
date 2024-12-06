@@ -12,9 +12,10 @@ final readonly class StringEnumArgument extends CommandArgument {
         string $name,
         array $allowedStrings,
         private bool $caseSensitive,
-        bool $optional
+        bool $optional,
+        ?string $customErrorMessage = null
     ) {
-        parent::__construct($name, $optional);
+        parent::__construct($name, $optional, $customErrorMessage);
         $this->allowedStrings = array_map(fn(string $string) => $this->caseSensitive ? $string : strtolower($string), $allowedStrings);
     }
 

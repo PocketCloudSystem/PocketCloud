@@ -14,7 +14,8 @@ class EnableCommand extends Command {
 
         $this->addParameter(new PluginArgument(
             "plugin",
-            false
+            false,
+            "The plugin was not found."
         ));
     }
 

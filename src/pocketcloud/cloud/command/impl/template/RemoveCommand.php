@@ -13,7 +13,8 @@ class RemoveCommand extends Command {
         parent::__construct("remove", "Remove a template");
         $this->addParameter(new TemplateArgument(
             "template",
-            false
+            false,
+            "The template was not found."
         ));
     }
 

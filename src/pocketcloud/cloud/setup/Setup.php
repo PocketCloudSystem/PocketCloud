@@ -99,12 +99,16 @@ abstract class Setup {
             return;
         }
 
-        if ($this->currentQuestion->isCanSkipped() && $input == "") {
+        $canBeSkipped = $this->currentQuestion->isCanSkipped() || isset($this->results[$this->currentQuestion->getKey()]);
+        if ($canBeSkipped && $input == "") {
             $this->nextQuestion();
             return;
         }
 
-        if ($input == "") return;
+        if ($input == "") {
+            echo CloudColor::toColoredString("§8» §b");
+            return;
+        }
 
         if (($result = $this->checkResult($this->currentQuestion, $input)) !== null) {
             $this->results[$this->currentQuestion->getKey()] = $result;

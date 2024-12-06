@@ -9,6 +9,7 @@ use pocketcloud\cloud\command\argument\def\WebAccountArgument;
 use pocketcloud\cloud\command\Command;
 use pocketcloud\cloud\command\sender\ICommandSender;
 use pocketcloud\cloud\config\impl\MainConfig;
+use pocketcloud\cloud\setup\impl\WebAccountSetup;
 use pocketcloud\cloud\util\Utils;
 use pocketcloud\cloud\web\WebAccount;
 use pocketcloud\cloud\web\WebAccountManager;
@@ -23,7 +24,8 @@ class WebAccountCommand extends Command {
             "action",
             ["list", "create", "remove", "update"],
             false,
-            false
+            false,
+            "Please provide a supported action."
         ));
 
         $this->addParameter(new MultipleTypesArgument(
@@ -39,7 +41,8 @@ class WebAccountCommand extends Command {
             "update_action",
             ["password", "role"],
             false,
-            true
+            true,
+            "Please provide a supported action to update the web account."
         ));
 
         $this->addParameter(new StringArgument(
@@ -66,9 +69,9 @@ class WebAccountCommand extends Command {
                 );
             }
         } else if ($subCommand == "create") {
-            if (count($args) < 3) {
-                //TODO: Create Setup
-                return false;
+            if (count($args) < 2) {
+                (new WebAccountSetup())->startSetup();
+                return true;
             }
 
             $name = $args["name"];
@@ -80,14 +83,12 @@ class WebAccountCommand extends Command {
             WebAccountManager::getInstance()->create(new WebAccount($name, password_hash($initPassword = Utils::generateString(6), PASSWORD_BCRYPT), true, WebAccountRoles::DEFAULT));
             $sender->success("Successfully §acreated §rthe web account §b" . $name . " §rwith the role §bdefault§r. §8(§rInitial Password: §b" . $initPassword . "§8)");
         } else if ($subCommand == "remove") {
-            if (count($args) < 3) {
-                return false;
-            }
+            if (count($args) < 2) return false;
 
             $account = $args["name"];
             if (!$account instanceof WebAccount) {
-                $sender->error("The account does not exist!");
-                return false;
+                $sender->error("The web account does not exist!");
+                return true;
             }
 
             WebAccountManager::getInstance()->remove($account);
@@ -99,8 +100,8 @@ class WebAccountCommand extends Command {
 
             $account = $args["name"];
             if (!$account instanceof WebAccount) {
-                $sender->error("The account does not exist!");
-                return false;
+                $sender->error("The web account does not exist!");
+                return true;
             }
 
             $action = $args["update_action"];
@@ -110,7 +111,7 @@ class WebAccountCommand extends Command {
                 WebAccountManager::getInstance()->update($account, password_hash($value, PASSWORD_BCRYPT), null);
                 $sender->success("Successfully §aupdated §rthe §bweb account§r.");
             } else if ($action == "role") {
-                if (($role = WebAccountRoles::from($value)) !== null) {
+                if (($role = WebAccountRoles::get($value)) !== null) {
                     WebAccountManager::getInstance()->update($account, null, $role);
                     $sender->success("Successfully §aupdated §rthe role of the §bweb account§r.");
                 } else $sender->warn("The web role does not exist!");

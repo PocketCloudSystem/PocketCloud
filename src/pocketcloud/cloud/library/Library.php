@@ -38,7 +38,7 @@ readonly class Library {
                     if (file_exists($this->unzipLocation . DIRECTORY_SEPARATOR . $excludedFile)) unlink($this->unzipLocation . DIRECTORY_SEPARATOR . $excludedFile);
                 }
             }
-        } else var_dump("failed to open archive");
+        }
 
         @unlink($this->fileLocation);
         if ($this->copySource !== "") FileUtils::removeDirectory($this->deletionDir ?? $this->copySource);

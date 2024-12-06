@@ -16,7 +16,8 @@ class ExecuteCommand extends Command {
 
         $this->addParameter(new ServerArgument(
             "server",
-            false
+            false,
+            "The server was not found."
         ));
 
         $this->addParameter(new StringArgument(

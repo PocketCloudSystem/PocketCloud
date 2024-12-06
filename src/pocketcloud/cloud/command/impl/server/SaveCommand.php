@@ -14,7 +14,8 @@ class SaveCommand extends Command {
 
         $this->addParameter(new ServerArgument(
             "server",
-            false
+            false,
+            "The server was not found."
         ));
     }
 

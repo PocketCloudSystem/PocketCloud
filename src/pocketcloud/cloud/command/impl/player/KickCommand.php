@@ -14,7 +14,8 @@ class KickCommand extends Command {
 
         $this->addParameter(new PlayerArgument(
             "player",
-            false
+            false,
+            "The player was not found."
         ));
 
         $this->addParameter(new StringArgument(
