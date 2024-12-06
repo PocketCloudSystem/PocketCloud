@@ -3,6 +3,7 @@
 namespace pocketcloud\cloud\setup\impl;
 
 use pocketcloud\cloud\config\impl\MainConfig;
+use pocketcloud\cloud\exception\ExceptionHandler;
 use pocketcloud\cloud\server\util\ServerUtils;
 use pocketcloud\cloud\setup\QuestionBuilder;
 use pocketcloud\cloud\setup\Setup;
@@ -125,6 +126,6 @@ final class ConfigSetup extends Setup {
         MainConfig::getInstance()->setStartMethod($results["startMethod"] ?? (ServerUtils::checkTmux() ? "tmux" : "screen"));
         MainConfig::getInstance()->setHttpServerEnabled($results["httpServerEnabled"] ?? true);
         MainConfig::getInstance()->setHttpServerPort($results["httpServerPort"] ?? 8000);
-        MainConfig::getInstance()->save();
+        ExceptionHandler::tryCatch(fn() => MainConfig::getInstance()->save(), "Failed to save main config");
     }
 }

@@ -11,6 +11,7 @@ final readonly class MultipleTypesArgument extends CommandArgument {
      * @param string $name
      * @param array<CommandArgument> $allowedTypes
      * @param bool $optional
+     * @param string|null $customErrorMessage
      */
     public function __construct(
         string $name,

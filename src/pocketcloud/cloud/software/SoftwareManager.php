@@ -21,13 +21,13 @@ final class SoftwareManager {
 
     public function downloadAll(): void {
         foreach ($this->software as $software) {
-            if (!$this->isDownloaded($software)) {
-                $this->downloadSoftware($software);
+            if (!$this->check($software)) {
+                $this->download($software);
             }
         }
     }
 
-    public function downloadSoftware(Software $software): void {
+    public function download(Software $software): void {
         $temporaryLogger = CloudLogger::temp(false);
         $temporaryLogger->info("Start downloading software: %s (%s)", $software->getName(), $software->getUrl());
         $result = NetUtils::download($software->getUrl(), SOFTWARE_PATH . $software->getFileName());
@@ -39,7 +39,7 @@ final class SoftwareManager {
         $temporaryLogger->success("Successfully downloaded software: %s (%s)", $software->getName(), SOFTWARE_PATH . $software->getFileName());
     }
 
-    public function isDownloaded(Software $software): bool {
+    public function check(Software $software): bool {
         return file_exists(SOFTWARE_PATH . $software->getFileName());
     }
 

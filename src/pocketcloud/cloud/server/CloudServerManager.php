@@ -68,7 +68,7 @@ final class CloudServerManager implements Tickable {
         ) : $object;
 
         if ($object instanceof Template) {
-            foreach ($this->getAllByTemplate($object) as $server) $this->stop($server, $force);
+            foreach ($this->getAll($object) as $server) $this->stop($server, $force);
             return true;
         } else if ($object instanceof CloudServer) {
             $object->stop($force);
@@ -274,7 +274,7 @@ final class CloudServerManager implements Tickable {
     }
 
     public function canStartMore(Template $template): bool {
-        return count($this->getAllByTemplate($template)) >= $template->getSettings()->getMaxServerCount();
+        return count($this->getAll($template)) >= $template->getSettings()->getMaxServerCount();
     }
 
     public function get(string $name): ?CloudServer {
@@ -282,18 +282,14 @@ final class CloudServerManager implements Tickable {
     }
 
     public function getLatest(Template $template): ?CloudServer {
-        $servers = $this->getAllByTemplate($template);
+        $servers = $this->getAll($template);
         if (empty($servers)) return null;
         usort($servers, fn(CloudServer $a, CloudServer $b) => $a->getStartTime() <=> $b->getStartTime());
         return $servers[array_key_last($servers)];
     }
 
-    /** @return array<CloudServer> */
-    public function getAllByTemplate(Template $template): array {
-        return array_filter($this->servers, fn(CloudServer $server) => $server->getTemplate() === $template);
-    }
-
-    public function getAll(): array {
+    public function getAll(?Template $template = null): array {
+        if ($template !== null) return array_filter($this->servers, fn(CloudServer $server) => $server->getTemplate() === $template);
         return $this->servers;
     }
 }

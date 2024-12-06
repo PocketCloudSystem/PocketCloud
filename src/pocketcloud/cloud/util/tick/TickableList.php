@@ -21,7 +21,7 @@ final class TickableList {
         }
     }
 
-    public static function getList(): array {
+    public static function getAll(): array {
         return self::$list;
     }
 }

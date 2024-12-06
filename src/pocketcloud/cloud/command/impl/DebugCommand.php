@@ -5,6 +5,7 @@ namespace pocketcloud\cloud\command\impl;
 use pocketcloud\cloud\command\Command;
 use pocketcloud\cloud\command\sender\ICommandSender;
 use pocketcloud\cloud\config\impl\MainConfig;
+use pocketcloud\cloud\exception\ExceptionHandler;
 
 final class DebugCommand extends Command {
 
@@ -21,7 +22,7 @@ final class DebugCommand extends Command {
             MainConfig::getInstance()->setDebugMode(true);
         }
 
-        MainConfig::getInstance()->save();
+        ExceptionHandler::tryCatch(fn() => MainConfig::getInstance()->save(), "Failed to save main config");
         return true;
     }
 }

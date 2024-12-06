@@ -17,7 +17,7 @@ class CloudPlayerTextEndPoint extends EndPoint {
 
     public function handleRequest(Request $request, Response $response): array {
         $identifier = $request->data()->queries()->get("identifier");
-        $player = CloudPlayerManager::getInstance()->get($identifier) ?? CloudPlayerManager::getInstance()->getByUniqueId($identifier) ?? CloudPlayerManager::getInstance()->getByXboxId($identifier);
+        $player = CloudPlayerManager::getInstance()->get($identifier);
         if ($player === null) {
             return ["error" => "Player is not online!"];
         }

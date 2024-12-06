@@ -51,8 +51,8 @@ final class MainConfig extends Configuration {
     ];
 
     public function __construct() {
-        self::setInstance($this);
         parent::__construct(STORAGE_PATH . "config.json", self::TYPE_JSON);
+        self::setInstance($this);
         $this->httpServer["auth-key"] = ($this->generatedKey = Utils::generateString(10));
 
         $defaultHttp = $this->httpServer;

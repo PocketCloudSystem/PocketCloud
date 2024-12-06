@@ -142,11 +142,7 @@ final class CloudPluginManager implements Tickable {
         return $this->loaders;
     }
 
-    public function getEnabled(): array {
-        return $this->enabledPlugins;
-    }
-
-    public function getAll(): array {
-        return $this->plugins;
+    public function getAll(bool $enabled = false): array {
+        return $enabled ? $this->enabledPlugins : $this->plugins;
     }
 }

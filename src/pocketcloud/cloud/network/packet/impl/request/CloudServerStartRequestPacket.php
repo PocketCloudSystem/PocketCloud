@@ -37,7 +37,7 @@ class CloudServerStartRequestPacket extends RequestPacket {
 
     public function handle(ServerClient $client): void {
         if (($template = TemplateManager::getInstance()->get($this->template)) !== null) {
-            if (count(CloudServerManager::getInstance()->getAllByTemplate($template)) < $template->getSettings()->getMaxServerCount()) {
+            if (count(CloudServerManager::getInstance()->getAll($template)) < $template->getSettings()->getMaxServerCount()) {
                 CloudServerManager::getInstance()->start($template, $this->count);
                 $this->sendResponse(new CloudServerStartResponsePacket(ErrorReason::NO_ERROR()), $client);
             } else $this->sendResponse(new CloudServerStartResponsePacket(ErrorReason::MAX_SERVERS()), $client);

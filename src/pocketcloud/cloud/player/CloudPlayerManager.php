@@ -42,15 +42,12 @@ final class CloudPlayerManager {
     }
 
     public function get(string $name): ?CloudPlayer {
-        return $this->players[$name] ?? null;
-    }
-
-    public function getByUniqueId(string $uniqueId): ?CloudPlayer {
-        return array_filter($this->players, fn(CloudPlayer $player) => $player->getUniqueId() == $uniqueId)[0] ?? null;
-    }
-
-    public function getByXboxId(string $xboxUserId): ?CloudPlayer {
-        return array_filter($this->players, fn(CloudPlayer $player) => $player->getXboxUserId() == $xboxUserId)[0] ?? null;
+        if (isset($this->players[$name])) return $this->players[$name];
+        foreach ($this->players as $player) {
+            if ($player->getXboxUserId() == $name || $player->getUniqueId() == $name) return $player;
+        }
+        
+        return null;
     }
 
     public function getAll(): array {

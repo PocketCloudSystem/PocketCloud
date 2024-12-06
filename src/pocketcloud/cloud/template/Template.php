@@ -46,8 +46,8 @@ readonly class Template {
 
     public function toDetailedArray(): array {
         $playerCount = 0;
-        $serverCount = count(CloudServerManager::getInstance()->getAllByTemplate($this));
-        foreach (CloudServerManager::getInstance()->getAllByTemplate($this) as $server) $playerCount += $server->getCloudPlayerCount();
+        $serverCount = count(CloudServerManager::getInstance()->getAll($this));
+        foreach (CloudServerManager::getInstance()->getAll($this) as $server) $playerCount += $server->getCloudPlayerCount();
         return array_merge($this->toArray(), [
             "playerCount" => $playerCount,
             "serverCount" => $serverCount

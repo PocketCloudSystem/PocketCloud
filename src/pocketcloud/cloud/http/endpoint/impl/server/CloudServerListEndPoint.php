@@ -23,7 +23,7 @@ class CloudServerListEndPoint extends EndPoint {
             return array_values(array_map(fn(CloudServer $cloudServer) => $cloudServer->getName(), CloudServerManager::getInstance()->getAll()));
         } else {
             if (($template = TemplateManager::getInstance()->get($template)) !== null) {
-                return array_values(array_map(fn(CloudServer $cloudServer) => $cloudServer->getName(), CloudServerManager::getInstance()->getAllByTemplate($template)));
+                return array_values(array_map(fn(CloudServer $cloudServer) => $cloudServer->getName(), CloudServerManager::getInstance()->getAll($template)));
             } else {
                 return ["error" => "The template doesn't exists!"];
             }

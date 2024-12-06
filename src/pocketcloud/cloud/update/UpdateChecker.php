@@ -163,7 +163,7 @@ final class UpdateChecker {
             }
 
             if ($downloadNewest) {
-                SoftwareManager::getInstance()->downloadSoftware(SoftwareManager::getInstance()->get("PocketMine-MP"));
+                SoftwareManager::getInstance()->download(SoftwareManager::getInstance()->get("PocketMine-MP"));
             }
         } catch (Exception $e) {
             CloudLogger::get()->exception($e);

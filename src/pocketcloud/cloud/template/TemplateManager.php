@@ -94,7 +94,7 @@ final class TemplateManager implements Tickable {
     public function tick(int $currentTick): void {
         foreach (TemplateManager::getInstance()->getAll() as $template) {
             if ($template->getSettings()->isAutoStart()) {
-                if (($running = count(CloudServerManager::getInstance()->getAllByTemplate($template))) < $template->getSettings()->getMaxServerCount()) {
+                if (($running = count(CloudServerManager::getInstance()->getAll($template))) < $template->getSettings()->getMaxServerCount()) {
                     CloudServerManager::getInstance()->start($template, ($template->getSettings()->getMinServerCount() - $running));
                 }
             }
