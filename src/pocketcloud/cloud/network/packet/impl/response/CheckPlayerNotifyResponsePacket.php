@@ -5,7 +5,7 @@ namespace pocketcloud\cloud\network\packet\impl\response;
 use pocketcloud\cloud\network\packet\data\PacketData;
 use pocketcloud\cloud\network\packet\ResponsePacket;
 
-class CheckPlayerNotifyResponsePacket extends ResponsePacket {
+final class CheckPlayerNotifyResponsePacket extends ResponsePacket {
 
     public function __construct(private bool $value = false) {}
 

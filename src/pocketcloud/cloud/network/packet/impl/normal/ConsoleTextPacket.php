@@ -8,7 +8,7 @@ use pocketcloud\cloud\network\packet\data\PacketData;
 use pocketcloud\cloud\network\packet\impl\type\LogType;
 use pocketcloud\cloud\terminal\log\CloudLogger;
 
-class ConsoleTextPacket extends CloudPacket {
+final class ConsoleTextPacket extends CloudPacket {
 
     public function __construct(
         private string $text = "",

@@ -8,7 +8,7 @@ use pocketcloud\cloud\network\client\ServerClient;
 use pocketcloud\cloud\network\packet\CloudPacket;
 use pocketcloud\cloud\network\packet\data\PacketData;
 
-class LibrarySyncPacket extends CloudPacket {
+final class LibrarySyncPacket extends CloudPacket {
 
     private array $data = [];
 

@@ -14,8 +14,8 @@ final class MainConfig extends Configuration {
     /** @ignored */
     private string $generatedKey;
     private int $memoryLimit = 512;
+    private string $language = "en_US";
     private string $provider = "json";
-    private string $inGamePrefix = "§b§lPocket§3Cloud §r§8» §r§7";
     private bool $debugMode = false;
     private bool $updateChecks = true;
     private bool $executeUpdates = true;
@@ -91,13 +91,13 @@ final class MainConfig extends Configuration {
         ini_set("memory_limit", ($memoryLimit < 0 ? "-1" : $memoryLimit . "M"));
     }
 
+    public function setLanguage(string $language): void {
+        $this->language = $language;
+    }
+
     public function setProvider(string $provider): void {
         $this->provider = $provider;
         CloudProvider::select();
-    }
-
-    public function setInGamePrefix(string $inGamePrefix): void {
-        $this->inGamePrefix = $inGamePrefix;
     }
 
     public function setDebugMode(bool $debugMode): void {
@@ -148,12 +148,12 @@ final class MainConfig extends Configuration {
         return $this->memoryLimit;
     }
 
-    public function getProvider(): string {
-        return strtolower($this->provider);
+    public function getLanguage(): string {
+        return $this->language;
     }
 
-    public function getInGamePrefix(): string {
-        return $this->inGamePrefix;
+    public function getProvider(): string {
+        return strtolower($this->provider);
     }
 
     public function isDebugMode(): bool {

@@ -2,6 +2,7 @@
 
 namespace pocketcloud\cloud\command\impl;
 
+use pocketcloud\cloud\cache\InGameModule;
 use pocketcloud\cloud\command\argument\def\StringEnumArgument;
 use pocketcloud\cloud\command\Command;
 use pocketcloud\cloud\command\sender\ICommandSender;
@@ -17,7 +18,7 @@ class ListCommand extends Command {
 
         $this->addParameter(new StringEnumArgument(
             "type",
-            ["servers", "templates", "players"],
+            ["servers", "templates", "players", "modules"],
             false,
             true
         ));
@@ -65,6 +66,14 @@ class ListCommand extends Command {
                     " §8- §rUniqueId: §b" . $player->getUniqueId() .
                     " §8- §rServer: §b" . ($player->getCurrentServer() === null ? "§cNo server." : $player->getCurrentServer()->getName()) .
                     " §8- §rProxy: §b" . ($player->getCurrentProxy() === null ? "§cNo proxy." : $player->getCurrentProxy()->getName())
+                );
+            }
+        } else if ($type == "modules") {
+            $sender->info("Modules §8(§b" . count(InGameModule::getAll()) . "§8)§r:");
+            foreach (InGameModule::getAll() as $module) {
+                $sender->info(
+                    "§b" . $module .
+                    " §8- §rState: §a" . (InGameModule::getModuleState($module) ? "Enabled" : "Disabled")
                 );
             }
         }

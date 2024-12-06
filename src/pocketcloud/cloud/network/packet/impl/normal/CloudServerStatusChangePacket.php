@@ -7,7 +7,7 @@ use pocketcloud\cloud\network\packet\CloudPacket;
 use pocketcloud\cloud\network\packet\data\PacketData;
 use pocketcloud\cloud\server\util\ServerStatus;
 
-class CloudServerStatusChangePacket extends CloudPacket {
+final class CloudServerStatusChangePacket extends CloudPacket {
 
     public function __construct(private ?ServerStatus $newStatus = null) {}
 

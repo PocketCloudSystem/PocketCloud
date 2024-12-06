@@ -7,7 +7,7 @@ use pocketcloud\cloud\network\packet\CloudPacket;
 use pocketcloud\cloud\network\packet\data\PacketData;
 use pocketcloud\cloud\template\Template;
 
-class TemplateSyncPacket extends CloudPacket {
+final class TemplateSyncPacket extends CloudPacket {
 
     public function __construct(
         private ?Template $template = null,

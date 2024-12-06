@@ -8,7 +8,7 @@ use pocketcloud\cloud\network\packet\CloudPacket;
 use pocketcloud\cloud\network\packet\data\PacketData;
 use pocketcloud\cloud\player\CloudPlayerManager;
 
-class PlayerDisconnectPacket extends CloudPacket {
+final class PlayerDisconnectPacket extends CloudPacket {
 
     public function __construct(private ?string $playerName = "") {}
 

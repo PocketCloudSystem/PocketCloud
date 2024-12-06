@@ -6,7 +6,7 @@ use pocketcloud\cloud\network\client\ServerClient;
 use pocketcloud\cloud\network\packet\CloudPacket;
 use pocketcloud\cloud\network\packet\data\PacketData;
 
-class CloudNotifyPacket extends CloudPacket {
+final class CloudNotifyPacket extends CloudPacket {
 
     public function __construct(private string $message = "") {}
 

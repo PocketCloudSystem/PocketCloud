@@ -7,7 +7,7 @@ use pocketcloud\cloud\network\packet\CloudPacket;
 use pocketcloud\cloud\network\packet\data\PacketData;
 use pocketcloud\cloud\server\CloudServer;
 
-class ServerSyncPacket extends CloudPacket {
+final class ServerSyncPacket extends CloudPacket {
 
     public function __construct(
         private ?CloudServer $server = null,

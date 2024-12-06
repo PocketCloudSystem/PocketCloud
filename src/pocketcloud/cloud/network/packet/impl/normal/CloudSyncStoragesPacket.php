@@ -8,7 +8,7 @@ use pocketcloud\cloud\network\packet\data\PacketData;
 use pocketcloud\cloud\server\CloudServerManager;
 
 //sending to the sub servers
-class CloudSyncStoragesPacket extends CloudPacket {
+final class CloudSyncStoragesPacket extends CloudPacket {
 
     private array $storage = [];
 

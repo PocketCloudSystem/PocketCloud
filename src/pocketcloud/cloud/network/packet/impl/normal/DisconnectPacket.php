@@ -16,7 +16,7 @@ use pocketcloud\cloud\terminal\log\CloudLogger;
 use pocketcloud\cloud\util\FileUtils;
 use pocketcloud\cloud\util\terminal\TerminalUtils;
 
-class DisconnectPacket extends CloudPacket {
+final class DisconnectPacket extends CloudPacket {
 
     public function __construct(private ?DisconnectReason $disconnectReason = null) {}
 

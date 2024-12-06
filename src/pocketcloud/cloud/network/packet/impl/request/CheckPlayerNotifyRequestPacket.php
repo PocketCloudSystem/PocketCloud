@@ -8,7 +8,7 @@ use pocketcloud\cloud\network\packet\impl\response\CheckPlayerMaintenanceRespons
 use pocketcloud\cloud\network\packet\RequestPacket;
 use pocketcloud\cloud\provider\CloudProvider;
 
-class CheckPlayerNotifyRequestPacket extends RequestPacket {
+final class CheckPlayerNotifyRequestPacket extends RequestPacket {
 
     public function __construct(private string $player = "") {}
 

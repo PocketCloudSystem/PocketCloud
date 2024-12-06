@@ -8,7 +8,7 @@ use pocketcloud\cloud\network\packet\data\PacketData;
 use pocketcloud\cloud\player\CloudPlayer;
 use pocketcloud\cloud\player\CloudPlayerManager;
 
-class PlayerConnectPacket extends CloudPacket {
+final class PlayerConnectPacket extends CloudPacket {
 
     public function __construct(private ?CloudPlayer $player = null) {}
 

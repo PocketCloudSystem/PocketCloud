@@ -13,6 +13,7 @@ use pocketcloud\cloud\network\packet\impl\normal\CommandSendPacket;
 use pocketcloud\cloud\network\packet\impl\normal\ConsoleTextPacket;
 use pocketcloud\cloud\network\packet\impl\normal\DisconnectPacket;
 use pocketcloud\cloud\network\packet\impl\normal\KeepAlivePacket;
+use pocketcloud\cloud\network\packet\impl\normal\LanguageSyncPacket;
 use pocketcloud\cloud\network\packet\impl\normal\LibrarySyncPacket;
 use pocketcloud\cloud\network\packet\impl\normal\ModuleSyncPacket;
 use pocketcloud\cloud\network\packet\impl\normal\PlayerConnectPacket;
@@ -83,6 +84,7 @@ final class PacketPool {
         $this->registerPacket(CloudNotifyPacket::class);
         $this->registerPacket(ModuleSyncPacket::class);
         $this->registerPacket(LibrarySyncPacket::class);
+        $this->registerPacket(LanguageSyncPacket::class);
         $this->registerPacket(CloudServerSyncStoragePacket::class);
         $this->registerPacket(CloudSyncStoragesPacket::class);
     }

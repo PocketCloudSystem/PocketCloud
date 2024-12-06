@@ -7,7 +7,7 @@ use pocketcloud\cloud\network\client\ServerClient;
 use pocketcloud\cloud\network\packet\CloudPacket;
 use pocketcloud\cloud\network\packet\data\PacketData;
 
-class ModuleSyncPacket extends CloudPacket {
+final class ModuleSyncPacket extends CloudPacket {
 
     private array $data;
 

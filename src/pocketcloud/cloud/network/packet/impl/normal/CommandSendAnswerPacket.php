@@ -8,7 +8,7 @@ use pocketcloud\cloud\network\packet\data\PacketData;
 use pocketcloud\cloud\network\packet\impl\type\CommandExecutionResult;
 use pocketcloud\cloud\util\promise\Promise;
 
-class CommandSendAnswerPacket extends CloudPacket {
+final class CommandSendAnswerPacket extends CloudPacket {
 
     public function __construct(private ?CommandExecutionResult $result = null) {}
 

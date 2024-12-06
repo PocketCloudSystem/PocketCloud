@@ -9,7 +9,7 @@ use pocketcloud\cloud\network\packet\impl\type\ErrorReason;
 use pocketcloud\cloud\network\packet\RequestPacket;
 use pocketcloud\cloud\server\CloudServerManager;
 
-class CloudServerStopRequestPacket extends RequestPacket {
+final class CloudServerStopRequestPacket extends RequestPacket {
 
     public function __construct(private string $server = "") {}
 

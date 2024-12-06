@@ -8,7 +8,7 @@ use pocketcloud\cloud\network\packet\data\PacketData;
 use pocketcloud\cloud\network\packet\impl\type\TextType;
 use pocketcloud\cloud\player\CloudPlayerManager;
 
-class PlayerTextPacket extends CloudPacket {
+final class PlayerTextPacket extends CloudPacket {
 
     public function __construct(
         private string $player = "",

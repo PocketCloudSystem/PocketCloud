@@ -11,7 +11,7 @@ use pocketcloud\cloud\player\CloudPlayerManager;
 use pocketcloud\cloud\server\CloudServerManager;
 use pocketcloud\cloud\terminal\log\CloudLogger;
 
-class PlayerSwitchServerPacket extends CloudPacket {
+final class PlayerSwitchServerPacket extends CloudPacket {
 
     public function __construct(
         private string $playerName = "",

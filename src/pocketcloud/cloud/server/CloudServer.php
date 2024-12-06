@@ -7,6 +7,7 @@ use pocketcloud\cloud\event\impl\server\ServerStopEvent;
 use pocketcloud\cloud\network\client\ServerClientCache;
 use pocketcloud\cloud\network\packet\CloudPacket;
 use pocketcloud\cloud\network\packet\impl\normal\DisconnectPacket;
+use pocketcloud\cloud\network\packet\impl\normal\LanguageSyncPacket;
 use pocketcloud\cloud\network\packet\impl\normal\LibrarySyncPacket;
 use pocketcloud\cloud\network\packet\impl\normal\ModuleSyncPacket;
 use pocketcloud\cloud\network\packet\impl\normal\PlayerSyncPacket;
@@ -193,6 +194,8 @@ class CloudServer {
             $packets[] = LibrarySyncPacket::create();
         }
 
+        $packets[] = LanguageSyncPacket::create();
+
         foreach ($packets as $packet) $this->sendPacket($packet);
     }
 
@@ -209,7 +212,9 @@ class CloudServer {
     }
 
     public function toDetailedArray(): array {
-        return array_merge($this->toArray(), []);
+        return array_merge($this->toArray(), [
+            "internalStorage" => $this->internalCloudServerStorage->getAll()
+        ]);
     }
 
     public static function fromArray(array $server): ?self {

@@ -10,7 +10,7 @@ use pocketcloud\cloud\network\packet\RequestPacket;
 use pocketcloud\cloud\server\CloudServerManager;
 use pocketcloud\cloud\template\TemplateManager;
 
-class CloudServerStartRequestPacket extends RequestPacket {
+final class CloudServerStartRequestPacket extends RequestPacket {
 
     public function __construct(
         private string $template = "",
