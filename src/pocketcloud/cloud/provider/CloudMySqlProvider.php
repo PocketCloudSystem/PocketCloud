@@ -2,8 +2,9 @@
 
 namespace pocketcloud\cloud\provider;
 
+use pocketcloud\cloud\cache\MaintenanceList;
 use pocketcloud\cloud\config\impl\MainConfig;
-use pocketcloud\cloud\module\InGameModule;
+use pocketcloud\cloud\cache\InGameModule;
 use pocketcloud\cloud\PocketCloud;
 use pocketcloud\cloud\provider\database\DatabaseQueries;
 use pocketcloud\cloud\provider\migration\MigrationList;
@@ -39,6 +40,9 @@ final class CloudMySqlProvider extends CloudProvider {
             DatabaseQueries::getModuleState($value)
                 ->execute(fn (bool $v) => InGameModule::setModuleState($value, $v));
         }
+
+        DatabaseQueries::getWhitelist()
+            ->execute(fn(array $list) => MaintenanceList::sync($list));
     }
 
     public function addTemplate(Template $template): void {
@@ -47,6 +51,10 @@ final class CloudMySqlProvider extends CloudProvider {
 
     public function removeTemplate(Template $template): void {
         DatabaseQueries::removeTemplate($template->getName())->execute();
+    }
+
+    public function editTemplate(Template $template, array $newData): void {
+        DatabaseQueries::editTemplate($template->getName(), $newData)->execute();
     }
 
     public function getTemplate(string $template): Promise {
@@ -132,10 +140,12 @@ final class CloudMySqlProvider extends CloudProvider {
 
     public function addToWhitelist(string $player): void {
         DatabaseQueries::addToWhitelist($player)->execute();
+        MaintenanceList::add($player);
     }
 
     public function removeFromWhitelist(string $player): void {
         DatabaseQueries::removeFromWhitelist($player)->execute();
+        MaintenanceList::remove($player);
     }
 
     public function isOnWhitelist(string $player): Promise {

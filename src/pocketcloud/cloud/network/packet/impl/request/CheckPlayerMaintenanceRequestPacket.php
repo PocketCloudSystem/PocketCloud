@@ -2,11 +2,11 @@
 
 namespace pocketcloud\cloud\network\packet\impl\request;
 
+use pocketcloud\cloud\cache\MaintenanceList;
 use pocketcloud\cloud\network\client\ServerClient;
 use pocketcloud\cloud\network\packet\data\PacketData;
 use pocketcloud\cloud\network\packet\impl\response\CheckPlayerMaintenanceResponsePacket;
 use pocketcloud\cloud\network\packet\RequestPacket;
-use pocketcloud\cloud\provider\CloudProvider;
 
 class CheckPlayerMaintenanceRequestPacket extends RequestPacket {
 
@@ -25,7 +25,6 @@ class CheckPlayerMaintenanceRequestPacket extends RequestPacket {
     }
 
     public function handle(ServerClient $client): void {
-        CloudProvider::current()->isOnWhitelist($this->player)
-            ->then(fn(bool $v) => $this->sendResponse(new CheckPlayerMaintenanceResponsePacket($v), $client));
+        $this->sendResponse(new CheckPlayerMaintenanceResponsePacket(MaintenanceList::is($this->player)), $client);
     }
 }

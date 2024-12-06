@@ -14,10 +14,10 @@ final class DebugCommand extends Command {
 
     public function run(ICommandSender $sender, string $label, array $args): bool {
         if (MainConfig::getInstance()->isDebugMode()) {
-            $sender->info("The §edebug mode §rhas been §cdisabled§r!");
+            $sender->success("The §edebug mode §rhas been §cdisabled§r!");
             MainConfig::getInstance()->setDebugMode(false);
         } else {
-            $sender->info("The §edebug mode §rhas been §aenabled§r!");
+            $sender->success("The §edebug mode §rhas been §aenabled§r!");
             MainConfig::getInstance()->setDebugMode(true);
         }
 

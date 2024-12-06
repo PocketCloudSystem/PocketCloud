@@ -51,7 +51,7 @@ final class Network extends Thread {
             PocketCloud::getInstance()->shutdown();
             return;
         } else {
-            CloudLogger::get()->info("Successfully bound to §b" . $this->address);
+            CloudLogger::get()->success("Successfully bound to §b" . $this->address . "§r.");
         }
 
         $this->entry = PocketCloud::getInstance()->getSleeperHandler()->addNotifier(function(): void {

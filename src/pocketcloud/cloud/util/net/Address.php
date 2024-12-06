@@ -24,7 +24,7 @@ final  class Address extends ThreadSafe {
     }
 
     public function isLocal(): bool {
-        return $this->address == "127.0.0.1";
+        return $this->address == "127.0.0.1" || $this->address == "localhost";
     }
 
     public function equals(Address $target): bool {

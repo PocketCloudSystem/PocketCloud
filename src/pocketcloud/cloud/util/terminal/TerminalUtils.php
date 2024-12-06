@@ -8,7 +8,7 @@ final class TerminalUtils {
         echo chr(27) . chr(91) . "H" . chr(27) . chr(91) . "J";
     }
 
-    public static function kill(int $pid, bool $subprocesses = false): void {
+    public static function kill(int $pid, bool $subprocesses = true): void {
         if ($subprocesses) $pid = -$pid;
 
         if (function_exists("posix_kill")) {

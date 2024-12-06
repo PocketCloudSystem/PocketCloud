@@ -9,6 +9,7 @@ use pocketcloud\cloud\util\enum\EnumTrait;
  * @method static CloudLogLevel WARN()
  * @method static CloudLogLevel ERROR()
  * @method static CloudLogLevel DEBUG()
+ * @method static CloudLogLevel SUCCESS()
  */
 final class CloudLogLevel {
     use EnumTrait;
@@ -17,7 +18,8 @@ final class CloudLogLevel {
         self::register("info", new CloudLogLevel("INFO", "§bINFO"));
         self::register("warn", new CloudLogLevel("WARN", "§cWARN"));
         self::register("error", new CloudLogLevel("ERROR", "§4ERROR"));
-        self::register("debug", new CloudLogLevel("debug", "§6DEBUG"));
+        self::register("success", new CloudLogLevel("SUCCESS", "§aSUCCESS"));
+        self::register("debug", new CloudLogLevel("DEBUG", "§6DEBUG"));
     }
 
     public function __construct(

@@ -43,7 +43,7 @@ class DisconnectPacket extends CloudPacket {
                 CloudServerManager::getInstance()->printServerStackTrace($server->getName(), $crashData);
                 CrashChecker::writeCrashFile($server, $crashData);
             } else {
-                CloudLogger::get()->info("The server §b" . $server->getName() . " §rhas §cdisconnected §rfrom the cloud.");
+                CloudLogger::get()->success("The server §b" . $server->getName() . " §rhas §cdisconnected §rfrom the cloud.");
             }
 
             if ($server->getCloudServerData()->getProcessId() !== 0) TerminalUtils::kill($server->getCloudServerData()->getProcessId());

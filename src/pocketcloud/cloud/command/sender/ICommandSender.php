@@ -10,5 +10,7 @@ interface ICommandSender {
 
     public function error(string $message, string ...$params): self;
 
+    public function success(string $message, string ...$params): self;
+
     public function debug(string $message, string ...$params): self;
 }

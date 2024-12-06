@@ -2,9 +2,10 @@
 
 namespace pocketcloud\cloud\provider;
 
+use pocketcloud\cloud\cache\MaintenanceList;
 use pocketcloud\cloud\config\Config;
 use pocketcloud\cloud\config\type\ConfigTypes;
-use pocketcloud\cloud\module\InGameModule;
+use pocketcloud\cloud\cache\InGameModule;
 use pocketcloud\cloud\template\Template;
 use pocketcloud\cloud\util\promise\Promise;
 
@@ -20,6 +21,14 @@ final class CloudJsonProvider extends CloudProvider {
         $this->modulesConfig = new Config(IN_GAME_PATH . "modules.json", ConfigTypes::JSON());
         $this->notificationsList = new Config(IN_GAME_PATH . "notifications.json", ConfigTypes::JSON());
         $this->maintenanceList = new Config(IN_GAME_PATH . "maintenanceList.json", ConfigTypes::JSON());
+
+        foreach ($this->maintenanceList->getAll() as $player => $enabled) {
+            if ($enabled) MaintenanceList::add($player);
+        }
+
+        foreach ($this->modulesConfig->getAll() as $player => $enabled) {
+            InGameModule::setModuleState($player, $enabled);
+        }
     }
 
     public function addTemplate(Template $template): void {
@@ -29,6 +38,11 @@ final class CloudJsonProvider extends CloudProvider {
 
     public function removeTemplate(Template $template): void {
         $this->templatesConfig->remove($template->getName());
+        $this->templatesConfig->save();
+    }
+
+    public function editTemplate(Template $template, array $newData): void {
+        $this->templatesConfig->set($template->getName(), $newData);
         $this->templatesConfig->save();
     }
 
@@ -93,11 +107,13 @@ final class CloudJsonProvider extends CloudProvider {
     public function addToWhitelist(string $player): void {
         $this->maintenanceList->set($player, true);
         $this->maintenanceList->save();
+        MaintenanceList::add($player);
     }
 
     public function removeFromWhitelist(string $player): void {
         $this->maintenanceList->remove($player);
         $this->maintenanceList->save();
+        MaintenanceList::remove($player);
     }
 
     public function isOnWhitelist(string $player): Promise {

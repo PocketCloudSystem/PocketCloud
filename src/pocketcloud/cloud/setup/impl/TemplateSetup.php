@@ -63,7 +63,7 @@ final class TemplateSetup extends Setup {
             ->build(),
             QuestionBuilder::builder()
                 ->key("startNewPercentage")
-                ->question("How many players are required to start a new server? (in %, 1-100)")
+                ->question("How many players are required to start a new server? (in %, 0-100, 0 = none)")
                 ->parser(function(string $input): ?string {
                     if (is_numeric($input) && ($val = floatval($input)) > 0 && $val < 100) return floatval($input);
                     return null;
@@ -82,7 +82,7 @@ final class TemplateSetup extends Setup {
             ->build(),
             QuestionBuilder::builder()
                 ->key("minServerCount")
-                ->question("How many servers should always be online?")
+                ->question("How many servers should always be running?")
                 ->parser(function(string $input): ?int {
                     if (!is_numeric($input)) return null;
                     return intval($input);
@@ -91,7 +91,7 @@ final class TemplateSetup extends Setup {
             ->build(),
             QuestionBuilder::builder()
                 ->key("maxServerCount")
-                ->question("How many server can be online?")
+                ->question("How many servers can be running in total?")
                 ->parser(function(string $input): ?int {
                     if (!is_numeric($input)) return null;
                     return intval($input);

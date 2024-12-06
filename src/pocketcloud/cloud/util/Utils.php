@@ -59,13 +59,13 @@ final class Utils {
         if ($downloadServerPlugin) {
             $temporaryLogger->info("Start downloading server plugin: %s", "CloudBridge.phar");
             NetUtils::download("https://github.com/PocketCloudSystem/CloudBridge/releases/latest/download/CloudBridge.phar", $serverPluginsPath . "CloudBridge.phar");
-            $temporaryLogger->info("Successfully downloaded server plugin: %s (%s)", "CloudBridge.phar", $serverPluginsPath . "CloudBridge.phar");
+            $temporaryLogger->success("Successfully downloaded server plugin: %s (%s)", "CloudBridge.phar", $serverPluginsPath . "CloudBridge.phar");
         }
 
         if ($downloadProxyPlugin) {
             $temporaryLogger->info("Start downloading proxy plugin: %s", "CloudBridge.jar");
             NetUtils::download("https://github.com/PocketCloudSystem/CloudBridge-Proxy/releases/latest/download/CloudBridge.jar", $proxyPluginsPath . "CloudBridge.jar");
-            $temporaryLogger->info("Successfully downloaded proxy plugin: %s (%s)", "CloudBridge.jar", $proxyPluginsPath . "CloudBridge.jar");
+            $temporaryLogger->success("Successfully downloaded proxy plugin: %s (%s)", "CloudBridge.jar", $proxyPluginsPath . "CloudBridge.jar");
         }
     }
 

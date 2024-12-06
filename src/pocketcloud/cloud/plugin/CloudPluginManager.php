@@ -44,7 +44,7 @@ final class CloudPluginManager implements Tickable {
         if (count($this->plugins) == 0) {
             CloudLogger::get()->info("No plugins were loaded.");
         } else {
-            CloudLogger::get()->info("Successfully loaded §b" . count($this->plugins) . " plugin" . (count($this->plugins) == 1 ? "" : "s") . "§r.");
+            CloudLogger::get()->success("Successfully loaded §b" . count($this->plugins) . " plugin" . (count($this->plugins) == 1 ? "" : "s") . "§r.");
         }
     }
 
@@ -82,7 +82,7 @@ final class CloudPluginManager implements Tickable {
         }
 
         if (count($this->enabledPlugins) > 0) {
-            CloudLogger::get()->info("Successfully enabled §b" . count($this->enabledPlugins) . " plugin" . (count($this->enabledPlugins) == 1 ? "" : "s") . "§r.");
+            CloudLogger::get()->success("Successfully enabled §b" . count($this->enabledPlugins) . " plugin" . (count($this->enabledPlugins) == 1 ? "" : "s") . "§r.");
         }
     }
 

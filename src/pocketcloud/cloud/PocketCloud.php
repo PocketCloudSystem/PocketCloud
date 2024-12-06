@@ -6,6 +6,7 @@ use Phar;
 use pocketcloud\cloud\config\impl\MainConfig;
 use pocketcloud\cloud\event\impl\cloud\CloudStartedEvent;
 use pocketcloud\cloud\exception\ExceptionHandler;
+use pocketcloud\cloud\http\HttpServer;
 use pocketcloud\cloud\library\LibraryManager;
 use pocketcloud\cloud\loader\ClassLoader;
 use pocketcloud\cloud\network\Network;
@@ -29,6 +30,7 @@ use pocketcloud\cloud\util\terminal\TerminalUtils;
 use pocketcloud\cloud\util\tick\TickableList;
 use pocketcloud\cloud\util\Utils;
 use pocketcloud\cloud\util\VersionInfo;
+use pocketcloud\cloud\web\WebAccountManager;
 use pocketmine\snooze\SleeperHandler;
 
 final class PocketCloud {
@@ -41,6 +43,7 @@ final class PocketCloud {
     private SleeperHandler $sleeperHandler;
     private Terminal $terminal;
     private Network $network;
+    private HttpServer $httpServer;
 
     public function __construct(
         private readonly ClassLoader $classLoader
@@ -51,7 +54,7 @@ final class PocketCloud {
 
     protected function startUp(): void {
         if (Utils::checkRunning($pid)) {
-            CloudLogger::get()->error("Another instance of §bPocket§3Cloud §ris already running! (ProcessId: " . $pid . ")");
+            CloudLogger::get()->error("Another instance of §bPocket§3Cloud §ris already running! §8(§rProcessId: §b" . $pid . "§8)");
             exit(1);
         }
 
@@ -62,13 +65,13 @@ final class PocketCloud {
 
         if (!ServerUtils::checkBinary()) {
             CloudLogger::get()->error("Please install the following php binary in " . CLOUD_PATH . ":");
-            CloudLogger::get()->error("§ehttps://jenkins.pmmp.io/job/PHP-8.0-Aggregate/lastSuccessfulBuild/artifact/PHP-8.0-Linux-x86_64.tar.gz");
+            CloudLogger::get()->error("§bhttps://github.com/pmmp/PHP-Binaries/releases/latest");
             exit(1);
         }
 
         if (!ServerUtils::checkJava()) {
             CloudLogger::get()->error("Please install Java 17!");
-            CloudLogger::get()->error("Your operating system: §e" . php_uname());
+            CloudLogger::get()->error("Your operating system: §b" . php_uname());
             exit(1);
         }
 
@@ -76,8 +79,8 @@ final class PocketCloud {
 
         if (!ServerUtils::detectStartMethod()) {
             CloudLogger::get()->error("Please install one of the following software:");
-            CloudLogger::get()->error("tmux (apt-get install tmux)");
-            CloudLogger::get()->error("Screen (apt-get install screen)");
+            CloudLogger::get()->error("§btmux §8(§rapt-get install tmux§8)");
+            CloudLogger::get()->error("§bScreen §8(§rapt-get install screen§9)");
             exit(1);
         }
 
@@ -94,12 +97,10 @@ final class PocketCloud {
         $this->terminal = new Terminal();
         $this->terminal->start();
 
-        CloudLogger::get()->emptyLine();
-        CloudLogger::get()->setUsePrefix(false);
+        CloudLogger::get()->emptyLine()->setUsePrefix(false);
         CloudLogger::get()->info("  §bPocket§3Cloud §8- §rA cloud system for pocketmine servers with proxy support §8- §b" . VersionInfo::VERSION . (VersionInfo::BETA ? "§c@BETA" : "") . " §8- §rdeveloped by §b" . implode("§8, §b", VersionInfo::DEVELOPERS));
         CloudLogger::get()->info("  Join our discord for information: §bhttps://discord.gg/3HbPEpaE3T");
-        CloudLogger::get()->setUsePrefix(true);
-        CloudLogger::get()->emptyLine();
+        CloudLogger::get()->emptyLine()->setUsePrefix(true);
 
         if (FIRST_RUN) {
             (new ConfigSetup())->completion(function(array $results): void {
@@ -122,7 +123,7 @@ final class PocketCloud {
         $startTime = microtime(true);
 
         $this->network = new Network(new Address("127.0.0.1", MainConfig::getInstance()->getNetworkPort()));
-        #$this->httpServer = new HttpServer(new Address("0.0.0.0", DefaultConfig::getInstance()->getHttpServerPort()));
+        $this->httpServer = new HttpServer(new Address("127.0.0.1", MainConfig::getInstance()->getHttpServerPort()));
 
         TemplateManager::getInstance()->load();
         CloudPluginManager::getInstance()->loadAll();
@@ -135,11 +136,8 @@ final class PocketCloud {
 
         $this->network->init();
 
-        #if (MainConfig::getInstance()->isHttpServerEnabled()) $this->httpServer->init();
-        /*if (DefaultConfig::getInstance()->isWebEnabled()) {
-            ReloadableList::add(WebAccountManager::getInstance());
-            WebAccountManager::getInstance()->loadAccounts();
-        }+*/
+        if (MainConfig::getInstance()->isHttpServerEnabled()) $this->httpServer->init();
+        if (MainConfig::getInstance()->isWebEnabled()) WebAccountManager::getInstance()->load();
 
         if (MainConfig::getInstance()->isUpdateChecks()) {
             UpdateChecker::getInstance()->check();
@@ -147,7 +145,7 @@ final class PocketCloud {
 
         $startedTime = (microtime(true) - $startTime);
         (new CloudStartedEvent($startedTime))->call();
-        CloudLogger::get()->info("§bCloud §rhas been §astarted§r. §8(§rTook §b" . number_format($startedTime, 3) . "s§8)");
+        CloudLogger::get()->success("§bCloud §rhas been §astarted§r. §8(§rTook §b" . number_format($startedTime, 3) . "s§8)");
         if (count(TemplateManager::getInstance()->getAll()) == 0 && FIRST_RUN) {
             CloudLogger::get()->info("No templates found, starting the setup...");
             (new TemplateSetup())->startSetup();
@@ -155,7 +153,6 @@ final class PocketCloud {
 
         $this->network->start();
     }
-
 
     public function tick(): void {
         $start = microtime(true);
@@ -178,6 +175,14 @@ final class PocketCloud {
         TerminalUtils::kill(getmypid());
     }
 
+    public function getHttpServer(): HttpServer {
+        return $this->httpServer;
+    }
+
+    public function getNetwork(): Network {
+        return $this->network;
+    }
+
     public function getTerminal(): Terminal {
         return $this->terminal;
     }
@@ -188,6 +193,14 @@ final class PocketCloud {
 
     public function getClassLoader(): ClassLoader {
         return $this->classLoader;
+    }
+
+    public function getTick(): int {
+        return $this->tick;
+    }
+
+    public function isRunning(): bool {
+        return $this->running;
     }
 
     public static function getInstance(): ?self {

@@ -23,7 +23,7 @@ class EditCommand extends Command {
         $this->addParameter(new StringEnumArgument(
             "key",
             TemplateHelper::EDITABLE_KEYS,
-            false,
+            true,
             true
         ));
 

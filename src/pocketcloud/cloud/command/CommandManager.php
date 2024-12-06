@@ -20,6 +20,7 @@ use pocketcloud\cloud\command\impl\template\EditCommand;
 use pocketcloud\cloud\command\impl\template\MaintenanceCommand;
 use pocketcloud\cloud\command\impl\template\RemoveCommand;
 use pocketcloud\cloud\command\impl\VersionCommand;
+use pocketcloud\cloud\command\impl\web\WebAccountCommand;
 use pocketcloud\cloud\command\sender\ICommandSender;
 use pocketcloud\cloud\util\SingletonTrait;
 
@@ -53,6 +54,8 @@ final class CommandManager {
         $this->register(new EnableCommand());
         $this->register(new DisableCommand());
         $this->register(new PluginsCommand());
+
+        $this->register(new WebAccountCommand());
     }
 
     public function handleInput(ICommandSender $sender, string $input): bool {

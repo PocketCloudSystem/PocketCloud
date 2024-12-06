@@ -19,16 +19,16 @@ class KickCommand extends Command {
 
         $this->addParameter(new StringArgument(
             "reason",
-            false,
+            true,
             true
         ));
     }
 
     public function run(ICommandSender $sender, string $label, array $args): bool {
         $player = $args["player"];
-        $reason = $args["reason"];
+        $reason = $args["reason"] ?? "";
 
-        $sender->info("The player has been successfully §ckicked§r!");
+        $sender->success("The player has been successfully §ckicked§r!");
         $player->kick($reason);
         return true;
     }

@@ -21,6 +21,11 @@ class ConsoleCommandSender implements ICommandSender {
         return $this;
     }
 
+    public function success(string $message, string ...$params): ICommandSender {
+        CloudLogger::get()->success($message, ...$params);
+        return $this;
+    }
+
     public function debug(string $message, string ...$params): ICommandSender {
         CloudLogger::get()->debug($message, ...$params);
         return $this;

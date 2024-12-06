@@ -1,6 +1,6 @@
 <?php
 
-namespace pocketcloud\cloud\module;
+namespace pocketcloud\cloud\cache;
 
 final class InGameModule {
 

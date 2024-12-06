@@ -37,6 +37,10 @@ final class Logger {
         return $this->send(CloudLogLevel::ERROR(), $message, ...$params);
     }
 
+    public function success(string $message, string ...$params): self {
+        return $this->send(CloudLogLevel::SUCCESS(), $message, ...$params);
+    }
+
     public function debug(string $message, bool $force = false, string ...$params): self {
         if ($this->isDebugMode() || $force) return $this->send(CloudLogLevel::DEBUG(), $message, ...$params);
         return $this;

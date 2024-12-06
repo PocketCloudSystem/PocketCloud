@@ -14,7 +14,7 @@ class TemplateEditEvent extends TemplateEvent {
         private readonly ?int $maxPlayerCount,
         private readonly ?int $minServerCount,
         private readonly ?int $maxServerCount,
-        private readonly ?bool $startNewWhenFull,
+        private readonly ?float $startNewPercentage,
         private readonly ?bool $autoStart
     ) {
         parent::__construct($template);
@@ -44,8 +44,8 @@ class TemplateEditEvent extends TemplateEvent {
         return $this->maxServerCount;
     }
 
-    public function getStartNewWhenFull(): ?bool {
-        return $this->startNewWhenFull;
+    public function getStartNewPercentage(): ?float {
+        return $this->startNewPercentage;
     }
 
     public function getAutoStart(): ?bool {

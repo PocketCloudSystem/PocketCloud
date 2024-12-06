@@ -20,7 +20,7 @@ class StopCommand extends Command {
             [
                 new ServerArgument("server", false),
                 new TemplateArgument("template", false),
-                new StringEnumArgument("action", ["all"], false, false)
+                new StringEnumArgument("all", ["all"], false, false)
             ],
             false
         ));

@@ -14,6 +14,8 @@ abstract class CloudProvider {
 
     abstract public function removeTemplate(Template $template): void;
 
+    abstract public function editTemplate(Template $template, array $newData): void;
+
     abstract public function getTemplate(string $template): Promise;
 
     abstract public function checkTemplate(string $template): Promise;

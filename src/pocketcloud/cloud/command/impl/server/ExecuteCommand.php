@@ -32,12 +32,12 @@ class ExecuteCommand extends Command {
 
         CloudServerManager::getInstance()->send($server, $command)->then(function(CommandExecutionResult $result) use($server, $sender): void {
             $server->getCloudServerStorage()->remove("command_promise")->remove("command_promise_time");
-            $sender->info("The command was successfully handled by the server, response:");
+            $sender->success("The command was successfully handled by the server, response:");
             if (empty($result->getMessages())) $sender->info("§c/");
             else foreach ($result->getMessages() as $message) $sender->info("§b" . $server->getName() . "§8: §r" . $message);
         })->failure(function() use($server, $sender): void {
             $server->getCloudServerStorage()->remove("command_promise")->remove("command_promise_time");
-            $sender->warn("§cThe command could not be handled by the server");
+            $sender->error("The command could not be handled by the server.");
         });
         return true;
     }

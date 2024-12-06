@@ -41,12 +41,12 @@ final class CloudServerManager implements Tickable {
 
     public function start(Template $template, int $count = 1): ?array {
         $startedServers = [];
-        if (count($this->getAllByTemplate($template)) >= $template->getSettings()->getMaxServerCount()) {
+        if (!$this->canStartMore($template)) {
             CloudLogger::get()->warn("Can not start any more servers of §b" . $template->getName() . " §rdue to the max servers reached.");
             return null;
         } else {
             for ($i = 0; $i < $count; $i++) {
-                if (count($this->getAllByTemplate($template)) >= $template->getSettings()->getMaxServerCount()) break;
+                if (!$this->canStartMore($template)) break;
                 $id = ServerUtils::getFreeId($template);
                 if ($id !== -1) {
                     $port = ($template->getTemplateType() === TemplateType::SERVER() ? ServerUtils::getFreePort() : ServerUtils::getFreeProxyPort());
@@ -96,7 +96,7 @@ final class CloudServerManager implements Tickable {
         $startTime = microtime(true);
         $this->send($server, "save-all")->then(function() use($startTime, $server): void {
             $this->instantSave($server);
-            CloudLogger::get()->info("Successfully §asaved §rthe server files of §b" . $server->getName() . " §rin §b" . number_format(microtime(true) - $startTime, 3) . "s§r.");
+            CloudLogger::get()->success("Successfully §asaved §rthe server files of §b" . $server->getName() . " §rin §b" . number_format(microtime(true) - $startTime, 3) . "s§r.");
         });
     }
 
@@ -273,8 +273,19 @@ final class CloudServerManager implements Tickable {
         foreach ($crashData["trace"] as $message) CloudLogger::get()->error("§c" . $message);
     }
 
+    public function canStartMore(Template $template): bool {
+        return count($this->getAllByTemplate($template)) >= $template->getSettings()->getMaxServerCount();
+    }
+
     public function get(string $name): ?CloudServer {
         return $this->servers[$name] ?? null;
+    }
+
+    public function getLatest(Template $template): ?CloudServer {
+        $servers = $this->getAllByTemplate($template);
+        if (empty($servers)) return null;
+        usort($servers, fn(CloudServer $a, CloudServer $b) => $a->getStartTime() <=> $b->getStartTime());
+        return $servers[array_key_last($servers)];
     }
 
     /** @return array<CloudServer> */

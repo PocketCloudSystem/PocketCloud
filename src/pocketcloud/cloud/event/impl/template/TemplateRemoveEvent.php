@@ -2,4 +2,4 @@
 
 namespace pocketcloud\cloud\event\impl\template;
 
-class TemplateDeleteEvent extends TemplateEvent {}
+class TemplateRemoveEvent extends TemplateEvent {}
