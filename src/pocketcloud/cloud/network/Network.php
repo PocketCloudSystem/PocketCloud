@@ -87,8 +87,8 @@ final class Network extends Thread {
         if(@socket_bind($this->socket, $address->getAddress(), $address->getPort()) === true) {
             $this->connected = true;
             (new NetworkBindEvent($this->address))->call();
-            socket_set_option($this->socket, SOL_SOCKET, SO_SNDBUF, 1024);
-            socket_set_option($this->socket, SOL_SOCKET, SO_RCVBUF, 1024);
+            socket_set_option($this->socket, SOL_SOCKET, SO_SNDBUF, 1024 * 1024 * 8);
+            socket_set_option($this->socket, SOL_SOCKET, SO_RCVBUF, 1024 * 1024 * 8);
         } else return false;
         return true;
     }

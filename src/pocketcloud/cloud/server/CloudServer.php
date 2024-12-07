@@ -4,6 +4,7 @@ namespace pocketcloud\cloud\server;
 
 use pocketcloud\cloud\event\impl\server\ServerStartEvent;
 use pocketcloud\cloud\event\impl\server\ServerStopEvent;
+use pocketcloud\cloud\language\Language;
 use pocketcloud\cloud\network\client\ServerClientCache;
 use pocketcloud\cloud\network\packet\CloudPacket;
 use pocketcloud\cloud\network\packet\impl\normal\DisconnectPacket;
@@ -194,7 +195,10 @@ class CloudServer {
             $packets[] = LibrarySyncPacket::create();
         }
 
-        $packets[] = LanguageSyncPacket::create();
+        /** @var Language $lang */
+        foreach (Language::getAll() as $lang) {
+            $packets[] = LanguageSyncPacket::create($lang->getName(), $lang->getMessages());
+        }
 
         foreach ($packets as $packet) $this->sendPacket($packet);
     }
