@@ -4,6 +4,7 @@ namespace pocketcloud\cloud;
 
 use Phar;
 use pocketcloud\cloud\config\impl\MainConfig;
+use pocketcloud\cloud\event\EventManager;
 use pocketcloud\cloud\event\impl\cloud\CloudStartedEvent;
 use pocketcloud\cloud\exception\ExceptionHandler;
 use pocketcloud\cloud\http\HttpServer;
@@ -167,6 +168,13 @@ final class PocketCloud {
     public function shutdown(): void {
         if (!$this->running) return;
         $this->running = false;
+        EventManager::getInstance()->removeAll();
+        CloudServerManager::getInstance()->stopAll(true);
+        CloudPluginManager::getInstance()->disableAll();
+        AsyncPool::getInstance()->shutdown();
+        if (isset($this->network)) $this->network->close();
+        if (isset($this->terminal)) $this->terminal->quit();
+        if (isset($this->httpServer)) $this->httpServer->close();
         ShutdownHandler::unregister();
         ThreadManager::getInstance()->stopAll();
         Utils::deleteLockFile();

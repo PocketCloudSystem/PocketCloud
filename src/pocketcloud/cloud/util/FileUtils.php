@@ -11,6 +11,7 @@ final class FileUtils {
     public static function copyFile(string $src, string $dst): bool {
         return ExceptionHandler::tryCatch(
             function (string $src, string $dst): bool {
+                if (!@file_exists($src)) return false;
                 return copy($src, $dst);
             },
             "Failed to copy " . $src . " to " . $dst,

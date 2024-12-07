@@ -202,7 +202,7 @@ final class CloudServerManager implements Tickable {
                         CrashChecker::writeCrashFile($server, $crashData);
                     } else {
                         CloudLogger::get()->warn("Failed to start the server §b" . $server->getName() . "§r, deleting it's data...");
-                        if ($server->getTemplate()->getTemplateType() === TemplateType::PROXY()) FileUtils::copyFile($server->getPath() . "logs/server.log", $server->getTemplate()->getPath() . "logs/server.log");
+                        if ($server->getTemplate()->getTemplateType()->isProxy()) FileUtils::copyFile($server->getPath() . "logs/server.log", $server->getTemplate()->getPath() . "logs/server.log");
                         else FileUtils::copyFile($server->getPath() . "server.log", $server->getTemplate()->getPath() . "server.log");
                     }
 

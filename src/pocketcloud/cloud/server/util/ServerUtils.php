@@ -40,7 +40,6 @@ final class ServerUtils {
             "server-name" => "%name%",
             "template" => "%template%",
             "cloud-port" => "%port%",
-            "cloud-path" => "%cloud_path%",
             "encryption" => "%encryption%",
             "cloud-language" => "%language%"
         ],
@@ -88,7 +87,6 @@ final class ServerUtils {
             "default_idle_threads" => -1,
             "enable-statistics" => false,
             "enable_error_reporting" => true,
-            "cloud-path" => "%cloud_path%",
             "cloud-port" => "%port%",
             "server-name" => "%name%",
             "template" => "%template%",
@@ -179,7 +177,7 @@ final class ServerUtils {
         $content = file_get_contents($server->getPath() . $fileName);
         if ($content === false) return;
         file_put_contents($server->getPath() . $fileName, str_replace(
-            ["%max_players%", "%server_port%", "%server_portv6%", "%name%", "%template%", "%port%", "%cloud_path%", "%encryption%"],
+            ["%max_players%", "%server_port%", "%server_portv6%", "%name%", "%template%", "%port%", "%encryption%", "%language%"],
             [
                 $server->getCloudServerData()->getMaxPlayers(),
                 $server->getCloudServerData()->getPort(),
@@ -187,8 +185,8 @@ final class ServerUtils {
                 $server->getName(),
                 $server->getTemplate()->getName(),
                 MainConfig::getInstance()->getNetworkPort(),
-                CLOUD_PATH,
-                ($server->getTemplate()->getTemplateType() === TemplateType::SERVER() ? (MainConfig::getInstance()->isNetworkEncryptionEnabled() ? "on" : "off") : (MainConfig::getInstance()->isNetworkEncryptionEnabled() ? "true" : "false"))
+                ($server->getTemplate()->getTemplateType()->isServer() ? (MainConfig::getInstance()->isNetworkEncryptionEnabled() ? "on" : "off") : (MainConfig::getInstance()->isNetworkEncryptionEnabled() ? "true" : "false")),
+                MainConfig::getInstance()->getLanguage()
             ],
             $content
         ));

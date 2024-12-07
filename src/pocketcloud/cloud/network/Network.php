@@ -9,6 +9,7 @@ use pocketcloud\cloud\event\impl\network\NetworkBindEvent;
 use pocketcloud\cloud\event\impl\network\NetworkCloseEvent;
 use pocketcloud\cloud\event\impl\network\NetworkPacketReceiveEvent;
 use pocketcloud\cloud\event\impl\network\NetworkPacketSendEvent;
+use pocketcloud\cloud\network\packet\pool\PacketPool;
 use pocketcloud\cloud\PocketCloud;
 use pocketcloud\cloud\terminal\log\CloudLogger;
 use pocketcloud\cloud\thread\Thread;
@@ -32,6 +33,7 @@ final class Network extends Thread {
 
     public function __construct(private Address $address) {
         self::setInstance($this);
+        PacketPool::init();
         $this->buffer = new ThreadSafeArray();
     }
 
@@ -85,15 +87,15 @@ final class Network extends Thread {
         if(@socket_bind($this->socket, $address->getAddress(), $address->getPort()) === true) {
             $this->connected = true;
             (new NetworkBindEvent($this->address))->call();
-            socket_set_option($this->socket, SOL_SOCKET, SO_SNDBUF, 1024 * 1024 * 8);
-            socket_set_option($this->socket, SOL_SOCKET, SO_RCVBUF, 1024 * 1024 * 8);
+            socket_set_option($this->socket, SOL_SOCKET, SO_SNDBUF, 1024);
+            socket_set_option($this->socket, SOL_SOCKET, SO_RCVBUF, 1024);
         } else return false;
         return true;
     }
 
     public function write(string $buffer, Address $dst): bool {
         if (!$this->isConnected()) return false;
-        return socket_sendto($this->socket, $buffer, strlen($buffer), 0, $dst->getAddress(), $dst->getPort()) !== false;
+        return socket_sendto($this->socket, $buffer, strlen($buffer), 0, $dst->getAddress(), $dst->getPort()) == strlen($buffer);
     }
 
     public function read(?string &$buffer, ?string &$address, ?int &$port): bool {

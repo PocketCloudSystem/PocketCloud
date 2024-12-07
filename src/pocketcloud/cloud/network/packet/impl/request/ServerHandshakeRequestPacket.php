@@ -55,10 +55,9 @@ final class ServerHandshakeRequestPacket extends RequestPacket {
             $server->getCloudServerData()->setProcessId($this->processId);
             $server->setVerifyStatus(VerifyStatus::VERIFIED());
             $this->sendResponse(new ServerHandshakeResponsePacket(VerifyStatus::VERIFIED()), $client);
-            Network::getInstance()->broadcastPacket(new ServerSyncPacket($server), $client);
             $server->sync();
+            Network::getInstance()->broadcastPacket(new ServerSyncPacket($server), $client);
             $server->setServerStatus(ServerStatus::ONLINE());
-            $server->sendPacket(new KeepAlivePacket());
         } else $this->sendResponse(new ServerHandshakeResponsePacket(VerifyStatus::DENIED()), $client);
     }
 }

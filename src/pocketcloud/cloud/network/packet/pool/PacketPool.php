@@ -48,6 +48,10 @@ final class PacketPool {
     /** @var array<CloudPacket> */
     private array $packets = [];
 
+    public static function init(): void {
+        self::setInstance(new self());
+    }
+
     public function __construct() {
         self::setInstance($this);
 

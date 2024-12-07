@@ -9,13 +9,15 @@ use pocketcloud\cloud\network\packet\data\PacketData;
 
 final class LanguageSyncPacket extends CloudPacket {
 
-    private array $data;
+    private array $data = [];
 
     public function __construct() {
-        $this->data = [
-            "de_DE" => Language::GERMAN()->getMessages(),
-            "en_US" => Language::ENGLISH()->getMessages()
-        ];
+        /**
+         * $this->data = [
+         * "de_DE" => Language::GERMAN()->getMessages(),
+         * "en_US" => Language::ENGLISH()->getMessages()
+         * ];
+         */
     }
 
     public function encodePayload(PacketData $packetData): void {
