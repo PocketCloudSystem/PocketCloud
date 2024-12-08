@@ -6,6 +6,7 @@ use pocketcloud\cloud\cache\MaintenanceList;
 use pocketcloud\cloud\event\impl\template\TemplateCreateEvent;
 use pocketcloud\cloud\event\impl\template\TemplateEditEvent;
 use pocketcloud\cloud\event\impl\template\TemplateRemoveEvent;
+use pocketcloud\cloud\group\ServerGroupManager;
 use pocketcloud\cloud\network\packet\impl\normal\TemplateSyncPacket;
 use pocketcloud\cloud\player\CloudPlayer;
 use pocketcloud\cloud\player\CloudPlayerManager;
@@ -29,7 +30,10 @@ final class TemplateManager implements Tickable {
 
     public function load(): void {
         CloudProvider::current()->getTemplates()
-            ->then(fn(array $templates) => $this->templates = $templates);
+            ->then(function(array $templates): void {
+                $this->templates = $templates;
+                ServerGroupManager::getInstance()->load();
+            });
     }
 
     public function create(Template $template): void {
