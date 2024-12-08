@@ -9,7 +9,7 @@ use pocketcloud\cloud\http\endpoint\EndPoint;
 use pocketcloud\cloud\template\Template;
 use pocketcloud\cloud\template\TemplateManager;
 
-class CloudTemplateListEndPoint extends EndPoint {
+final class CloudTemplateListEndPoint extends EndPoint {
 
     public function __construct() {
         parent::__construct(Router::GET, "/template/list/");

@@ -9,7 +9,7 @@ use pocketcloud\cloud\http\io\Response;
 use pocketcloud\cloud\http\util\Router;
 use pocketcloud\cloud\provider\CloudProvider;
 
-class MaintenanceRemoveEndPoint extends EndPoint {
+final class MaintenanceRemoveEndPoint extends EndPoint {
 
     public function __construct() {
         parent::__construct(Router::DELETE, "/maintenance/remove/");

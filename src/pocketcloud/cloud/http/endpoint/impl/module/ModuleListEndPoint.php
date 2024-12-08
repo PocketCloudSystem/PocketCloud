@@ -8,7 +8,7 @@ use pocketcloud\cloud\http\io\Request;
 use pocketcloud\cloud\http\io\Response;
 use pocketcloud\cloud\http\util\Router;
 
-class ModuleListEndPoint extends EndPoint {
+final class ModuleListEndPoint extends EndPoint {
 
     public function __construct() {
         parent::__construct(Router::GET, "/module/list/");

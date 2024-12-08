@@ -7,7 +7,7 @@ use pocketcloud\cloud\command\argument\def\StringArgument;
 use pocketcloud\cloud\command\Command;
 use pocketcloud\cloud\command\sender\ICommandSender;
 
-class KickCommand extends Command {
+final class KickCommand extends Command {
 
     public function __construct() {
         parent::__construct("kick", "Kick a player");

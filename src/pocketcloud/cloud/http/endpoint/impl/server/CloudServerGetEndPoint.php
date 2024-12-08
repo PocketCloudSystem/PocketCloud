@@ -10,7 +10,7 @@ use pocketcloud\cloud\server\CloudServer;
 use pocketcloud\cloud\server\CloudServerManager;
 use pocketcloud\cloud\template\TemplateManager;
 
-class CloudServerGetEndPoint extends EndPoint {
+final class CloudServerGetEndPoint extends EndPoint {
 
     public function __construct() {
         parent::__construct(Router::GET, "/server/get/");

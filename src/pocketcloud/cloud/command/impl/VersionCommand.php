@@ -7,7 +7,7 @@ use pocketcloud\cloud\command\Command;
 use pocketcloud\cloud\command\sender\ICommandSender;
 use pocketcloud\cloud\util\VersionInfo;
 
-class VersionCommand extends Command {
+final class VersionCommand extends Command {
 
     public function __construct() {
         parent::__construct("version", "Version information of the current cloud build");

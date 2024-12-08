@@ -11,7 +11,7 @@ use pocketcloud\cloud\server\CloudServerManager;
 use pocketcloud\cloud\template\TemplateManager;
 use pocketcloud\cloud\template\TemplateType;
 
-class ListCommand extends Command {
+final class ListCommand extends Command {
 
     public function __construct() {
         parent::__construct("list", "List servers, templates or players");

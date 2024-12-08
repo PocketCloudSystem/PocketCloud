@@ -9,7 +9,7 @@ use pocketcloud\cloud\http\endpoint\EndPoint;
 use pocketcloud\cloud\template\TemplateHelper;
 use pocketcloud\cloud\template\TemplateManager;
 
-class CloudTemplateEditEndPoint extends EndPoint {
+final class CloudTemplateEditEndPoint extends EndPoint {
 
     public function __construct() {
         parent::__construct(Router::PATCH, "/template/edit/");

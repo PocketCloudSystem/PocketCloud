@@ -4,7 +4,7 @@ namespace pocketcloud\cloud\command\sender;
 
 use pocketcloud\cloud\terminal\log\CloudLogger;
 
-class ConsoleCommandSender implements ICommandSender {
+final class ConsoleCommandSender implements ICommandSender {
 
     public function info(string $message, string ...$params): ICommandSender {
         CloudLogger::get()->info($message, ...$params);

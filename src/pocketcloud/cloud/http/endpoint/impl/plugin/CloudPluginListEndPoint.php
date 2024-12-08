@@ -9,7 +9,7 @@ use pocketcloud\cloud\plugin\CloudPlugin;
 use pocketcloud\cloud\plugin\CloudPluginManager;
 use pocketcloud\cloud\http\endpoint\EndPoint;
 
-class CloudPluginListEndPoint extends EndPoint {
+final class CloudPluginListEndPoint extends EndPoint {
 
     public function __construct() {
         parent::__construct(Router::GET, "/plugin/list/");

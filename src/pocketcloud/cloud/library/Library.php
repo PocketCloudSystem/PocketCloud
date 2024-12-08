@@ -6,7 +6,7 @@ use pocketcloud\cloud\util\FileUtils;
 use pocketcloud\cloud\util\net\NetUtils;
 use ZipArchive;
 
-readonly class Library {
+final readonly class Library {
 
     public function __construct(
         private string $name,

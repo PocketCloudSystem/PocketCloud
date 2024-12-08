@@ -8,7 +8,7 @@ use pocketcloud\cloud\http\io\Response;
 use pocketcloud\cloud\http\util\Router;
 use pocketcloud\cloud\web\WebAccountManager;
 
-class WebAccountRemoveEndPoint extends EndPoint {
+final class WebAccountRemoveEndPoint extends EndPoint {
 
     public function __construct() {
         parent::__construct(Router::DELETE, "/webaccount/remove/");

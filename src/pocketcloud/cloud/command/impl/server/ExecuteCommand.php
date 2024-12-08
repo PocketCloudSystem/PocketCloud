@@ -9,7 +9,7 @@ use pocketcloud\cloud\command\sender\ICommandSender;
 use pocketcloud\cloud\network\packet\impl\type\CommandExecutionResult;
 use pocketcloud\cloud\server\CloudServerManager;
 
-class ExecuteCommand extends Command {
+final class ExecuteCommand extends Command {
 
     public function __construct() {
         parent::__construct("execute", "Send a command to a server");

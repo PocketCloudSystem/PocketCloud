@@ -8,7 +8,7 @@ use pocketcloud\cloud\http\io\Response;
 use pocketcloud\cloud\http\util\Router;
 use pocketcloud\cloud\web\WebAccountManager;
 
-class WebAccountGetEndPoint extends EndPoint {
+final class WebAccountGetEndPoint extends EndPoint {
 
     public function __construct() {
         parent::__construct(Router::GET, "/webaccount/get/");

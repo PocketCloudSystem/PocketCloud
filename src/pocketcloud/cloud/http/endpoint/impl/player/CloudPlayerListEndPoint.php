@@ -9,7 +9,7 @@ use pocketcloud\cloud\player\CloudPlayer;
 use pocketcloud\cloud\player\CloudPlayerManager;
 use pocketcloud\cloud\http\endpoint\EndPoint;
 
-class CloudPlayerListEndPoint extends EndPoint {
+final class CloudPlayerListEndPoint extends EndPoint {
 
     public function __construct() {
         parent::__construct(Router::GET, "/player/list/");

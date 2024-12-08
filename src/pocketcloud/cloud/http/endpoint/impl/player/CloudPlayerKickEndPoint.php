@@ -8,7 +8,7 @@ use pocketcloud\cloud\http\util\Router;
 use pocketcloud\cloud\player\CloudPlayerManager;
 use pocketcloud\cloud\http\endpoint\EndPoint;
 
-class CloudPlayerKickEndPoint extends EndPoint {
+final class CloudPlayerKickEndPoint extends EndPoint {
 
     public function __construct() {
         parent::__construct(Router::POST, "/player/kick/");

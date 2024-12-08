@@ -9,7 +9,7 @@ use pocketcloud\cloud\http\util\Router;
 use pocketcloud\cloud\web\WebAccount;
 use pocketcloud\cloud\web\WebAccountManager;
 
-class WebAccountListEndPoint extends EndPoint {
+final class WebAccountListEndPoint extends EndPoint {
 
     public function __construct() {
         parent::__construct(Router::GET, "/webaccount/list/");

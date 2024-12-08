@@ -7,7 +7,7 @@ use pocketcloud\cloud\command\Command;
 use pocketcloud\cloud\command\sender\ICommandSender;
 use pocketcloud\cloud\server\CloudServerManager;
 
-class SaveCommand extends Command {
+final class SaveCommand extends Command {
 
     public function __construct() {
         parent::__construct("save", "Save a server");

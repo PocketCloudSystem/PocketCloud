@@ -2,7 +2,7 @@
 
 namespace pocketcloud\cloud\software;
 
-readonly class Software {
+final readonly class Software {
 
     public function __construct(
         private string $name,

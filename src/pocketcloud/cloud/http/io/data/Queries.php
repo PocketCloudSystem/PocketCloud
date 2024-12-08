@@ -2,7 +2,7 @@
 
 namespace pocketcloud\cloud\http\io\data;
 
-readonly class Queries {
+final readonly class Queries {
 
     public function __construct(private array $queries) {}
 

@@ -8,7 +8,7 @@ use pocketcloud\cloud\http\util\Router;
 use pocketcloud\cloud\http\endpoint\EndPoint;
 use pocketcloud\cloud\template\TemplateManager;
 
-class CloudTemplateGetEndPoint extends EndPoint {
+final class CloudTemplateGetEndPoint extends EndPoint {
 
     public function __construct() {
         parent::__construct(Router::GET, "/template/get/");

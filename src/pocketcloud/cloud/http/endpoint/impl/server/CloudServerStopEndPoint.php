@@ -9,7 +9,7 @@ use pocketcloud\cloud\http\endpoint\EndPoint;
 use pocketcloud\cloud\server\CloudServerManager;
 use pocketcloud\cloud\template\TemplateManager;
 
-class CloudServerStopEndPoint extends EndPoint {
+final class CloudServerStopEndPoint extends EndPoint {
 
     public function __construct() {
         parent::__construct(Router::POST, "/server/stop/");

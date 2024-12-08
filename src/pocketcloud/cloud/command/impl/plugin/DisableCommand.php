@@ -7,7 +7,7 @@ use pocketcloud\cloud\command\Command;
 use pocketcloud\cloud\command\sender\ICommandSender;
 use pocketcloud\cloud\plugin\CloudPluginManager;
 
-class DisableCommand extends Command {
+final class DisableCommand extends Command {
 
     public function __construct() {
         parent::__construct("disable", "Disable a running plugin");

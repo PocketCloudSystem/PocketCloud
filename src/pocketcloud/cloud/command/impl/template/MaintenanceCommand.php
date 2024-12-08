@@ -9,7 +9,7 @@ use pocketcloud\cloud\command\Command;
 use pocketcloud\cloud\command\sender\ICommandSender;
 use pocketcloud\cloud\provider\CloudProvider;
 
-class MaintenanceCommand extends Command {
+final class MaintenanceCommand extends Command {
 
     public function __construct() {
         parent::__construct("maintenance", "Manage the maintenance list");

@@ -9,7 +9,7 @@ use pocketcloud\cloud\network\packet\impl\type\TextType;
 use pocketcloud\cloud\player\CloudPlayerManager;
 use pocketcloud\cloud\http\endpoint\EndPoint;
 
-class CloudPlayerTextEndPoint extends EndPoint {
+final class CloudPlayerTextEndPoint extends EndPoint {
 
     public function __construct() {
         parent::__construct(Router::POST, "/player/text/");

@@ -15,7 +15,7 @@ use pocketcloud\cloud\web\WebAccount;
 use pocketcloud\cloud\web\WebAccountManager;
 use pocketcloud\cloud\web\WebAccountRoles;
 
-class WebAccountCommand extends Command {
+final class WebAccountCommand extends Command {
 
     public function __construct() {
         parent::__construct("webaccount", "Manage web accounts");

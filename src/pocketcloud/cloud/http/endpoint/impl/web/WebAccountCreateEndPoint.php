@@ -11,7 +11,7 @@ use pocketcloud\cloud\web\WebAccount;
 use pocketcloud\cloud\web\WebAccountManager;
 use pocketcloud\cloud\web\WebAccountRoles;
 
-class WebAccountCreateEndPoint extends EndPoint {
+final class WebAccountCreateEndPoint extends EndPoint {
 
     public function __construct() {
         parent::__construct(Router::POST, "/webaccount/create/");

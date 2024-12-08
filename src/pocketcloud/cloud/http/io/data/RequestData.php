@@ -4,7 +4,7 @@ namespace pocketcloud\cloud\http\io\data;
 
 use pocketcloud\cloud\util\net\Address;
 
-readonly class RequestData {
+final readonly class RequestData {
 	
 	public function __construct(
         private Address $requestAddress,

@@ -8,7 +8,7 @@ use pocketcloud\cloud\http\endpoint\EndPoint;
 use pocketcloud\cloud\http\util\Router;
 use pocketcloud\cloud\plugin\CloudPluginManager;
 
-class CloudPluginEnableEndPoint extends EndPoint {
+final class CloudPluginEnableEndPoint extends EndPoint {
 
     public function __construct() {
         parent::__construct(Router::POST, "/plugin/enable/");

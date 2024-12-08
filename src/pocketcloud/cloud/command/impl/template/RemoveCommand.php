@@ -7,7 +7,7 @@ use pocketcloud\cloud\command\Command;
 use pocketcloud\cloud\command\sender\ICommandSender;
 use pocketcloud\cloud\template\TemplateManager;
 
-class RemoveCommand extends Command {
+final class RemoveCommand extends Command {
 
     public function __construct() {
         parent::__construct("remove", "Remove a template");

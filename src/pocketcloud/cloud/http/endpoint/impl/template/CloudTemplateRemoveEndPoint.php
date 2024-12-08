@@ -8,7 +8,7 @@ use pocketcloud\cloud\http\util\Router;
 use pocketcloud\cloud\http\endpoint\EndPoint;
 use pocketcloud\cloud\template\TemplateManager;
 
-class CloudTemplateRemoveEndPoint extends EndPoint {
+final class CloudTemplateRemoveEndPoint extends EndPoint {
 
     public function __construct() {
         parent::__construct(Router::DELETE, "/template/remove/");

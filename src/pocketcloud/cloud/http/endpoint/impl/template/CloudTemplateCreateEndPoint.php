@@ -11,7 +11,7 @@ use pocketcloud\cloud\template\TemplateManager;
 use pocketcloud\cloud\template\TemplateSettings;
 use pocketcloud\cloud\template\TemplateType;
 
-class CloudTemplateCreateEndPoint extends EndPoint {
+final class CloudTemplateCreateEndPoint extends EndPoint {
 
     public function __construct() {
         parent::__construct(Router::POST, "/template/create/");

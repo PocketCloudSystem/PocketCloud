@@ -10,7 +10,7 @@ use pocketcloud\cloud\command\sender\ICommandSender;
 use pocketcloud\cloud\template\TemplateHelper;
 use pocketcloud\cloud\template\TemplateManager;
 
-class EditCommand extends Command {
+final class EditCommand extends Command {
 
     public function __construct() {
         parent::__construct("edit", "Edit a template");

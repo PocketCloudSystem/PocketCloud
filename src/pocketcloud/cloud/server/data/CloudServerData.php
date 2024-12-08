@@ -2,7 +2,7 @@
 
 namespace pocketcloud\cloud\server\data;
 
-class CloudServerData {
+final class CloudServerData {
 
     public function __construct(
         private readonly int $port,

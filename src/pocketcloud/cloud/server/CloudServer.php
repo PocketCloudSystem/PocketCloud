@@ -26,6 +26,7 @@ use pocketcloud\cloud\server\util\ServerStatus;
 use pocketcloud\cloud\server\util\ServerUtils;
 use pocketcloud\cloud\template\Template;
 use pocketcloud\cloud\template\TemplateManager;
+use pocketcloud\cloud\template\TemplateType;
 use pocketcloud\cloud\terminal\log\CloudLogger;
 use pocketcloud\cloud\util\FileUtils;
 use pocketcloud\cloud\util\terminal\TerminalUtils;
@@ -56,6 +57,13 @@ class CloudServer {
 
         if ($this->getTemplate()->getTemplateType()->isServer()) FileUtils::copyDirectory(SERVER_PLUGINS_PATH, $this->getPath() . "plugins/");
         else FileUtils::copyDirectory(PROXY_PLUGINS_PATH, $this->getPath() . "plugins/");
+
+        if (file_exists($this->getPath() . "server.log") || file_exists($this->getPath() . "logs/server.log")) {
+            unlink(match ($this->getTemplate()->getTemplateType()) {
+                TemplateType::PROXY() => $this->getPath() . "logs/server.log",
+                default => $this->getPath() . "server.log"
+            });
+        }
 
         ServerUtils::copyProperties($this);
     }
@@ -177,6 +185,17 @@ class CloudServer {
 
     public function getInternalCloudServerStorage(): InternalCloudServerStorage {
         return $this->internalCloudServerStorage;
+    }
+
+    public function retrieveLogs(): ?array {
+        $basePath = $this->getPath();
+        $logFile = $this->getTemplate()->getTemplateType()->isServer() ? "server.log" : "logs/server.log";
+
+        if (file_exists($basePath . $logFile)) {
+            return explode("\n", file_get_contents($basePath . $logFile));
+        }
+
+        return null;
     }
 
     public function sync(): void {

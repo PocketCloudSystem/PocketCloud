@@ -9,7 +9,7 @@ use pocketcloud\cloud\http\util\Router;
 use pocketcloud\cloud\web\WebAccountManager;
 use pocketcloud\cloud\web\WebAccountRoles;
 
-class WebAccountUpdateEndPoint extends EndPoint {
+final class WebAccountUpdateEndPoint extends EndPoint {
 
     public function __construct() {
         parent::__construct(Router::PATCH, "/webaccount/update/");

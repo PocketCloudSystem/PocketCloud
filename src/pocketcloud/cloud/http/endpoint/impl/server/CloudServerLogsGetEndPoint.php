@@ -2,28 +2,33 @@
 
 namespace pocketcloud\cloud\http\endpoint\impl\server;
 
+use pocketcloud\cloud\http\endpoint\EndPoint;
 use pocketcloud\cloud\http\io\Request;
 use pocketcloud\cloud\http\io\Response;
 use pocketcloud\cloud\http\util\Router;
-use pocketcloud\cloud\http\endpoint\EndPoint;
 use pocketcloud\cloud\server\CloudServerManager;
 
-final class CloudServerSaveEndPoint extends EndPoint {
+final class CloudServerLogsGetEndPoint extends EndPoint {
 
     public function __construct() {
-        parent::__construct(Router::POST, "/server/save/");
+        parent::__construct(Router::GET, "/server/logs/");
     }
 
     public function handleRequest(Request $request, Response $response): array {
-        $name = $request->data()->queries()->get("server");
-        $server = CloudServerManager::getInstance()->get($name);
+        $server = $request->data()->queries()->get("server");
 
-        if ($server === null) {
+        if (($server = CloudServerManager::getInstance()->get($server)) === null) {
             return ["error" => "The server doesn't exists!"];
         }
 
-        CloudServerManager::getInstance()->save($server);
-        return ["success" => "The cloud is successfully trying to save the given server!"];
+        if (($logs = $server->retrieveLogs()) === null) {
+            return ["error" => "No logs were found!"];
+        }
+
+        return [
+            "server" => $server->getName(),
+            "logs" => $logs
+        ];
     }
 
     public function isBadRequest(Request $request): bool {

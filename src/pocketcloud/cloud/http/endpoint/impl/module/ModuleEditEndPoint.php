@@ -11,7 +11,7 @@ use pocketcloud\cloud\network\packet\impl\normal\ModuleSyncPacket;
 use pocketcloud\cloud\provider\CloudProvider;
 use pocketcloud\cloud\server\CloudServerManager;
 
-class ModuleEditEndPoint extends EndPoint {
+final class ModuleEditEndPoint extends EndPoint {
 
     public function __construct() {
         parent::__construct(Router::PATCH, "/module/edit/");

@@ -11,7 +11,7 @@ use pocketcloud\cloud\command\sender\ICommandSender;
 use pocketcloud\cloud\server\CloudServerManager;
 use pocketcloud\cloud\template\TemplateManager;
 
-class StartCommand extends Command {
+final class StartCommand extends Command {
 
     public function __construct() {
         parent::__construct("start", "Start a server");

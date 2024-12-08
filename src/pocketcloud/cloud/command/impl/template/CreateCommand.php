@@ -11,7 +11,7 @@ use pocketcloud\cloud\template\TemplateManager;
 use pocketcloud\cloud\template\TemplateSettings;
 use pocketcloud\cloud\template\TemplateType;
 
-class CreateCommand extends Command {
+final class CreateCommand extends Command {
 
     public function __construct() {
         parent::__construct("create", "Create a template");

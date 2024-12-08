@@ -21,6 +21,7 @@ use pocketcloud\cloud\http\endpoint\impl\plugin\CloudPluginListEndPoint;
 use pocketcloud\cloud\http\endpoint\impl\server\CloudServerExecuteEndPoint;
 use pocketcloud\cloud\http\endpoint\impl\server\CloudServerGetEndPoint;
 use pocketcloud\cloud\http\endpoint\impl\server\CloudServerListEndPoint;
+use pocketcloud\cloud\http\endpoint\impl\server\CloudServerLogsGetEndPoint;
 use pocketcloud\cloud\http\endpoint\impl\server\CloudServerSaveEndPoint;
 use pocketcloud\cloud\http\endpoint\impl\server\CloudServerStartEndPoint;
 use pocketcloud\cloud\http\endpoint\impl\server\CloudServerStopEndPoint;
@@ -45,7 +46,7 @@ final class EndpointRegistry {
             new CloudPlayerGetEndPoint(), new CloudPlayerTextEndPoint(), new CloudPlayerKickEndPoint(), new CloudPlayerListEndPoint(),
             new CloudPluginGetEndPoint(), new CloudPluginEnableEndPoint(), new CloudPluginDisableEndPoint(), new CloudPluginListEndPoint(),
             new CloudTemplateCreateEndPoint(), new CloudTemplateRemoveEndPoint(), new CloudTemplateGetEndPoint(), new CloudTemplateListEndPoint(), new CloudTemplateEditEndPoint(),
-            new CloudServerStartEndPoint(), new CloudServerStopEndPoint(), new CloudServerSaveEndPoint(), new CloudServerExecuteEndPoint(), new CloudServerGetEndPoint(), new CloudServerListEndPoint(),
+            new CloudServerStartEndPoint(), new CloudServerStopEndPoint(), new CloudServerSaveEndPoint(), new CloudServerExecuteEndPoint(), new CloudServerGetEndPoint(), new CloudServerListEndPoint(), new CloudServerLogsGetEndPoint(),
             new ModuleGetEndPoint(), new ModuleListEndPoint(), new ModuleEditEndPoint(),
             new MaintenanceAddEndPoint(), new MaintenanceRemoveEndPoint(), new MaintenanceGetEndPoint(), new MaintenanceListEndPoint()
         ];

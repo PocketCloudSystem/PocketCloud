@@ -5,7 +5,7 @@ namespace pocketcloud\cloud\template;
 use pocketcloud\cloud\server\CloudServerManager;
 use pocketcloud\cloud\util\Utils;
 
-readonly class Template {
+final readonly class Template {
 
     public function __construct(
         private string $name,

@@ -10,7 +10,7 @@ use pocketcloud\cloud\command\Command;
 use pocketcloud\cloud\command\sender\ICommandSender;
 use pocketcloud\cloud\server\CloudServerManager;
 
-class StopCommand extends Command {
+final class StopCommand extends Command {
 
     public function __construct() {
         parent::__construct("stop", "Stop a server");

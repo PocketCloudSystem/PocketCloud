@@ -8,7 +8,7 @@ use pocketcloud\cloud\http\util\Router;
 use pocketcloud\cloud\plugin\CloudPluginManager;
 use pocketcloud\cloud\http\endpoint\EndPoint;
 
-class CloudPluginDisableEndPoint extends EndPoint {
+final class CloudPluginDisableEndPoint extends EndPoint {
 
     public function __construct() {
         parent::__construct(Router::POST, "/plugin/disable/");

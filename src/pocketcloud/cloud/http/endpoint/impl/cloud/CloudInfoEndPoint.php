@@ -17,7 +17,7 @@ use pocketcloud\cloud\template\Template;
 use pocketcloud\cloud\template\TemplateManager;
 use pocketcloud\cloud\util\VersionInfo;
 
-class CloudInfoEndPoint extends EndPoint {
+final class CloudInfoEndPoint extends EndPoint {
 
     public function __construct() {
         parent::__construct(Router::GET, "/cloud/info/");

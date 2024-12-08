@@ -8,7 +8,7 @@ use pocketcloud\cloud\http\io\Request;
 use pocketcloud\cloud\http\io\Response;
 use pocketcloud\cloud\http\util\Router;
 
-class MaintenanceAddEndPoint extends EndPoint {
+final class MaintenanceAddEndPoint extends EndPoint {
 
     public function __construct() {
         parent::__construct(Router::POST, "/maintenance/add/");

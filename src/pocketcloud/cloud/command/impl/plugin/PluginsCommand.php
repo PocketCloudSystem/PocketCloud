@@ -6,7 +6,7 @@ use pocketcloud\cloud\command\Command;
 use pocketcloud\cloud\command\sender\ICommandSender;
 use pocketcloud\cloud\plugin\CloudPluginManager;
 
-class PluginsCommand extends Command {
+final class PluginsCommand extends Command {
 
     public function __construct() {
         parent::__construct("plugins", "View the current plugins");
