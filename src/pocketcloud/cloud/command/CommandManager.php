@@ -5,6 +5,7 @@ namespace pocketcloud\cloud\command;
 use pocketcloud\cloud\command\impl\ConfigureCommand;
 use pocketcloud\cloud\command\impl\DebugCommand;
 use pocketcloud\cloud\command\impl\ExitCommand;
+use pocketcloud\cloud\command\impl\group\GroupCommand;
 use pocketcloud\cloud\command\impl\HelpCommand;
 use pocketcloud\cloud\command\impl\ListCommand;
 use pocketcloud\cloud\command\impl\player\KickCommand;
@@ -56,6 +57,8 @@ final class CommandManager {
         $this->register(new PluginsCommand());
 
         $this->register(new WebAccountCommand());
+
+        $this->register(new GroupCommand());
     }
 
     public function handleInput(ICommandSender $sender, string $input): bool {

@@ -115,7 +115,7 @@ final class CloudJsonProvider extends CloudProvider {
         $promise = new Promise();
 
         $serverGroups = [];
-        $data = $this->templatesConfig->getAll();
+        $data = $this->serverGroupsConfig->getAll();
         foreach ($data as $serverGroup) {
             if (($serverGroup = ServerGroup::fromArray($serverGroup)) !== null) $serverGroups[$serverGroup->getName()] = $serverGroup;
         }

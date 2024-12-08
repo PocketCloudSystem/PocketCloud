@@ -36,7 +36,6 @@ final class ServerGroupManager {
         if (!file_exists($serverGroup->getPath())) mkdir($serverGroup->getPath());
         $this->serverGroups[$serverGroup->getName()] = $serverGroup;
         CloudLogger::get()->success("Successfully §acreated §rthe server group §b" . $serverGroup->getName() . "§r. §8(§rTook §b" . number_format(microtime(true) - $startTime, 3) . "s§8)");
-        //TODO: Sync Packet (maybe)
     }
 
     public function remove(ServerGroup $serverGroup): void {
@@ -48,7 +47,6 @@ final class ServerGroupManager {
         if (file_exists($serverGroup->getPath())) FileUtils::removeDirectory($serverGroup->getPath());
         if (isset($this->serverGroups[$serverGroup->getName()])) unset($this->serverGroups[$serverGroup->getName()]);
         CloudLogger::get()->success("Successfully §cremoved §rthe server group §b" . $serverGroup->getName() . "§r. §8(§rTook §b" . number_format(microtime(true) - $startTime, 3) . "s§8)");
-        //TODO: Sync Packet (maybe)
     }
 
     public function addTemplate(ServerGroup $serverGroup, Template $template): void {
@@ -59,7 +57,6 @@ final class ServerGroupManager {
         (new ServerGroupEditEvent($serverGroup, $serverGroup->getTemplates()))->call();
 
         CloudLogger::get()->success("Successfully §aadded §rthe template §b" . $template->getName() . " §rto the server group §b" . $serverGroup->getName() . "§r. §8(§rTook §b" . number_format(microtime(true) - $startTime, 3) . "s§8)");
-        //TODO: Sync Packet (maybe)
     }
 
     public function removeTemplate(ServerGroup $serverGroup, Template $template): void {
@@ -70,7 +67,6 @@ final class ServerGroupManager {
         (new ServerGroupEditEvent($serverGroup, $serverGroup->getTemplates()))->call();
 
         CloudLogger::get()->success("Successfully §cremoved §rthe template §b" . $template->getName() . " §rfrom the server group §b" . $serverGroup->getName() . "§r. §8(§rTook §b" . number_format(microtime(true) - $startTime, 3) . "s§8)");
-        //TODO: Sync Packet (maybe)
     }
 
     public function get(Template|string $name): ?ServerGroup {

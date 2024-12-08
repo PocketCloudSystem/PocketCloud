@@ -124,8 +124,8 @@ final class DatabaseQueries {
         });
 
         self::register("getServerGroups", function (): QueryBuilder {
-            return QueryBuilder::table(DatabaseTables::TEMPLATES)
-                ->select(TemplateHelper::KEYS, "*");
+            return QueryBuilder::table(DatabaseTables::SERVER_GROUPS)
+                ->select(["name", "templates"], "*");
         });
 
         self::register("setModuleState", function (string $module, bool $enabled): QueryBuilder {

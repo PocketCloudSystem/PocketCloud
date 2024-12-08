@@ -28,6 +28,7 @@ final class ServerGroup {
     public function remove(Template|string $template): void {
         $template = $template instanceof Template ? $template->getName() : $template;
         if ($this->is($template)) unset($this->templates[array_search($template, $this->templates)]);
+        $this->templates = array_values($this->templates);
     }
 
     public function is(Template|string $template): bool {
@@ -60,7 +61,7 @@ final class ServerGroup {
 
         $templates = [];
         foreach ((is_array($data["templates"]) ? $data["templates"] : []) as $name) {
-            if (($template = TemplateManager::getInstance()->get($name)) !== null) $templates[] = $template;
+            if (TemplateManager::getInstance()->check($name)) $templates[] = $name;
         }
 
         return new self(

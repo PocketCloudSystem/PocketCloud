@@ -56,7 +56,7 @@ final class TemplateManager implements Tickable {
 
         (new TemplateRemoveEvent($template))->call();
 
-        CloudServerManager::getInstance()->stop($template);
+        CloudServerManager::getInstance()->stop($template, true);
 
         if (file_exists($template->getPath())) FileUtils::removeDirectory($template->getPath());
         if (isset($this->templates[$template->getName()])) unset($this->templates[$template->getName()]);
