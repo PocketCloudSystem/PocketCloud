@@ -3,6 +3,7 @@
 namespace pocketcloud\cloud\provider;
 
 use pocketcloud\cloud\config\impl\MainConfig;
+use pocketcloud\cloud\group\ServerGroup;
 use pocketcloud\cloud\template\Template;
 use pocketcloud\cloud\util\promise\Promise;
 
@@ -21,6 +22,18 @@ abstract class CloudProvider {
     abstract public function checkTemplate(string $template): Promise;
 
     abstract public function getTemplates(): Promise;
+
+    abstract public function addServerGroup(ServerGroup $serverGroup): void;
+
+    abstract public function removeServerGroup(ServerGroup $serverGroup): void;
+
+    abstract public function editServerGroup(ServerGroup $serverGroup, array $newData): void;
+
+    abstract public function getServerGroup(string $serverGroup): Promise;
+
+    abstract public function checkServerGroup(string $serverGroup): Promise;
+
+    abstract public function getServerGroups(): Promise;
 
     abstract public function setModuleState(string $module, bool $enabled): void;
 

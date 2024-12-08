@@ -14,6 +14,12 @@ use r3pt1s\mysql\query\QueryBuilder;
  * @method static QueryBuilder getTemplate(string $name)
  * @method static QueryBuilder checkTemplate(string $name)
  * @method static QueryBuilder getTemplates()
+ * @method static QueryBuilder addServerGroup(array $data)
+ * @method static QueryBuilder removeServerGroup(string $name)
+ * @method static QueryBuilder editServerGroup(string $name, array $newData)
+ * @method static QueryBuilder getServerGroup(string $name)
+ * @method static QueryBuilder checkServerGroup(string $name)
+ * @method static QueryBuilder getServerGroups()
  * @method static QueryBuilder setModuleState(string $module, bool $enabled)
  * @method static QueryBuilder getModuleState(string $module)
  * @method static QueryBuilder enablePlayerNotifications(string $player)
@@ -42,9 +48,14 @@ final class DatabaseQueries {
                     "autoStart" => "BOOL",
                     "templateType" => "VARCHAR(10)"
                 ])
+                ->changeTable(DatabaseTables::SERVER_GROUPS)
+                    ->create([
+                        "name" => "VARCHAR(50) PRIMARY KEY",
+                        "templates" => "TEXT"
+                    ])
                 ->changeTable(DatabaseTables::MODULES)
                     ->create([
-                        "module" => "VARCHAR(100)",
+                        "module" => "VARCHAR(100) PRIMARY KEY",
                         "enabled" => "BOOL"
                     ])
                 ->changeTable(DatabaseTables::NOTIFICATIONS)
@@ -83,6 +94,36 @@ final class DatabaseQueries {
         });
 
         self::register("getTemplates", function (): QueryBuilder {
+            return QueryBuilder::table(DatabaseTables::TEMPLATES)
+                ->select(TemplateHelper::KEYS, "*");
+        });
+
+        self::register("addServerGroup", function (array $data): QueryBuilder {
+            return QueryBuilder::table(DatabaseTables::SERVER_GROUPS)
+                ->insert($data);
+        });
+
+        self::register("removeServerGroup", function (string $name): QueryBuilder {
+            return QueryBuilder::table(DatabaseTables::SERVER_GROUPS)
+                ->delete(["name" => $name]);
+        });
+
+        self::register("editServerGroup", function (string $name, array $newData): QueryBuilder {
+            return QueryBuilder::table(DatabaseTables::SERVER_GROUPS)
+                ->update($newData, ["name" => $name]);
+        });
+
+        self::register("getServerGroup", function (string $name): QueryBuilder {
+            return QueryBuilder::table(DatabaseTables::SERVER_GROUPS)
+                ->get(["name", "templates"], ["name" => $name]);
+        });
+
+        self::register("checkServerGroup", function (string $name): QueryBuilder {
+            return QueryBuilder::table(DatabaseTables::SERVER_GROUPS)
+                ->has(["name" => $name]);
+        });
+
+        self::register("getServerGroups", function (): QueryBuilder {
             return QueryBuilder::table(DatabaseTables::TEMPLATES)
                 ->select(TemplateHelper::KEYS, "*");
         });

@@ -241,6 +241,7 @@ define("WEB_PATH", STORAGE_PATH . "web/");
 define("LOG_PATH", STORAGE_PATH . "cloud.log");
 define("TEMP_PATH", CLOUD_PATH . "tmp/");
 define("TEMPLATES_PATH", CLOUD_PATH . "templates/");
+define("SERVER_GROUPS_PATH", CLOUD_PATH . "groups/");
 define("FIRST_RUN", !file_exists(STORAGE_PATH . "config.json"));
 
 if (!file_exists(STORAGE_PATH)) mkdir(STORAGE_PATH);
@@ -255,6 +256,7 @@ if (!file_exists(IN_GAME_PATH)) mkdir(IN_GAME_PATH);
 if (!file_exists(WEB_PATH)) mkdir(WEB_PATH);
 if (!file_exists(LOG_PATH)) file_put_contents(LOG_PATH, "");
 if (!file_exists(TEMPLATES_PATH)) mkdir(TEMPLATES_PATH);
+if (!file_exists(SERVER_GROUPS_PATH)) mkdir(SERVER_GROUPS_PATH);
 if (!file_exists(TEMP_PATH)) mkdir(TEMP_PATH);
 
 $classLoader = new ClassLoader();

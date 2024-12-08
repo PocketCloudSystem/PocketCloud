@@ -27,10 +27,10 @@ final class ServerGroup {
         return in_array($template, $this->templates);
     }
 
-    public function toArray(): array {
+    public function toArray(bool $mySql = false): array {
         return [
             "name" => $this->name,
-            "templates" => $this->templates
+            "templates" => ($mySql ? json_encode($this->templates) : $this->templates)
         ];
     }
 
@@ -39,7 +39,7 @@ final class ServerGroup {
     }
 
     public function getPath(): string {
-        return TEMPLATES_PATH . $this->name . "/";
+        return SERVER_GROUPS_PATH . $this->name . "/";
     }
 
     public function getTemplates(): array {
@@ -48,6 +48,8 @@ final class ServerGroup {
 
     public static function fromArray(array $data): ?self {
         if (!Utils::containKeys($data, "name", "templates")) return null;
+        if (is_string($data["templates"])) $data["templates"] = json_decode($data["templates"], true);
+
         $templates = [];
         foreach ((is_array($data["templates"]) ? $data["templates"] : []) as $name) {
             if (($template = TemplateManager::getInstance()->get($name)) !== null) $templates[] = $template;

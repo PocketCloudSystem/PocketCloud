@@ -5,6 +5,7 @@ namespace pocketcloud\cloud\provider;
 use pocketcloud\cloud\cache\MaintenanceList;
 use pocketcloud\cloud\config\impl\MainConfig;
 use pocketcloud\cloud\cache\InGameModule;
+use pocketcloud\cloud\group\ServerGroup;
 use pocketcloud\cloud\PocketCloud;
 use pocketcloud\cloud\provider\database\DatabaseQueries;
 use pocketcloud\cloud\provider\migration\MigrationList;
@@ -100,6 +101,69 @@ final class CloudMySqlProvider extends CloudProvider {
                 }
 
                 $promise->resolve($templates);
+            });
+
+        return $promise;
+    }
+
+    public function addServerGroup(ServerGroup $serverGroup): void {
+        DatabaseQueries::addServerGroup($serverGroup->toArray(true))->execute();
+    }
+
+    public function removeServerGroup(ServerGroup $serverGroup): void {
+        DatabaseQueries::removeServerGroup($serverGroup->getName())->execute();
+    }
+
+    public function editServerGroup(ServerGroup $serverGroup, array $newData): void {
+        if (is_array($newData["templates"])) $newData["templates"] = json_encode($newData["templates"]);
+        DatabaseQueries::editServerGroup($serverGroup->getName(), $newData)->execute();
+    }
+
+    public function getServerGroup(string $serverGroup): Promise {
+        $promise = new Promise();
+
+        DatabaseQueries::getServerGroup($serverGroup)
+            ->execute(function (?array $result) use($promise): void {
+                if (!is_array($result)) {
+                    $promise->reject();
+                    return;
+                }
+
+                if (($serverGroup = ServerGroup::fromArray($result)) !== null) {
+                    $promise->resolve($serverGroup);
+                } else $promise->reject();
+            });
+
+        return $promise;
+    }
+
+    public function checkServerGroup(string $serverGroup): Promise {
+        $promise = new Promise();
+
+        DatabaseQueries::checkServerGroup($serverGroup)
+            ->execute(fn(?bool $check) => $promise->resolve($check ?? false));
+
+        return $promise;
+    }
+
+    public function getServerGroups(): Promise {
+        $promise = new Promise();
+
+        DatabaseQueries::getServerGroups()
+            ->execute(function (?array $result) use($promise): void {
+                if (!is_array($result)) {
+                    $promise->reject();
+                    return;
+                }
+
+                $serverGroups = [];
+                foreach ($result as $data) {
+                    if (($serverGroup = ServerGroup::fromArray($data)) !== null) {
+                        $serverGroups[$serverGroup->getName()] = $serverGroup;
+                    }
+                }
+
+                $promise->resolve($serverGroups);
             });
 
         return $promise;
