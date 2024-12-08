@@ -4,6 +4,7 @@ namespace pocketcloud\cloud\server;
 
 use pocketcloud\cloud\event\impl\server\ServerStartEvent;
 use pocketcloud\cloud\event\impl\server\ServerStopEvent;
+use pocketcloud\cloud\group\ServerGroupManager;
 use pocketcloud\cloud\language\Language;
 use pocketcloud\cloud\network\client\ServerClientCache;
 use pocketcloud\cloud\network\packet\CloudPacket;
@@ -57,6 +58,8 @@ class CloudServer {
 
         if ($this->getTemplate()->getTemplateType()->isServer()) FileUtils::copyDirectory(SERVER_PLUGINS_PATH, $this->getPath() . "plugins/");
         else FileUtils::copyDirectory(PROXY_PLUGINS_PATH, $this->getPath() . "plugins/");
+
+        if (($group = ServerGroupManager::getInstance()->get($this->getTemplate())) !== null) $group->copyDataTo($this);
 
         if (file_exists($this->getPath() . "server.log") || file_exists($this->getPath() . "logs/server.log")) {
             unlink(match ($this->getTemplate()->getTemplateType()) {

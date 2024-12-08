@@ -12,7 +12,7 @@ final class FileUtils {
         return ExceptionHandler::tryCatch(
             function (string $src, string $dst): bool {
                 if (!@file_exists($src)) return false;
-                return copy($src, $dst);
+                return @copy($src, $dst);
             },
             "Failed to copy " . $src . " to " . $dst,
             null,
@@ -69,9 +69,7 @@ final class FileUtils {
                         if (filetype($src . DIRECTORY_SEPARATOR . $file) == "dir") {
                             self::copyDirectory($src . DIRECTORY_SEPARATOR . $file, $dst . DIRECTORY_SEPARATOR . $file);
                         } else {
-                            try {
-                                copy($src . DIRECTORY_SEPARATOR . $file, $dst . DIRECTORY_SEPARATOR . $file);
-                            } catch (Throwable) {
+                            if (!@copy($src . DIRECTORY_SEPARATOR . $file, $dst . DIRECTORY_SEPARATOR . $file)) {
                                 CloudLogger::get()->debug("Can't copy file from: " . $src . DIRECTORY_SEPARATOR . $file . " to " . $dst . DIRECTORY_SEPARATOR . $file);
                             }
                         }
@@ -101,7 +99,7 @@ final class FileUtils {
                         if (is_file($filePath)) self::unlinkFile($filePath);
                         else if (is_dir($filePath)) self::removeDirectory($filePath);
                     }
-                    return rmdir($directoryPath);
+                    return @rmdir($directoryPath);
                 }
 
                 return false;
@@ -115,7 +113,7 @@ final class FileUtils {
     public static function jsonDecode(string $jsonString, int $depth = 512): ?array {
         return ExceptionHandler::tryCatch(
             function (string $jsonString, int $depth): ?array {
-                $decode = json_decode($jsonString, true, $depth);
+                $decode = json_decode($jsonString, true, $depth, JSON_THROW_ON_ERROR);
                 return !$decode ? null : $decode;
             },
             "Failed to json decode: " . $jsonString,
@@ -127,7 +125,7 @@ final class FileUtils {
     public static function jsonEncode(array $jsonArray): ?string {
         return ExceptionHandler::tryCatch(
             function (array $jsonArray): ?string {
-                $encode = json_encode($jsonArray);
+                $encode = json_encode($jsonArray, JSON_THROW_ON_ERROR);
                 return !$encode ? null : $encode;
             },
             "Failed to json encode",

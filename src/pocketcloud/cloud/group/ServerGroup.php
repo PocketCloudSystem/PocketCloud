@@ -2,8 +2,10 @@
 
 namespace pocketcloud\cloud\group;
 
+use pocketcloud\cloud\server\CloudServer;
 use pocketcloud\cloud\template\Template;
 use pocketcloud\cloud\template\TemplateManager;
+use pocketcloud\cloud\util\FileUtils;
 use pocketcloud\cloud\util\Utils;
 
 final class ServerGroup {
@@ -12,6 +14,12 @@ final class ServerGroup {
         private readonly string $name,
         private array $templates
     ) {}
+
+    public function copyDataTo(CloudServer $server): void {
+        if ($this->is($server->getTemplate())) {
+            FileUtils::copyDirectory($this->getPath(), $server->getPath());
+        }
+    }
 
     public function add(Template $template): void {
         if (!$this->is($template)) $this->templates[] = $template->getName();
