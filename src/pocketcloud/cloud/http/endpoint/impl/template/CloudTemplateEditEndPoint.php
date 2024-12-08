@@ -38,7 +38,7 @@ final class CloudTemplateEditEndPoint extends EndPoint {
             $localTemplateData["maxPlayerCount"],
             $localTemplateData["minServerCount"],
             $localTemplateData["maxServerCount"],
-            $localTemplateData["startNewWhenFull"],
+            $localTemplateData["startNewPercentage"],
             $localTemplateData["autoStart"]
         );
         return ["success" => "The template was edited!"];

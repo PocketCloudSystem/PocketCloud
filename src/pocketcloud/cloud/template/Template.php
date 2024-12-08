@@ -64,15 +64,15 @@ final readonly class Template {
         return self::create($data["name"], TemplateHelper::sumSettingsToInstance($data), TemplateType::get($data["templateType"]) ?? TemplateType::SERVER());
     }
 
-    public static function server(string $name, bool $lobby = false, bool $maintenance = true, bool $static = false, int $maxPlayerCount = 20, int $minServerCount = 1, int $maxServerCount = 2, bool $startNewWhenFull = true, bool $autoStart = true): self {
-        return self::create($name, TemplateSettings::create($lobby, $maintenance, $static, $maxPlayerCount, $minServerCount, $maxServerCount, $startNewWhenFull, $autoStart), TemplateType::SERVER());
+    public static function server(string $name, bool $lobby = false, bool $maintenance = true, bool $static = false, int $maxPlayerCount = 20, int $minServerCount = 1, int $maxServerCount = 2, float $startNewPercentage = 100, bool $autoStart = true): self {
+        return self::create($name, TemplateSettings::create($lobby, $maintenance, $static, $maxPlayerCount, $minServerCount, $maxServerCount, $startNewPercentage, $autoStart), TemplateType::SERVER());
     }
 
-    public static function proxy(string $name, bool $maintenance = true, bool $static = false, int $maxPlayerCount = 20, int $minServerCount = 1, int $maxServerCount = 1, bool $startNewWhenFull = false, bool $autoStart = true): self {
-        return self::create($name, TemplateSettings::create(false, $maintenance, $static, $maxPlayerCount, $minServerCount, $maxServerCount, $startNewWhenFull, $autoStart), TemplateType::PROXY());
+    public static function proxy(string $name, bool $maintenance = true, bool $static = false, int $maxPlayerCount = 20, int $minServerCount = 1, int $maxServerCount = 1, float $startNewPercentage = 100, bool $autoStart = true): self {
+        return self::create($name, TemplateSettings::create(false, $maintenance, $static, $maxPlayerCount, $minServerCount, $maxServerCount, $startNewPercentage, $autoStart), TemplateType::PROXY());
     }
 
-    public static function lobby(string $name, bool $maintenance = true, bool $static = false, int $maxPlayerCount = 20, int $minServerCount = 1, int $maxServerCount = 2, bool $startNewWhenFull = true, bool $autoStart = true): self {
-        return self::create($name, TemplateSettings::create(true, $maintenance, $static, $maxPlayerCount, $minServerCount, $maxServerCount, $startNewWhenFull, $autoStart), TemplateType::SERVER());
+    public static function lobby(string $name, bool $maintenance = true, bool $static = false, int $maxPlayerCount = 20, int $minServerCount = 1, int $maxServerCount = 2, float $startNewPercentage = 0, bool $autoStart = true): self {
+        return self::create($name, TemplateSettings::create(true, $maintenance, $static, $maxPlayerCount, $minServerCount, $maxServerCount, $startNewPercentage, $autoStart), TemplateType::SERVER());
     }
 }
