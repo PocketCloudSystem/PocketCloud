@@ -3,6 +3,7 @@
 namespace pocketcloud\cloud\provider\migration;
 
 use pocketcloud\cloud\cache\InGameModule;
+use pocketcloud\cloud\group\ServerGroup;
 use pocketcloud\cloud\provider\CloudProvider;
 use pocketcloud\cloud\template\Template;
 use pocketcloud\cloud\terminal\log\CloudLogger;
@@ -12,6 +13,7 @@ final class JsonToMySqlMigrator implements IMigrator {
 
     public function checkForMigration(): bool {
         return file_exists(TEMPLATES_PATH . "templates.json") ||
+            file_exists(SERVER_GROUPS_PATH . "groups.json") ||
             file_exists(IN_GAME_PATH . "maintenanceList.json") ||
             file_exists(IN_GAME_PATH . "modules.json") ||
             file_exists(IN_GAME_PATH . "notifyList.json");
@@ -74,6 +76,26 @@ final class JsonToMySqlMigrator implements IMigrator {
                         ->then(function (bool $exists) use($template): void {
                             if (!$exists) CloudProvider::current()->addTemplate($template);
                             else CloudLogger::get()->warn("A mysql template with the name §b" . $template->getName() . " §ralready exists, ignoring...");
+                        });
+                }
+            }
+        }
+
+        if (file_exists(SERVER_GROUPS_PATH . "groups.json")) {
+            $groupsRaw = FileUtils::jsonDecode(FileUtils::fileGetContents(SERVER_GROUPS_PATH . "groups.json"));
+            if (!empty($groupsRaw)) {
+                FileUtils::copyFile(SERVER_GROUPS_PATH . "groups.json", SERVER_GROUPS_PATH . "groups.json");
+                FileUtils::unlinkFile(SERVER_GROUPS_PATH . "groups.json");
+                $serverGroups = [];
+                foreach ($groupsRaw as $data) {
+                    if (($serverGroup = ServerGroup::fromArray($data)) !== null) $serverGroups[$serverGroup->getName()] = $serverGroup;
+                }
+
+                foreach ($serverGroups as $serverGroup) {
+                    CloudProvider::current()->checkServerGroup($serverGroup->getName())
+                        ->then(function (bool $exists) use($serverGroup): void {
+                            if (!$exists) CloudProvider::current()->addServerGroup($serverGroup);
+                            else CloudLogger::get()->warn("A mysql server group with the name §b" . $serverGroup->getName() . " §ralready exists, ignoring...");
                         });
                 }
             }
