@@ -38,7 +38,7 @@ final class DatabaseQueries {
                     "maxPlayerCount" => "INTEGER",
                     "minServerCount" => "INTEGER",
                     "maxServerCount" => "INTEGER",
-                    "startNewPercentage" => "INTEGER",
+                    "startNewPercentage" => "FLOAT",
                     "autoStart" => "BOOL",
                     "templateType" => "VARCHAR(10)"
                 ])

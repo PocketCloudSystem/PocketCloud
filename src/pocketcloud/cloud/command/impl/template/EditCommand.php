@@ -24,7 +24,7 @@ final class EditCommand extends Command {
         $this->addParameter(new StringEnumArgument(
             "key",
             TemplateHelper::EDITABLE_KEYS,
-            true,
+            false,
             false,
             "The key you are trying to edit was not found."
         ));
@@ -37,7 +37,7 @@ final class EditCommand extends Command {
 
     public function run(ICommandSender $sender, string $label, array $args): bool {
         $template = $args["template"];
-        $key = $args["key"];
+        $key = TemplateHelper::convert($args["key"]);
         $value = $args["value"];
 
         if (TemplateHelper::isValidEditKey($key)) {
@@ -50,7 +50,7 @@ final class EditCommand extends Command {
                     ($key == "maxPlayerCount" ? $realValue : null),
                     ($key == "minServerCount" ? $realValue : null),
                     ($key == "maxServerCount" ? $realValue : null),
-                    ($key == "startNewWhenFull" ? $realValue : null),
+                    ($key == "startNewPercentage" ? $realValue : null),
                     ($key == "autoStart" ? $realValue : null),
                 );
             } else $sender->error("Wrong value provided, expected an §b" . $expected . " §rwhen editing §b" . $key . "§r!");

@@ -13,6 +13,13 @@ final class TemplateHelper {
 
     public const UNNECESSARY_KEYS = ["maintenance", "static", "maxPlayerCount", "minServerCount", "maxServerCount", "startNewPercentage", "autoStart"];
     public const DEFAULT_VALUES = ["maintenance" => true, "static" => false, "mayPlayerCount" => 20, "minServerCount" => 0, "maxServerCount" => 2, "startNewPercentage" => 100, "autoStart" => true];
+    private const CONVERSION = [
+        "maxplayercount" => "maxPlayerCount",
+        "minservercount" => "minServerCount",
+        "maxservercount" => "maxServerCount",
+        "startnewpercentage" => "startNewPercentage",
+        "autostart" => "autoStart"
+    ];
 
     public static function addUnnecessaryKeys(array $data): void {
         foreach (array_filter(self::UNNECESSARY_KEYS, fn(string $key) => !isset($data[$key])) as $key) $data[$key] = self::DEFAULT_VALUES[$key];
@@ -28,16 +35,16 @@ final class TemplateHelper {
     }
 
     public static function isValidEditValue(string $value, string $key, ?string &$expected = null, mixed &$realValue = null): bool {
-        if ($key == "lobby" || $key == "maintenance" || $key == "autoStart" || $key == "static" || $key == "startNewWhenFull") {
+        if ($key == "lobby" || $key == "maintenance" || $key == "autoStart" || $key == "static") {
             $expected = "true | false";
             if ($value == "true" || $value == "false") {
                 $realValue = $value == "true";
                 return true;
             }
-        } else if ($key == "maxPlayerCount" || $key == "minServerCount" || $key == "maxServerCount") {
+        } else if ($key == "maxPlayerCount" || $key == "minServerCount" || $key == "maxServerCount" || $key == "startNewPercentage") {
             $expected = "number";
             if (is_numeric($value)) {
-                $realValue = max(intval($value), 0);
+                $realValue = max($key == "startNewPercentage" ? floatval($value) : intval($value), 0);
                 return true;
             }
         }
@@ -46,5 +53,9 @@ final class TemplateHelper {
 
     public static function isValidEditKey(string $key): bool {
         return in_array($key, self::EDITABLE_KEYS);
+    }
+
+    public static function convert(string $key): string {
+        return self::CONVERSION[strtolower($key)] ?? $key;
     }
 }
