@@ -141,6 +141,7 @@ final class PocketCloud {
         if (MainConfig::getInstance()->isWebEnabled()) WebAccountManager::getInstance()->load();
 
         if (MainConfig::getInstance()->isUpdateChecks()) {
+            CloudLogger::get()->info("Checking for §bupdates§r...");
             UpdateChecker::getInstance()->check();
         }
 

@@ -2,6 +2,8 @@
 
 namespace pocketcloud\cloud\util\tick;
 
+use pocketcloud\cloud\update\UpdateChecker;
+
 final class TickableList {
 
     /** @var array<Tickable> */
@@ -16,6 +18,7 @@ final class TickableList {
     }
 
     public static function tick(int $currentTick): void {
+        if (UpdateChecker::getInstance()->isUpdating()) return;
         foreach (self::$list as $tickable) {
             $tickable->tick($currentTick);
         }

@@ -24,4 +24,18 @@ final class NetUtils {
 
         return curl_errno($ch) == 0;
     }
+
+    public static function fileSize(string $url): ?int {
+        $stream = fopen($url, "r", context: stream_context_create([
+            "ssl" => [
+                "verify_peer" => false,
+                "verify_peer_name" => false
+            ]
+        ]));
+
+        if ($stream) {
+            return strlen(stream_get_contents($stream));
+        }
+        return null;
+    }
 }

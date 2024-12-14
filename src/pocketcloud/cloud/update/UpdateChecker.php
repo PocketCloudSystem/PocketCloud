@@ -9,6 +9,7 @@ use pocketcloud\cloud\config\impl\MainConfig;
 use pocketcloud\cloud\software\SoftwareManager;
 use pocketcloud\cloud\terminal\log\CloudLogger;
 use pocketcloud\cloud\util\AsyncExecutor;
+use pocketcloud\cloud\util\net\NetUtils;
 use pocketcloud\cloud\util\SingletonTrait;
 use pocketcloud\cloud\util\Utils;
 use pocketcloud\cloud\util\VersionInfo;
@@ -17,9 +18,14 @@ final class UpdateChecker {
     use SingletonTrait;
 
     private array $data = [];
+    private bool $updating = false;
 
     public function __construct() {
         self::setInstance($this);
+    }
+
+    public function setUpdating(bool $updating): void {
+        $this->updating = $updating;
     }
 
     public function check(): void {
@@ -27,6 +33,7 @@ final class UpdateChecker {
         $this->checkServerPlugin();
         $this->checkProxyPlugin();
         $this->checkServerSoftware();
+        $this->checkProxySoftware();
     }
 
     private function checkCloud(): void {
@@ -211,6 +218,27 @@ final class UpdateChecker {
         }
     }
 
+    private function checkProxySoftware(): void {
+        try {
+            $software = SoftwareManager::getInstance()->get("WaterdogPE");
+            $downloadNewest = false;
+            $size = NetUtils::fileSize($software->getUrl());
+            if ($size !== $software->getFileSize()) {
+                CloudLogger::get()->warn("§cYour version of §bWaterdogPE §cis outdated!");
+                if (MainConfig::getInstance()->isExecuteUpdates()) {
+                    CloudLogger::get()->warn("§bDownloading §rthe newest version...");
+                    $downloadNewest = true;
+                } else CloudLogger::get()->warn("§cPlease install the newest version from §8'§bhttps://github.com/WaterdogPE/WaterdogPE/releases/latest§8'§c!");
+            }
+
+            if ($downloadNewest) {
+                SoftwareManager::getInstance()->removeAndDownload($software);
+            }
+        } catch (Exception $e) {
+            CloudLogger::get()->exception($e);
+        }
+    }
+
     public function isOutdated(): ?bool {
         return $this->data["outdated"] ?? null;
     }
@@ -233,6 +261,10 @@ final class UpdateChecker {
 
     public function getData(): array {
         return $this->data;
+    }
+
+    public function isUpdating(): bool {
+        return $this->updating;
     }
 
     public static function getInstance(): self {

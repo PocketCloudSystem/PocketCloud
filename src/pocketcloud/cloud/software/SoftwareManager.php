@@ -29,10 +29,10 @@ final class SoftwareManager {
 
     public function download(Software $software): void {
         $temporaryLogger = CloudLogger::temp(false);
-        $temporaryLogger->info("Start downloading software: %s (%s)", $software->getName(), $software->getUrl());
+        $temporaryLogger->info("Starting the download of software: %s (%s)", $software->getName(), $software->getUrl());
         $result = NetUtils::download($software->getUrl(), SOFTWARE_PATH . $software->getFileName());
         if (!$result) {
-            $temporaryLogger->warn("Failed to downloaded software: %s", $software->getName());
+            $temporaryLogger->warn("Failed to download software: %s", $software->getName());
             return;
         }
 
