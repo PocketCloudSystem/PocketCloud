@@ -39,6 +39,11 @@ final class SoftwareManager {
         $temporaryLogger->success("Successfully downloaded software: %s (%s)", $software->getName(), SOFTWARE_PATH . $software->getFileName());
     }
 
+    public function removeAndDownload(Software $software): void {
+        if (file_exists(SOFTWARE_PATH . $software->getFileName())) @unlink(SOFTWARE_PATH . $software->getFileName());
+        $this->download($software);
+    }
+
     public function check(Software $software): bool {
         return file_exists(SOFTWARE_PATH . $software->getFileName());
     }

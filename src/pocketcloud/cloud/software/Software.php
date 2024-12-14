@@ -12,6 +12,13 @@ final readonly class Software {
         private array $aliases
     ) {}
 
+    public function getFileSize(): ?int {
+        if (file_exists(SOFTWARE_PATH . $this->fileName)) {
+            return filesize(SOFTWARE_PATH . $this->fileName);
+        }
+        return null;
+    }
+
     public function getName(): string {
         return $this->name;
     }

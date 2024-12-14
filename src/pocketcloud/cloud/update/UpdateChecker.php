@@ -24,8 +24,10 @@ final class UpdateChecker {
 
     public function check(): void {
         $this->checkCloud();
-        $this->checkPlugin();
+        $this->checkServerPlugin();
+        $this->checkProxyPlugin();
         $this->checkServerSoftware();
+        $this->checkProxySoftware();
     }
 
     private function checkCloud(): void {
@@ -95,7 +97,7 @@ final class UpdateChecker {
         });
     }
 
-    private function checkPlugin(): void {
+    private function checkServerPlugin(): void {
         try {
             $downloadNewest = false;
             $ch = curl_init("https://api.github.com/repos/PocketCloudSystem/CloudBridge/releases/latest");
@@ -135,6 +137,78 @@ final class UpdateChecker {
         }
     }
 
+    private function checkProxyPlugin(): void {
+        try {
+            $downloadNewest = false;
+            $ch = curl_init("https://api.github.com/repos/PocketCloudSystem/CloudBridge-Proxy/releases/latest");
+            curl_setopt_array($ch, [
+                    CURLOPT_SSL_VERIFYPEER => false,
+                    CURLOPT_SSL_VERIFYHOST => false,
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_HEADER => false,
+                    CURLOPT_USERAGENT => "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1)"
+                ]
+            );
+
+            $result = curl_exec($ch);
+            $data = json_decode($result, true, flags: JSON_THROW_ON_ERROR);
+            if (is_array($data) && isset($data["assets"]) && is_array($data["assets"])) {
+                foreach ($data["assets"] as $asset) {
+                    if (isset($asset["name"]) && isset($asset["size"])) {
+                        if ($asset["name"] == "CloudBridge.jar" && ($size = filesize(PROXY_PLUGINS_PATH . "CloudBridge.jar")) > 0) {
+                            if ($asset["size"] !== $size) {
+                                $downloadNewest = true;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if ($downloadNewest) {
+                @unlink(PROXY_PLUGINS_PATH . "CloudBridge.jar");
+                Utils::downloadPlugins();
+            }
+        } catch (Exception $e) {
+            CloudLogger::get()->exception($e);
+        }
+    }
+
+    private function checkProxySoftware(): void {
+        try {
+            $software = SoftwareManager::getInstance()->get("WaterdogPE");
+            $downloadNewest = false;
+            $ch = curl_init("https://api.github.com/repos/WaterdogPE/WaterdogPE/releases/latest");
+            curl_setopt_array($ch, [
+                    CURLOPT_SSL_VERIFYPEER => false,
+                    CURLOPT_SSL_VERIFYHOST => false,
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_HEADER => false,
+                    CURLOPT_USERAGENT => "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1)"
+                ]
+            );
+
+            $result = curl_exec($ch);
+            $data = json_decode($result, true, flags: JSON_THROW_ON_ERROR);
+            if (is_array($data) && isset($data["assets"]) && is_array($data["assets"])) {
+                foreach ($data["assets"] as $asset) {
+                    if (isset($asset["name"]) && isset($asset["size"])) {
+                        if ($asset["name"] == "Waterdog.jar" && $software->getFileSize() !== null) {
+                            if ($asset["size"] !== $software->getFileSize()) {
+                                $downloadNewest = true;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if ($downloadNewest) {
+                SoftwareManager::getInstance()->removeAndDownload($software);
+            }
+        } catch (Exception $e) {
+            CloudLogger::get()->exception($e);
+        }
+    }
+
     private function checkServerSoftware(): void {
         try {
             $downloadNewest = false;
@@ -163,7 +237,7 @@ final class UpdateChecker {
             }
 
             if ($downloadNewest) {
-                SoftwareManager::getInstance()->download(SoftwareManager::getInstance()->get("PocketMine-MP"));
+                SoftwareManager::getInstance()->removeAndDownload(SoftwareManager::getInstance()->get("PocketMine-MP"));
             }
         } catch (Exception $e) {
             CloudLogger::get()->exception($e);
