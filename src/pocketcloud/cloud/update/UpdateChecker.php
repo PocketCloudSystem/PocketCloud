@@ -27,7 +27,6 @@ final class UpdateChecker {
         $this->checkServerPlugin();
         $this->checkProxyPlugin();
         $this->checkServerSoftware();
-        $this->checkProxySoftware();
     }
 
     private function checkCloud(): void {
@@ -157,7 +156,11 @@ final class UpdateChecker {
                     if (isset($asset["name"]) && isset($asset["size"])) {
                         if ($asset["name"] == "CloudBridge.jar" && ($size = filesize(PROXY_PLUGINS_PATH . "CloudBridge.jar")) > 0) {
                             if ($asset["size"] !== $size) {
-                                $downloadNewest = true;
+                                CloudLogger::get()->warn("§cYour version of the §bCloudBridge-Proxy §cis outdated!");
+                                if (MainConfig::getInstance()->isExecuteUpdates()) {
+                                    CloudLogger::get()->warn("§bDownloading §rthe newest version...");
+                                    $downloadNewest = true;
+                                } else CloudLogger::get()->warn("§cPlease install the newest version from §8'§bhttps://github.com/PocketCloudSystem/CloudBridge-Proxy/releases/latest§8'§c!");
                             }
                         }
                     }
@@ -167,42 +170,6 @@ final class UpdateChecker {
             if ($downloadNewest) {
                 @unlink(PROXY_PLUGINS_PATH . "CloudBridge.jar");
                 Utils::downloadPlugins();
-            }
-        } catch (Exception $e) {
-            CloudLogger::get()->exception($e);
-        }
-    }
-
-    private function checkProxySoftware(): void {
-        try {
-            $software = SoftwareManager::getInstance()->get("WaterdogPE");
-            $downloadNewest = false;
-            $ch = curl_init("https://api.github.com/repos/WaterdogPE/WaterdogPE/releases/latest");
-            curl_setopt_array($ch, [
-                    CURLOPT_SSL_VERIFYPEER => false,
-                    CURLOPT_SSL_VERIFYHOST => false,
-                    CURLOPT_RETURNTRANSFER => true,
-                    CURLOPT_HEADER => false,
-                    CURLOPT_USERAGENT => "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1)"
-                ]
-            );
-
-            $result = curl_exec($ch);
-            $data = json_decode($result, true, flags: JSON_THROW_ON_ERROR);
-            if (is_array($data) && isset($data["assets"]) && is_array($data["assets"])) {
-                foreach ($data["assets"] as $asset) {
-                    if (isset($asset["name"]) && isset($asset["size"])) {
-                        if ($asset["name"] == "Waterdog.jar" && $software->getFileSize() !== null) {
-                            if ($asset["size"] !== $software->getFileSize()) {
-                                $downloadNewest = true;
-                            }
-                        }
-                    }
-                }
-            }
-
-            if ($downloadNewest) {
-                SoftwareManager::getInstance()->removeAndDownload($software);
             }
         } catch (Exception $e) {
             CloudLogger::get()->exception($e);
