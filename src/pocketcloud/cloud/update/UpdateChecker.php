@@ -18,14 +18,9 @@ final class UpdateChecker {
     use SingletonTrait;
 
     private array $data = [];
-    private bool $updating = false;
 
     public function __construct() {
         self::setInstance($this);
-    }
-
-    public function setUpdating(bool $updating): void {
-        $this->updating = $updating;
     }
 
     public function check(): void {
@@ -261,10 +256,6 @@ final class UpdateChecker {
 
     public function getData(): array {
         return $this->data;
-    }
-
-    public function isUpdating(): bool {
-        return $this->updating;
     }
 
     public static function getInstance(): self {
