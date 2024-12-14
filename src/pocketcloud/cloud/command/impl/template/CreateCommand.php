@@ -3,6 +3,7 @@
 namespace pocketcloud\cloud\command\impl\template;
 
 use pocketcloud\cloud\command\argument\def\StringArgument;
+use pocketcloud\cloud\command\argument\def\StringEnumArgument;
 use pocketcloud\cloud\command\Command;
 use pocketcloud\cloud\command\sender\ICommandSender;
 use pocketcloud\cloud\setup\impl\TemplateSetup;
@@ -19,6 +20,13 @@ final class CreateCommand extends Command {
             "name",
             true
         ));
+
+        $this->addParameter(new StringEnumArgument(
+            "type",
+            ["server", "proxy"],
+            false,
+            true
+        ));
     }
 
     public function run(ICommandSender $sender, string $label, array $args): bool {
@@ -29,7 +37,7 @@ final class CreateCommand extends Command {
         } else {
             if (!TemplateManager::getInstance()->check($name)) {
                 $templateType = TemplateType::SERVER();
-                if (isset($args[1])) $templateType = TemplateType::get($args[1]) ?? TemplateType::SERVER();
+                if (isset($args["type"])) $templateType = TemplateType::get($args["type"]) ?? TemplateType::SERVER();
 
                 TemplateManager::getInstance()->create(Template::create($name, TemplateSettings::create(false, true, false, 20, 0, 2, 100, false), $templateType));
             } else $sender->error("The template already exists!");
