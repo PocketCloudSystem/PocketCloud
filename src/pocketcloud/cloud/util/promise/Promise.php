@@ -14,6 +14,7 @@ final class Promise {
     public function resolve(mixed $result): void {
         if ($this->resolved) return;
         $this->result = $result;
+        $this->resolved = true;
         if ($this->success !== null) ($this->success)($this->result);
 
         $this->success = null;

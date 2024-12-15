@@ -4,7 +4,7 @@ namespace pocketcloud\cloud\util;
 
 final class VersionInfo {
 
-    public const VERSION = "3.0.0";
+    public const VERSION = "3.0.1";
     public const DEVELOPERS = ["r3pt1s"];
     public const BETA = false;
 
