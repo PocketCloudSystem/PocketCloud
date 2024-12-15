@@ -5,9 +5,11 @@ namespace pocketcloud\cloud\provider\migration;
 use pocketcloud\cloud\cache\InGameModule;
 use pocketcloud\cloud\group\ServerGroup;
 use pocketcloud\cloud\provider\CloudProvider;
+use pocketcloud\cloud\provider\database\DatabaseTables;
 use pocketcloud\cloud\template\Template;
 use pocketcloud\cloud\terminal\log\CloudLogger;
 use pocketcloud\cloud\util\FileUtils;
+use r3pt1s\mysql\query\QueryBuilder;
 
 final class JsonToMySqlMigrator implements IMigrator {
 
@@ -56,7 +58,11 @@ final class JsonToMySqlMigrator implements IMigrator {
                     default => null
                 };
                 foreach ($list as $module => $enabled) {
-                    if (($module = $convertOldName($module)) !== null) CloudProvider::current()->setModuleState($module, $enabled);
+                    if (($module = $convertOldName($module)) !== null) {
+                        QueryBuilder::table(DatabaseTables::MODULES)
+                            ->insert([$module => $enabled])
+                            ->execute();
+                    }
                 }
             }
         }
