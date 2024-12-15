@@ -6,7 +6,7 @@ final class VersionInfo {
 
     public const VERSION = "3.0.0";
     public const DEVELOPERS = ["r3pt1s"];
-    public const BETA = true;
+    public const BETA = false;
 
     public static function getVersion(): int {
         return self::VERSION;
