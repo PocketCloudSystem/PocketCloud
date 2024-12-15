@@ -178,7 +178,7 @@ final class CloudMySqlProvider extends CloudProvider {
         $promise = new Promise();
 
         DatabaseQueries::getModuleState($module)
-            ->execute(fn(?bool $enabled) => $promise->resolve($enabled ?? false));
+            ->execute(fn(array $result) => $promise->resolve($result["enabled"] == 1));
 
         return $promise;
     }
