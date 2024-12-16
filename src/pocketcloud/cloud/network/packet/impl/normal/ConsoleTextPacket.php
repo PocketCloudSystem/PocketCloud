@@ -40,6 +40,7 @@ final class ConsoleTextPacket extends CloudPacket {
         else if ($this->logType === LogType::DEBUG()) CloudLogger::get()->debug($this->text, true);
         else if ($this->logType === LogType::WARN()) CloudLogger::get()->warn($this->text);
         else if ($this->logType === LogType::ERROR()) CloudLogger::get()->error($this->text);
+        else if ($this->logType === LogType::SUCCESS()) CloudLogger::get()->success($this->text);
     }
 
     public static function create(string $text = "", ?LogType $logType = null): self {
