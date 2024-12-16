@@ -8,6 +8,8 @@ use pocketcloud\cloud\event\impl\server\ServerSaveEvent;
 use pocketcloud\cloud\event\impl\server\ServerSendCommandEvent;
 use pocketcloud\cloud\event\impl\server\ServerStartFailEvent;
 use pocketcloud\cloud\event\impl\server\ServerTimeOutEvent;
+use pocketcloud\cloud\group\ServerGroup;
+use pocketcloud\cloud\group\ServerGroupManager;
 use pocketcloud\cloud\network\client\ServerClientCache;
 use pocketcloud\cloud\network\packet\impl\normal\CommandSendPacket;
 use pocketcloud\cloud\network\packet\impl\normal\ProxyRegisterServerPacket;
@@ -64,7 +66,7 @@ final class CloudServerManager implements Tickable {
 
     public function stop(Template|CloudServer|string $object, bool $force = false): bool {
         $object = is_string($object) ? (
-            $this->get($object) ?? TemplateManager::getInstance()->get($object)
+            $this->get($object) ?? (TemplateManager::getInstance()->get($object) ?? ServerGroupManager::getInstance()->get($object))
         ) : $object;
 
         if ($object instanceof Template) {
@@ -72,6 +74,11 @@ final class CloudServerManager implements Tickable {
             return true;
         } else if ($object instanceof CloudServer) {
             $object->stop($force);
+            return true;
+        } else if ($object instanceof ServerGroup) {
+            foreach ($object->getTemplates() as $template) {
+                if (($template = TemplateManager::getInstance()->get($template)) !== null) foreach ($this->getAll($template) as $server) $this->stop($server, $force);
+            }
             return true;
         }
 
