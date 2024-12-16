@@ -19,7 +19,7 @@ trait EnumTrait {
 
     final public static function get(string $name): mixed {
         self::check();
-        return self::$members[strtolower($name)] ?? null;
+        return self::$members[strtoupper($name)] ?? null;
     }
 
     private static function check(): void {

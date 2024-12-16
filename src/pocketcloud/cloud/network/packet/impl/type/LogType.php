@@ -9,6 +9,7 @@ use pocketcloud\cloud\util\enum\EnumTrait;
  * @method static LogType DEBUG()
  * @method static LogType WARN()
  * @method static LogType ERROR()
+ * @method static LogType SUCCESS()
  */
 final class LogType {
     use EnumTrait;
@@ -18,6 +19,7 @@ final class LogType {
         self::register("debug", new LogType("DEBUG"));
         self::register("warn", new LogType("WARN"));
         self::register("error", new LogType("ERROR"));
+        self::register("success", new LogType("SUCCESS"));
     }
 
     public function __construct(private readonly string $name) {}
