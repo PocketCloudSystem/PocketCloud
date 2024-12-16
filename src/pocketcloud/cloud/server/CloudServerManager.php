@@ -64,7 +64,7 @@ final class CloudServerManager implements Tickable {
         return $startedServers;
     }
 
-    public function stop(Template|CloudServer|string $object, bool $force = false): bool {
+    public function stop(Template|CloudServer|ServerGroup|string $object, bool $force = false): bool {
         $object = is_string($object) ? (
             $this->get($object) ?? (TemplateManager::getInstance()->get($object) ?? ServerGroupManager::getInstance()->get($object))
         ) : $object;
