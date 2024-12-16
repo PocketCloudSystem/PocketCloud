@@ -4,6 +4,7 @@ namespace pocketcloud\cloud\command\impl\server;
 
 use pocketcloud\cloud\command\argument\def\MultipleTypesArgument;
 use pocketcloud\cloud\command\argument\def\ServerArgument;
+use pocketcloud\cloud\command\argument\def\ServerGroupArgument;
 use pocketcloud\cloud\command\argument\def\StringEnumArgument;
 use pocketcloud\cloud\command\argument\def\TemplateArgument;
 use pocketcloud\cloud\command\Command;
@@ -20,6 +21,7 @@ final class StopCommand extends Command {
             [
                 new ServerArgument("server", false),
                 new TemplateArgument("template", false),
+                new ServerGroupArgument("group", false),
                 new StringEnumArgument("all", ["all"], false, false)
             ],
             false,
