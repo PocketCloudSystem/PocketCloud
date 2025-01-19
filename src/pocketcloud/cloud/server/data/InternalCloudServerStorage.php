@@ -22,10 +22,8 @@ final class InternalCloudServerStorage {
     }
 
     public function set(string $k, mixed $v): self {
-        if (!isset($this->storage[$k])) {
-            $this->storage[$k] = $v;
-            $this->outgoingSync();
-        }
+        $this->storage[$k] = $v;
+        $this->outgoingSync();
         return $this;
     }
 
