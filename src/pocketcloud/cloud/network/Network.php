@@ -89,6 +89,7 @@ final class Network extends Thread {
             (new NetworkBindEvent($this->address))->call();
             socket_set_option($this->socket, SOL_SOCKET, SO_SNDBUF, 1024 * 1024 * 8);
             socket_set_option($this->socket, SOL_SOCKET, SO_RCVBUF, 1024 * 1024 * 8);
+            socket_set_block($this->socket);
         } else return false;
         return true;
     }

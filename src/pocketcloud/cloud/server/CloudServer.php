@@ -2,6 +2,7 @@
 
 namespace pocketcloud\cloud\server;
 
+use Closure;
 use pocketcloud\cloud\event\impl\server\ServerStartEvent;
 use pocketcloud\cloud\event\impl\server\ServerStopEvent;
 use pocketcloud\cloud\group\ServerGroupManager;
@@ -168,6 +169,16 @@ class CloudServer {
 
     public function sendPacket(CloudPacket $packet): bool {
         return ServerClientCache::getInstance()->get($this)?->sendPacket($packet) ?? false;
+    }
+
+    /**
+     * @param CloudPacket $packet
+     * @param int $ticks delay in ticks (20 = 1s)
+     * @param Closure|null $onSend function(ServerClient $client, CloudPacket $packet, bool $success): void {}
+     * @return void
+     */
+    public function sendDelayedPacket(CloudPacket $packet, int $ticks, ?Closure $onSend = null): void {
+        ServerClientCache::getInstance()->get($this)?->sendDelayedPacket($packet, $ticks, $onSend);
     }
 
     public function getCloudPlayer(string $name): ?CloudPlayer {
