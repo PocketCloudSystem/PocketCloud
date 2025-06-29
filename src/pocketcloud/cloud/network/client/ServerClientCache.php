@@ -8,8 +8,9 @@ use pocketcloud\cloud\server\CloudServerManager;
 use pocketcloud\cloud\terminal\log\CloudLogger;
 use pocketcloud\cloud\util\net\Address;
 use pocketcloud\cloud\util\SingletonTrait;
+use pocketcloud\cloud\util\tick\Tickable;
 
-final class ServerClientCache {
+final class ServerClientCache implements Tickable {
     use SingletonTrait;
 
     /** @var array<ServerClient> */
@@ -42,6 +43,23 @@ final class ServerClientCache {
 
     public function pick(Closure $conditionClosure): array {
         return array_filter($this->clients, $conditionClosure);
+    }
+
+    public function tick(int $currentTick): void {
+        $clientsWithDelayedPackets = array_filter($this->clients, fn(ServerClient $client) => count($client->getDelayedPackets()) > 0);
+        if (count($clientsWithDelayedPackets) == 0) return;
+        foreach ($clientsWithDelayedPackets as $client) {
+            foreach ($client->getDelayedPackets() as $i => $data) {
+                $packet = $data[0];
+                $tick = $data[1];
+                if ($tick <= $currentTick) {
+                    $sendClosure = $data[2] ?? null;
+                    $success = $client->sendPacket($packet);
+                    if ($sendClosure !== null) ($sendClosure)($client, $packet, $success);
+                    $client->unsetDelayedPacket($i);
+                }
+            }
+        }
     }
 
     public function get(CloudServer $server): ?ServerClient {

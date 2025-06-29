@@ -16,6 +16,7 @@ final class ServerGroupManager {
 
     /** @var array<ServerGroup> */
     private array $serverGroups = [];
+    private bool $loaded = false;
 
     public function __construct() {
         self::setInstance($this);
@@ -23,7 +24,10 @@ final class ServerGroupManager {
 
     public function load(): void {
         CloudProvider::current()->getServerGroups()
-            ->then(fn(array $serverGroups) => $this->serverGroups = $serverGroups);
+            ->then(function (array $serverGroups): void {
+                $this->serverGroups = $serverGroups;
+                $this->loaded = true;
+            });
     }
 
     public function create(ServerGroup $serverGroup): void {
@@ -78,6 +82,10 @@ final class ServerGroupManager {
         }
 
         return null;
+    }
+
+    public function isLoaded(): bool {
+        return $this->loaded;
     }
 
     public function getAll(): array {

@@ -10,6 +10,7 @@ use pocketcloud\cloud\exception\ExceptionHandler;
 use pocketcloud\cloud\http\HttpServer;
 use pocketcloud\cloud\library\LibraryManager;
 use pocketcloud\cloud\loader\ClassLoader;
+use pocketcloud\cloud\network\client\ServerClientCache;
 use pocketcloud\cloud\network\Network;
 use pocketcloud\cloud\plugin\CloudPluginManager;
 use pocketcloud\cloud\scheduler\AsyncPool;
@@ -134,6 +135,7 @@ final class PocketCloud {
         TickableList::add(AsyncPool::getInstance());
         TickableList::add(CloudServerManager::getInstance());
         TickableList::add(TemplateManager::getInstance());
+        TickableList::add(ServerClientCache::getInstance());
 
         $this->network->init();
 

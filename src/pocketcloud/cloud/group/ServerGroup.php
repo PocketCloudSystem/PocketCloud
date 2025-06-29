@@ -16,9 +16,7 @@ final class ServerGroup {
     ) {}
 
     public function copyDataTo(CloudServer $server): void {
-        if ($this->is($server->getTemplate())) {
-            FileUtils::copyDirectory($this->getPath(), $server->getPath());
-        }
+        FileUtils::copyDirectory($this->getPath(), $server->getPath());
     }
 
     public function add(Template $template): void {
