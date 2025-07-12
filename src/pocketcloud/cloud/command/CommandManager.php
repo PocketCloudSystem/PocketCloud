@@ -16,6 +16,7 @@ use pocketcloud\cloud\command\impl\server\ExecuteCommand;
 use pocketcloud\cloud\command\impl\server\SaveCommand;
 use pocketcloud\cloud\command\impl\server\StartCommand;
 use pocketcloud\cloud\command\impl\server\StopCommand;
+use pocketcloud\cloud\command\impl\StatusCommand;
 use pocketcloud\cloud\command\impl\template\CreateCommand;
 use pocketcloud\cloud\command\impl\template\EditCommand;
 use pocketcloud\cloud\command\impl\template\MaintenanceCommand;
@@ -39,6 +40,7 @@ final class CommandManager {
         $this->register(new ListCommand());
         $this->register(new VersionCommand());
         $this->register(new ConfigureCommand());
+        $this->register(new StatusCommand());
 
         $this->register(new StartCommand());
         $this->register(new StopCommand());
