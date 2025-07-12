@@ -2,7 +2,11 @@
 
 namespace pocketcloud\cloud\util;
 
+use pocketcloud\cloud\config\impl\MainConfig;
+use pocketcloud\cloud\player\CloudPlayerManager;
+use pocketcloud\cloud\server\CloudServerManager;
 use pocketcloud\cloud\terminal\log\CloudLogger;
+use pocketcloud\cloud\thread\ThreadManager;
 use pocketcloud\cloud\util\net\NetUtils;
 use Throwable;
 
@@ -17,11 +21,10 @@ final class Utils {
         if (!flock($file, LOCK_EX | LOCK_NB)) {
             flock($file, LOCK_SH);
             $processId = stream_get_contents($file);
-            if(preg_match('/^\d+$/', $processId) === 1) {
-                $pid = $processId;
-            }
+            if (preg_match('/^\d+$/', $processId) === 1) $pid = $processId;
             return true;
         }
+
         return false;
     }
 
@@ -80,6 +83,15 @@ final class Utils {
     public static function cleanPath(string $path, bool $removePath = false): string {
         if ($removePath) return ($explode = explode(DIRECTORY_SEPARATOR, str_replace(["\\", "//", "/"], DIRECTORY_SEPARATOR, $path)))[count($explode) - 1];
         return str_replace(CLOUD_PATH, rtrim(str_replace("pocketcloud", "pcsrc", basename(CLOUD_PATH)), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR, $path);
+    }
+
+    public static function readCloudPerformanceStatus(): array {
+        $threadCount = count($threads = ThreadManager::getInstance()->getAll());
+        $memoryLimit = MainConfig::getInstance()->getMemoryLimit();
+        [$mainMemory, $mainMemoryPeak] = [memory_get_usage(), memory_get_peak_usage()];
+        [$mainMemorySys, $mainMemorySysPeak] = [memory_get_usage(true), memory_get_peak_usage(true)];
+        [$serverCount, $playerCount] = [count(CloudServerManager::getInstance()->getAll()), count(CloudPlayerManager::getInstance()->getAll())];
+        return [$threadCount, $threads, $mainMemory, $mainMemoryPeak, $mainMemorySys, $mainMemorySysPeak, $memoryLimit, $serverCount, $playerCount];
     }
 
     public static function generateString(int $length = 5): string {

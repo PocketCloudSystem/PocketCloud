@@ -2,7 +2,6 @@
 
 namespace pocketcloud\cloud\network\packet\impl\type;
 
-use pocketcloud\cloud\config\impl\MainConfig;
 use pocketcloud\cloud\language\Language;
 use pocketcloud\cloud\network\client\ServerClient;
 use pocketcloud\cloud\network\client\ServerClientCache;

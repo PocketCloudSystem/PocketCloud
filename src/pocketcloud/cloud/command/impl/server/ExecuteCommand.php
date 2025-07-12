@@ -7,6 +7,7 @@ use pocketcloud\cloud\command\argument\def\StringArgument;
 use pocketcloud\cloud\command\Command;
 use pocketcloud\cloud\command\sender\ICommandSender;
 use pocketcloud\cloud\network\packet\impl\type\CommandExecutionResult;
+use pocketcloud\cloud\server\CloudServer;
 use pocketcloud\cloud\server\CloudServerManager;
 
 final class ExecuteCommand extends Command {
@@ -28,16 +29,17 @@ final class ExecuteCommand extends Command {
     }
 
     public function run(ICommandSender $sender, string $label, array $args): bool {
+        /** @var CloudServer $server */
         $server = $args["server"];
         $command = $args["command"];
 
         CloudServerManager::getInstance()->send($server, $command)->then(function(CommandExecutionResult $result) use($server, $sender): void {
-            $server->getCloudServerStorage()->remove("command_promise")->remove("command_promise_time");
+            $server->getInternalCloudServerStorage()->remove("command_promise")->remove("command_promise_time");
             $sender->success("The command was successfully handled by the server, response:");
             if (empty($result->getMessages())) $sender->info("§c/");
             else foreach ($result->getMessages() as $message) $sender->info("§b" . $server->getName() . "§8: §r" . $message);
         })->failure(function() use($server, $sender): void {
-            $server->getCloudServerStorage()->remove("command_promise")->remove("command_promise_time");
+            $server->getInternalCloudServerStorage()->remove("command_promise")->remove("command_promise_time");
             $sender->error("The command could not be handled by the server.");
         });
         return true;

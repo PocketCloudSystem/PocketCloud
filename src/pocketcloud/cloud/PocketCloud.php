@@ -41,6 +41,7 @@ final class PocketCloud {
 
     private bool $running = true;
     private int $tick = 0;
+    private float $startTime = 0;
 
     private SleeperHandler $sleeperHandler;
     private Terminal $terminal;
@@ -122,7 +123,7 @@ final class PocketCloud {
     public function start(): void {
         ini_set("memory_limit", ($memory = MainConfig::getInstance()->getMemoryLimit()) > 0 ? $memory . "M" : "-1");
         CloudLogger::get()->info("The §bCloud §ris §astarting§r...");
-        $startTime = microtime(true);
+        $this->startTime = microtime(true);
 
         $this->network = new Network(new Address("127.0.0.1", MainConfig::getInstance()->getNetworkPort()));
         $this->httpServer = new HttpServer(new Address("127.0.0.1", MainConfig::getInstance()->getHttpServerPort()));
@@ -147,7 +148,7 @@ final class PocketCloud {
             UpdateChecker::getInstance()->check();
         }
 
-        $startedTime = (microtime(true) - $startTime);
+        $startedTime = (microtime(true) - $this->startTime);
         (new CloudStartedEvent($startedTime))->call();
         CloudLogger::get()->success("§bCloud §rhas been §astarted§r. §8(§rTook §b" . number_format($startedTime, 3) . "s§8)");
         if (count(TemplateManager::getInstance()->getAll()) == 0 && FIRST_RUN) {
@@ -186,6 +187,11 @@ final class PocketCloud {
         TerminalUtils::kill(getmypid());
     }
 
+    public function getUptime(): float {
+        if ($this->startTime <= 0) return 0;
+        return microtime(true) - $this->startTime;
+    }
+
     public function getHttpServer(): HttpServer {
         return $this->httpServer;
     }
@@ -204,6 +210,10 @@ final class PocketCloud {
 
     public function getClassLoader(): ClassLoader {
         return $this->classLoader;
+    }
+
+    public function getStartTime(): float {
+        return $this->startTime;
     }
 
     public function getTick(): int {
