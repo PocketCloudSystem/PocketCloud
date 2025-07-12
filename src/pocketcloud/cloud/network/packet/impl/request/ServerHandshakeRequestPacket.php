@@ -6,7 +6,6 @@ use pocketcloud\cloud\network\client\ServerClient;
 use pocketcloud\cloud\network\client\ServerClientCache;
 use pocketcloud\cloud\network\Network;
 use pocketcloud\cloud\network\packet\data\PacketData;
-use pocketcloud\cloud\network\packet\impl\normal\KeepAlivePacket;
 use pocketcloud\cloud\network\packet\impl\normal\ServerSyncPacket;
 use pocketcloud\cloud\network\packet\impl\response\ServerHandshakeResponsePacket;
 use pocketcloud\cloud\network\packet\impl\type\VerifyStatus;
