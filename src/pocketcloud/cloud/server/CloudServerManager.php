@@ -183,7 +183,7 @@ final class CloudServerManager implements Tickable {
             if ($server->getInternalCloudServerStorage()->has("command_promise_time")) {
                 $promise = $server->getInternalCloudServerStorage()->get("command_promise");
                 if ($promise instanceof Promise) {
-                    if (($server->getInternalCloudServerStorage()->get("command_promise_time") + ServerUtils::TIMEOUT_SERVER) <= time()) {
+                    if (($server->getInternalCloudServerStorage()->get("command_promise_time") + TemplateType::SERVER()->getServerTimeout()) <= time()) {
                         $promise->reject();
                         $server->getInternalCloudServerStorage()->remove("command_promise")->remove("command_promise_time");
                     }
@@ -192,8 +192,8 @@ final class CloudServerManager implements Tickable {
 
             if ($server->getServerStatus() === ServerStatus::STARTING()) {
                 $timeout = match ($server->getTemplate()->getTemplateType()->isServer()) {
-                    true => ServerUtils::TIMEOUT_SERVER,
-                    default => ServerUtils::TIMEOUT_PROXY
+                    true => TemplateType::SERVER()->getServerTimeout(),
+                    default => TemplateType::PROXY()->getServerTimeout()
                 };
 
                 if (($server->getStartTime() + $timeout) <= time()) {

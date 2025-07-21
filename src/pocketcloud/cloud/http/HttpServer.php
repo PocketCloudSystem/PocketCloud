@@ -39,10 +39,37 @@ final class HttpServer extends Thread {
     public function onRun(): void {
         while ($this->connected) {
             if ($c = $this->accept()) {
-                if ($buffer = $c->read(self::REQUEST_READ_LENGTH)) {
-                    $this->buffer[] = new UnhandledHttpRequest($buffer, $c);
-                    $this->entry->createNotifier()->wakeupSleeper();
+                // thanks JS `fetch` and shoutout to my bro ChatGPT for fixing this shit
+                $request = "";
+                $contentLength = 0;
+                $body = "";
+                $rawHeaders = "";
+
+                while (($chunk = $c->read(self::REQUEST_READ_LENGTH))) {
+                    $request .= $chunk;
+                    if (($pos = strpos($request, "\r\n\r\n")) !== false) {
+                        $rawHeaders = substr($request, 0, $pos);
+                        $bodyStart = substr($request, $pos + 4);
+
+                        if (preg_match('/content-length:\s*(\d+)/i', $rawHeaders, $m)) {
+                            $contentLength = (int)$m[1];
+                        }
+
+                        $body .= $bodyStart;
+                        break;
+                    }
                 }
+
+                $remaining = $contentLength - strlen($body);
+                while ($remaining > 0 && ($chunk = $c->read($remaining))) {
+                    $body .= $chunk;
+                    $remaining -= strlen($chunk);
+                }
+
+                $fullRequest = $rawHeaders . "\r\n\r\n" . $body;
+
+                $this->buffer[] = new UnhandledHttpRequest($fullRequest, $c);
+                $this->entry->createNotifier()->wakeupSleeper();
             }
         }
     }

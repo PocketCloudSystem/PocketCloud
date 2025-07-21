@@ -12,7 +12,8 @@ use pocketcloud\cloud\util\FileUtils;
 
 final class ServerUtils {
 
-    public const TIMEOUT_SERVER = 10;
+    public const DEFAULT_TIMEOUT = 20;
+    public const TIMEOUT_SERVER = 20;
     public const TIMEOUT_PROXY = 25;
 
     public const PROPERTY_KEYS = [
