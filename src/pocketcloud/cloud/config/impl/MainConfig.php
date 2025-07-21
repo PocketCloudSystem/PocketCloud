@@ -5,6 +5,7 @@ namespace pocketcloud\cloud\config\impl;
 use configlib\Configuration;
 use pocketcloud\cloud\exception\ExceptionHandler;
 use pocketcloud\cloud\provider\CloudProvider;
+use pocketcloud\cloud\server\util\ServerUtils;
 use pocketcloud\cloud\util\SingletonTrait;
 use pocketcloud\cloud\util\Utils;
 
@@ -50,6 +51,11 @@ final class MainConfig extends Configuration {
         "proxy" => "java -jar %SOFTWARE_PATH%Waterdog.jar"
     ];
 
+    private array $serverTimeouts = [
+        "server" => 15,
+        "proxy" => 20
+    ];
+
     public function __construct() {
         parent::__construct(STORAGE_PATH . "config.json", self::TYPE_JSON);
         self::setInstance($this);
@@ -59,8 +65,10 @@ final class MainConfig extends Configuration {
         $defaultNetwork = $this->network;
         $defaultWeb = $this->web;
         $defaultMySql = $this->mysqlSettings;
+        $defaultStartCommands = $this->startCommands;
+        $defaultServerTimeouts = $this->serverTimeouts;
 
-        ExceptionHandler::tryCatch(function (array $defaultHttp, array $defaultNetwork, array $defaultWeb, array $defaultMySql): void {
+        ExceptionHandler::tryCatch(function (array $defaultHttp, array $defaultNetwork, array $defaultWeb, array $defaultMySql, array $defaultStartCommands, array $defaultServerTimeouts): void {
             $this->load();
             foreach (array_keys($defaultHttp) as $key) {
                 if (!isset($this->httpServer[$key])) $this->httpServer[$key] = $defaultHttp[$key];
@@ -78,12 +86,24 @@ final class MainConfig extends Configuration {
                 if (!isset($this->mysqlSettings[$key])) $this->mysqlSettings[$key] = $defaultMySql[$key];
             }
 
+            foreach (array_keys($defaultStartCommands) as $key) {
+                if (!isset($this->startCommands[$key])) $this->startCommands[$key] = $defaultStartCommands[$key];
+            }
+
+            foreach (array_keys($defaultServerTimeouts) as $key) {
+                if (!isset($this->serverTimeouts[$key])) $this->serverTimeouts[$key] = $defaultServerTimeouts[$key];
+            }
+
+            if (!in_array(strtolower($this->startMethod), ["tmux", "screen"])) {
+                $this->provider = "tmux";
+            }
+
             if (!in_array(strtolower($this->provider), ["mysql", "json"])) {
                 $this->provider = "json";
             }
 
             $this->save();
-        }, "Failed to load main config", null, $defaultHttp, $defaultNetwork, $defaultWeb, $defaultMySql);
+        }, "Failed to load main config", null, $defaultHttp, $defaultNetwork, $defaultWeb, $defaultMySql, $defaultStartCommands, $defaultServerTimeouts);
     }
 
     public function setMemoryLimit(int $memoryLimit): void {
@@ -142,6 +162,14 @@ final class MainConfig extends Configuration {
 
     public function setWebEnabled(bool $value): void {
         $this->web["enabled"] = $value;
+    }
+
+    public function setStartCommand(string $templateType, string $startCommand): void {
+        $this->startCommands[strtolower($templateType)] = $startCommand;
+    }
+
+    public function setServerTimeouts(string $templateType, int $timeout): void {
+        $this->serverTimeouts[strtolower($templateType)] = $timeout;
     }
 
     public function getMemoryLimit(): int {
@@ -230,5 +258,13 @@ final class MainConfig extends Configuration {
 
     public function getStartCommands(): array {
         return $this->startCommands;
+    }
+
+    public function getServerTimeout(string $templateType): int {
+        return $this->serverTimeouts[strtolower($templateType)] ?? ServerUtils::DEFAULT_TIMEOUT;
+    }
+
+    public function getServerTimeouts(): array {
+        return $this->serverTimeouts;
     }
 }

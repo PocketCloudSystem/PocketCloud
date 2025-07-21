@@ -132,8 +132,8 @@ class CloudServer {
 
     public function checkAlive(): bool {
         $timeout = match ($this->getTemplate()->getTemplateType()->isServer()) {
-            true => ServerUtils::TIMEOUT_SERVER,
-            default => ServerUtils::TIMEOUT_PROXY
+            true => TemplateType::SERVER()->getServerTimeout(),
+            default => TemplateType::PROXY()->getServerTimeout()
         };
 
         if ((time() - $this->startTime) < $timeout) return true;

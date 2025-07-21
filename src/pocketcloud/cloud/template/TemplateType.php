@@ -2,6 +2,7 @@
 
 namespace pocketcloud\cloud\template;
 
+use pocketcloud\cloud\config\impl\MainConfig;
 use pocketcloud\cloud\software\Software;
 use pocketcloud\cloud\software\SoftwareManager;
 use pocketcloud\cloud\util\enum\EnumTrait;
@@ -40,6 +41,10 @@ final class TemplateType {
 
     public function getName(): string {
         return $this->name;
+    }
+
+    public function getServerTimeout(): int {
+        return MainConfig::getInstance()->getServerTimeout($this->name);
     }
 
     public function getSoftware(): Software {
