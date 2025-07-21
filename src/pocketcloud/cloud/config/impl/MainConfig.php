@@ -95,7 +95,7 @@ final class MainConfig extends Configuration {
             }
 
             if (!in_array(strtolower($this->startMethod), ["tmux", "screen"])) {
-                $this->provider = "tmux";
+                $this->startMethod = "tmux";
             }
 
             if (!in_array(strtolower($this->provider), ["mysql", "json"])) {
