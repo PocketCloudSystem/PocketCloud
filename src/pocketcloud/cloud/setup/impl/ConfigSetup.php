@@ -29,18 +29,20 @@ final class ConfigSetup extends Setup {
                 ->default(3656)
                 ->parser(function(string $input): ?int {
                     if (!is_numeric($input)) return null;
-                    return intval($input);
+                    if (($input = intval($input)) > 65535 || $input <= 0) return null;
+                    return $input;
                 })
             ->build(),
             QuestionBuilder::builder()
                 ->key("memoryLimit")
-                ->question("How much memory should be available for the cloud?")
+                ->question("How much memory should be available for the cloud? (in MB)")
                 ->recommendation("512")
                 ->default("512")
                 ->canSkipped(true)
                 ->parser(function(string $input): ?int {
                     if (!is_numeric($input)) return null;
-                    return intval($input);
+                    if (($input = intval($input)) <= 0) return null;
+                    return $input;
                 })
             ->build(),
             QuestionBuilder::builder()
@@ -95,7 +97,44 @@ final class ConfigSetup extends Setup {
                 ->default("8000")
                 ->parser(function(string $input): ?int {
                     if (!is_numeric($input)) return null;
-                    return intval($input);
+                    if (($input = intval($input)) > 65535 || $input <= 0) return null;
+                    return $input;
+                })
+            ->build(),
+            QuestionBuilder::builder()
+                ->key("serverTimeout")
+                ->question("How long until a server timeouts after starting? (in seconds)")
+                ->canSkipped(true)
+                ->default("15")
+                ->recommendation("15")
+                ->parser(function (string $input): ?int {
+                    if (!is_numeric($input)) return null;
+                    if (($input = intval($input)) <= 0) return null;
+                    return $input;
+                })
+            ->build(),
+            QuestionBuilder::builder()
+                ->key("proxyTimeout")
+                ->question("How long until a proxy server timeouts after starting? (in seconds)")
+                ->canSkipped(true)
+                ->default("20")
+                ->recommendation("20")
+                ->parser(function (string $input): ?int {
+                    if (!is_numeric($input)) return null;
+                    if (($input = intval($input)) <= 0) return null;
+                    return $input;
+                })
+            ->build(),
+            QuestionBuilder::builder()
+                ->key("prepareThreads")
+                ->question("How many threads for server creation (copying template data, etc.) do you want to create? (5 is max, recommended if you have many active running servers by default)")
+                ->canSkipped(true)
+                ->default("0")
+                ->recommendation("0")
+                ->parser(function (string $input): ?int {
+                    if (!is_numeric($input)) return null;
+                    if (($input = intval($input)) < 0 || $input > 5) return null;
+                    return $input;
                 })
             ->build(),
             QuestionBuilder::builder()
@@ -126,6 +165,9 @@ final class ConfigSetup extends Setup {
         MainConfig::getInstance()->setStartMethod($results["startMethod"] ?? (ServerUtils::checkTmux() ? "tmux" : "screen"));
         MainConfig::getInstance()->setHttpServerEnabled($results["httpServerEnabled"] ?? true);
         MainConfig::getInstance()->setHttpServerPort($results["httpServerPort"] ?? 8000);
+        MainConfig::getInstance()->setServerTimeouts("server", $results["serverTimeout"] ?? 15);
+        MainConfig::getInstance()->setServerTimeouts("proxy", $results["proxyTimeout"] ?? 20);
+        MainConfig::getInstance()->setServerPrepareThreads($results["prepareThreads"] ?? 0);
         ExceptionHandler::tryCatch(fn() => MainConfig::getInstance()->save(), "Failed to save main config");
     }
 }

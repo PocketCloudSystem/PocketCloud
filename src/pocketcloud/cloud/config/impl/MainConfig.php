@@ -7,7 +7,6 @@ use pocketcloud\cloud\exception\ExceptionHandler;
 use pocketcloud\cloud\PocketCloud;
 use pocketcloud\cloud\provider\CloudProvider;
 use pocketcloud\cloud\server\util\ServerUtils;
-use pocketcloud\cloud\terminal\log\CloudLogger;
 use pocketcloud\cloud\terminal\log\level\CloudLogLevel;
 use pocketcloud\cloud\util\SingletonTrait;
 use pocketcloud\cloud\util\Utils;
