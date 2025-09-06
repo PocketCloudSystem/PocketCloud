@@ -26,10 +26,9 @@ final class ThreadManager extends ThreadSafe {
     }
 
     public function getAll(): array {
-        $array = [];
-        foreach ($this->threads as $key => $thread) $array[$key] = $thread;
-
-        return $array;
+        return array_map(function ($thread) {
+            return $thread;
+        }, (array) $this->threads);
     }
 
     public function stopAll(): int {

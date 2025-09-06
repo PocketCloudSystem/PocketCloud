@@ -137,8 +137,9 @@ final class ServerUtils {
     }
 
     public static function getFreePort(): int {
+        [$start, $end] = array_values(TemplateType::SERVER()->getServerPortRange());
         while (true) {
-            $port = mt_rand(40000, 65535);
+            $port = mt_rand($start ?? 40000, $end ?? 65535);
             $socket = socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
             $state = socket_connect($socket, "127.0.0.1", $port);
 
@@ -151,7 +152,8 @@ final class ServerUtils {
     }
 
     public static function getFreeProxyPort(): int {
-        for ($i = 19132; $i < 20000; $i++) {
+        [$start, $end] = array_values(TemplateType::PROXY()->getServerPortRange());
+        for ($i = ($start ?? 19132); $i < ($end ?? 20000); $i++) {
             if (in_array($i, self::$usedPorts)) {
                 continue;
             } else {

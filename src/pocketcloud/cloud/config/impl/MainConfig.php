@@ -4,8 +4,10 @@ namespace pocketcloud\cloud\config\impl;
 
 use configlib\Configuration;
 use pocketcloud\cloud\exception\ExceptionHandler;
+use pocketcloud\cloud\PocketCloud;
 use pocketcloud\cloud\provider\CloudProvider;
 use pocketcloud\cloud\server\util\ServerUtils;
+use pocketcloud\cloud\terminal\log\level\CloudLogLevel;
 use pocketcloud\cloud\util\SingletonTrait;
 use pocketcloud\cloud\util\Utils;
 
@@ -56,6 +58,19 @@ final class MainConfig extends Configuration {
         "proxy" => 20
     ];
 
+    private array $serverPortRanges = [
+        "server" => [
+            "start" => 40000,
+            "end" => 65535
+        ],
+        "proxy" => [
+            "start" => 19132,
+            "end" => 20000
+        ]
+    ];
+
+    private int $serverPrepareThreads = 0; // By default, we are creating zero threads for that purpose to save some resources. Recommended to use if you've got more than 5 templates or 9 servers running at the same time
+
     public function __construct() {
         parent::__construct(STORAGE_PATH . "config.json", self::TYPE_JSON);
         self::setInstance($this);
@@ -67,8 +82,9 @@ final class MainConfig extends Configuration {
         $defaultMySql = $this->mysqlSettings;
         $defaultStartCommands = $this->startCommands;
         $defaultServerTimeouts = $this->serverTimeouts;
+        $defaultServerPortRanges = $this->serverPortRanges;
 
-        ExceptionHandler::tryCatch(function (array $defaultHttp, array $defaultNetwork, array $defaultWeb, array $defaultMySql, array $defaultStartCommands, array $defaultServerTimeouts): void {
+        ExceptionHandler::tryCatch(function (array $defaultHttp, array $defaultNetwork, array $defaultWeb, array $defaultMySql, array $defaultStartCommands, array $defaultServerTimeouts, array $defaultServerPortRanges): void {
             $this->load();
             foreach (array_keys($defaultHttp) as $key) {
                 if (!isset($this->httpServer[$key])) $this->httpServer[$key] = $defaultHttp[$key];
@@ -102,8 +118,41 @@ final class MainConfig extends Configuration {
                 $this->provider = "json";
             }
 
+            if ($this->serverPrepareThreads < 0) $this->serverPrepareThreads = 0; // If this is 0, server preparing remains inside the main-thread, therefore blocking it during the process
+            else if ($this->serverPrepareThreads > 5) $this->serverPrepareThreads = 5;
+
+            foreach ($this->serverPortRanges as $key => $data) {
+                if (!is_array($data)) $this->serverPortRanges[$key] = [];
+                if (!isset($data["start"])) $this->serverPortRanges[$key]["start"] = mt_rand(40000, 41000);
+                if (!isset($data["end"])) $this->serverPortRanges[$key]["end"] = mt_rand(41000, 42000);
+
+                $start = $this->serverPortRanges[$key]["start"];
+                $end = $this->serverPortRanges[$key]["end"];
+
+                if ($start <= 0 || $end <= 0) {
+                    PocketCloud::getInstance()->notifyOnStart("Invalid port range §8(§b{$start}§8-§b{$end}§8) §rfor server type §8'§b" . $key . "§8'§r: §bStart §7or §bend §7can not be less or equal to §b0§r: §cResetting the entry, please review your config...", CloudLogLevel::WARN());
+                    unset($this->serverPortRanges[$key]);
+                    continue;
+                }
+
+                if ($start > $end) {
+                    PocketCloud::getInstance()->notifyOnStart("Invalid port range §8(§b{$start}§8-§b{$end}§8) §rfor server type §8'§b" . $key . "§8'§r: §bStart §ris §chigher §rthan §bend§r: §cResetting the entry, please review your config...", CloudLogLevel::WARN());
+                    unset($this->serverPortRanges[$key]);
+                    continue;
+                }
+
+                if (($start + 50) > $end) {
+                    PocketCloud::getInstance()->notifyOnStart("Invalid port range §8(§b{$start}§8-§b{$end}§8) §rfor server type §8'§b" . $key . "§8'§r: §bEnd §rneeds to be at least §b50 ports higher §rthan §bstart§r: §cResetting the entry, please review your config...", CloudLogLevel::WARN());
+                    unset($this->serverPortRanges[$key]);
+                }
+            }
+
+            foreach (array_keys($defaultServerPortRanges) as $key) {
+                if (!isset($this->serverPortRanges[$key])) $this->serverPortRanges[$key] = $defaultServerPortRanges[$key];
+            }
+
             $this->save();
-        }, "Failed to load main config", null, $defaultHttp, $defaultNetwork, $defaultWeb, $defaultMySql, $defaultStartCommands, $defaultServerTimeouts);
+        }, "Failed to load main config", fn() => PocketCloud::getInstance()->shutdown(), $defaultHttp, $defaultNetwork, $defaultWeb, $defaultMySql, $defaultStartCommands, $defaultServerTimeouts, $defaultServerPortRanges);
     }
 
     public function setMemoryLimit(int $memoryLimit): void {
@@ -170,6 +219,16 @@ final class MainConfig extends Configuration {
 
     public function setServerTimeouts(string $templateType, int $timeout): void {
         $this->serverTimeouts[strtolower($templateType)] = $timeout;
+    }
+
+    public function setServerPortRange(string $templateType, int $start, int $end): void {
+        $this->serverPortRanges[strtolower($templateType)] = ["start" => $start, "end" => $end];
+    }
+
+    public function setServerPrepareThreads(int $serverPrepareThreads): void {
+        if ($serverPrepareThreads < 0) $serverPrepareThreads = 0;
+        else if ($serverPrepareThreads > 5) $serverPrepareThreads = 5;
+        $this->serverPrepareThreads = $serverPrepareThreads;
     }
 
     public function getMemoryLimit(): int {
@@ -266,5 +325,17 @@ final class MainConfig extends Configuration {
 
     public function getServerTimeouts(): array {
         return $this->serverTimeouts;
+    }
+
+    public function getServerPortRange(string $templateType): ?array {
+        return $this->serverPortRanges[strtolower($templateType)] ?? null;
+    }
+
+    public function getServerPortRanges(): array {
+        return $this->serverPortRanges;
+    }
+
+    public function getServerPrepareThreads(): int {
+        return $this->serverPrepareThreads;
     }
 }

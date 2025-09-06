@@ -32,6 +32,11 @@ final class TemplateManager implements Tickable {
         CloudProvider::current()->getTemplates()
             ->then(function(array $templates): void {
                 $this->templates = $templates;
+
+                if (array_sum(array_map(fn(Template $template) => $template->getSettings()->getMinServerCount(), array_filter($this->templates, fn(Template $template) => $template->getSettings()->isAutoStart()))) >= 9) {
+                    CloudLogger::get()->warn("Your total active server count exceeds §b9§8, §rtherefore you should set §8'§bserverPrepareThreads§8' §rinside your §bconfig.json §rto at least §b1 §ror §b2 §rand restart the the §bcloud§r.");
+                }
+
                 ServerGroupManager::getInstance()->load();
             });
     }

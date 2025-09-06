@@ -15,6 +15,7 @@ use pocketcloud\cloud\network\Network;
 use pocketcloud\cloud\plugin\CloudPluginManager;
 use pocketcloud\cloud\scheduler\AsyncPool;
 use pocketcloud\cloud\server\CloudServerManager;
+use pocketcloud\cloud\server\prepare\ServerPreparator;
 use pocketcloud\cloud\server\util\ServerUtils;
 use pocketcloud\cloud\setup\impl\ConfigSetup;
 use pocketcloud\cloud\setup\impl\TemplateSetup;
@@ -23,6 +24,7 @@ use pocketcloud\cloud\template\Template;
 use pocketcloud\cloud\template\TemplateManager;
 use pocketcloud\cloud\terminal\log\CloudLogger;
 use pocketcloud\cloud\terminal\log\handler\ShutdownHandler;
+use pocketcloud\cloud\terminal\log\level\CloudLogLevel;
 use pocketcloud\cloud\terminal\log\logger\LoggingCache;
 use pocketcloud\cloud\terminal\Terminal;
 use pocketcloud\cloud\thread\ThreadManager;
@@ -42,6 +44,8 @@ final class PocketCloud {
     private bool $running = true;
     private int $tick = 0;
     private float $startTime = 0;
+
+    private array $userNotificationsOnStart = [];
 
     private SleeperHandler $sleeperHandler;
     private Terminal $terminal;
@@ -128,6 +132,8 @@ final class PocketCloud {
         $this->network = new Network(new Address("127.0.0.1", MainConfig::getInstance()->getNetworkPort()));
         $this->httpServer = new HttpServer(new Address("127.0.0.1", MainConfig::getInstance()->getHttpServerPort()));
 
+        ServerPreparator::getInstance()->init();
+
         TemplateManager::getInstance()->load();
         CloudPluginManager::getInstance()->loadAll();
         CloudPluginManager::getInstance()->enableAll();
@@ -151,12 +157,20 @@ final class PocketCloud {
         $startedTime = (microtime(true) - $this->startTime);
         (new CloudStartedEvent($startedTime))->call();
         CloudLogger::get()->success("§bCloud §rhas been §astarted§r. §8(§rTook §b" . number_format($startedTime, 3) . "s§8)");
+
+        foreach ($this->userNotificationsOnStart as $entry) CloudLogger::get()->send($entry[1], $entry[0]);
+        $this->userNotificationsOnStart = [];
+
         if (count(TemplateManager::getInstance()->getAll()) == 0 && FIRST_RUN) {
             CloudLogger::get()->info("No templates found, starting the setup...");
             (new TemplateSetup())->startSetup();
         }
 
         $this->network->start();
+    }
+
+    public function notifyOnStart(string $message, ?CloudLogLevel $logLevel = null): void {
+        $this->userNotificationsOnStart[] = [$message, $logLevel ?? CloudLogLevel::INFO()];
     }
 
     public function tick(): void {
