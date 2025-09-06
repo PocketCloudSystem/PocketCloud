@@ -25,6 +25,8 @@ use pocketcloud\cloud\player\CloudPlayerManager;
 use pocketcloud\cloud\PocketCloud;
 use pocketcloud\cloud\server\data\CloudServerData;
 use pocketcloud\cloud\server\data\InternalCloudServerStorage;
+use pocketcloud\cloud\server\prepare\ServerPreparator;
+use pocketcloud\cloud\server\prepare\ServerPrepareEntry;
 use pocketcloud\cloud\server\util\ServerStatus;
 use pocketcloud\cloud\server\util\ServerUtils;
 use pocketcloud\cloud\template\Template;
@@ -32,6 +34,7 @@ use pocketcloud\cloud\template\TemplateManager;
 use pocketcloud\cloud\template\TemplateType;
 use pocketcloud\cloud\terminal\log\CloudLogger;
 use pocketcloud\cloud\util\FileUtils;
+use pocketcloud\cloud\util\promise\Promise;
 use pocketcloud\cloud\util\terminal\TerminalUtils;
 use pocketcloud\cloud\util\Utils;
 
@@ -54,28 +57,20 @@ class CloudServer {
         $this->startTime = time();
     }
 
-    public function prepare(): void {
-        if (file_exists($this->getPath()) && !$this->getTemplate()->getSettings()->isStatic()) FileUtils::removeDirectory($this->getPath());
-        FileUtils::copyDirectory($this->getTemplate()->getPath(), $this->getPath());
+    public function prepare(): Promise {
+        $promise = new Promise();
+        CloudLogger::get()->info("§rPreparing the server §b" . $this->getName() . "§r...");
 
-        if ($this->getTemplate()->getTemplateType()->isServer()) FileUtils::copyDirectory(SERVER_PLUGINS_PATH, $this->getPath() . "plugins/");
-        else FileUtils::copyDirectory(PROXY_PLUGINS_PATH, $this->getPath() . "plugins/");
+        ServerPreparator::getInstance()->submitEntry(ServerPrepareEntry::fromServer($this), function() use($promise): void {
+            ServerUtils::copyProperties($this);
+            $promise->resolve(true);
+        });
 
-        if (($group = ServerGroupManager::getInstance()->get($this->getTemplate())) !== null) $group->copyDataTo($this);
-
-        if (file_exists($this->getPath() . "server.log") || file_exists($this->getPath() . "logs/server.log")) {
-            unlink(match ($this->getTemplate()->getTemplateType()) {
-                TemplateType::PROXY() => $this->getPath() . "logs/server.log",
-                default => $this->getPath() . "server.log"
-            });
-        }
-
-        ServerUtils::copyProperties($this);
+        return $promise;
     }
 
     public function start(): void {
-        CloudServerManager::getInstance()->add($this);
-
+        CloudServerManager::getInstance()->addToProxies($this);
         (new ServerStartEvent($this))->call();
         CloudLogger::get()->info("§aStarting §b" . $this->getName() . "§r...");
         NotifyType::STARTING()->send(["%server%" => $this->getName()]);

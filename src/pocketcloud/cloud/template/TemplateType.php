@@ -47,6 +47,10 @@ final class TemplateType {
         return MainConfig::getInstance()->getServerTimeout($this->name);
     }
 
+    public function getServerPortRange(): array {
+        return MainConfig::getInstance()->getServerPortRange($this->name);
+    }
+
     public function getSoftware(): Software {
         return $this->software;
     }

@@ -12,7 +12,7 @@ final class FileUtils {
         return ExceptionHandler::tryCatch(
             function (string $src, string $dst): bool {
                 if (!@file_exists($src)) return false;
-                return @copy($src, $dst);
+                return copy($src, $dst);
             },
             "Failed to copy " . $src . " to " . $dst,
             null,
@@ -85,7 +85,7 @@ final class FileUtils {
 
     public static function unlinkFile(string $filePath): bool {
         return ExceptionHandler::tryCatch(
-            fn() => @unlink($filePath),
+            fn() => unlink($filePath),
             "Failed to unlink file: " . $filePath
         ) ?? false;
     }
