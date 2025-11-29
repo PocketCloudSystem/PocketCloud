@@ -45,7 +45,7 @@ final class TemplateManager implements Tickable {
         $startTime = microtime(true);
         CloudProvider::current()->addTemplate($template);
 
-        (new TemplateCreateEvent($template))->call();
+        new TemplateCreateEvent($template)->call();
 
         CloudLogger::get()->debug("Creating directory: " . $template->getPath());
         if (!file_exists($template->getPath())) mkdir($template->getPath());
@@ -59,7 +59,7 @@ final class TemplateManager implements Tickable {
         $startTime = microtime(true);
         CloudProvider::current()->removeTemplate($template);
 
-        (new TemplateRemoveEvent($template))->call();
+        new TemplateRemoveEvent($template)->call();
 
         CloudServerManager::getInstance()->stop($template, true);
 
@@ -80,7 +80,7 @@ final class TemplateManager implements Tickable {
         $template->getSettings()->setStartNewPercentage(($startNewPercentage === null ? $template->getSettings()->getStartNewPercentage() : $startNewPercentage));
         $template->getSettings()->setAutoStart(($autoStart === null ? $template->getSettings()->isAutoStart() : $autoStart));
 
-        (new TemplateEditEvent($template, $lobby, $maintenance, $static, $maxPlayerCount, $minServerCount, $maxServerCount, $startNewPercentage, $autoStart))->call();
+        new TemplateEditEvent($template, $lobby, $maintenance, $static, $maxPlayerCount, $minServerCount, $maxServerCount, $startNewPercentage, $autoStart)->call();
 
         CloudProvider::current()->editTemplate($template, $template->toArray());
 

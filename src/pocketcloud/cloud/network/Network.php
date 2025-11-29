@@ -13,6 +13,9 @@ use pocketcloud\cloud\network\packet\pool\PacketPool;
 use pocketcloud\cloud\PocketCloud;
 use pocketcloud\cloud\terminal\log\CloudLogger;
 use pocketcloud\cloud\thread\Thread;
+use pocketcloud\cloud\traffic\impl\NetworkTrafficMonitor;
+use pocketcloud\cloud\traffic\TrafficMonitor;
+use pocketcloud\cloud\traffic\TrafficMonitorManager;
 use pocketcloud\cloud\util\net\Address;
 use pocketcloud\cloud\util\SingletonTrait;
 use pocketcloud\cloud\network\client\ServerClient;
@@ -61,13 +64,27 @@ final class Network extends Thread {
             while (($object = $this->buffer->shift()) !== null) {
                 $buffer = $object->getBuffer();
                 $address = new Address($object->getAddress(), $object->getPort());
+
+                TrafficMonitorManager::getInstance()->pushBytes(TrafficMonitorManager::TRAFFIC_NETWORK, $bytes = strlen($buffer), TrafficMonitor::REGULAR_MODE_IN);
+                TrafficMonitorManager::getInstance()->callHandlers(
+                    TrafficMonitorManager::TRAFFIC_NETWORK,
+                    TrafficMonitor::REGULAR_MODE_IN,
+                    $object->getBuffer(), $bytes, $address
+                );
+
                 $client = ServerClientCache::getInstance()->getByAddress($address) ?? new ServerClient($address);
                 $continue = true;
                 if (MainConfig::getInstance()->isNetworkOnlyLocal() && !$address->isLocal()) $continue = false;
                 if ($continue) {
                     try {
                         if (($packet = PacketSerializer::decode($buffer)) !== null) {
-                            (new NetworkPacketReceiveEvent($packet, $client))->call();
+                            TrafficMonitorManager::getInstance()->callHandlers(
+                                TrafficMonitorManager::TRAFFIC_NETWORK,
+                                NetworkTrafficMonitor::parsePacketMode(NetworkTrafficMonitor::NETWORK_MODE_PACKET_IN, $packet::class),
+                                $packet, $address
+                            );
+
+                            new NetworkPacketReceiveEvent($packet, $client)->call();
                             $packet->handle($client);
                         } else CloudLogger::get()->warn("Received an unknown packet from §b" . $address . "§r, ignoring...")->debug("Packet buffer: " . (MainConfig::getInstance()->isNetworkEncryptionEnabled() ? base64_decode($buffer) : $buffer));
                     } catch (Exception $e) {
@@ -86,7 +103,7 @@ final class Network extends Thread {
         $this->socket = @socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
         if(@socket_bind($this->socket, $address->getAddress(), $address->getPort()) === true) {
             $this->connected = true;
-            (new NetworkBindEvent($this->address))->call();
+            new NetworkBindEvent($this->address)->call();
             socket_set_option($this->socket, SOL_SOCKET, SO_SNDBUF, 1024 * 1024 * 8);
             socket_set_option($this->socket, SOL_SOCKET, SO_RCVBUF, 1024 * 1024 * 8);
             socket_set_block($this->socket);
@@ -96,7 +113,14 @@ final class Network extends Thread {
 
     public function write(string $buffer, Address $dst): bool {
         if (!$this->isConnected()) return false;
-        return @socket_sendto($this->socket, $buffer, strlen($buffer), 0, $dst->getAddress(), $dst->getPort()) == strlen($buffer);
+        TrafficMonitorManager::getInstance()->pushBytes(TrafficMonitorManager::TRAFFIC_NETWORK, $bytes = strlen($buffer), TrafficMonitor::REGULAR_MODE_OUT);
+        TrafficMonitorManager::getInstance()->callHandlers(
+            TrafficMonitorManager::TRAFFIC_NETWORK,
+            TrafficMonitor::REGULAR_MODE_OUT,
+            $buffer, $bytes, $dst
+        );
+
+        return @socket_sendto($this->socket, $buffer, $bytes, 0, $dst->getAddress(), $dst->getPort()) == strlen($buffer);
     }
 
     public function read(?string &$buffer, ?string &$address, ?int &$port): bool {
@@ -106,7 +130,7 @@ final class Network extends Thread {
 
     public function close(): void {
         if ($this->isConnected()) {
-            (new NetworkCloseEvent())->call();
+            new NetworkCloseEvent()->call();
             $this->connected = false;
             $this->quit();
         }
@@ -115,7 +139,13 @@ final class Network extends Thread {
     public function sendPacket(CloudPacket $packet, ServerClient $client): bool {
         $buffer = PacketSerializer::encode($packet);
         $success = $this->write($buffer, $client->getAddress());
-        (new NetworkPacketSendEvent($packet, $client, $success))->call();
+        TrafficMonitorManager::getInstance()->callHandlers(
+            TrafficMonitorManager::TRAFFIC_NETWORK,
+            NetworkTrafficMonitor::parsePacketMode(NetworkTrafficMonitor::NETWORK_MODE_PACKET_OUT, $packet::class),
+            $packet, $client->getAddress(), $success
+        );
+
+        new NetworkPacketSendEvent($packet, $client, $success)->call();
         return $success;
     }
 

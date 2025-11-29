@@ -4,9 +4,9 @@ namespace pocketcloud\cloud\cache;
 
 final class InGameModule {
 
-    public const SIGN_MODULE = "sign_module";
-    public const NPC_MODULE = "npc_module";
-    public const HUB_COMMAND_MODULE = "hub_command_module";
+    public const string SIGN_MODULE = "sign_module";
+    public const string NPC_MODULE = "npc_module";
+    public const string HUB_COMMAND_MODULE = "hub_command_module";
 
     private static array $moduleStates = [
         self::SIGN_MODULE => false,

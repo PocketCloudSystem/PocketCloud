@@ -3,6 +3,8 @@
 namespace pocketcloud\cloud\http\network;
 
 use pmmp\thread\ThreadSafe;
+use pocketcloud\cloud\traffic\TrafficMonitor;
+use pocketcloud\cloud\traffic\TrafficMonitorManager;
 use pocketcloud\cloud\util\net\Address;
 use Socket;
 
@@ -24,6 +26,7 @@ final class SocketClient extends ThreadSafe {
     }
 
     public function write(string $buffer): bool {
+        TrafficMonitorManager::getInstance()->pushBytes(TrafficMonitorManager::TRAFFIC_HTTP, strlen($buffer), TrafficMonitor::REGULAR_MODE_OUT);
         return (@socket_write($this->socket, $buffer) === strlen($buffer));
     }
 

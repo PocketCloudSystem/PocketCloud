@@ -64,7 +64,7 @@ final class CloudPluginManager implements Tickable {
                         return;
                     }
 
-                    (new PluginLoadEvent($plugin))->call();
+                    new PluginLoadEvent($plugin)->call();
                     $this->plugins[$plugin->getDescription()->getName()] = $plugin;
                     $plugin->onLoad();
                 }
@@ -89,7 +89,7 @@ final class CloudPluginManager implements Tickable {
     public function enable(CloudPlugin $plugin): void {
         CloudLogger::get()->info("Enabling §b" . $plugin->getDescription()->getName() . "§r...");
         $plugin->setEnabled(true);
-        (new PluginEnableEvent($plugin))->call();
+        new PluginEnableEvent($plugin)->call();
         try {
             $plugin->onEnable();
         } catch (Throwable $throwable) {
@@ -112,7 +112,7 @@ final class CloudPluginManager implements Tickable {
 
     public function disable(CloudPlugin $plugin): void {
         CloudLogger::get()->info("Disabling §b" . $plugin->getDescription()->getName() . "§r...");
-        (new PluginDisableEvent($plugin))->call();
+        new PluginDisableEvent($plugin)->call();
         $plugin->setEnabled(false);
         $plugin->onDisable();
 

@@ -7,6 +7,8 @@ use Closure;
 final class Promise {
 
     private bool $resolved = false;
+    private bool $rejected = false;
+
     private mixed $result = null;
     private ?Closure $success = null;
     private ?Closure $failure = null;
@@ -25,6 +27,7 @@ final class Promise {
         if ($this->resolved) return;
         if ($this->failure !== null) ($this->failure)();
 
+        $this->rejected = true;
         $this->success = null;
         $this->failure = null;
     }
@@ -32,7 +35,7 @@ final class Promise {
     public function then(Closure $closure): self {
         if ($this->resolved) {
             if ($this->result !== null) ($closure)($this->result);
-        } else {
+        } else if (!$this->rejected) {
             $this->success = $closure;
         }
 
@@ -40,9 +43,9 @@ final class Promise {
     }
 
     public function failure(Closure $closure): self {
-        if ($this->resolved) {
+        if ($this->rejected) {
             if ($this->result === null) ($closure)();
-        } else {
+        } else if (!$this->resolved) {
             $this->failure = $closure;
         }
 
@@ -51,6 +54,10 @@ final class Promise {
 
     public function isResolved(): bool {
         return $this->resolved;
+    }
+
+    public function isRejected(): bool {
+        return $this->rejected;
     }
 
     public function getResult(): mixed {

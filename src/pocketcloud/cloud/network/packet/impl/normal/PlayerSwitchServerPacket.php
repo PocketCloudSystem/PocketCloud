@@ -41,7 +41,7 @@ final class PlayerSwitchServerPacket extends CloudPacket {
             if (($server = CloudServerManager::getInstance()->get($this->newServer)) !== null) {
                 Network::getInstance()->broadcastPacket($this);
                 CloudLogger::get()->info("Player %s performed a server switch (%s -> %s)", $player->getName(), ($player->getCurrentServer()?->getName() ?? "NULL"), ($server?->getName() ?? "NULL"));
-                (new PlayerSwitchServerEvent($player, $player->getCurrentServer(), $server))->call();
+                new PlayerSwitchServerEvent($player, $player->getCurrentServer(), $server)->call();
                 $player->setCurrentServer($server);
             }
         }

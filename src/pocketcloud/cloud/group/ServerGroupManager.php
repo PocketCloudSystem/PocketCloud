@@ -34,7 +34,7 @@ final class ServerGroupManager {
         $startTime = microtime(true);
         CloudProvider::current()->addServerGroup($serverGroup);
 
-        (new ServerGroupCreateEvent($serverGroup))->call();
+        new ServerGroupCreateEvent($serverGroup)->call();
 
         CloudLogger::get()->debug("Creating directory: " . $serverGroup->getPath());
         if (!file_exists($serverGroup->getPath())) mkdir($serverGroup->getPath());
@@ -46,7 +46,7 @@ final class ServerGroupManager {
         $startTime = microtime(true);
         CloudProvider::current()->removeServerGroup($serverGroup);
 
-        (new ServerGroupRemoveEvent($serverGroup))->call();
+        new ServerGroupRemoveEvent($serverGroup)->call();
 
         if (file_exists($serverGroup->getPath())) FileUtils::removeDirectory($serverGroup->getPath());
         if (isset($this->serverGroups[$serverGroup->getName()])) unset($this->serverGroups[$serverGroup->getName()]);
@@ -58,7 +58,7 @@ final class ServerGroupManager {
         $serverGroup->add($template);
         CloudProvider::current()->editServerGroup($serverGroup, $serverGroup->toArray());
 
-        (new ServerGroupEditEvent($serverGroup, $serverGroup->getTemplates()))->call();
+        new ServerGroupEditEvent($serverGroup, $serverGroup->getTemplates())->call();
 
         CloudLogger::get()->success("Successfully §aadded §rthe template §b" . $template->getName() . " §rto the server group §b" . $serverGroup->getName() . "§r. §8(§rTook §b" . number_format(microtime(true) - $startTime, 3) . "s§8)");
     }
@@ -68,7 +68,7 @@ final class ServerGroupManager {
         $serverGroup->remove($template);
         CloudProvider::current()->editServerGroup($serverGroup, $serverGroup->toArray());
 
-        (new ServerGroupEditEvent($serverGroup, $serverGroup->getTemplates()))->call();
+        new ServerGroupEditEvent($serverGroup, $serverGroup->getTemplates())->call();
 
         CloudLogger::get()->success("Successfully §cremoved §rthe template §b" . $template->getName() . " §rfrom the server group §b" . $serverGroup->getName() . "§r. §8(§rTook §b" . number_format(microtime(true) - $startTime, 3) . "s§8)");
     }
@@ -77,11 +77,8 @@ final class ServerGroupManager {
         $name = $name instanceof Template ? $name->getName() : $name;
         if (isset($this->serverGroups[$name])) return $this->serverGroups[$name];
 
-        foreach ($this->serverGroups as $group) {
-            if ($group->is($name)) return $group;
-        }
+        return array_find($this->serverGroups, fn($group) => $group->is($name));
 
-        return null;
     }
 
     public function isLoaded(): bool {

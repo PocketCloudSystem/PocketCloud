@@ -18,7 +18,7 @@ final class PacketSerializer {
             $packet->encode($buffer = new PacketData());
             return MainConfig::getInstance()->isNetworkEncryptionEnabled() ? base64_encode(json_encode($buffer, JSON_THROW_ON_ERROR)) : json_encode($buffer, JSON_THROW_ON_ERROR);
         } catch (Exception $exception) {
-            CloudLogger::get()->error("§cFailed to encode packet: §e" . (new ReflectionClass($packet))->getShortName());
+            CloudLogger::get()->error("§cFailed to encode packet: §e" . new ReflectionClass($packet)->getShortName());
             CloudLogger::get()->exception($exception);
         }
         return "";

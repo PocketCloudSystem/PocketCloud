@@ -65,10 +65,8 @@ final class SoftwareManager {
     }
 
     public function get(string $name): ?Software {
-        foreach ($this->software as $software) {
-            if ($software->getName() == $name || in_array($name, $software->getAliases())) return $software;
-        }
-        return null;
+        return array_find($this->software, fn($software) => $software->getName() == $name ||
+            in_array($name, $software->getAliases()));
     }
 
     public function getAll(): array {

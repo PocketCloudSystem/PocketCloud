@@ -14,7 +14,7 @@ use Throwable;
 final class Language {
     use EnumTrait;
 
-    public const FALLBACK = "en";
+    public const string FALLBACK = "en";
 
     protected static function init(): void {
         self::register("german", new Language(
@@ -42,10 +42,8 @@ final class Language {
 
     public static function get(string $name): ?Language {
         /** @var Language $language */
-        foreach (self::getAll() as $language) {
-            if ($language->getName() == $name || in_array($name, $language->getAliases())) return $language;
-        }
-        return null;
+        return array_find(self::getAll(), fn($language) => $language->getName() == $name ||
+            in_array($name, $language->getAliases()));
     }
 
     /** @var array<string, string> */

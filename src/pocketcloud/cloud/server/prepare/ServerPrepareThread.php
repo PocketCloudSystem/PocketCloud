@@ -21,7 +21,7 @@ final class ServerPrepareThread extends Thread {
     }
 
     public function onRun(): void {
-        while (true) {
+        while ($this->isRunning()) {
             $this->synchronized(function (): void {
                 if ($this->isRunning() &&
                     $this->prepareQueue->count() == 0 &&

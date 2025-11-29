@@ -19,7 +19,7 @@ final class ServerClient {
 
     public function sendPacket(CloudPacket $packet): bool {
         if (!Network::getInstance()->sendPacket($packet, $this)) {
-            CloudLogger::get()->debug("Failed to send packet " . (new ReflectionClass($packet))->getShortName() . " to " . $this->address);
+            CloudLogger::get()->debug("Failed to send packet " . new ReflectionClass($packet)->getShortName() . " to " . $this->address);
             return false;
         }
         return true;

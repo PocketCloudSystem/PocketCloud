@@ -6,14 +6,14 @@ use JetBrains\PhpStorm\Pure;
 
 final class Pattern {
 
-    public const TYPE_STRING = "string";
-    public const TYPE_INT = "int";
-    public const TYPE_FLOAT = "float";
+    public const string TYPE_STRING = "string";
+    public const string TYPE_INT = "int";
+    public const string TYPE_FLOAT = "float";
 
-    public const OPTION_NAME = "name";
-    public const OPTION_MIN_LENGTH = "len-min";
-    public const OPTION_MAX_LENGTH = "len-max";
-    public const OPTION_TYPE = "type";
+    public const string OPTION_NAME = "name";
+    public const string OPTION_MIN_LENGTH = "len-min";
+    public const string OPTION_MAX_LENGTH = "len-max";
+    public const string OPTION_TYPE = "type";
 
     #[Pure] public static function isValid(string $string, array $pattern): bool {
         if (isset($pattern[self::OPTION_MIN_LENGTH]) && (strlen($string) < $pattern[self::OPTION_MIN_LENGTH])) return false;

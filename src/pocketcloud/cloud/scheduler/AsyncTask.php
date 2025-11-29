@@ -20,7 +20,7 @@ abstract class AsyncTask extends Runnable {
             $this->onRun();
         } catch (Throwable $exception) {
             $this->crashed = true;
-            CloudLogger::get()->error("§cAsynchronous task §8'§e" . (new ReflectionClass($this))->getShortName() . "§8' §ccrashed!");
+            CloudLogger::get()->error("§cAsynchronous task §8'§e" . new ReflectionClass($this)->getShortName() . "§8' §ccrashed!");
             CloudLogger::get()->exception($exception);
         }
 
