@@ -132,7 +132,9 @@ final class PocketCloud {
         $this->startTime = microtime(true);
 
         $this->network = new Network(new Address("127.0.0.1", MainConfig::getInstance()->getNetworkPort()));
-        $this->httpServer = new HttpServer(new Address("127.0.0.1", MainConfig::getInstance()->getHttpServerPort()));
+        
+        $httpAddress = (MainConfig::getInstance()->isHttpServerOnlyLocal() ? "127.0.0.1" : "0.0.0.0");
+        $this->httpServer = new HttpServer(new Address($httpAddress, MainConfig::getInstance()->getHttpServerPort()));
         $this->trafficMonitorManager = new TrafficMonitorManager();
 
         ServerPreparator::getInstance()->init();
