@@ -21,6 +21,10 @@ final class TickableList {
         }
     }
 
+    public static function clear(): void {
+        self::$list = [];
+    }
+
     public static function getAll(): array {
         return self::$list;
     }

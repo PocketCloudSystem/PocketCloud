@@ -42,6 +42,12 @@ final class ServerPreparator {
         }
     }
 
+    public function stop(): void {
+        foreach ($this->threads as $thread) {
+            $thread->quit();
+        }
+    }
+
     public function submitEntry(ServerPrepareEntry $entry, ?Closure $completionHandler): void {
         CloudLogger::get()->debug("Preparing server (" . $entry->getServer() . "): §b" . ($this->isAsync() ? "async" : "sync"));
         if (!$this->isAsync()) {

@@ -69,14 +69,14 @@ class CloudServer {
 
     public function start(): void {
         CloudServerManager::getInstance()->addToProxies($this);
-        (new ServerStartEvent($this))->call();
+        new ServerStartEvent($this)->call();
         CloudLogger::get()->info("§aStarting §b" . $this->getName() . "§r...");
         NotifyType::STARTING()->send(["%server%" => $this->getName()]);
         ServerUtils::executeWithStartCommand($this->getPath(), $this->getName(), $this->getTemplate()->getTemplateType()->getSoftware()->getStartCommand());
     }
 
     public function stop(bool $force = false): void {
-        (new ServerStopEvent($this, $force))->call();
+        new ServerStopEvent($this, $force)->call();
         CloudLogger::get()->info("§cStopping §b" . $this->getName() . "§r...");
         NotifyType::STOPPING()->send(["%server%" => $this->getName()]);
         $this->setServerStatus(ServerStatus::STOPPING());
@@ -175,8 +175,7 @@ class CloudServer {
     }
 
     public function getCloudPlayer(string $name): ?CloudPlayer {
-        foreach ($this->getCloudPlayers() as $player) if ($player->getName() == $name) return $player;
-        return null;
+        return array_find($this->getCloudPlayers(), fn($player) => $player->getName() == $name);
     }
 
     /** @return array<CloudPlayer> */

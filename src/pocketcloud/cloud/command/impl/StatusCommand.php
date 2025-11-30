@@ -7,6 +7,8 @@ use pocketcloud\cloud\command\sender\ICommandSender;
 use pocketcloud\cloud\PocketCloud;
 use pocketcloud\cloud\thread\Thread;
 use pocketcloud\cloud\thread\Worker;
+use pocketcloud\cloud\traffic\TrafficMonitor;
+use pocketcloud\cloud\traffic\TrafficMonitorManager;
 use pocketcloud\cloud\util\Utils;
 
 final class StatusCommand extends Command {
@@ -28,6 +30,13 @@ final class StatusCommand extends Command {
             $playerCount
         ] = Utils::readCloudPerformanceStatus();
 
+        $allTimeTrafficMessages = [];
+        foreach (TrafficMonitorManager::getInstance()->getAllTimeTraffic() as $trafficType => $traffic) {
+            $bytesIn = $this->formatBytes($traffic[TrafficMonitor::REGULAR_MODE_IN]);
+            $bytesOut = $this->formatBytes($traffic[TrafficMonitor::REGULAR_MODE_OUT]);
+            $allTimeTrafficMessages[] = ucfirst($trafficType) . " All-Time-Traffic: §a" . $bytesIn . " §8(§aIN§8) §8/ §c" . $bytesOut . " §8(§cOUT§8)";
+        }
+
         $threadNames = array_map(fn(Thread|Worker $thread) => $thread::class, $threads);
 
         $sender->info("Current §bPocket§3Cloud §rperformance status:");
@@ -40,6 +49,10 @@ final class StatusCommand extends Command {
         if ($memoryLimit > 0) $sender->info("Memory limit: §c" . round($memoryLimit, 2) . " MB");
         $sender->info("Server count: §c" . $serverCount . " server" . ($serverCount == 1 ? "" : "s"));
         $sender->info("Player count: §c" . $playerCount . " player" . ($playerCount == 1 ? "" : "s"));
+        foreach ($allTimeTrafficMessages as $message) {
+            $sender->info($message);
+        }
+
         return true;
     }
 
@@ -68,5 +81,16 @@ final class StatusCommand extends Command {
             ($hours > 0 ? $hours . "h, " : "") .
             ($minutes > 0 ? $minutes . "m, " : "") .
             ($seconds > 0 ? floor($seconds) . "s" : "");
+    }
+
+    private function formatBytes(int $bytes): string {
+        if ($bytes < 1024) return $bytes . " B";
+
+        $units = ["B", "KB", "MB", "GB", "TB", "PB", "EB"];
+        $exp = (int) floor(log($bytes, 1024));
+        $value = $bytes / (1024 ** $exp);
+        $value = round($value, 2);
+
+        return $value . " " . $units[$exp];
     }
 }

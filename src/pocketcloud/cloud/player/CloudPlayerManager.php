@@ -25,7 +25,7 @@ final class CloudPlayerManager {
         $this->players[$player->getName()] = $player;
         PlayerSyncPacket::create($player, false)->broadcastPacket();
 
-        (new PlayerConnectEvent($player, ($player->getCurrentServer() ?? $player->getCurrentProxy())))->call();
+        new PlayerConnectEvent($player, ($player->getCurrentServer() ?? $player->getCurrentProxy()))->call();
     }
 
     public function remove(CloudPlayer $player): void {
@@ -33,7 +33,7 @@ final class CloudPlayerManager {
         else CloudLogger::get()->info("Player %s is disconnected. (From: %s)", $player->getName(), ($player->getCurrentServer()->getName() ?? "NULL"));
 
         if (isset($this->players[$player->getName()])) unset($this->players[$player->getName()]);
-        (new PlayerDisconnectEvent($player, ($player->getCurrentServer() ?? $player->getCurrentProxy())))->call();
+        new PlayerDisconnectEvent($player, ($player->getCurrentServer() ?? $player->getCurrentProxy()))->call();
 
         $player->setCurrentServer(null);
         $player->setCurrentProxy(null);
@@ -43,11 +43,9 @@ final class CloudPlayerManager {
 
     public function get(string $name): ?CloudPlayer {
         if (isset($this->players[$name])) return $this->players[$name];
-        foreach ($this->players as $player) {
-            if ($player->getXboxUserId() == $name || $player->getUniqueId() == $name) return $player;
-        }
-        
-        return null;
+        return array_find($this->players, fn($player) => $player->getXboxUserId() == $name ||
+            $player->getUniqueId() == $name);
+
     }
 
     public function getAll(): array {

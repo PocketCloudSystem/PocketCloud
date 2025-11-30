@@ -205,7 +205,7 @@ final class CloudServerManager implements Tickable {
                 };
 
                 if (($server->getStartTime() + $timeout) <= time()) {
-                    (new ServerStartFailEvent($server))->call();
+                    new ServerStartFailEvent($server)->call();
                     if ($server->getCloudServerData()->getProcessId() !== 0) TerminalUtils::kill($server->getCloudServerData()->getProcessId());
                     $this->remove($server);
                     ServerClientCache::getInstance()->remove($server);
@@ -213,7 +213,7 @@ final class CloudServerManager implements Tickable {
                     if (CrashChecker::checkCrashed($server, $crashData)) {
                         CloudLogger::get()->warn("Failed to start server §b" . $server->getName() . "§r, writing crash file...");
                         $this->printServerStackTrace($server->getName(), $crashData);
-                        (new ServerCrashEvent($server, $crashData))->call();
+                        new ServerCrashEvent($server, $crashData)->call();
                         CrashChecker::writeCrashFile($server, $crashData);
                     } else {
                         CloudLogger::get()->warn("Failed to start the server §b" . $server->getName() . "§r, deleting it's data...");
@@ -226,7 +226,7 @@ final class CloudServerManager implements Tickable {
                 }
             } else if ($server->getServerStatus() === ServerStatus::ONLINE() || $server->getServerStatus() === ServerStatus::FULL() || $server->getServerStatus() === ServerStatus::IN_GAME()) {
                 if (!$server->checkAlive()) {
-                    (new ServerTimeOutEvent($server))->call();
+                    new ServerTimeOutEvent($server)->call();
                     if ($server->getCloudServerData()->getProcessId() !== 0) TerminalUtils::kill($server->getCloudServerData()->getProcessId());
                     $this->remove($server);
                     ServerClientCache::getInstance()->remove($server);
@@ -234,7 +234,7 @@ final class CloudServerManager implements Tickable {
                     if (CrashChecker::checkCrashed($server, $crashData)) {
                         CloudLogger::get()->info("The server §b" . $server->getName() . " §ccrashed§r, writing crash file...");
                         $this->printServerStackTrace($server->getName(), $crashData);
-                        (new ServerCrashEvent($server, $crashData))->call();
+                        new ServerCrashEvent($server, $crashData)->call();
                         CrashChecker::writeCrashFile($server, $crashData);
                         NotifyType::CRASHED()->send(["%server%" => $server->getName()]);
                     } else {
@@ -253,7 +253,7 @@ final class CloudServerManager implements Tickable {
                     if (CrashChecker::checkCrashed($server, $crashData)) {
                         CloudLogger::get()->info("The server §b" . $server->getName() . " §ccrashed§r!");
                         $this->printServerStackTrace($server->getName(), $crashData);
-                        (new ServerCrashEvent($server, $crashData))->call();
+                        new ServerCrashEvent($server, $crashData)->call();
                         CrashChecker::writeCrashFile($server, $crashData);
                     } else {
                         CloudLogger::get()->warn("Failed to stop the server §b" . $server->getName() . "§r, killing the process instead...");
@@ -272,7 +272,7 @@ final class CloudServerManager implements Tickable {
                 if (CrashChecker::checkCrashed($server, $crashData)) {
                     CloudLogger::get()->info("The server §b" . $server->getName() . " §ccrashed§r!");
                     $this->printServerStackTrace($server->getName(), $crashData);
-                    (new ServerCrashEvent($server, $crashData))->call();
+                    new ServerCrashEvent($server, $crashData)->call();
                     CrashChecker::writeCrashFile($server, $crashData);
                     NotifyType::CRASHED()->send(["%server%" => $server->getName()]);
                 }

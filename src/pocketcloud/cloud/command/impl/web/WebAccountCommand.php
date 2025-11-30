@@ -70,7 +70,7 @@ final class WebAccountCommand extends Command {
             }
         } else if ($subCommand == "create") {
             if (count($args) < 2) {
-                (new WebAccountSetup())->startSetup();
+                new WebAccountSetup()->startSetup();
                 return true;
             }
 

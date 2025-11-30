@@ -4,7 +4,7 @@ namespace pocketcloud\cloud\language;
 
 final class DefaultMessages {
 
-    public const MESSAGES = [
+    public const array MESSAGES = [
         "raw.yes" => "Yes",
         "raw.no" => "No",
         "raw.author" => "Author(s)",
@@ -199,7 +199,7 @@ final class DefaultMessages {
         "inGame.proxy.stopped" => "§f§lProxy shutdown..."
     ];
 
-    public const MESSAGES_DE = [
+    public const array MESSAGES_DE = [
         "raw.yes" => "Ja",
         "raw.no" => "Nein",
         "raw.author" => "Autor(en)",

@@ -13,7 +13,7 @@ final class ConfigureCommand extends Command {
     }
 
     public function run(ICommandSender $sender, string $label, array $args): bool {
-        (new ConfigSetup())->startSetup();
+        new ConfigSetup()->startSetup();
         return true;
     }
 }

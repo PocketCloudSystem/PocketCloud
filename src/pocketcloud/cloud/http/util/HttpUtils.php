@@ -10,7 +10,7 @@ use UnexpectedValueException;
 
 final class HttpUtils {
 	
-	private const LOCALHOST_PREFIX = "http://localhost";
+	private const string LOCALHOST_PREFIX = "http://localhost";
 	
 	public static function parseRequest(Address $address, string $request): ?Request {
 		[$headers, $bodyLines] = self::splitData(explode("\r\n", $request));

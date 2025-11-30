@@ -32,7 +32,7 @@ final class CreateCommand extends Command {
     public function run(ICommandSender $sender, string $label, array $args): bool {
         $name = $args["name"] ?? null;
         if ($name === null) {
-            (new TemplateSetup())->startSetup();
+            new TemplateSetup()->startSetup();
             return true;
         } else {
             if (!TemplateManager::getInstance()->check($name)) {

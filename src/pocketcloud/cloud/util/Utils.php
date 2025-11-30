@@ -73,11 +73,7 @@ final class Utils {
     }
 
     public static function containKeys(array $array, ...$keys): bool {
-        foreach ($keys as $key) {
-            if (!isset($array[$key])) return false;
-        }
-
-        return true;
+        return array_all($keys, fn($key) => isset($array[$key]));
     }
 
     public static function cleanPath(string $path, bool $removePath = false): string {

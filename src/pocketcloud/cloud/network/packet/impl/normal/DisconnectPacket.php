@@ -36,9 +36,9 @@ final class DisconnectPacket extends CloudPacket {
             }
 
             $server->setServerStatus(ServerStatus::OFFLINE());
-            (new ServerDisconnectEvent($server))->call();
+            new ServerDisconnectEvent($server)->call();
             if (CrashChecker::checkCrashed($server, $crashData)) {
-                (new ServerCrashEvent($server, $crashData))->call();
+                new ServerCrashEvent($server, $crashData)->call();
                 CloudLogger::get()->info("The server §b" . $server->getName() . " §ccrashed§r, writing crash file...");
                 CloudServerManager::getInstance()->printServerStackTrace($server->getName(), $crashData);
                 CrashChecker::writeCrashFile($server, $crashData);

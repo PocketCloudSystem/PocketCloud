@@ -6,14 +6,14 @@ use pocketcloud\cloud\util\Utils;
 
 final class TemplateHelper {
 
-    public const KEYS = ["name", "lobby", "maintenance", "static", "maxPlayerCount", "minServerCount", "maxServerCount", "startNewPercentage", "autoStart", "templateType"];
-    public const EDITABLE_KEYS = ["lobby", "maintenance", "static", "maxPlayerCount", "minServerCount", "maxServerCount", "startNewPercentage", "autoStart"];
+    public const array KEYS = ["name", "lobby", "maintenance", "static", "maxPlayerCount", "minServerCount", "maxServerCount", "startNewPercentage", "autoStart", "templateType"];
+    public const array EDITABLE_KEYS = ["lobby", "maintenance", "static", "maxPlayerCount", "minServerCount", "maxServerCount", "startNewPercentage", "autoStart"];
 
-    public const NECESSARY_KEYS = ["name", "lobby", "templateType"];
+    public const array NECESSARY_KEYS = ["name", "lobby", "templateType"];
 
-    public const UNNECESSARY_KEYS = ["maintenance", "static", "maxPlayerCount", "minServerCount", "maxServerCount", "startNewPercentage", "autoStart"];
-    public const DEFAULT_VALUES = ["maintenance" => true, "static" => false, "mayPlayerCount" => 20, "minServerCount" => 0, "maxServerCount" => 2, "startNewPercentage" => 100, "autoStart" => true];
-    private const CONVERSION = [
+    public const array UNNECESSARY_KEYS = ["maintenance", "static", "maxPlayerCount", "minServerCount", "maxServerCount", "startNewPercentage", "autoStart"];
+    public const array DEFAULT_VALUES = ["maintenance" => true, "static" => false, "mayPlayerCount" => 20, "minServerCount" => 0, "maxServerCount" => 2, "startNewPercentage" => 100, "autoStart" => true];
+    private const array CONVERSION = [
         "maxplayercount" => "maxPlayerCount",
         "minservercount" => "minServerCount",
         "maxservercount" => "maxServerCount",

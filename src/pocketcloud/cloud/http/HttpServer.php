@@ -16,6 +16,9 @@ use pocketcloud\cloud\http\util\UnhandledHttpRequest;
 use pocketcloud\cloud\PocketCloud;
 use pocketcloud\cloud\terminal\log\CloudLogger;
 use pocketcloud\cloud\thread\Thread;
+use pocketcloud\cloud\traffic\impl\HttpTrafficMonitor;
+use pocketcloud\cloud\traffic\TrafficMonitor;
+use pocketcloud\cloud\traffic\TrafficMonitorManager;
 use pocketcloud\cloud\util\net\Address;
 use pocketmine\snooze\SleeperHandlerEntry;
 use Socket;
@@ -23,7 +26,7 @@ use Throwable;
 
 final class HttpServer extends Thread {
 
-    public const REQUEST_READ_LENGTH = 8192;
+    public const int REQUEST_READ_LENGTH = 8192;
 
     private bool $connected = false;
 
@@ -86,16 +89,29 @@ final class HttpServer extends Thread {
             return new Response(500);
         }
 
+        TrafficMonitorManager::getInstance()->callHandlers(
+            TrafficMonitorManager::TRAFFIC_HTTP,
+            HttpTrafficMonitor::HTTP_MODE_REQUEST_IN,
+            $request, $address
+        );
+
         if (Router::getInstance()->isRegistered($request)) return Router::getInstance()->execute($request);
         CloudLogger::get()->debug("No route found for " . $request->data()->method() . " HTTP request from " . $request->data()->address() . ", sending 404 response...");
         $response = new Response(404);
         if ($this->invalidUrlHandler !== null) ($this->invalidUrlHandler)($request, $response);
+
+        TrafficMonitorManager::getInstance()->callHandlers(
+            TrafficMonitorManager::TRAFFIC_HTTP,
+            HttpTrafficMonitor::HTTP_MODE_RESPONSE_OUT,
+            $request, $response, $address
+        );
+
         return $response;
     }
 
     public function init(): void {
         if (MainConfig::getInstance()->isHttpServerEnabled()) {
-            (new HttpServerInitializeEvent())->call();
+            new HttpServerInitializeEvent()->call();
 
             EndpointRegistry::registerDefaults();
 
@@ -117,6 +133,13 @@ final class HttpServer extends Thread {
                     $buf = $data->getBuffer();
 
                     CloudLogger::get()->debug("Received incoming HTTP request from " . $client->getAddress() . "...");
+
+                    TrafficMonitorManager::getInstance()->pushBytes(TrafficMonitorManager::TRAFFIC_HTTP, $bytes = strlen($buf), TrafficMonitor::REGULAR_MODE_IN);
+                    TrafficMonitorManager::getInstance()->callHandlers(
+                        TrafficMonitorManager::TRAFFIC_HTTP,
+                        TrafficMonitor::REGULAR_MODE_IN,
+                        $buf, $bytes, $client->getAddress()
+                    );
 
                     try {
                         $write = true;

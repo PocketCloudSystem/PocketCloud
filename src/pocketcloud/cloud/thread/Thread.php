@@ -8,6 +8,7 @@ use pocketcloud\cloud\loader\ClassLoader;
 use pocketcloud\cloud\PocketCloud;
 use pmmp\thread\Thread as NativeThread;
 use pocketcloud\cloud\terminal\log\CloudLogger;
+use ReflectionClass;
 
 abstract class Thread extends NativeThread {
 
@@ -71,5 +72,9 @@ abstract class Thread extends NativeThread {
 
     public function isRunning(): bool {
         return $this->running;
+    }
+
+    public function getThreadName(): string {
+        return new ReflectionClass($this)->getShortName();
     }
 }

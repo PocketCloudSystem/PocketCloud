@@ -6,16 +6,18 @@ use Closure;
 use pocketcloud\cloud\http\io\Request;
 use pocketcloud\cloud\http\io\Response;
 use pocketcloud\cloud\terminal\log\CloudLogger;
+use pocketcloud\cloud\traffic\impl\HttpTrafficMonitor;
+use pocketcloud\cloud\traffic\TrafficMonitorManager;
 use pocketcloud\cloud\util\SingletonTrait;
 
 final class Router {
     use SingletonTrait;
 
-    public const GET = "GET";
-    public const POST = "POST";
-    public const PUT = "PUT";
-    public const PATCH = "PATCH";
-    public const DELETE = "DELETE";
+    public const string GET = "GET";
+    public const string POST = "POST";
+    public const string PUT = "PUT";
+    public const string PATCH = "PATCH";
+    public const string DELETE = "DELETE";
 
     /** @var array<string, array<string, Closure>> $routes */
     protected array $routes = [];
@@ -60,6 +62,13 @@ final class Router {
             CloudLogger::get()->debug("Choosing route " . $expectedPath . " for " . $request->data()->method() . " HTTP request to proceed, received from " . $request->data()->address());
             HttpUtils::fillRequest($request, $expectedPath);
             $closure($request, $response);
+
+            TrafficMonitorManager::getInstance()->callHandlers(
+                TrafficMonitorManager::TRAFFIC_HTTP,
+                HttpTrafficMonitor::HTTP_MODE_RESPONSE_OUT,
+                $request, $response, $request->data()->address()
+            );
+
             CloudLogger::get()->debug("Successfully handled " . $request->data()->method() . " HTTP request, sending " . $response->getStatusCode() . " (" . ($response->getCustomResponseCodeMessage() ?? (StatusCodes::RESPOND_CODES[$response->getStatusCode()] ?? "Unknown")) . ") response to " . $request->data()->address() . "...");
         }
         return $response;

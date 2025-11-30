@@ -96,8 +96,7 @@ final class AsyncPool implements Tickable {
 
     public function collectTasks(): bool {
         foreach ($this->taskQueues as $worker => $queue) $this->collectTasksFromWorker($worker);
-        foreach ($this->taskQueues as $queue) if (!$queue->isEmpty()) return true;
-        return false;
+        return array_any($this->taskQueues, fn($queue) => !$queue->isEmpty());
     }
 
     public function collectTasksFromWorker(int $worker): bool {

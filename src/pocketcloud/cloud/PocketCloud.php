@@ -28,6 +28,7 @@ use pocketcloud\cloud\terminal\log\level\CloudLogLevel;
 use pocketcloud\cloud\terminal\log\logger\LoggingCache;
 use pocketcloud\cloud\terminal\Terminal;
 use pocketcloud\cloud\thread\ThreadManager;
+use pocketcloud\cloud\traffic\TrafficMonitorManager;
 use pocketcloud\cloud\update\UpdateChecker;
 use pocketcloud\cloud\util\net\Address;
 use pocketcloud\cloud\util\terminal\TerminalUtils;
@@ -51,6 +52,7 @@ final class PocketCloud {
     private Terminal $terminal;
     private Network $network;
     private HttpServer $httpServer;
+    private TrafficMonitorManager $trafficMonitorManager;
 
     public function __construct(
         private readonly ClassLoader $classLoader
@@ -110,7 +112,7 @@ final class PocketCloud {
         CloudLogger::get()->emptyLine()->setUsePrefix(true);
 
         if (FIRST_RUN) {
-            (new ConfigSetup())->completion(function(array $results): void {
+            new ConfigSetup()->completion(function(array $results): void {
                 $this->start();
                 if ($results["defaultLobbyTemplate"] ?? true) {
                     TemplateManager::getInstance()->create(Template::lobby("Lobby"));
@@ -131,6 +133,7 @@ final class PocketCloud {
 
         $this->network = new Network(new Address("127.0.0.1", MainConfig::getInstance()->getNetworkPort()));
         $this->httpServer = new HttpServer(new Address("127.0.0.1", MainConfig::getInstance()->getHttpServerPort()));
+        $this->trafficMonitorManager = new TrafficMonitorManager();
 
         ServerPreparator::getInstance()->init();
 
@@ -155,7 +158,7 @@ final class PocketCloud {
         }
 
         $startedTime = (microtime(true) - $this->startTime);
-        (new CloudStartedEvent($startedTime))->call();
+        new CloudStartedEvent($startedTime)->call();
         CloudLogger::get()->success("§bCloud §rhas been §astarted§r. §8(§rTook §b" . number_format($startedTime, 3) . "s§8)");
 
         foreach ($this->userNotificationsOnStart as $entry) CloudLogger::get()->send($entry[1], $entry[0]);
@@ -163,7 +166,7 @@ final class PocketCloud {
 
         if (count(TemplateManager::getInstance()->getAll()) == 0 && FIRST_RUN) {
             CloudLogger::get()->info("No templates found, starting the setup...");
-            (new TemplateSetup())->startSetup();
+            new TemplateSetup()->startSetup();
         }
 
         $this->network->start();
@@ -183,27 +186,46 @@ final class PocketCloud {
         }
     }
 
+    public function handleCrash(): void {
+        if (!$this->running) return;
+        $this->running = false;
+        $this->shutdown();
+        echo "--- Uptime: " . round($this->getUptime(), 2) . "s - PocketCloud has crashed, waiting 60s before completely killing the process. ---";
+        sleep(60);
+        @TerminalUtils::kill(getmypid());
+        exit(1);
+    }
+
     public function shutdown(): void {
         if (!$this->running) return;
         $this->running = false;
-        EventManager::getInstance()->removeAll();
-        CloudServerManager::getInstance()->stopAll(true);
-        CloudPluginManager::getInstance()->disableAll();
-        AsyncPool::getInstance()->shutdown();
-        if (isset($this->network)) $this->network->close();
-        if (isset($this->terminal)) $this->terminal->quit();
-        if (isset($this->httpServer)) $this->httpServer->close();
-        ShutdownHandler::unregister();
-        ThreadManager::getInstance()->stopAll();
-        Utils::deleteLockFile();
-        CloudLogger::close();
-        LoggingCache::clear();
-        TerminalUtils::kill(getmypid());
+        try {
+            TickableList::clear();
+            EventManager::getInstance()->removeAll();
+            CloudServerManager::getInstance()->stopAll(true);
+            CloudPluginManager::getInstance()->disableAll();
+            AsyncPool::getInstance()->shutdown();
+            if (isset($this->network)) $this->network->close();
+            if (isset($this->terminal)) $this->terminal->quit();
+            if (isset($this->httpServer)) $this->httpServer->close();
+            ServerPreparator::getInstance()->stop();
+            ShutdownHandler::unregister();
+            ThreadManager::getInstance()->stopAll();
+            CloudLogger::close();
+            LoggingCache::clear();
+        } catch (\Throwable $exception) {
+            CloudLogger::get()->error("Cloud crashed while shutting down...");
+            CloudLogger::get()->exception($exception);
+        }
     }
 
     public function getUptime(): float {
         if ($this->startTime <= 0) return 0;
         return microtime(true) - $this->startTime;
+    }
+
+    public function getTrafficMonitorManager(): TrafficMonitorManager {
+        return $this->trafficMonitorManager;
     }
 
     public function getHttpServer(): HttpServer {
@@ -289,4 +311,11 @@ if (!file_exists(TEMP_PATH)) mkdir(TEMP_PATH);
 $classLoader = new ClassLoader();
 $classLoader->init();
 
-new PocketCloud($classLoader);
+do {
+    new PocketCloud($classLoader);
+} while (false);
+
+Utils::deleteLockFile();
+
+@TerminalUtils::kill(getmypid());
+exit(1);

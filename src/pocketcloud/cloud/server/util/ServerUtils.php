@@ -12,11 +12,11 @@ use pocketcloud\cloud\util\FileUtils;
 
 final class ServerUtils {
 
-    public const DEFAULT_TIMEOUT = 20;
-    public const TIMEOUT_SERVER = 20;
-    public const TIMEOUT_PROXY = 25;
+    public const int DEFAULT_TIMEOUT = 20;
+    public const int TIMEOUT_SERVER = 20;
+    public const int TIMEOUT_PROXY = 25;
 
-    public const PROPERTY_KEYS = [
+    public const array PROPERTY_KEYS = [
         "SERVER" => [
             "language" => "eng",
             "motd" => "§b%name%",
