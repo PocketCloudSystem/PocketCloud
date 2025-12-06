@@ -22,6 +22,8 @@ final class ServerUtils {
             "motd" => "§b%name%",
             "server-port" => "%server_port%",
             "server-portv6" => "%server_portv6%",
+            "server-ip" => "127.0.0.1",
+            "server-ipv6" => "::1",
             "enable-ipv6" => "on",
             "white-list" => "off",
             "max-players" => "%max_players%",
