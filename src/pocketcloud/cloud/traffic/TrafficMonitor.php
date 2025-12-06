@@ -8,6 +8,7 @@ abstract class TrafficMonitor {
 
     public const string REGULAR_MODE_IN = "in";
     public const string REGULAR_MODE_OUT = "out";
+    public const string SUFFIX_AVG = "_avg";
 
     protected bool $active = true;
     protected int $timestamp;
@@ -18,6 +19,10 @@ abstract class TrafficMonitor {
 
     protected int $totalBytesIn = 0;
     protected int $totalBytesOut = 0;
+    protected array $byteHistoryIn = [];
+    protected array $byteHistoryOut = [];
+
+    protected ?Closure $stopMonitoringHandler = null;
 
     public function __construct(protected readonly string $monitorType) {
         $this->timestamp = time();
@@ -49,15 +54,32 @@ abstract class TrafficMonitor {
     /** @internal */
     public function pushBytes(string $mode, int $bytes): void {
         if (!$this->active) return;
+        $now = microtime(true);
         switch (strtolower($mode)) {
             case self::REGULAR_MODE_IN: {
                 $this->totalBytesIn += $bytes;
+                $this->byteHistoryIn[] = [$now, $bytes];
                 break;
             }
             case self::REGULAR_MODE_OUT: {
                 $this->totalBytesOut += $bytes;
+                $this->byteHistoryOut[] = [$now, $bytes];
                 break;
             }
+        }
+    }
+
+    /** @internal */
+    public function cleanupHistory(): void {
+        $now = microtime(true);
+        $threshold = $now - 1;
+
+        foreach ($this->byteHistoryIn as $i => $data) {
+            if ($data[0] < $threshold) unset($this->byteHistoryIn[$i]);
+        }
+
+        foreach ($this->byteHistoryOut as $i => $data) {
+            if ($data[0] < $threshold) unset($this->byteHistoryOut[$i]);
         }
     }
 
@@ -70,12 +92,21 @@ abstract class TrafficMonitor {
         }
     }
 
-    final public function stopMonitoring(): void {
+    public function registerStopMonitoringHandler(?Closure $handler): void {
+        $this->stopMonitoringHandler = $handler;
+    }
+
+    public function onStopMonitoring(mixed ...$args): bool {
+        return false;
+    }
+
+    final public function stopMonitoring(mixed ...$args): void {
         if (!$this->active) return;
         $this->active = false;
         $this->handlers = [];
         $this->monitoringDuration = time() - $this->timestamp;
         TrafficMonitorManager::getInstance()->removeTrafficMonitor($this);
+        if (!$this->onStopMonitoring(...$args) && $this->stopMonitoringHandler !== null) ($this->stopMonitoringHandler)(...$args);
     }
 
     public function isActive(): bool {
@@ -99,8 +130,24 @@ abstract class TrafficMonitor {
         return $this->totalBytesIn;
     }
 
+    public function getAverageBytesIn(): int {
+        return array_sum(array_map(fn(array $data) => $data[1], $this->byteHistoryIn));
+    }
+
     public function getTotalBytesOut(): int {
         return $this->totalBytesOut;
+    }
+
+    public function getTotalBytes(): int {
+        return $this->totalBytesOut + $this->totalBytesIn;
+    }
+
+    public function getAverageBytesOut(): int {
+        return array_sum(array_map(fn(array $data) => $data[1], $this->byteHistoryOut));
+    }
+
+    public function getAverageTotalBytes(): int {
+        return $this->getAverageBytesOut() + $this->getAverageBytesIn();
     }
 
     public function getMonitorType(): string {

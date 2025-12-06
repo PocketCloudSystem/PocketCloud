@@ -141,6 +141,7 @@ final class PocketCloud {
         CloudPluginManager::getInstance()->loadAll();
         CloudPluginManager::getInstance()->enableAll();
 
+        TickableList::add($this->trafficMonitorManager);
         TickableList::add(CloudPluginManager::getInstance());
         TickableList::add(AsyncPool::getInstance());
         TickableList::add(CloudServerManager::getInstance());
