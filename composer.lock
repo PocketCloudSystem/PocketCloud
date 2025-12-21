@@ -1,0 +1,43 @@
+{
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
+        "This file is @generated automatically"
+    ],
+    "content-hash": "bbaed9cb800bf7e982a0a400d8bda6ec",
+    "packages": [],
+    "packages-dev": [],
+    "aliases": [],
+    "minimum-stability": "stable",
+    "stability-flags": [],
+    "prefer-stable": false,
+    "prefer-lowest": false,
+    "platform": {
+        "php": "^8.4",
+        "php-64bit": "*",
+        "ext-crypto": "^0.3.1",
+        "ext-ctype": "*",
+        "ext-curl": "*",
+        "ext-date": "*",
+        "ext-encoding": "~1.0.0",
+        "ext-gmp": "*",
+        "ext-hash": "*",
+        "ext-igbinary": "^3.0.1",
+        "ext-json": "*",
+        "ext-mbstring": "*",
+        "ext-morton": "^0.1.0",
+        "ext-openssl": "*",
+        "ext-pcre": "*",
+        "ext-phar": "*",
+        "ext-pmmpthread": "^6.1.0",
+        "ext-reflection": "*",
+        "ext-simplexml": "*",
+        "ext-sockets": "*",
+        "ext-spl": "*",
+        "ext-yaml": ">=2.0.0",
+        "ext-zip": "*",
+        "ext-zlib": ">=1.2.11"
+    },
+    "platform-dev": [],
+    "plugin-api-version": "2.6.0"
+}

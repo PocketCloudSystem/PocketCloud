@@ -1,0 +1,225 @@
+<?php
+
+namespace pocketcloud\cloud\util;
+
+use pocketcloud\cloud\console\handler\ExceptionHandler;
+use pocketcloud\cloud\console\log\CloudLogger;
+use Throwable;
+use const pocketcloud\CLOUD_PATH;
+
+final class FileUtils {
+
+    public static function copyFile(string $src, string $dst): bool {
+        return ExceptionHandler::tryCatch(
+            function (string $src, string $dst): bool {
+                if (!@file_exists($src)) return false;
+                return copy($src, $dst);
+            },
+            "Failed to copy " . $src . " to " . $dst,
+            null,
+            $src, $dst
+        );
+    }
+
+    public static function createDir(string $path): bool {
+        return ExceptionHandler::tryCatch(
+            function (string $path): bool {
+                if (is_dir($path)) return true;
+                $previousPath = dirname($path);
+                $return = self::createDir($previousPath);
+                return $return && is_writable($previousPath) && mkdir($path);
+            },
+            "Failed to create directory: " . $path,
+            null,
+            $path
+        ) ?? false;
+    }
+
+    public static function filePutContents(string $filePath, string $content): int|false {
+        return ExceptionHandler::tryCatch(
+            function (string $filePath, string $content): int|false {
+                return file_put_contents($filePath, $content);
+            },
+            "Failed to write in file: " . $filePath,
+            null,
+            $filePath, $content
+        ) ?? false;
+    }
+
+    public static function fileGetContents(string $filePath): ?string {
+        return ExceptionHandler::tryCatch(
+            function (string $filePath): string {
+                return file_get_contents($filePath);
+            },
+            "Failed to read file: " . $filePath,
+            null,
+            $filePath
+        );
+    }
+
+    public static function copyDirectory(string $src, string $dst): bool {
+        return ExceptionHandler::tryCatch(
+            function (string $src, string $dst): bool {
+                $src = rtrim($src, DIRECTORY_SEPARATOR);
+                $dst = rtrim($dst, DIRECTORY_SEPARATOR);
+                self::createDir($src);
+                self::createDir($dst);
+
+                foreach (array_diff(scandir($src), [".", ".."]) as $file) {
+                    try {
+                        if (filetype($src . DIRECTORY_SEPARATOR . $file) == "dir") {
+                            self::copyDirectory($src . DIRECTORY_SEPARATOR . $file, $dst . DIRECTORY_SEPARATOR . $file);
+                        } else {
+                            if (!copy($src . DIRECTORY_SEPARATOR . $file, $dst . DIRECTORY_SEPARATOR . $file)) {
+                                CloudLogger::get()->warn("Can't copy file from: {} to {}" . $src . DIRECTORY_SEPARATOR . $file, $dst . DIRECTORY_SEPARATOR . $file);
+                            }
+                        }
+                    } catch (Throwable) {}
+                }
+                return false;
+            },
+            null,
+            null,
+            $src, $dst
+        );
+    }
+
+    public static function rename(string $src, string $dst): bool {
+        return ExceptionHandler::tryCatch(
+            function (string $src, string $dst): bool {
+                return rename($src, $dst);
+            },
+            "Failed to rename: " . $src . " to " . $dst,
+            null,
+            $src, $dst
+        );
+    }
+
+    public static function unlinkFile(string $filePath): bool {
+        return ExceptionHandler::tryCatch(
+            fn() => unlink($filePath),
+            "Failed to unlink file: " . $filePath
+        ) ?? false;
+    }
+
+    public static function removeDirectory(string $directoryPath): bool {
+        return ExceptionHandler::tryCatch(
+            function (string $directoryPath): bool {
+                if (@is_dir($directoryPath)) {
+                    foreach (array_diff(scandir($directoryPath), [".", ".."]) as $file) {
+                        $filePath = rtrim($directoryPath, "/") . "/" . $file;
+                        if (is_file($filePath)) self::unlinkFile($filePath);
+                        else if (is_dir($filePath)) self::removeDirectory($filePath);
+                    }
+                    return rmdir($directoryPath);
+                }
+
+                return false;
+            },
+            "Failed to remove directory: " . $directoryPath,
+            null,
+            $directoryPath
+        ) ?? false;
+    }
+
+    public static function encodeJson(array $jsonArray): ?string {
+        return ExceptionHandler::tryCatch(
+            function (array $jsonArray): ?string {
+                $encode = json_encode($jsonArray, JSON_THROW_ON_ERROR);
+                return is_string($encode) ? $encode : null;
+            },
+            "Failed to encode json string",
+            null,
+            $jsonArray
+        );
+    }
+
+    public static function encodeJsonFile(string $filePath, array $jsonArray): ?bool {
+        return ExceptionHandler::tryCatch(
+            function (string $filePath, array $jsonArray): ?string {
+                $encode = json_encode($jsonArray, JSON_THROW_ON_ERROR);
+                if (is_string($encode)) return is_int(file_put_contents($filePath, $encode));
+                return is_string($encode) ? $encode : null;
+            },
+            "Failed to encode & place json string into a file",
+            null,
+            $filePath, $jsonArray
+        );
+    }
+
+    public static function decodeJson(string $jsonString, int $depth = 512): ?array {
+        return ExceptionHandler::tryCatch(
+            function (string $jsonString, int $depth): ?array {
+                $decode = json_decode($jsonString, true, $depth, JSON_THROW_ON_ERROR);
+                return is_array($decode) ? $decode : null;
+            },
+            "Failed to decode json string: " . $jsonString,
+            null,
+            $jsonString, $depth
+        );
+    }
+
+    public static function decodeJsonFile(string $filePath, int $depth = 512): ?array {
+        return ExceptionHandler::tryCatch(
+            function (string $filePath, int $depth): ?array {
+                $decode = json_decode(file_get_contents($filePath), true, $depth, JSON_THROW_ON_ERROR);
+                return is_array($decode) ? $decode : null;
+            },
+            "Failed to decode json file: " . $filePath,
+            null,
+            $filePath, $depth
+        );
+    }
+
+    public static function emitYaml(mixed $yamlData): string {
+        return ExceptionHandler::tryCatch(
+            function (mixed $yamlData): ?string {
+                $emitted = yaml_emit($yamlData);
+                return is_string($emitted) ? $emitted : null;
+            },
+            "Failed to emit yaml data",
+            null,
+            $yamlData
+        );
+    }
+
+    public static function emitYamlFile(string $filePath, mixed $yamlData): bool {
+        return ExceptionHandler::tryCatch(
+            function (string $filePath, mixed $yamlData): bool {
+                return yaml_emit_file($filePath, $yamlData);
+            },
+            "Failed to emit & place yaml string into file",
+            null,
+            $filePath, $yamlData
+        );
+    }
+
+    public static function parseYaml(string $yamlString): ?array {
+        return ExceptionHandler::tryCatch(
+            function (string $yamlString): ?array {
+                $parsed = yaml_parse($yamlString);
+                return is_array($parsed) ? $parsed : null;
+            },
+            "Failed to parse yaml string: " . $yamlString,
+            null,
+            $yamlString
+        );
+    }
+
+    public static function parseYamlFile(string $filePath): ?array {
+        return ExceptionHandler::tryCatch(
+            function (string $filePath): ?array {
+                $parsed = yaml_parse_file($filePath);
+                return is_array($parsed) ? $parsed : null;
+            },
+            "Failed to parse yaml file: " . $filePath,
+            null,
+            $filePath
+        );
+    }
+
+    public static function cleanPath(string $path, bool $removePath = false): string {
+        if ($removePath) return ($explode = explode(DIRECTORY_SEPARATOR, str_replace(["\\", "//", "/"], DIRECTORY_SEPARATOR, $path)))[count($explode) - 1];
+        return str_replace(CLOUD_PATH, rtrim(str_replace("pocketcloud", "pcsrc", basename(CLOUD_PATH)), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR, $path);
+    }
+}
