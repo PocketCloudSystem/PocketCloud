@@ -26,6 +26,7 @@ final class ManualConsole {
         private ?Closure $controlCHandler = null
     ) {
         stream_set_blocking(STDIN, false);
+        mb_internal_encoding("UTF-8");
         shell_exec("stty -echo");
         shell_exec("stty raw");
     }
@@ -68,14 +69,16 @@ final class ManualConsole {
 
         if ($char === "\177") {
             if ($this->cursor > 0) {
-                $this->input = substr($this->input, 0, $this->cursor - 1) . substr($this->input, $this->cursor);
+                $before = mb_substr($this->input, 0, $this->cursor - 1);
+                $after = mb_substr($this->input, $this->cursor);
+                $this->input = $before . $after;
                 $this->cursor--;
                 $this->redraw($this->prompt);
             }
             return null;
         }
 
-        $this->input = substr($this->input, 0, $this->cursor) . $char . substr($this->input, $this->cursor);
+        $this->input = mb_substr($this->input, 0, $this->cursor) . $char . mb_substr($this->input, $this->cursor);
         $this->cursor++;
         $this->redraw($this->prompt);
 
@@ -166,14 +169,44 @@ final class ManualConsole {
 
     private function readChar(int $timeoutMs): ?string {
         $this->ensureOpen();
+
         $read = [STDIN];
         $write = null;
         $except = null;
         $tv_usec = ($timeoutMs % 1000) * 1000;
-        $n = stream_select($read, $write, $except, 0, $tv_usec);
-        if ($n === false || $n === 0) return null;
+
+        if (stream_select($read, $write, $except, 0, $tv_usec) <= 0) {
+            return null;
+        }
+
         $char = fread(STDIN, 1);
-        return $char === false ? null : $char;
+        if ($char === false || $char === "") return null;
+
+        $ord = ord($char);
+
+        if ($ord < 0x80) {
+            return $char;
+        }
+
+        $bytes = [$char];
+
+        if (($ord & 0xE0) === 0xC0) {
+            $length = 2;
+        } elseif (($ord & 0xF0) === 0xE0) {
+            $length = 3;
+        } elseif (($ord & 0xF8) === 0xF0) {
+            $length = 4;
+        } else {
+            return null;
+        }
+
+        for ($i = 1; $i < $length; $i++) {
+            $next = fread(STDIN, 1);
+            if ($next === false) return null;
+            $bytes[] = $next;
+        }
+
+        return implode("", $bytes);
     }
 
     private function handleEscapeSequence(string $seq, string $prompt): void {
@@ -210,7 +243,7 @@ final class ManualConsole {
     private function redraw(string $prompt): void {
         echo "\033[2K\r";
         echo $prompt . $this->input;
-        $back = strlen($this->input) - $this->cursor;
+        $back = mb_strlen($this->input) - $this->cursor;
         if ($back > 0) echo str_repeat("\033[D", $back);
     }
 
