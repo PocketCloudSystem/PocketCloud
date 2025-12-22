@@ -5,15 +5,16 @@ namespace pocketcloud\cloud\thread;
 use pmmp\thread\ThreadSafe;
 use pmmp\thread\ThreadSafeArray;
 use pocketcloud\cloud\console\log\CloudLogger;
+use pocketcloud\cloud\util\trait\SingletonTrait;
 
 final class ThreadManager extends ThreadSafe {
-
-    private static ?self $instance = null;
+    use SingletonTrait;
 
     /** @var ThreadSafeArray<int, Thread|Worker> */
     private ThreadSafeArray $threads;
 
     public function __construct() {
+        self::setInstance($this);
         $this->threads = new ThreadSafeArray();
     }
 
@@ -53,10 +54,5 @@ final class ThreadManager extends ThreadSafe {
 
     public function getAll(): array {
         return iterator_to_array($this->threads);
-    }
-
-    public static function getInstance(): self {
-        if (self::$instance === null) self::$instance = new self();
-        return self::$instance;
     }
 }

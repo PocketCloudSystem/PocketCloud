@@ -10,7 +10,8 @@ final class UnhandledPacket extends ThreadSafe {
 
     public function __construct(
         private readonly string $buffer,
-        private readonly Address $address
+        private readonly Address $address,
+        private readonly int $bytes
     ) {}
 
     public function buildCloudPacket(bool $encryptionEnabled): ?CloudboundPacket {
@@ -23,5 +24,9 @@ final class UnhandledPacket extends ThreadSafe {
 
     public function getAddress(): Address {
         return $this->address;
+    }
+
+    public function getBytes(): int {
+        return $this->bytes;
     }
 }

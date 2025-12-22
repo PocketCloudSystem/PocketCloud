@@ -45,8 +45,4 @@ final class EventManager {
             }
         }
     }
-
-    public static function getInstance(): self {
-        return self::$instance ??= new self;
-    }
 }

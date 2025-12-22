@@ -8,6 +8,7 @@ use pocketcloud\cloud\config\impl\MainConfig;
 use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\event\impl\network\NetworkPacketPreSendEvent;
 use pocketcloud\cloud\event\impl\network\NetworkPacketReceiveEvent;
+use pocketcloud\cloud\event\impl\network\NetworkPacketReceivePreProcessEvent;
 use pocketcloud\cloud\event\impl\network\NetworkPacketSendEvent;
 use pocketcloud\cloud\exception\SocketException;
 use pocketcloud\cloud\network\client\ServerClient;
@@ -34,7 +35,6 @@ final class Network extends Thread {
     private SleeperHandlerEntry $handlerEntry;
     private Socket $socket;
     private bool $established = false;
-    private int $actualReadingBuffer = 65535;
 
     public function __construct(private readonly Address $address) {
         self::setInstance($this);
@@ -45,7 +45,7 @@ final class Network extends Thread {
             while (($unhandledPacket = $this->buffer->shift()) !== null) {
                 $continue = true;
 
-                TrafficMonitorManager::getInstance()->pushBytes(TrafficMonitorManager::TRAFFIC_NETWORK, $bytes = strlen($unhandledPacket->getBuffer()), TrafficMonitor::REGULAR_MODE_IN);
+                TrafficMonitorManager::getInstance()->pushBytes(TrafficMonitorManager::TRAFFIC_NETWORK, $bytes = $unhandledPacket->getBytes(), TrafficMonitor::REGULAR_MODE_IN);
                 TrafficMonitorManager::getInstance()->callHandlers(
                     TrafficMonitorManager::TRAFFIC_NETWORK,
                     TrafficMonitor::REGULAR_MODE_IN,
@@ -53,19 +53,23 @@ final class Network extends Thread {
                 );
 
                 $client = ServerClientCache::getInstance()->getByAddress($unhandledPacket->getAddress()) ?? new ServerClient($unhandledPacket->getAddress());
+
+                ($ev = new NetworkPacketReceivePreProcessEvent($unhandledPacket->getBuffer(), $encryption = MainConfig::getInstance()->isNetworkEncryptionEnabled(), $client))->call();
+                if ($ev->isCancelled()) return;
+
                 if (MainConfig::getInstance()->isNetworkOnlyLocal() && !$unhandledPacket->getAddress()->isLocal()) $continue = false;
                 if ($continue) {
-                    if (($packet = $unhandledPacket->buildCloudPacket(MainConfig::getInstance()->isNetworkEncryptionEnabled())) !== null) {
+                    if (($packet = $unhandledPacket->buildCloudPacket($encryption)) !== null) {
                         TrafficMonitorManager::getInstance()->callHandlers(
                             TrafficMonitorManager::TRAFFIC_NETWORK,
                             NetworkTrafficMonitor::parsePacketMode(NetworkTrafficMonitor::NETWORK_MODE_PACKET_IN, $packet::class),
                             $packet, $unhandledPacket->getAddress()
                         );
 
-                        new NetworkPacketReceiveEvent($packet, $client)->call();
-                        $packet->handle($client);
-                    } else CloudLogger::get()->warn("Received an unknown packet from §b{}§r, ignoring...", $unhandledPacket->getAddress())->debug("Packet buffer: " . $unhandledPacket->getBuffer());
-                } else CloudLogger::get()->warn("Received an external packet from §b{}§r, ignoring...", $unhandledPacket->getAddress())->debug("Packet buffer: " . $unhandledPacket->getBuffer());
+                        ($ev = new NetworkPacketReceiveEvent($packet, $client))->call();
+                        if (!$ev->isCancelled()) $packet->handle($client);
+                    } else CloudLogger::get()->debug("Received an unknown packet from §b{}§r, ignoring...", $unhandledPacket->getAddress())->debug("Packet buffer: " . $unhandledPacket->getBuffer()); # Both of this is using debug due to the potential risks
+                } else CloudLogger::get()->debug("Received an external packet from §b{}§r, ignoring...", $unhandledPacket->getAddress())->debug("Packet buffer: " . $unhandledPacket->getBuffer());    # that are caused by warn() (flooding the console visibly basically)
             }
         });
     }
@@ -92,8 +96,8 @@ final class Network extends Thread {
             $write = $except = [];
 
             if (socket_select($read, $write, $except, 0, 50 * 1000) > 0) {
-                if ($this->read($buffer, $address, $port)) {
-                    $this->buffer[] = new UnhandledPacket($buffer, Address::create($address, $port));
+                if ($this->read($bytes, $buffer, $address, $port)) {
+                    $this->buffer[] = new UnhandledPacket($buffer, Address::create($address, $port), $bytes);
                 }
             }
         }
@@ -141,19 +145,32 @@ final class Network extends Thread {
 
     public function write(string $buffer, Address $dst): bool {
         if (!$this->established) return false;
-        TrafficMonitorManager::getInstance()->pushBytes(TrafficMonitorManager::TRAFFIC_NETWORK, $bytes = strlen($buffer), TrafficMonitor::REGULAR_MODE_OUT);
+        $sent = @socket_sendto($this->socket, $buffer, $bytes = strlen($buffer), 0, $dst->getAddress(), $dst->getPort());
+
+        if ($sent === false || $sent <= 0) return false;
+
+        TrafficMonitorManager::getInstance()->pushBytes(TrafficMonitorManager::TRAFFIC_NETWORK, $sent, TrafficMonitor::REGULAR_MODE_OUT);
         TrafficMonitorManager::getInstance()->callHandlers(
             TrafficMonitorManager::TRAFFIC_NETWORK,
             TrafficMonitor::REGULAR_MODE_OUT,
-            $buffer, $bytes, $dst
+            $buffer,
+            $sent,
+            $dst
         );
 
-        return socket_sendto($this->socket, $buffer, $bytes, 0, $dst->getAddress(), $dst->getPort()) == $bytes;
+        return $sent === $bytes;
     }
 
-    public function read(?string &$buffer, ?string &$address, ?int &$port): bool {
+    public function read(?int &$bytes, ?string &$buffer, ?string &$address, ?int &$port): bool {
         if (!$this->established) return false;
-        return socket_recvfrom($this->socket, $buffer, $this->actualReadingBuffer, 0, $address, $port) !== false;
+        $result = @socket_recvfrom($this->socket, $buffer, 65535, 0, $address, $port);
+        if (!$result === false || $result === 0) {
+            $bytes = 0;
+            return false;
+        }
+
+        $bytes = $result;
+        return true;
     }
 
     public function close(): void {
