@@ -88,7 +88,7 @@ final class Promise {
     }
 
     public static function resolved(mixed $result = null): Promise {
-        return new Promise()->resolved($result);
+        return new Promise()->resolve($result);
     }
 
     public static function rejected(mixed $reason = null): Promise {
