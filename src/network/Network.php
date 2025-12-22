@@ -1,0 +1,168 @@
+<?php
+
+namespace pocketcloud\cloud\network;
+
+use LogicException;
+use pmmp\thread\ThreadSafeArray;
+use pocketcloud\cloud\config\impl\MainConfig;
+use pocketcloud\cloud\console\log\CloudLogger;
+use pocketcloud\cloud\event\impl\network\NetworkPacketPreSendEvent;
+use pocketcloud\cloud\event\impl\network\NetworkPacketReceiveEvent;
+use pocketcloud\cloud\event\impl\network\NetworkPacketSendEvent;
+use pocketcloud\cloud\exception\SocketException;
+use pocketcloud\cloud\network\client\ServerClient;
+use pocketcloud\cloud\network\client\ServerClientCache;
+use pocketcloud\cloud\network\packet\ClientboundPacket;
+use pocketcloud\cloud\network\packet\UnhandledPacket;
+use pocketcloud\cloud\network\packet\util\PacketSerializer;
+use pocketcloud\cloud\PocketCloud;
+use pocketcloud\cloud\template\TemplateType;
+use pocketcloud\cloud\thread\Thread;
+use pocketcloud\cloud\traffic\impl\NetworkTrafficMonitor;
+use pocketcloud\cloud\traffic\TrafficMonitor;
+use pocketcloud\cloud\traffic\TrafficMonitorManager;
+use pocketcloud\cloud\util\net\Address;
+use pocketcloud\cloud\util\promise\Promise;
+use pocketcloud\cloud\util\trait\SingletonTrait;
+use pocketmine\snooze\SleeperHandlerEntry;
+use Socket;
+
+final class Network extends Thread {
+    use SingletonTrait;
+
+    private ThreadSafeArray $buffer;
+    private SleeperHandlerEntry $handlerEntry;
+    private Socket $socket;
+    private bool $established = false;
+    private int $actualReadingBuffer = 65535;
+
+    public function __construct(private readonly Address $address) {
+        self::setInstance($this);
+        $this->buffer = new ThreadSafeArray();
+
+        $this->handlerEntry = PocketCloud::getInstance()->getSleeperHandler()->addNotifier(function (): void {
+            /** @var UnhandledPacket $unhandledPacket */
+            while (($unhandledPacket = $this->buffer->shift()) !== null) {
+                $continue = true;
+
+                TrafficMonitorManager::getInstance()->pushBytes(TrafficMonitorManager::TRAFFIC_NETWORK, $bytes = strlen($unhandledPacket->getBuffer()), TrafficMonitor::REGULAR_MODE_IN);
+                TrafficMonitorManager::getInstance()->callHandlers(
+                    TrafficMonitorManager::TRAFFIC_NETWORK,
+                    TrafficMonitor::REGULAR_MODE_IN,
+                    $unhandledPacket->getBuffer(), $bytes, $unhandledPacket->getAddress()
+                );
+
+                $client = ServerClientCache::getInstance()->getByAddress($unhandledPacket->getAddress()) ?? new ServerClient($unhandledPacket->getAddress());
+                if (MainConfig::getInstance()->isNetworkOnlyLocal() && !$unhandledPacket->getAddress()->isLocal()) $continue = false;
+                if ($continue) {
+                    if (($packet = $unhandledPacket->buildCloudPacket(MainConfig::getInstance()->isNetworkEncryptionEnabled())) !== null) {
+                        TrafficMonitorManager::getInstance()->callHandlers(
+                            TrafficMonitorManager::TRAFFIC_NETWORK,
+                            NetworkTrafficMonitor::parsePacketMode(NetworkTrafficMonitor::NETWORK_MODE_PACKET_IN, $packet::class),
+                            $packet, $unhandledPacket->getAddress()
+                        );
+
+                        new NetworkPacketReceiveEvent($packet, $client)->call();
+                        $packet->handle($client);
+                    } else CloudLogger::get()->warn("Received an unknown packet from §b{}§r, ignoring...", $unhandledPacket->getAddress())->debug("Packet buffer: " . $unhandledPacket->getBuffer());
+                } else CloudLogger::get()->warn("Received an external packet from §b{}§r, ignoring...", $unhandledPacket->getAddress())->debug("Packet buffer: " . $unhandledPacket->getBuffer());
+            }
+        });
+    }
+
+    public function init(): void {
+        if ($this->established) throw new LogicException("Socket has already been established");
+        $socket = @socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
+        if (!$socket) throw new SocketException(socket_strerror(socket_last_error()));
+        $this->socket = $socket;
+        if (@socket_bind($socket, $this->address->getAddress(), $this->address->getPort())) {
+            $this->established = true;
+            socket_set_option($this->socket, SOL_SOCKET, SO_SNDBUF, 1024 * 1024 * 8);
+            socket_set_option($this->socket, SOL_SOCKET, SO_RCVBUF, 1024 * 1024 * 8);
+            socket_set_block($this->socket);
+        } else throw new SocketException(socket_strerror(socket_last_error()));
+
+        CloudLogger::get()->success("§bNetwork connection §rhas been §aestablished §ron §b{}§r.", $this->address);
+        $this->start();
+    }
+
+    protected function onRun(): void {
+        while ($this->established && $this->isRunning()) {
+            $read = [$this->socket];
+            $write = $except = [];
+
+            if (socket_select($read, $write, $except, 0, 50 * 1000) > 0) {
+                if ($this->read($buffer, $address, $port)) {
+                    $this->buffer[] = new UnhandledPacket($buffer, Address::create($address, $port));
+                }
+            }
+        }
+    }
+
+    public function sendPacket(ClientboundPacket $packet, ServerClient $client): bool {
+        if (!$this->established) return false;
+        $buffer = PacketSerializer::encode($packet, MainConfig::getInstance()->isNetworkEncryptionEnabled());
+        $success = $this->write($buffer, $client->getAddress());
+        TrafficMonitorManager::getInstance()->callHandlers(
+            TrafficMonitorManager::TRAFFIC_NETWORK,
+            NetworkTrafficMonitor::parsePacketMode(NetworkTrafficMonitor::NETWORK_MODE_PACKET_OUT, $packet::class),
+            $packet, $client->getAddress(), $success
+        );
+
+        new NetworkPacketSendEvent($packet, $client, $success)->call();
+        return $success;
+    }
+
+    public function broadcastPacket(ClientboundPacket $packet, ServerClient|TemplateType... $exclusions): Promise {
+        if (!$this->established) return Promise::all([]);
+        $buffer = PacketSerializer::encode($packet, MainConfig::getInstance()->isNetworkEncryptionEnabled());
+        $promises = [];
+        foreach (ServerClientCache::getInstance()->getAll() as $client) {
+            if (in_array($client, $exclusions) || in_array($client->getServer()->getTemplate()->getTemplateType(), $exclusions)) continue;
+            ($ev = new NetworkPacketPreSendEvent($packet, $client))->call();
+            if ($ev->isCancelled()) {
+                $success = false;
+            } else {
+                $success = $this->write($buffer, $client->getAddress());
+                TrafficMonitorManager::getInstance()->callHandlers(
+                    TrafficMonitorManager::TRAFFIC_NETWORK,
+                    NetworkTrafficMonitor::parsePacketMode(NetworkTrafficMonitor::NETWORK_MODE_PACKET_OUT, $packet::class),
+                    $packet, $client->getAddress(), $success
+                );
+
+                new NetworkPacketSendEvent($packet, $client, $success)->call();
+            }
+
+            $promises[] = $success ? Promise::resolved() : Promise::rejected();
+        }
+
+        return Promise::all($promises);
+    }
+
+    public function write(string $buffer, Address $dst): bool {
+        if (!$this->established) return false;
+        TrafficMonitorManager::getInstance()->pushBytes(TrafficMonitorManager::TRAFFIC_NETWORK, $bytes = strlen($buffer), TrafficMonitor::REGULAR_MODE_OUT);
+        TrafficMonitorManager::getInstance()->callHandlers(
+            TrafficMonitorManager::TRAFFIC_NETWORK,
+            TrafficMonitor::REGULAR_MODE_OUT,
+            $buffer, $bytes, $dst
+        );
+
+        return socket_sendto($this->socket, $buffer, $bytes, 0, $dst->getAddress(), $dst->getPort()) == $bytes;
+    }
+
+    public function read(?string &$buffer, ?string &$address, ?int &$port): bool {
+        if (!$this->established) return false;
+        return socket_recvfrom($this->socket, $buffer, $this->actualReadingBuffer, 0, $address, $port) !== false;
+    }
+
+    public function close(): void {
+        if (!$this->established) return;
+        @socket_close($this->socket);
+        $this->established = false;
+    }
+
+    public static function getInstance(): self {
+        return self::$instance;
+    }
+}

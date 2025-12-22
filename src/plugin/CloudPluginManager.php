@@ -40,7 +40,7 @@ final class CloudPluginManager implements Tickable, Loadable {
         CloudLogger::get()->debug("Loading plugins...");
         foreach (array_diff(scandir(PLUGINS_PATH), [".", ".."]) as $file) {
             $path = PLUGINS_PATH . $file;
-            $this->load($path);
+            $this->loadPlugin($path);
         }
 
         if (count($this->plugins) == 0) {

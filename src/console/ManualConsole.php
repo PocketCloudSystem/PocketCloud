@@ -175,9 +175,7 @@ final class ManualConsole {
         $except = null;
         $tv_usec = ($timeoutMs % 1000) * 1000;
 
-        if (stream_select($read, $write, $except, 0, $tv_usec) <= 0) {
-            return null;
-        }
+        if (stream_select($read, $write, $except, 0, $tv_usec) <= 0) return null;
 
         $char = fread(STDIN, 1);
         if ($char === false || $char === "") return null;

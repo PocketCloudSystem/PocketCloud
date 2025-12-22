@@ -9,6 +9,7 @@ use pocketcloud\cloud\PocketCloud;
 use pocketcloud\cloud\provider\CloudProvider;
 use pocketcloud\cloud\util\trait\SingletonTrait;
 use pocketcloud\cloud\util\Utils;
+use Random\Randomizer;
 use const pocketcloud\STORAGE_PATH;
 
 final class MainConfig extends Configuration {
@@ -50,10 +51,6 @@ final class MainConfig extends Configuration {
         "database" => "cloud"
     ];
 
-    private array $web = [
-        "enabled" => false
-    ];
-
     private array $startCommands = [
         "server" => "%BINARY_PATH%bin/php7/bin/php %SOFTWARE_PATH%PocketMine-MP.phar --no-wizard",
         "proxy" => "java -jar %SOFTWARE_PATH%Waterdog.jar"
@@ -67,11 +64,13 @@ final class MainConfig extends Configuration {
     private array $serverPortRanges = [
         "server" => [
             "start" => 40000,
-            "end" => 65535
+            "end" => 65535,
+            "random-ports" => true
         ],
         "proxy" => [
             "start" => 19132,
-            "end" => 20000
+            "end" => 20000,
+            "random-ports" => false
         ]
     ];
 
@@ -85,42 +84,24 @@ final class MainConfig extends Configuration {
         $defaultBinaries = $this->binaries;
         $defaultNetwork = $this->network;
         $defaultHttp = $this->httpServer;
-        $defaultWeb = $this->web;
         $defaultMySql = $this->mysqlSettings;
         $defaultStartCommands = $this->startCommands;
         $defaultServerTimeouts = $this->serverTimeouts;
         $defaultServerPortRanges = $this->serverPortRanges;
 
-        ExceptionHandler::tryCatch(function (array $defaultBinaries, array $defaultNetwork, array $defaultHttp, array $defaultWeb, array $defaultMySql, array $defaultStartCommands, array $defaultServerTimeouts, array $defaultServerPortRanges): void {
+        ExceptionHandler::tryCatch(function (array $defaultBinaries, array $defaultNetwork, array $defaultHttp, array $defaultMySql, array $defaultStartCommands, array $defaultServerTimeouts, array $defaultServerPortRanges): void {
             $this->load();
             foreach (array_keys($defaultBinaries) as $binary) {
                 if (!isset($this->binaries[$binary])) $this->binaries[$binary] = str_replace(["{php_ver}"], [substr(PHP_VERSION, 0, 3)], $defaultBinaries[$binary]);
                 else if ($this->binaries[$binary]) $this->binaries[$binary] = str_replace(["{php_ver}"], [substr(PHP_VERSION, 0, 3)], $this->binaries[$binary]);
             }
 
-            foreach (array_keys($defaultNetwork) as $key) {
-                if (!isset($this->network[$key])) $this->network[$key] = $defaultNetwork[$key];
-            }
-
-            foreach (array_keys($defaultHttp) as $key) {
-                if (!isset($this->httpServer[$key])) $this->httpServer[$key] = $defaultHttp[$key];
-            }
-
-            foreach (array_keys($defaultWeb) as $key) {
-                if (!isset($this->web[$key])) $this->web[$key] = $defaultWeb[$key];
-            }
-
-            foreach (array_keys($defaultMySql) as $key) {
-                if (!isset($this->mysqlSettings[$key])) $this->mysqlSettings[$key] = $defaultMySql[$key];
-            }
-
-            foreach (array_keys($defaultStartCommands) as $key) {
-                if (!isset($this->startCommands[$key])) $this->startCommands[$key] = $defaultStartCommands[$key];
-            }
-
-            foreach (array_keys($defaultServerTimeouts) as $key) {
-                if (!isset($this->serverTimeouts[$key])) $this->serverTimeouts[$key] = $defaultServerTimeouts[$key];
-            }
+            Utils::fillMissingKeys($this->network, $defaultNetwork);
+            Utils::fillMissingKeys($this->httpServer, $defaultHttp);
+            Utils::fillMissingKeys($this->mysqlSettings, $defaultMySql);
+            Utils::fillMissingKeys($this->startCommands, $defaultStartCommands);
+            Utils::fillMissingKeys($this->serverTimeouts, $defaultServerTimeouts);
+            Utils::fillMissingKeys($this->serverPortRanges, $defaultServerPortRanges);
 
             if (!in_array(strtolower($this->startMethod), ["tmux", "screen"])) {
                 $this->startMethod = "tmux";
@@ -137,9 +118,11 @@ final class MainConfig extends Configuration {
                 if (!is_array($data)) $this->serverPortRanges[$key] = [];
                 if (!isset($data["start"])) $this->serverPortRanges[$key]["start"] = mt_rand(40000, 41000);
                 if (!isset($data["end"])) $this->serverPortRanges[$key]["end"] = mt_rand(41000, 42000);
+                if (!isset($data["random-ports"])) $this->serverPortRanges[$key]["random-ports"] = (bool) round(new Randomizer()->getFloat(0, 1));
 
                 $start = $this->serverPortRanges[$key]["start"];
                 $end = $this->serverPortRanges[$key]["end"];
+                $randomPorts = $this->serverPortRanges[$key]["random-ports"] ?? false;
 
                 if ($start <= 0 || $end <= 0) {
                     PocketCloud::getInstance()->addStartNotification("Invalid port range §8(§b{$start}§8-§b{$end}§8) §rfor server type §8'§b" . $key . "§8'§r: §bStart §7or §bend §7can not be less or equal to §b0§r: §cResetting the entry, please review your config...", CloudLogLevel::WARN());
@@ -157,14 +140,15 @@ final class MainConfig extends Configuration {
                     PocketCloud::getInstance()->addStartNotification("Invalid port range §8(§b{$start}§8-§b{$end}§8) §rfor server type §8'§b" . $key . "§8'§r: §bEnd §rneeds to be at least §b50 ports higher §rthan §bstart§r: §cResetting the entry, please review your config...", CloudLogLevel::WARN());
                     unset($this->serverPortRanges[$key]);
                 }
-            }
 
-            foreach (array_keys($defaultServerPortRanges) as $key) {
-                if (!isset($this->serverPortRanges[$key])) $this->serverPortRanges[$key] = $defaultServerPortRanges[$key];
+                // Re-setting this due to strict declarations, see ServerUtils
+                $this->serverPortRanges[$key] = [
+                    "start" => $start, "end" => $end, "random-ports" => $randomPorts
+                ];
             }
 
             $this->save();
-        }, "Failed to load main config", fn() => PocketCloud::getInstance()->shutdown(), $defaultBinaries, $defaultNetwork, $defaultHttp, $defaultWeb, $defaultMySql, $defaultStartCommands, $defaultServerTimeouts, $defaultServerPortRanges);
+        }, "Failed to load main config", fn() => PocketCloud::getInstance()->shutdown(), $defaultBinaries, $defaultNetwork, $defaultHttp, $defaultMySql, $defaultStartCommands, $defaultServerTimeouts, $defaultServerPortRanges);
     }
 
     public function setMemoryLimit(int $memoryLimit): void {
@@ -233,10 +217,6 @@ final class MainConfig extends Configuration {
         $this->httpServer["onlyLocal"] = $value;
     }
 
-    public function setWebEnabled(bool $value): void {
-        $this->web["enabled"] = $value;
-    }
-
     public function setStartCommand(string $templateType, string $startCommand): void {
         $this->startCommands[strtolower($templateType)] = $startCommand;
     }
@@ -245,8 +225,8 @@ final class MainConfig extends Configuration {
         $this->serverTimeouts[strtolower($templateType)] = $timeout;
     }
 
-    public function setServerPortRange(string $templateType, int $start, int $end): void {
-        $this->serverPortRanges[strtolower($templateType)] = ["start" => $start, "end" => $end];
+    public function setServerPortRange(string $templateType, int $start, int $end, bool $randomPorts): void {
+        $this->serverPortRanges[strtolower($templateType)] = ["random-ports" => $randomPorts, "start" => $start, "end" => $end];
     }
 
     public function setServerPrepareThreads(int $serverPrepareThreads): void {
@@ -289,6 +269,10 @@ final class MainConfig extends Configuration {
 
     public function getAllBinaries(): array {
         return $this->binaries;
+    }
+
+    public function getNetwork(): array {
+        return $this->network;
     }
 
     public function getNetworkAddress(): int {
@@ -345,10 +329,6 @@ final class MainConfig extends Configuration {
 
     public function getMySqlDatabase(): string {
         return $this->mysqlSettings["database"];
-    }
-
-    public function isWebEnabled(): bool {
-        return $this->web["enabled"];
     }
 
     public function getStartCommand(string $software): string {

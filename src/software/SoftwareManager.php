@@ -4,7 +4,7 @@ namespace pocketcloud\cloud\software;
 
 use pocketcloud\cloud\config\impl\MainConfig;
 use pocketcloud\cloud\console\log\CloudLogger;
-use pocketcloud\cloud\util\NetUtils;
+use pocketcloud\cloud\util\net\NetUtils;
 use pocketcloud\cloud\util\misc\Loadable;
 use pocketcloud\cloud\util\trait\SingletonTrait;
 use const pocketcloud\SOFTWARE_PATH;

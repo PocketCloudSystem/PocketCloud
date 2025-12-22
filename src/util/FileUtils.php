@@ -24,7 +24,7 @@ final class FileUtils {
     public static function createDir(string $path): bool {
         return ExceptionHandler::tryCatch(
             function (string $path): bool {
-                if (is_dir($path)) return true;
+                if (@file_exists($path)) return true;
                 $previousPath = dirname($path);
                 $return = self::createDir($previousPath);
                 return $return && is_writable($previousPath) && mkdir($path);
@@ -220,6 +220,9 @@ final class FileUtils {
 
     public static function cleanPath(string $path, bool $removePath = false): string {
         if ($removePath) return ($explode = explode(DIRECTORY_SEPARATOR, str_replace(["\\", "//", "/"], DIRECTORY_SEPARATOR, $path)))[count($explode) - 1];
-        return str_replace(CLOUD_PATH, rtrim(str_replace("pocketcloud", "pcsrc", basename(CLOUD_PATH)), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR, $path);
+        $result = str_replace([".php", "phar://"], ["", ""], $path);
+        $cleanPath = rtrim(str_replace("phar://", "", CLOUD_PATH), "/");
+        if (str_starts_with($result, $cleanPath)) $result = ltrim(str_replace($cleanPath, "pcsrc", $result), "/");
+        return $result;
     }
 }

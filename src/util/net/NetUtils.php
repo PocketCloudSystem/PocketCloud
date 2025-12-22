@@ -1,8 +1,18 @@
 <?php
 
-namespace pocketcloud\cloud\util;
+namespace pocketcloud\cloud\util\net;
+
+use RuntimeException;
 
 final class NetUtils {
+
+    public static function isLocalUdpPortInUse(int $port, string $address = "0.0.0.0"): bool {
+        $sock = socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
+        if ($sock === false) throw new RuntimeException("Unable to create socket");
+        $ok = @socket_bind($sock, $address, $port);
+        socket_close($sock);
+        return $ok === false;
+    }
 
     public static function download(string $url, string $fileLocation): bool {
         $ch = curl_init($url);

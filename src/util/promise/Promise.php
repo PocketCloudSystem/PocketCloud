@@ -17,8 +17,8 @@ final class Promise {
     /** @var Closure[] */
     private array $failure = [];
 
-    public function resolve(mixed $value = null): void {
-        if ($this->resolved || $this->rejected) return;
+    public function resolve(mixed $value = null): self {
+        if ($this->resolved || $this->rejected) return $this;
 
         $this->resolved = true;
         $this->result = $value;
@@ -27,11 +27,11 @@ final class Promise {
             $handler($value);
         }
 
-        $this->clear();
+        return $this->clear();
     }
 
-    public function reject(mixed $reason = null): void {
-        if ($this->resolved || $this->rejected) return;
+    public function reject(mixed $reason = null): self {
+        if ($this->resolved || $this->rejected) return $this;
 
         $this->rejected = true;
         $this->result = $reason;
@@ -40,7 +40,7 @@ final class Promise {
             $handler($reason);
         }
 
-        $this->clear();
+        return $this->clear();
     }
 
     public function then(Closure $onSuccess): Promise {
@@ -81,9 +81,18 @@ final class Promise {
         return $this;
     }
 
-    private function clear(): void {
+    private function clear(): self {
         $this->success = [];
         $this->failure = [];
+        return $this;
+    }
+
+    public static function resolved(mixed $result = null): Promise {
+        return new Promise()->resolved($result);
+    }
+
+    public static function rejected(mixed $reason = null): Promise {
+        return new Promise()->reject($reason);
     }
 
     public static function all(array $promises): Promise {
@@ -97,8 +106,7 @@ final class Promise {
         }
 
         foreach ($promises as $i => $promise) {
-            $promise
-                ->then(function ($value) use (&$results, &$remaining, $i, $all) {
+            $promise->then(function (mixed $value) use (&$results, &$remaining, $i, $all) {
                     $results[$i] = $value;
                     $remaining--;
 
@@ -107,7 +115,7 @@ final class Promise {
                         $all->resolve($results);
                     }
                 })
-                ->failure(fn($reason) => $all->reject($reason));
+                ->failure(fn(mixed $reason) => $all->reject($reason));
         }
 
         return $all;

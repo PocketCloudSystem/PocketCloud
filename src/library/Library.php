@@ -6,7 +6,7 @@ use pocketcloud\cloud\console\handler\ExceptionHandler;
 use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\PocketCloud;
 use pocketcloud\cloud\util\FileUtils;
-use pocketcloud\cloud\util\NetUtils;
+use pocketcloud\cloud\util\net\NetUtils;
 use pocketcloud\cloud\util\Utils;
 use ZipArchive;
 use const pocketcloud\LIBRARIES_PATH;

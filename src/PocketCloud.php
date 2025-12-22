@@ -6,17 +6,21 @@ use Phar;
 use pocketcloud\cloud\config\impl\MainConfig;
 use pocketcloud\cloud\console\command\CommandManager;
 use pocketcloud\cloud\console\Console;
-use pocketcloud\cloud\console\handler\ExceptionHandler;
-use pocketcloud\cloud\console\handler\ShutdownHandler;
 use pocketcloud\cloud\console\log\level\CloudLogLevel;
+use pocketcloud\cloud\crash\CrashDump;
+use pocketcloud\cloud\event\impl\cloud\CloudStartedEvent;
 use pocketcloud\cloud\group\ServerGroupManager;
+use pocketcloud\cloud\network\Network;
+use pocketcloud\cloud\plugin\CloudPluginManager;
 use pocketcloud\cloud\provider\CloudProvider;
 use pocketcloud\cloud\scheduler\AsyncPool;
 use pocketcloud\cloud\server\binary\BinaryDownloader;
 use pocketcloud\cloud\server\config\ServerPropertiesGenerator;
+use pocketcloud\cloud\server\prepare\ServerPreparator;
 use pocketcloud\cloud\software\SoftwareManager;
 use pocketcloud\cloud\template\TemplateManager;
 use pocketcloud\cloud\thread\ThreadManager;
+use pocketcloud\cloud\traffic\TrafficMonitorManager;
 use pocketcloud\cloud\util\FileUtils;
 use pocketcloud\cloud\util\misc\Queue;
 use pocketcloud\cloud\library\LibraryManager;
@@ -24,18 +28,21 @@ use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\util\loader\ClassLoader;
 use pocketcloud\cloud\util\misc\LoadableList;
 use pocketcloud\cloud\util\misc\TickableList;
+use pocketcloud\cloud\util\net\Address;
 use pocketcloud\cloud\util\TerminalUtils;
 use pocketcloud\cloud\util\VersionInfo;
 use pocketmine\snooze\SleeperHandler;
+use Throwable;
 use const pocketcloud\BINARIES_PATH;
 use const pocketcloud\CLOUD_PATH;
-use const pocketcloud\CRASH_PATH;
+use const pocketcloud\CRASHES_PATH;
 use const pocketcloud\GLOBAL_TEMPLATES_PATH;
 use const pocketcloud\IN_GAME_PATH;
 use const pocketcloud\IS_PHAR;
 use const pocketcloud\LIBRARIES_PATH;
 use const pocketcloud\LOG_PATH;
 use const pocketcloud\PLUGINS_PATH;
+use const pocketcloud\SERVER_CRASHES_PATH;
 use const pocketcloud\SERVER_GROUPS_PATH;
 use const pocketcloud\SOFTWARE_PATH;
 use const pocketcloud\STORAGE_PATH;
@@ -58,10 +65,14 @@ final class PocketCloud {
     private MainConfig $config;
     private SoftwareManager $softwareManager;
     private ThreadManager $threadManager;
+    private Network $network;
     private AsyncPool $asyncPool;
     private TemplateManager $templateManager;
     private ServerGroupManager $serverGroupManager;
     private ServerPropertiesGenerator $serverPropertiesGenerator;
+    private TrafficMonitorManager $trafficMonitorManager;
+    private ServerPreparator $serverPreparator;
+    private CloudPluginManager $cloudPluginManager;
 
     public function __construct(
         private readonly ClassLoader $classLoader
@@ -86,22 +97,30 @@ final class PocketCloud {
         ($this->softwareManager = new SoftwareManager())->load();
         $this->softwareManager->downloadAll();
         $this->threadManager = new ThreadManager();
+        $this->network = new Network(Address::fromArray($this->config->getNetwork()));
         $this->asyncPool = new AsyncPool();
         $this->templateManager = new TemplateManager();
         $this->serverGroupManager = new ServerGroupManager();
         $this->serverPropertiesGenerator = new ServerPropertiesGenerator();
+        $this->trafficMonitorManager = new TrafficMonitorManager();
+        $this->serverPreparator = new ServerPreparator();
+        $this->cloudPluginManager = new CloudPluginManager();
 
         $this->console->register();
-
-        ExceptionHandler::setAll();
-        ShutdownHandler::register();
 
         CloudProvider::select();
 
         if (array_any($this->config->getAllBinaries(), fn(string $url, string $templateType) => !BinaryDownloader::downloadBinary($url, $templateType))) return;
 
+        TickableList::add(
+            $this->trafficMonitorManager
+        );
+
         LoadableList::add(
-            $this->commandManager, $this->templateManager, $this->serverGroupManager, $this->serverPropertiesGenerator
+            $this->commandManager,
+            $this->templateManager, $this->serverGroupManager,
+            $this->serverPropertiesGenerator, $this->serverPreparator,
+            $this->cloudPluginManager
         );
 
         TerminalUtils::clear();
@@ -112,21 +131,32 @@ final class PocketCloud {
 
         CloudLogger::get()->info("The §bCloud §ris §astarting§r...");
 
+        $this->network->init();
         LoadableList::loadAll();
-
-        ShutdownHandler::register();
+        $this->cloudPluginManager->enableAll();
 
         while (($entry = $this->startNotificationQueue->next()) !== null) {
             CloudLogger::get()->log($entry[0], $entry[1], ...$entry[2]);
         }
 
-        CloudLogger::get()->success("§bCloud §rhas been §astarted§r. §8(§rTook §b" . number_format(microtime(true) - $this->startTimestamp, 3) . "s§8)");
+        CloudLogger::get()->success("§bCloud §rhas been §astarted§r. §8(§rTook §b" . number_format($time = (microtime(true) - $this->startTimestamp), 3) . "s§8)");
+        new CloudStartedEvent($time)->call();
+
         $this->tick();
     }
 
     public function crash(): void {
         if (!$this->running) return;
         $this->shutdown();
+        try {
+            $filePath = CrashDump::fromLastestError()->create();
+            CloudLogger::get()->error("§cAn error has occurred and caused the Cloud to crash entirely.");
+            CloudLogger::get()->error("§cA crashdump has been created.");
+            CloudLogger::get()->error("§c(§b{}§c)", $filePath);
+        } catch (Throwable $e) {
+            CloudLogger::get()->error("§cFailed to create crashdump§8: §e" . $e->getMessage());
+        }
+
         echo "--- Uptime: " . round($this->getUptime(), 3) . "s - PocketCloud has crashed, waiting 60s before completely killing the process. ---" . PHP_EOL;
         sleep(60);
         @TerminalUtils::kill(getmypid());
@@ -138,6 +168,7 @@ final class PocketCloud {
         CloudLogger::get()->info("§cShutting down §bPocket§3Cloud§r...");
         $this->running = false;
 
+        $this->network->close();
         $this->console->remove();
     }
 
@@ -225,6 +256,8 @@ final class PocketCloud {
     }
 }
 
+error_reporting(-1);
+
 checkPlatform();
 
 $autoloadPath = dirname(__FILE__, 2) . "/vendor/autoload.php";
@@ -240,8 +273,9 @@ define("pocketcloud\CLOUD_PATH", (IS_PHAR ?
 ));
 
 define("pocketcloud\STORAGE_PATH", CLOUD_PATH . "storage" . DIRECTORY_SEPARATOR);
-define("pocketcloud\CRASH_PATH", CLOUD_PATH . "storage" . DIRECTORY_SEPARATOR . "crashes" . DIRECTORY_SEPARATOR);
-define("pocketcloud\BINARIES_PATH", CLOUD_PATH . "storage" . DIRECTORY_SEPARATOR . "binaries" . DIRECTORY_SEPARATOR);
+define("pocketcloud\CRASHES_PATH", CLOUD_PATH . "storage" . DIRECTORY_SEPARATOR . "crashes" . DIRECTORY_SEPARATOR);
+define("pocketcloud\SERVER_CRASHES_PATH", CRASHES_PATH . "servers" . DIRECTORY_SEPARATOR);
+define("pocketcloud\BINARIES_PATH", STORAGE_PATH . "binaries" . DIRECTORY_SEPARATOR);
 define("pocketcloud\LIBRARIES_PATH", STORAGE_PATH . "libraries" . DIRECTORY_SEPARATOR);
 define("pocketcloud\PLUGINS_PATH", STORAGE_PATH . "plugins" . DIRECTORY_SEPARATOR);
 define("pocketcloud\SOFTWARE_PATH", STORAGE_PATH . "software" . DIRECTORY_SEPARATOR);
@@ -254,7 +288,7 @@ define("pocketcloud\SERVER_GROUPS_PATH", CLOUD_PATH . "groups" . DIRECTORY_SEPAR
 define("pocketcloud\FIRST_RUN", !file_exists(STORAGE_PATH . "config.json"));
 
 foreach ([
-    STORAGE_PATH, CRASH_PATH, BINARIES_PATH, LIBRARIES_PATH, PLUGINS_PATH, SOFTWARE_PATH, IN_GAME_PATH, LOG_PATH,
+    STORAGE_PATH, CRASHES_PATH, SERVER_CRASHES_PATH, BINARIES_PATH, LIBRARIES_PATH, PLUGINS_PATH, SOFTWARE_PATH, IN_GAME_PATH, LOG_PATH,
     TEMP_PATH,
     TEMPLATES_PATH, GLOBAL_TEMPLATES_PATH,
     SERVER_GROUPS_PATH
