@@ -151,14 +151,6 @@ final class PocketCloud {
         CloudLogger::get()->success("§bCloud §rhas been §astarted§r. §8(§rTook §b" . number_format($time = (microtime(true) - $this->startTimestamp), 3) . "s§8)");
         new CloudStartedEvent($time)->call();
 
-        $template = new Template("sigma", TemplateSettings::create(
-            false, false,
-            false, false, 20, 0, 1, 0.65,
-            false
-        ), TemplateType::SERVER());
-        TemplateManager::getInstance()->create($template);
-        CloudServerManager::getInstance()->start($template);
-
         $this->tick();
     }
 

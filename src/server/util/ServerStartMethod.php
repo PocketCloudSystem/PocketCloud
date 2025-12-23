@@ -84,16 +84,13 @@ final class ServerStartMethod {
     }
 
     public function startServer(CloudServer $server): Promise {
-        $startCommand = str_replace(
+        return ($this->startHandler)($server, str_replace(
             ["%BINARY_PATH%", "%SOFTWARE_PATH%"],
             [
                 BINARIES_PATH . strtolower($server->getTemplate()->getTemplateType()->getName()) . DIRECTORY_SEPARATOR,
                 SOFTWARE_PATH
             ], $server->getTemplate()->getTemplateType()->getSoftware()->getStartCommand()
-        );
-
-        CloudLogger::get()->info($startCommand);
-        return ($this->startHandler)($server, $startCommand);
+        ));
     }
 
     public function getName(): string {
