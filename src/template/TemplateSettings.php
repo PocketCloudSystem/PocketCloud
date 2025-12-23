@@ -10,6 +10,7 @@ final class TemplateSettings {
         private bool $lobby,
         private bool $maintenance,
         private bool $static,
+        private bool $alwaysCopyToStaticServers,
         private int $maxPlayerCount,
         private int $minServerCount,
         private int $maxServerCount,
@@ -27,6 +28,10 @@ final class TemplateSettings {
 
     public function setStatic(bool $static): void {
         $this->static = $static;
+    }
+
+    public function setAlwaysCopyToStaticServers(bool $alwaysCopyToStaticServers): void {
+        $this->alwaysCopyToStaticServers = $alwaysCopyToStaticServers;
     }
 
     public function setMaxPlayerCount(int $maxPlayerCount): void {
@@ -61,6 +66,10 @@ final class TemplateSettings {
         return $this->static;
     }
 
+    public function isAlwaysCopyToStaticServers(): bool {
+        return $this->alwaysCopyToStaticServers;
+    }
+
     public function getMaxPlayerCount(): int {
         return $this->maxPlayerCount;
     }
@@ -86,6 +95,7 @@ final class TemplateSettings {
             "lobby" => $this->lobby,
             "maintenance" => $this->maintenance,
             "static" => $this->static,
+            "alwaysCopyToStaticServers" => $this->alwaysCopyToStaticServers,
             "maxPlayerCount" => $this->maxPlayerCount,
             "minServerCount" => $this->minServerCount,
             "maxServerCount" => $this->maxServerCount,
@@ -94,12 +104,12 @@ final class TemplateSettings {
         ];
     }
 
-    public static function create(bool $lobby, bool $maintenance, bool $static, int $maxPlayerCount, int $minServerCount, int $maxServerCount, float $startNewPercentage, bool $autoStart): self {
-        return new TemplateSettings($lobby, $maintenance, $static, $maxPlayerCount, $minServerCount, $maxServerCount, $startNewPercentage, $autoStart);
+    public static function create(bool $lobby, bool $maintenance, bool $static, bool $alwaysCopyToStaticServers, int $maxPlayerCount, int $minServerCount, int $maxServerCount, float $startNewPercentage, bool $autoStart): self {
+        return new TemplateSettings($lobby, $maintenance, $static, $alwaysCopyToStaticServers, $maxPlayerCount, $minServerCount, $maxServerCount, $startNewPercentage, $autoStart);
     }
 
     public static function read(array $data): ?self {
-        if (!Utils::containKeys($data, "lobby", "maintenance", "maxPlayerCount", "minServerCount", "maxServerCount", "autoStart")) return null;
+        if (!Utils::containKeys($data, "lobby", "maintenance", "static", "alwaysCopyToStaticServers", "maxPlayerCount", "minServerCount", "maxServerCount", "startNewPercentage", "autoStart")) return null;
         return self::create(...$data);
     }
 }

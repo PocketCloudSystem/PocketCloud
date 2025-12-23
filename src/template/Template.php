@@ -2,6 +2,7 @@
 
 namespace pocketcloud\cloud\template;
 
+use pocketcloud\cloud\server\CloudServerManager;
 use pocketcloud\cloud\util\Utils;
 use const pocketcloud\TEMPLATES_PATH;
 
@@ -101,7 +102,7 @@ final readonly class Template {
         return TEMPLATES_PATH . $this->name . "/";
     }
 
-    public function toArray(): array {
+    public function write(): array {
         return [
             "name" => $this->name,
             "lobby" => $this->templateSettings->isLobby(),
@@ -116,11 +117,11 @@ final readonly class Template {
         ];
     }
 
-    public function toDetailedArray(): array {
+    public function detailedWrite(): array {
         $playerCount = 0;
         $serverCount = count(CloudServerManager::getInstance()->getAll($this));
         foreach (CloudServerManager::getInstance()->getAll($this) as $server) $playerCount += $server->getCloudPlayerCount();
-        return array_merge($this->toArray(), [
+        return array_merge($this->write(), [
             "playerCount" => $playerCount,
             "serverCount" => $serverCount
         ]);
@@ -130,21 +131,21 @@ final readonly class Template {
         return new Template($name, $templateSettings, $templateType);
     }
 
-    public static function fromArray(array $data): ?self {
+    public static function read(array $data): ?self {
         if (!Utils::containKeys($data, ...TemplateHelper::NECESSARY_KEYS)) return null;
         TemplateHelper::fillKeys($data);
         return self::create($data["name"], TemplateHelper::sumSettingsToInstance($data), TemplateType::get($data["templateType"]) ?? TemplateType::SERVER());
     }
 
-    public static function server(string $name, bool $lobby = false, bool $maintenance = true, bool $static = false, int $maxPlayerCount = 20, int $minServerCount = 1, int $maxServerCount = 2, float $startNewPercentage = 100, bool $autoStart = true): self {
-        return self::create($name, TemplateSettings::create($lobby, $maintenance, $static, $maxPlayerCount, $minServerCount, $maxServerCount, $startNewPercentage, $autoStart), TemplateType::SERVER());
+    public static function server(string $name, bool $lobby = false, bool $maintenance = true, bool $static = false, bool $alwaysCopyToStaticServers = false, int $maxPlayerCount = 20, int $minServerCount = 1, int $maxServerCount = 2, float $startNewPercentage = 100, bool $autoStart = true): self {
+        return self::create($name, TemplateSettings::create($lobby, $maintenance, $static, $alwaysCopyToStaticServers, $maxPlayerCount, $minServerCount, $maxServerCount, $startNewPercentage, $autoStart), TemplateType::SERVER());
     }
 
-    public static function proxy(string $name, bool $maintenance = true, bool $static = false, int $maxPlayerCount = 20, int $minServerCount = 1, int $maxServerCount = 1, float $startNewPercentage = 100, bool $autoStart = true): self {
-        return self::create($name, TemplateSettings::create(false, $maintenance, $static, $maxPlayerCount, $minServerCount, $maxServerCount, $startNewPercentage, $autoStart), TemplateType::PROXY());
+    public static function proxy(string $name, bool $maintenance = true, bool $static = false, bool $alwaysCopyToStaticServers = false, int $maxPlayerCount = 20, int $minServerCount = 1, int $maxServerCount = 1, float $startNewPercentage = 100, bool $autoStart = true): self {
+        return self::create($name, TemplateSettings::create(false, $maintenance, $static, $alwaysCopyToStaticServers, $maxPlayerCount, $minServerCount, $maxServerCount, $startNewPercentage, $autoStart), TemplateType::PROXY());
     }
 
-    public static function lobby(string $name, bool $maintenance = true, bool $static = false, int $maxPlayerCount = 20, int $minServerCount = 1, int $maxServerCount = 2, float $startNewPercentage = 0, bool $autoStart = true): self {
-        return self::create($name, TemplateSettings::create(true, $maintenance, $static, $maxPlayerCount, $minServerCount, $maxServerCount, $startNewPercentage, $autoStart), TemplateType::SERVER());
+    public static function lobby(string $name, bool $maintenance = true, bool $static = false, bool $alwaysCopyToStaticServers = false, int $maxPlayerCount = 20, int $minServerCount = 1, int $maxServerCount = 2, float $startNewPercentage = 0, bool $autoStart = true): self {
+        return self::create($name, TemplateSettings::create(true, $maintenance, $static, $alwaysCopyToStaticServers, $maxPlayerCount, $minServerCount, $maxServerCount, $startNewPercentage, $autoStart), TemplateType::SERVER());
     }
 }

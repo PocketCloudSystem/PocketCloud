@@ -15,10 +15,14 @@ use pocketcloud\cloud\plugin\CloudPluginManager;
 use pocketcloud\cloud\provider\CloudProvider;
 use pocketcloud\cloud\scheduler\AsyncPool;
 use pocketcloud\cloud\server\binary\BinaryDownloader;
+use pocketcloud\cloud\server\CloudServerManager;
 use pocketcloud\cloud\server\config\ServerPropertiesGenerator;
 use pocketcloud\cloud\server\prepare\ServerPreparator;
 use pocketcloud\cloud\software\SoftwareManager;
+use pocketcloud\cloud\template\Template;
 use pocketcloud\cloud\template\TemplateManager;
+use pocketcloud\cloud\template\TemplateSettings;
+use pocketcloud\cloud\template\TemplateType;
 use pocketcloud\cloud\thread\ThreadManager;
 use pocketcloud\cloud\traffic\TrafficMonitorManager;
 use pocketcloud\cloud\util\FileUtils;
@@ -67,12 +71,13 @@ final class PocketCloud {
     private ThreadManager $threadManager;
     private Network $network;
     private AsyncPool $asyncPool;
+    private ServerPreparator $serverPreparator;
     private TemplateManager $templateManager;
     private ServerGroupManager $serverGroupManager;
     private ServerPropertiesGenerator $serverPropertiesGenerator;
+    private CloudServerManager $serverManager;
     private TrafficMonitorManager $trafficMonitorManager;
-    private ServerPreparator $serverPreparator;
-    private CloudPluginManager $cloudPluginManager;
+    private CloudPluginManager $pluginManager;
 
     public function __construct(
         private readonly ClassLoader $classLoader
@@ -89,38 +94,42 @@ final class PocketCloud {
         $this->commandManager = new CommandManager();
         ($this->libraryManager = new LibraryManager())->load();
         $this->sleeperHandler = new SleeperHandler();
-        $this->startNotificationQueue = new Queue(gettype([]));
+        $this->startNotificationQueue = Queue::fromType([]);
         $this->config = new MainConfig();
-
-        CloudLogger::get()->setDebugMode($this->config->isDebugMode());
-
         ($this->softwareManager = new SoftwareManager())->load();
         $this->softwareManager->downloadAll();
         $this->threadManager = new ThreadManager();
         $this->network = new Network(Address::fromArray($this->config->getNetwork()));
         $this->asyncPool = new AsyncPool();
+        $this->serverPreparator = new ServerPreparator();
         $this->templateManager = new TemplateManager();
         $this->serverGroupManager = new ServerGroupManager();
         $this->serverPropertiesGenerator = new ServerPropertiesGenerator();
+        $this->serverManager = new CloudServerManager();
         $this->trafficMonitorManager = new TrafficMonitorManager();
-        $this->serverPreparator = new ServerPreparator();
-        $this->cloudPluginManager = new CloudPluginManager();
+        $this->pluginManager = new CloudPluginManager();
 
         $this->console->register();
 
         CloudProvider::select();
 
-        if (array_any($this->config->getAllBinaries(), fn(string $url, string $templateType) => !BinaryDownloader::downloadBinary($url, $templateType))) return;
+        if (array_any($this->config->getAllBinaries(), fn(string $url, string $templateType) => BinaryDownloader::downloadBinary($url, $templateType) === true)) {
+            $this->addStartNotification("§8====== §cATTENTION! §8======", CloudLogLevel::WARN())
+                ->addStartNotification("§rNew binaries have been downloaded.", CloudLogLevel::WARN())
+                ->addStartNotification("Please make sure that they are NOT corrupted due to issues with PharData.", CloudLogLevel::WARN())
+                ->addStartNotification("If they are, please download them manually.", CloudLogLevel::WARN())
+                ->addStartNotification("Thank you.", CloudLogLevel::WARN());
+        }
 
         TickableList::add(
-            $this->trafficMonitorManager
+            $this->trafficMonitorManager, $this->serverManager
         );
 
         LoadableList::add(
             $this->commandManager,
             $this->templateManager, $this->serverGroupManager,
             $this->serverPropertiesGenerator, $this->serverPreparator,
-            $this->cloudPluginManager
+            $this->pluginManager
         );
 
         TerminalUtils::clear();
@@ -133,7 +142,7 @@ final class PocketCloud {
 
         $this->network->init();
         LoadableList::loadAll();
-        $this->cloudPluginManager->enableAll();
+        $this->pluginManager->enableAll();
 
         while (($entry = $this->startNotificationQueue->next()) !== null) {
             CloudLogger::get()->log($entry[0], $entry[1], ...$entry[2]);
@@ -141,6 +150,14 @@ final class PocketCloud {
 
         CloudLogger::get()->success("§bCloud §rhas been §astarted§r. §8(§rTook §b" . number_format($time = (microtime(true) - $this->startTimestamp), 3) . "s§8)");
         new CloudStartedEvent($time)->call();
+
+        $template = new Template("sigma", TemplateSettings::create(
+            false, false,
+            false, false, 20, 0, 1, 0.65,
+            false
+        ), TemplateType::SERVER());
+        TemplateManager::getInstance()->create($template);
+        CloudServerManager::getInstance()->start($template);
 
         $this->tick();
     }
@@ -182,8 +199,9 @@ final class PocketCloud {
         }
     }
 
-    public function addStartNotification(string $logMessage, ?CloudLogLevel $logLevel = null, mixed... $params): void {
+    public function addStartNotification(string $logMessage, ?CloudLogLevel $logLevel = null, mixed... $params): self {
         $this->startNotificationQueue->add([$logLevel ?? CloudLogLevel::INFO(), $logMessage, $params]);
+        return $this;
     }
 
     public function isRunning(): bool {
@@ -235,8 +253,16 @@ final class PocketCloud {
         return $this->threadManager;
     }
 
+    public function getNetwork(): Network {
+        return $this->network;
+    }
+
     public function getAsyncPool(): AsyncPool {
         return $this->asyncPool;
+    }
+
+    public function getServerPreparator(): ServerPreparator {
+        return $this->serverPreparator;
     }
 
     public function getTemplateManager(): TemplateManager {
@@ -245,6 +271,22 @@ final class PocketCloud {
 
     public function getServerGroupManager(): ServerGroupManager {
         return $this->serverGroupManager;
+    }
+
+    public function getServerPropertiesGenerator(): ServerPropertiesGenerator {
+        return $this->serverPropertiesGenerator;
+    }
+
+    public function getServerManager(): CloudServerManager {
+        return $this->serverManager;
+    }
+
+    public function getTrafficMonitorManager(): TrafficMonitorManager {
+        return $this->trafficMonitorManager;
+    }
+
+    public function getPluginManager(): CloudPluginManager {
+        return $this->pluginManager;
     }
 
     public function getClassLoader(): ClassLoader {

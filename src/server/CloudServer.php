@@ -3,8 +3,12 @@
 namespace pocketcloud\cloud\server;
 
 use Closure;
+use pocketcloud\cloud\console\log\CloudLogger;
+use pocketcloud\cloud\event\impl\server\ServerStartEvent;
+use pocketcloud\cloud\event\impl\server\ServerStopEvent;
 use pocketcloud\cloud\network\client\ServerClientCache;
 use pocketcloud\cloud\network\packet\CloudPacket;
+use pocketcloud\cloud\network\packet\impl\type\VerifyStatus;
 use pocketcloud\cloud\player\CloudPlayer;
 use pocketcloud\cloud\player\CloudPlayerManager;
 use pocketcloud\cloud\PocketCloud;
@@ -12,24 +16,23 @@ use pocketcloud\cloud\server\data\CloudServerData;
 use pocketcloud\cloud\server\data\InternalCloudServerStorage;
 use pocketcloud\cloud\server\prepare\ServerPreparator;
 use pocketcloud\cloud\server\prepare\ServerPrepareEntry;
+use pocketcloud\cloud\server\util\ServerStartMethod;
 use pocketcloud\cloud\server\util\ServerStatus;
-use pocketcloud\cloud\server\util\ServerUtils;
 use pocketcloud\cloud\template\Template;
 use pocketcloud\cloud\template\TemplateManager;
-use pocketcloud\cloud\template\TemplateType;
 use pocketcloud\cloud\util\promise\Promise;
+use pocketcloud\cloud\util\TerminalUtils;
 use pocketcloud\cloud\util\Utils;
 use const pocketcloud\TEMP_PATH;
 
 // TODO
-// just a placeholder class
 final class CloudServer {
 
-    private InternalCloudServerStorage $internalCloudServerStorage;
     private int $lastCheckTime;
     private int $startTime;
     private int $stopTime = 0;
     private VerifyStatus $verifyStatus;
+    private InternalCloudServerStorage $internalCloudServerStorage;
 
     public function __construct(
         private readonly int $id,
@@ -37,35 +40,36 @@ final class CloudServer {
         private readonly CloudServerData $cloudServerData,
         private ServerStatus $serverStatus
     ) {
-        $this->internalCloudServerStorage = new InternalCloudServerStorage($this);
-        $this->verifyStatus = VerifyStatus::NOT_APPLIED();
         $this->startTime = time();
+        $this->verifyStatus = VerifyStatus::NOT_APPLIED;
+        $this->internalCloudServerStorage = new InternalCloudServerStorage($this);
     }
 
     public function prepare(): Promise {
         $promise = new Promise();
         CloudLogger::get()->info("§rPreparing the server §b" . $this->getName() . "§r...");
 
-        ServerPreparator::getInstance()->submitEntry(ServerPrepareEntry::fromServer($this), function() use($promise): void {
-            ServerUtils::copyProperties($this);
-            $promise->resolve(true);
-        });
+        ServerPreparator::getInstance()->submitEntry(ServerPrepareEntry::fromServer($this), fn() => $promise->resolve());
 
         return $promise;
     }
 
     public function start(): void {
-        CloudServerManager::getInstance()->addToProxies($this);
+        #CloudServerManager::getInstance()->addToProxies($this);
         new ServerStartEvent($this)->call();
         CloudLogger::get()->info("§aStarting §b" . $this->getName() . "§r...");
-        NotifyType::STARTING()->send(["%server%" => $this->getName()]);
-        ServerUtils::executeWithStartCommand($this->getPath(), $this->getName(), $this->getTemplate()->getTemplateType()->getSoftware()->getStartCommand());
+        #NotifyType::STARTING()->send(["%server%" => $this->getName()]);
+
+        ServerStartMethod::current()?->startServer($this)->failure(function (): void {
+            CloudLogger::get()->warn("Failed to start server §b{}§8, §rcould not create the process...");
+            //TODO:
+        });
     }
 
     public function stop(bool $force = false): void {
         new ServerStopEvent($this, $force)->call();
         CloudLogger::get()->info("§cStopping §b" . $this->getName() . "§r...");
-        NotifyType::STOPPING()->send(["%server%" => $this->getName()]);
+        #NotifyType::STOPPING()->send(["%server%" => $this->getName()]);
         $this->setServerStatus(ServerStatus::STOPPING());
         $this->setStopTime(time());
 
@@ -74,7 +78,7 @@ final class CloudServer {
             $this->setServerStatus(ServerStatus::OFFLINE());
             CloudServerManager::getInstance()->tick(PocketCloud::getInstance()->getTick());
         } else {
-            DisconnectPacket::create(DisconnectReason::SERVER_SHUTDOWN())->sendPacket($this);
+            #DisconnectPacket::create(DisconnectReason::SERVER_SHUTDOWN())->sendPacket($this);
         }
     }
 
@@ -128,7 +132,7 @@ final class CloudServer {
 
     public function setServerStatus(ServerStatus $serverStatus): void {
         $this->serverStatus = $serverStatus;
-        ServerSyncPacket::create($this, false)->broadcastPacket();
+        #ServerSyncPacket::create($this, false)->broadcastPacket();
     }
 
     public function setLastCheckTime(float $lastCheckTime): void {
@@ -192,6 +196,7 @@ final class CloudServer {
     public function sync(): void {
         $packets = [];
 
+        /**
         foreach (TemplateManager::getInstance()->getAll() as $template) $packets[] = TemplateSyncPacket::create($template, false);
         foreach (CloudServerManager::getInstance()->getAll() as $server) {
             $packets[] = ServerSyncPacket::create($server, false);
@@ -205,10 +210,10 @@ final class CloudServer {
             $packets[] = LibrarySyncPacket::create();
         }
 
-        /** @var Language $lang */
+        /** @var Language $lang
         foreach (Language::getAll() as $lang) {
             $packets[] = LanguageSyncPacket::create($lang->getName(), $lang->getMessages());
-        }
+        }*/
 
         foreach ($packets as $packet) $this->sendPacket($packet);
     }

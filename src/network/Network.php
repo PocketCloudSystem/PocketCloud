@@ -105,6 +105,8 @@ final class Network extends Thread {
 
     public function sendPacket(ClientboundPacket $packet, ServerClient $client): bool {
         if (!$this->established) return false;
+        ($ev = new NetworkPacketPreSendEvent($packet, $client))->call();
+        if ($ev->isCancelled()) return false;
         $buffer = PacketSerializer::encode($packet, MainConfig::getInstance()->isNetworkEncryptionEnabled());
         $success = $this->write($buffer, $client->getAddress());
         TrafficMonitorManager::getInstance()->callHandlers(

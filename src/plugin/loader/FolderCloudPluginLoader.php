@@ -6,6 +6,7 @@ use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\plugin\CloudPlugin;
 use pocketcloud\cloud\plugin\CloudPluginDescription;
 use pocketcloud\cloud\PocketCloud;
+use pocketcloud\cloud\util\FileUtils;
 
 final class FolderCloudPluginLoader implements CloudPluginLoader {
 
@@ -14,11 +15,11 @@ final class FolderCloudPluginLoader implements CloudPluginLoader {
     }
 
     public function loadPlugin(string $path): string|CloudPlugin {
-        $pluginYml = yaml_parse(file_get_contents($path . "/plugin.yml"));
+        $pluginYml = FileUtils::parseYamlFile($path . "/plugin.yml");
         CloudLogger::get()->debug("Parsing plugin.yml... (" . $path . ")");
-        if (!is_array($pluginYml)) return "Can't parse plugin.yml";
+        if (!is_array($pluginYml)) return "Failed to parse plugin.yml";
         $pluginYml = CloudPluginDescription::read($pluginYml);
-        if ($pluginYml === null) return "Incorrect plugin.yml";
+        if ($pluginYml === null) return "Invalid plugin.yml";
 
         CloudLogger::get()->debug("Adding plugin to class loader (" . $path . ")");
         PocketCloud::getInstance()->getClassLoader()->addPrefix($pluginYml->getSrcNamespacePrefix(), $path . "/src");

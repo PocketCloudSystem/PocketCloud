@@ -4,9 +4,11 @@ namespace pocketcloud\cloud\config\impl;
 
 use configlib\Configuration;
 use pocketcloud\cloud\console\handler\ExceptionHandler;
+use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\console\log\level\CloudLogLevel;
 use pocketcloud\cloud\PocketCloud;
 use pocketcloud\cloud\provider\CloudProvider;
+use pocketcloud\cloud\server\util\ServerStartMethod;
 use pocketcloud\cloud\util\trait\SingletonTrait;
 use pocketcloud\cloud\util\Utils;
 use Random\Randomizer;
@@ -103,7 +105,7 @@ final class MainConfig extends Configuration {
             Utils::fillMissingKeys($this->serverTimeouts, $defaultServerTimeouts);
             Utils::fillMissingKeys($this->serverPortRanges, $defaultServerPortRanges);
 
-            if (!in_array(strtolower($this->startMethod), ["tmux", "screen"])) {
+            if (!in_array(strtolower($this->startMethod), ["tmux", "screen", "proc"])) {
                 $this->startMethod = "tmux";
             }
 
@@ -146,6 +148,9 @@ final class MainConfig extends Configuration {
                     "start" => $start, "end" => $end, "random-ports" => $randomPorts
                 ];
             }
+
+            CloudLogger::get()->setDebugMode($this->debugMode);
+            ServerStartMethod::set(ServerStartMethod::get($this->startMethod));
 
             $this->save();
         }, "Failed to load main config", fn() => PocketCloud::getInstance()->shutdown(), $defaultBinaries, $defaultNetwork, $defaultHttp, $defaultMySql, $defaultStartCommands, $defaultServerTimeouts, $defaultServerPortRanges);

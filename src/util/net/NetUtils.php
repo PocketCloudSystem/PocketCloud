@@ -15,22 +15,33 @@ final class NetUtils {
     }
 
     public static function download(string $url, string $fileLocation): bool {
-        $ch = curl_init($url);
-        $file = fopen($fileLocation, 'wb');
+        $tmpFile = $fileLocation . ".tmp";
+        $file = fopen($tmpFile, "wb");
         if (!$file) return false;
 
+        $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_FILE, $file);
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
         curl_setopt($ch, CURLOPT_FAILONERROR, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 60);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 15);
 
-        $result = curl_exec($ch);
+        $success = curl_exec($ch);
         $err = curl_errno($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
         curl_close($ch);
         fclose($file);
 
-        return $result !== false && $err === 0;
+        if ($success === false || $err !== 0 || $httpCode >= 400) {
+            @unlink($tmpFile);
+            return false;
+        }
+
+        rename($tmpFile, $fileLocation);
+        return true;
     }
+
 
     public static function fileSize(string $url): ?int {
         $ch = curl_init($url);

@@ -3,6 +3,10 @@
 namespace pocketcloud\cloud\util;
 
 use Exception;
+use InvalidArgumentException;
+use ReflectionFunction;
+use ReflectionMethod;
+use ReflectionNamedType;
 
 final class Utils {
 
@@ -60,5 +64,32 @@ final class Utils {
         }
 
         return $args;
+    }
+
+    /**
+     * @throws \ReflectionException
+     */
+    public static function validateCallbackSignature(callable $callback, array $expectedParameters, ?string $expectedReturnType = null): void {
+        $ref = is_array($callback) ? new ReflectionMethod($callback[0], $callback[1]) : new ReflectionFunction($callback);
+
+        $params = $ref->getParameters();
+
+        if (count($params) !== count($expectedParameters)) throw new InvalidArgumentException("Invalid parameter count");
+
+        foreach ($params as $i => $param) {
+            $expected = $expectedParameters[$i];
+            $type = $param->getType();
+
+            if (!$type instanceof ReflectionNamedType) throw new InvalidArgumentException("Parameter #$i must have a type");
+            if ($type->getName() !== $expected) throw new InvalidArgumentException("Parameter #$i must be of type {$expected}");
+        }
+
+        if ($expectedReturnType !== null) {
+            $returnType = $ref->getReturnType();
+
+            if (!$returnType instanceof ReflectionNamedType || $returnType->getName() !== $expectedReturnType) {
+                throw new InvalidArgumentException("Invalid return type");
+            }
+        }
     }
 }

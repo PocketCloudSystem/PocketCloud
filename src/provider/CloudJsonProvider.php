@@ -35,7 +35,7 @@ final class CloudJsonProvider extends CloudProvider {
     }
 
     public function addTemplate(Template $template): void {
-        $this->templatesConfig->set($template->getName(), $template->toArray());
+        $this->templatesConfig->set($template->getName(), $template->write());
         $this->templatesConfig->save();
     }
 
@@ -53,7 +53,7 @@ final class CloudJsonProvider extends CloudProvider {
         $promise = new Promise();
 
         $data = $this->templatesConfig->get($template);
-        if (($template = Template::fromArray($data)) !== null) {
+        if (($template = Template::read($data)) !== null) {
             $promise->resolve($template);
         } else $promise->reject();
 
@@ -72,7 +72,7 @@ final class CloudJsonProvider extends CloudProvider {
         $templates = [];
         $data = $this->templatesConfig->getAll();
         foreach ($data as $template) {
-            if (($template = Template::fromArray($template)) !== null) $templates[$template->getName()] = $template;
+            if (($template = Template::read($template)) !== null) $templates[$template->getName()] = $template;
         }
 
         $promise->resolve($templates);

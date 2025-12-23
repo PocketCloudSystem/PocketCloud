@@ -70,4 +70,8 @@ final class ServerPreparator implements Loadable {
     public function isAsync(): bool {
         return MainConfig::getInstance()->getServerPrepareThreads() > 0;
     }
+
+    public function getThreads(): array {
+        return $this->threads;
+    }
 }

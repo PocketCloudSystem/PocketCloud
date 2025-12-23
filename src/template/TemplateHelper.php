@@ -6,13 +6,13 @@ use pocketcloud\cloud\util\Utils;
 
 final class TemplateHelper {
 
-    public const array KEYS = ["name", "lobby", "maintenance", "static", "maxPlayerCount", "minServerCount", "maxServerCount", "startNewPercentage", "autoStart", "templateType"];
-    public const array EDITABLE_KEYS = ["lobby", "maintenance", "static", "maxPlayerCount", "minServerCount", "maxServerCount", "startNewPercentage", "autoStart"];
+    public const array KEYS = ["name", "lobby", "maintenance", "static", "alwaysCopyToStaticServers", "maxPlayerCount", "minServerCount", "maxServerCount", "startNewPercentage", "autoStart", "templateType"];
+    public const array EDITABLE_KEYS = ["lobby", "maintenance", "static", "alwaysCopyToStaticServers", "maxPlayerCount", "minServerCount", "maxServerCount", "startNewPercentage", "autoStart"];
 
     public const array NECESSARY_KEYS = ["name", "lobby", "templateType"];
 
-    public const array UNNECESSARY_KEYS = ["maintenance", "static", "maxPlayerCount", "minServerCount", "maxServerCount", "startNewPercentage", "autoStart"];
-    public const array DEFAULT_VALUES = ["maintenance" => true, "static" => false, "mayPlayerCount" => 20, "minServerCount" => 0, "maxServerCount" => 2, "startNewPercentage" => 100, "autoStart" => true];
+    public const array UNNECESSARY_KEYS = ["maintenance", "static", "alwaysCopyToStaticServers", "maxPlayerCount", "minServerCount", "maxServerCount", "startNewPercentage", "autoStart"];
+    public const array DEFAULT_VALUES = ["maintenance" => true, "static" => false, "alwaysCopyToStaticServers" => false, "mayPlayerCount" => 20, "minServerCount" => 0, "maxServerCount" => 2, "startNewPercentage" => 100, "autoStart" => true];
     private const array CONVERSION = [
         "maxplayercount" => "maxPlayerCount",
         "minservercount" => "minServerCount",
@@ -21,7 +21,7 @@ final class TemplateHelper {
         "autostart" => "autoStart"
     ];
 
-    public static function fillKeys(array $data): void {
+    public static function fillKeys(array &$data): void {
         foreach (array_filter(self::UNNECESSARY_KEYS, fn(string $key) => !isset($data[$key])) as $key) $data[$key] = self::DEFAULT_VALUES[$key];
     }
 

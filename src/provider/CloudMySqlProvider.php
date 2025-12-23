@@ -43,7 +43,7 @@ final class CloudMySqlProvider extends CloudProvider {
     }
 
     public function addTemplate(Template $template): void {
-        DatabaseQueries::addTemplate($template->toArray())->execute();
+        DatabaseQueries::addTemplate($template->write())->execute();
     }
 
     public function removeTemplate(Template $template): void {
@@ -64,7 +64,7 @@ final class CloudMySqlProvider extends CloudProvider {
                     return;
                 }
 
-                if (($template = Template::fromArray($result)) !== null) {
+                if (($template = Template::read($result)) !== null) {
                     $promise->resolve($template);
                 } else $promise->reject();
             });
@@ -93,7 +93,7 @@ final class CloudMySqlProvider extends CloudProvider {
 
                 $templates = [];
                 foreach ($result as $data) {
-                    if (($template = Template::fromArray($data)) !== null) {
+                    if (($template = Template::read($data)) !== null) {
                         $templates[$template->getName()] = $template;
                     }
                 }
