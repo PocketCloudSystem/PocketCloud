@@ -32,10 +32,6 @@ abstract class CloudPacket implements Packet {
         $this->decodePayload($packetData);
     }
 
-    public function encodePayload(PacketData $packetData): void {}
-
-    public function decodePayload(PacketData $packetData): void {}
-
     abstract public function handle(ServerClient $client): void;
 
     final public function getName(): string {

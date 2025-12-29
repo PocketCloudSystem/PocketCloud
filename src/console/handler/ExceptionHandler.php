@@ -59,7 +59,7 @@ final class ExceptionHandler {
         } catch (Throwable $exception) {
             if ($message !== null) CloudLogger::get()->error($message);
             self::handleException($exception);
-            ($onExceptionClosure)($exception);
+            if ($onExceptionClosure !== null) ($onExceptionClosure)($exception);
         } finally {
             restore_error_handler();
         }

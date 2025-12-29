@@ -83,7 +83,6 @@ final class Network extends Thread {
             $this->established = true;
             socket_set_option($this->socket, SOL_SOCKET, SO_SNDBUF, 1024 * 1024 * 8);
             socket_set_option($this->socket, SOL_SOCKET, SO_RCVBUF, 1024 * 1024 * 8);
-            socket_set_block($this->socket);
         } else throw new SocketException(socket_strerror(socket_last_error()));
 
         CloudLogger::get()->success("§bNetwork connection §rhas been §aestablished §ron §b{}§r.", $this->address);
@@ -91,13 +90,14 @@ final class Network extends Thread {
     }
 
     protected function onRun(): void {
-        while ($this->established && $this->isRunning()) {
+        while ($this->established && $this->isAlive()) {
             $read = [$this->socket];
             $write = $except = [];
 
             if (socket_select($read, $write, $except, 0, 50 * 1000) > 0) {
                 if ($this->read($bytes, $buffer, $address, $port)) {
                     $this->buffer[] = new UnhandledPacket($buffer, Address::create($address, $port), $bytes);
+                    $this->handlerEntry->createNotifier()->wakeupSleeper();
                 }
             }
         }
@@ -108,6 +108,7 @@ final class Network extends Thread {
         ($ev = new NetworkPacketPreSendEvent($packet, $client))->call();
         if ($ev->isCancelled()) return false;
         $buffer = PacketSerializer::encode($packet, MainConfig::getInstance()->isNetworkEncryptionEnabled());
+        if ($buffer === null) return false;
         $success = $this->write($buffer, $client->getAddress());
         TrafficMonitorManager::getInstance()->callHandlers(
             TrafficMonitorManager::TRAFFIC_NETWORK,
@@ -122,6 +123,7 @@ final class Network extends Thread {
     public function broadcastPacket(ClientboundPacket $packet, ServerClient|TemplateType... $exclusions): Promise {
         if (!$this->established) return Promise::all([]);
         $buffer = PacketSerializer::encode($packet, MainConfig::getInstance()->isNetworkEncryptionEnabled());
+        if ($buffer === null) return Promise::rejected("Buffer null");
         $promises = [];
         foreach (ServerClientCache::getInstance()->getAll() as $client) {
             if (in_array($client, $exclusions) || in_array($client->getServer()->getTemplate()->getTemplateType(), $exclusions)) continue;
@@ -147,9 +149,8 @@ final class Network extends Thread {
 
     public function write(string $buffer, Address $dst): bool {
         if (!$this->established) return false;
-        $sent = @socket_sendto($this->socket, $buffer, $bytes = strlen($buffer), 0, $dst->getAddress(), $dst->getPort());
-
-        if ($sent === false || $sent <= 0) return false;
+        $sent = socket_sendto($this->socket, $buffer, $bytes = strlen($buffer), 0, $dst->getAddress(), $dst->getPort());
+        if ($sent === false) return false;
 
         TrafficMonitorManager::getInstance()->pushBytes(TrafficMonitorManager::TRAFFIC_NETWORK, $sent, TrafficMonitor::REGULAR_MODE_OUT);
         TrafficMonitorManager::getInstance()->callHandlers(
@@ -165,8 +166,8 @@ final class Network extends Thread {
 
     public function read(?int &$bytes, ?string &$buffer, ?string &$address, ?int &$port): bool {
         if (!$this->established) return false;
-        $result = @socket_recvfrom($this->socket, $buffer, 65535, 0, $address, $port);
-        if (!$result === false || $result === 0) {
+        $result = socket_recvfrom($this->socket, $buffer, 65535, 0, $address, $port);
+        if ($result === false) {
             $bytes = 0;
             return false;
         }

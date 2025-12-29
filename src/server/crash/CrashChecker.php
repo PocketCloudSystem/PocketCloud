@@ -65,7 +65,7 @@ final class CrashChecker {
             "Plugin" => $crashData["plugin"] ?? "?",
             "Code" => "\n" . self::formatCodeLines($crashData["code"]) . "\n",
             "Trace" => "\n" . implode("\n", $crashData["trace"]),
-            "Server Time" => self::formatServerTime($crashData["time"]),
+            "Server Time" => self::formatServerTime(floor($crashData["time"])),
             "Server Uptime" => $crashData["uptime"],
             "Server Git Commit" => $crashData["general"]["git"]
         ];

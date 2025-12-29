@@ -83,7 +83,7 @@ final class PocketMineServerProperties implements ServerProperties {
             "server-uuid" => "%uuid%",
             "server-name" => "%name%",
             "template" => "%template%",
-            "cloud-address" => "%port%",
+            "cloud-address" => "%address%",
             "cloud-port" => "%port%",
             "network-encryption" => "%encryption%",
             "cloud-language" => "%language%",
