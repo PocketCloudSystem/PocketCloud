@@ -31,6 +31,10 @@ final class CloudServerData {
         $this->processId = $processId;
     }
 
+    public function getServerName(): string {
+        return $this->serverName;
+    }
+
     public function getPort(): int {
         return $this->port;
     }

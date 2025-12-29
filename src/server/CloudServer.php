@@ -11,7 +11,6 @@ use pocketcloud\cloud\network\packet\CloudPacket;
 use pocketcloud\cloud\network\packet\impl\type\VerifyStatus;
 use pocketcloud\cloud\player\CloudPlayer;
 use pocketcloud\cloud\player\CloudPlayerManager;
-use pocketcloud\cloud\PocketCloud;
 use pocketcloud\cloud\server\data\CloudServerData;
 use pocketcloud\cloud\server\data\InternalCloudServerStorage;
 use pocketcloud\cloud\server\prepare\ServerPreparator;
@@ -76,9 +75,8 @@ final class CloudServer {
         $this->setStopTime(time());
 
         if ($force) {
-            if ($this->getCloudServerData()->getProcessId() !== 0) TerminalUtils::kill($this->getCloudServerData()->getProcessId());
+            if ($this->getCloudServerData()->getProcessId() !== null) TerminalUtils::kill($this->getCloudServerData()->getProcessId());
             $this->setServerStatus(ServerStatus::OFFLINE());
-            CloudServerManager::getInstance()->tick(PocketCloud::getInstance()->getTick());
         } else {
             #DisconnectPacket::create(DisconnectReason::SERVER_SHUTDOWN())->sendPacket($this);
         }

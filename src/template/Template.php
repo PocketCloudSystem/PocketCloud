@@ -2,6 +2,8 @@
 
 namespace pocketcloud\cloud\template;
 
+use pocketcloud\cloud\group\ServerGroup;
+use pocketcloud\cloud\group\ServerGroupManager;
 use pocketcloud\cloud\server\CloudServerManager;
 use pocketcloud\cloud\util\Utils;
 use const pocketcloud\TEMPLATES_PATH;
@@ -96,6 +98,10 @@ final readonly class Template {
 
     public function getTemplateType(): TemplateType {
         return $this->templateType;
+    }
+
+    public function getParentServerGroup(): ?ServerGroup {
+        return ServerGroupManager::getInstance()->get($this);
     }
 
     public function getPath(): string {

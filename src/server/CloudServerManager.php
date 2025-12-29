@@ -3,6 +3,8 @@
 namespace pocketcloud\cloud\server;
 
 use pocketcloud\cloud\console\log\CloudLogger;
+use pocketcloud\cloud\group\ServerGroup;
+use pocketcloud\cloud\group\ServerGroupManager;
 use pocketcloud\cloud\server\data\CloudServerData;
 use pocketcloud\cloud\server\util\ServerStatus;
 use pocketcloud\cloud\server\util\ServerUtils;
@@ -45,13 +47,29 @@ final class CloudServerManager implements Tickable {
                 if ($id !== -1) {
                     $port = ServerUtils::getFreePort($template->getTemplateType());
                     if ($port > 0) {
-                        $server = new CloudServer($id, Uuid::uuid4()->toString(), $template->getName(), new CloudServerData($template->getName() . "-" . $id, $port, $template->getSettings()->getMaxPlayerCount(), 0), ServerStatus::STARTING());
+                        $server = new CloudServer($id, Uuid::uuid4()->toString(), $template->getName(), new CloudServerData($template->getName() . "-" . $id, $port, $template->getSettings()->getMaxPlayerCount(), null), ServerStatus::STARTING());
                         $this->add($server);
                         $this->serverPrepareQueue->add($server);
                     }
                 }
             }
         }
+    }
+
+    public function stop(CloudServer|Template|ServerGroup|string $source, bool $force): void {
+        if ($source instanceof CloudServer) {
+            $source->stop($force);
+        } else {
+            if (is_string($source)) {
+                $this->get($source)?->stop($force);
+            } else {
+                foreach ($this->getAll($source) as $server) $server->stop($force);
+            }
+        }
+    }
+
+    public function stopAll(bool $force): void {
+        foreach ($this->getAll() as $server) $server->stop($force);
     }
 
     public function add(CloudServer $server): void {
@@ -81,8 +99,8 @@ final class CloudServerManager implements Tickable {
         return $this->servers[$name] ?? null;
     }
 
-    public function getAll(?Template $template = null): array {
-        if ($template !== null) return array_filter($this->servers, fn(CloudServer $server) => $server->getTemplate()->getName() == $template->getName());
+    public function getAll(Template|ServerGroup|null $templateOrGroup = null): array {
+        if ($templateOrGroup !== null) return array_filter($this->servers, fn(CloudServer $server) => $server->getTemplate()->getName() == $templateOrGroup->getName() || $server->getTemplate()->getParentServerGroup()?->getName() == $templateOrGroup->getName());
         return $this->servers;
     }
 }

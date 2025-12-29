@@ -77,9 +77,7 @@ final class ServerGroupManager implements Loadable {
     public function get(Template|string $name): ?ServerGroup {
         $name = $name instanceof Template ? $name->getName() : $name;
         if (isset($this->serverGroups[$name])) return $this->serverGroups[$name];
-
-        return array_find($this->serverGroups, fn($group) => $group->is($name));
-
+        return array_find($this->serverGroups, fn(ServerGroup $group) => $group->is($name));
     }
 
     public function isLoaded(): bool {

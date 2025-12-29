@@ -176,6 +176,7 @@ final class PocketCloud {
         CloudLogger::get()->info("§cShutting down §bPocket§3Cloud§r...");
         $this->running = false;
 
+        $this->serverManager->stopAll(true);
         $this->network->close();
         $this->console->remove();
     }
