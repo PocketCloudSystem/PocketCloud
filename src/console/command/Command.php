@@ -32,13 +32,13 @@ abstract class Command {
     public function handle(ICommandSender $sender, string $label, array $args): void {
         $subCommand = null;
         if (!empty($this->subCommands)) {
-            if ($this->getRequiredSubCommandCount() > 0 && count($args) < 1) {
+            if ($this->mustUseSubCommands() && count($args) < 1) {
                 $this->sendUsageMessage($sender);
                 return;
             }
 
             if (count($args) > 0) $subCommand = $this->getSubCommand($args[0]);
-            if ($subCommand === null && $this->getRequiredSubCommandCount() > 0) {
+            if ($subCommand === null && $this->mustUseSubCommands()) {
                 $this->sendUsageMessage($sender);
                 return;
             } else if ($subCommand instanceof SubCommand) array_shift($args);
@@ -79,7 +79,7 @@ abstract class Command {
             }
 
             if ($lastSubCommand !== null && count($this->parameters) > 0) $usage .= "\n";
-            $usage .= $this->getName();
+            if ($usage == "") $usage .= $this->getName();
             foreach ($this->parameters as $parameter) {
                 $usage .= $parameter->isOptional() ?
                     " [" . $parameter->getName() . ": " . $parameter->getType() . "]" :
@@ -109,8 +109,8 @@ abstract class Command {
         return array_find($this->subCommands, fn(SubCommand $subCommand) => in_array($name, $subCommand->getAliases()));
     }
 
-    public function getRequiredSubCommandCount(): int {
-        return count(array_filter($this->subCommands, fn(SubCommand $subCommand) => !$subCommand->isOptional()));
+    public function mustUseSubCommands(): int {
+        return count($this->subCommands) > 0 && count($this->parameters) == 0;
     }
 
     public function getSubCommands(): array {

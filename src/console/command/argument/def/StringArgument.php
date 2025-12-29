@@ -18,10 +18,6 @@ readonly class StringArgument extends CommandArgument {
         return $input;
     }
 
-    public function onTabCompleteMatch(string $currentArg): array {
-        return [];
-    }
-
     public function getType(): string {
         return "string";
     }

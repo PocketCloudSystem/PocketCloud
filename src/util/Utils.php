@@ -4,6 +4,7 @@ namespace pocketcloud\cloud\util;
 
 use Exception;
 use InvalidArgumentException;
+use ReflectionException;
 use ReflectionFunction;
 use ReflectionMethod;
 use ReflectionNamedType;
@@ -67,7 +68,7 @@ final class Utils {
     }
 
     /**
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
     public static function validateCallbackSignature(callable $callback, array $expectedParameters, ?string $expectedReturnType = null): void {
         $ref = is_array($callback) ? new ReflectionMethod($callback[0], $callback[1]) : new ReflectionFunction($callback);

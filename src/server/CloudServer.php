@@ -4,6 +4,7 @@ namespace pocketcloud\cloud\server;
 
 use Closure;
 use pocketcloud\cloud\console\log\CloudLogger;
+use pocketcloud\cloud\event\impl\server\ServerCrashEvent;
 use pocketcloud\cloud\event\impl\server\ServerStartEvent;
 use pocketcloud\cloud\event\impl\server\ServerStopEvent;
 use pocketcloud\cloud\network\client\ServerClientCache;
@@ -11,6 +12,7 @@ use pocketcloud\cloud\network\packet\CloudPacket;
 use pocketcloud\cloud\network\packet\impl\type\VerifyStatus;
 use pocketcloud\cloud\player\CloudPlayer;
 use pocketcloud\cloud\player\CloudPlayerManager;
+use pocketcloud\cloud\server\crash\CrashChecker;
 use pocketcloud\cloud\server\data\CloudServerData;
 use pocketcloud\cloud\server\data\InternalCloudServerStorage;
 use pocketcloud\cloud\server\prepare\ServerPreparator;
@@ -19,6 +21,7 @@ use pocketcloud\cloud\server\util\ServerStartMethod;
 use pocketcloud\cloud\server\util\ServerStatus;
 use pocketcloud\cloud\template\Template;
 use pocketcloud\cloud\template\TemplateManager;
+use pocketcloud\cloud\util\FileUtils;
 use pocketcloud\cloud\util\promise\Promise;
 use pocketcloud\cloud\util\TerminalUtils;
 use pocketcloud\cloud\util\Utils;
@@ -77,9 +80,27 @@ final class CloudServer {
         if ($force) {
             if ($this->getCloudServerData()->getProcessId() !== null) TerminalUtils::kill($this->getCloudServerData()->getProcessId());
             $this->setServerStatus(ServerStatus::OFFLINE());
+
+            CloudServerManager::getInstance()->remove($this);
+            ServerClientCache::getInstance()->remove($this);
+
+            if (CrashChecker::checkCrashed($this, $crashData)) {
+                CloudLogger::get()->warn("The server §b{} §ccrashed§r!", $this->getName());
+                $this->printCrashStackTrace($crashData);
+                new ServerCrashEvent($this, $crashData)->call();
+                CrashChecker::writeCrashFile($this, $crashData);
+                #NotifyType::CRASHED()->send(["%server%" => $server->getName()]);
+            }
+
+            if (!$this->getTemplate()->getSettings()->isStatic()) FileUtils::removeDirectory($this->getPath());
         } else {
             #DisconnectPacket::create(DisconnectReason::SERVER_SHUTDOWN())->sendPacket($this);
         }
+    }
+
+    public function printCrashStackTrace(array $crashData): void {
+        CloudLogger::get()->info("§8[§cERROR§8/§e{}§r§8] §cUnhandled §e{}§c: §e{} §cwas thrown in §e{} §cat line §e{}", $this->getName(), $crashData["error"]["type"], $crashData["error"]["message"] ?? "Unknown error", $crashData["error"]["file"], $crashData["error"]["line"]);
+        foreach ($crashData["trace"] as $message) CloudLogger::get()->error("§c" . $message);
     }
 
     public function getServerUuid(): string {

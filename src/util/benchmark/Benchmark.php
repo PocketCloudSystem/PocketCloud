@@ -3,6 +3,7 @@
 namespace pocketcloud\cloud\util\benchmark;
 
 use Closure;
+use RuntimeException;
 
 final class Benchmark {
 
@@ -28,7 +29,7 @@ final class Benchmark {
     }
 
     public static function stopTiming(string $name): BenchmarkTiming {
-        if (!isset(self::$timings[$name]) || empty(self::$timings[$name])) throw new \RuntimeException("No timings started for '$name'");
+        if (!isset(self::$timings[$name]) || empty(self::$timings[$name])) throw new RuntimeException("No timings started for '$name'");
         $lastIndex = count(self::$timings[$name]) - 1;
         ($timing = self::$timings[$name][$lastIndex])->stopTiming();
         return $timing;

@@ -9,6 +9,7 @@ use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\console\log\logger\ThreadLogger;
 use pocketcloud\cloud\PocketCloud;
 use pocketcloud\cloud\util\loader\IClassLoader;
+use ReflectionClass;
 use Throwable;
 use const pocketcloud\VENDOR_AUTOLOAD_PATH;
 
@@ -118,6 +119,6 @@ trait ThreadPartsTrait {
     }
 
     public function getThreadName(): string {
-        return new \ReflectionClass($this)->getShortName();
+        return new ReflectionClass($this)->getShortName();
     }
 }

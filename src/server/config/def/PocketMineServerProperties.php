@@ -50,6 +50,7 @@ final class PocketMineServerProperties implements ServerProperties {
             "%server_portv6%" => $server->getCloudServerData()->getPort() + 1,
             "%max_players%" => $server->getTemplate()->getMaxPlayerCount(),
             "%template%" => $server->getTemplate()->getName(),
+            "%address%" => Network::getInstance()->getAddress()->getAddress(),
             "%port%" => Network::getInstance()->getAddress()->getPort(),
             "%encryption%" =>  MainConfig::getInstance()->isNetworkEncryptionEnabled(),
             "%language%" => "eng",
@@ -82,8 +83,9 @@ final class PocketMineServerProperties implements ServerProperties {
             "server-uuid" => "%uuid%",
             "server-name" => "%name%",
             "template" => "%template%",
+            "cloud-address" => "%port%",
             "cloud-port" => "%port%",
-            "encryption" => "%encryption%",
+            "network-encryption" => "%encryption%",
             "cloud-language" => "%language%",
             "cloud-path" => "%cloud_path%"
         ];

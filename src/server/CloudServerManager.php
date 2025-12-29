@@ -4,7 +4,6 @@ namespace pocketcloud\cloud\server;
 
 use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\group\ServerGroup;
-use pocketcloud\cloud\group\ServerGroupManager;
 use pocketcloud\cloud\server\data\CloudServerData;
 use pocketcloud\cloud\server\util\ServerStatus;
 use pocketcloud\cloud\server\util\ServerUtils;
@@ -34,7 +33,7 @@ final class CloudServerManager implements Tickable {
 
     public function start(Template $template, int $count = 1): void {
         if (!$this->checkCapacity($template)) {
-            CloudLogger::get()->warn("Can not start any more servers of §b{} §rdue to the max servers reached.", $template->getName());
+            CloudLogger::get()->warn("Failed to start any more servers of §b{} §rdue to the max amount of servers already being reached.", $template->getName());
         } else {
             for ($i = 0; $i < $count; $i++) {
                 if (!$this->checkCapacity($template)) break;
@@ -56,26 +55,36 @@ final class CloudServerManager implements Tickable {
         }
     }
 
-    public function stop(CloudServer|Template|ServerGroup|string $source, bool $force): void {
+    public function stop(CloudServer|Template|ServerGroup|string $source, bool $force): array {
         if ($source instanceof CloudServer) {
-            $source->stop($force);
+            $affectedServers = [$source];
         } else {
-            if (is_string($source)) {
-                $this->get($source)?->stop($force);
+            if (is_string($source) && ($server = $this->get($source)) !== null) {
+                $affectedServers = [$server];
             } else {
-                foreach ($this->getAll($source) as $server) $server->stop($force);
+                $affectedServers = $this->getAll($source);
             }
         }
+
+        foreach ($affectedServers as $server) $server->stop($force);
+        return $affectedServers;
     }
 
-    public function stopAll(bool $force): void {
-        foreach ($this->getAll() as $server) $server->stop($force);
+    public function stopAll(bool $force): array {
+        foreach (($servers = $this->getAll()) as $server) $server->stop($force);
+        return $servers;
     }
 
     public function add(CloudServer $server): void {
         if (!isset($this->servers[$server->getName()])) $this->servers[$server->getName()] = $server;
         ServerUtils::addId($server->getTemplate(), $server->getId());
         ServerUtils::addPort($server->getCloudServerData()->getPort());
+    }
+
+    public function remove(CloudServer $server): void {
+        if (isset($this->servers[$server->getName()])) unset($this->servers[$server->getName()]);
+        ServerUtils::removeId($server->getTemplate(), $server->getId());
+        ServerUtils::removePort($server->getCloudServerData()->getPort());
     }
 
     public function checkCapacity(Template $template): bool {
@@ -96,11 +105,12 @@ final class CloudServerManager implements Tickable {
     }
 
     public function get(string $name): ?CloudServer {
-        return $this->servers[$name] ?? null;
+        return $this->servers[$name] ?? array_find($this->servers, fn(CloudServer $server) => $server->getServerUuid() == $name);
     }
 
-    public function getAll(Template|ServerGroup|null $templateOrGroup = null): array {
-        if ($templateOrGroup !== null) return array_filter($this->servers, fn(CloudServer $server) => $server->getTemplate()->getName() == $templateOrGroup->getName() || $server->getTemplate()->getParentServerGroup()?->getName() == $templateOrGroup->getName());
+    public function getAll(Template|ServerGroup|string|null $templateOrGroup = null): array {
+        $templateOrGroup = is_string($templateOrGroup) ? $templateOrGroup : ($templateOrGroup instanceof Template || $templateOrGroup instanceof ServerGroup ? $templateOrGroup->getName() : null);
+        if ($templateOrGroup !== null) return array_filter($this->servers, fn(CloudServer $server) => $server->getTemplate()->getName() == $templateOrGroup || $server->getTemplate()->getParentServerGroup()?->getName() == $templateOrGroup);
         return $this->servers;
     }
 }

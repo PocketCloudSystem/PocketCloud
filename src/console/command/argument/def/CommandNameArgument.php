@@ -10,7 +10,7 @@ use pocketcloud\cloud\console\command\CommandManager;
 readonly class CommandNameArgument extends CommandArgument {
 
     public function parseValue(string $input): Command {
-        if (($command = CommandManager::getInstance()->get($input))) return $command;;
+        if (($command = CommandManager::getInstance()->get($input))) return $command;
         return throw new ArgumentParseException();
     }
 

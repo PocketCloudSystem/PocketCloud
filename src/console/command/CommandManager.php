@@ -4,6 +4,7 @@ namespace pocketcloud\cloud\console\command;
 
 use pocketcloud\cloud\console\command\impl\ExitCommand;
 use pocketcloud\cloud\console\command\impl\HelpCommand;
+use pocketcloud\cloud\console\command\impl\server\ServerCommand;
 use pocketcloud\cloud\console\command\sender\ICommandSender;
 use pocketcloud\cloud\util\misc\Loadable;
 use pocketcloud\cloud\util\trait\SingletonTrait;
@@ -21,6 +22,8 @@ final class CommandManager implements Loadable {
     public function load(): void {
         $this->register(new ExitCommand());
         $this->register(new HelpCommand());
+
+        $this->register(new ServerCommand());
     }
 
     public function handleInput(ICommandSender $sender, string $name, array $args): bool {

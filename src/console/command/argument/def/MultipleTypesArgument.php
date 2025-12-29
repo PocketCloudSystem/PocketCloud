@@ -37,7 +37,12 @@ readonly class MultipleTypesArgument extends CommandArgument {
     }
 
     public function onTabCompleteMatch(string $currentArg): array {
-        return array_values(array_map(fn(CommandArgument $arg) => $arg->onTabCompleteMatch($currentArg), $this->allowedTypes));
+        $matches = [];
+        foreach ($this->allowedTypes as $type) {
+            $matches = array_merge($type->onTabCompleteMatch($currentArg), $matches);
+        }
+
+        return array_unique(array_values($matches));
     }
 
     public function getType(): string {

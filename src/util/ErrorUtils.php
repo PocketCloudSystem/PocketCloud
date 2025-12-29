@@ -2,6 +2,7 @@
 
 namespace pocketcloud\cloud\util;
 
+use Exception;
 use pocketcloud\cloud\console\handler\ExceptionHandler;
 
 final class ErrorUtils {
@@ -56,7 +57,7 @@ final class ErrorUtils {
         if (function_exists("xdebug_get_function_stack") && count($trace = @xdebug_get_function_stack()) !== 0) {
             $trace = array_reverse($trace);
         } else {
-            $trace = new \Exception()->getTrace();
+            $trace = new Exception()->getTrace();
         }
 
         for ($i = 0; $i < $skips; $i++) {

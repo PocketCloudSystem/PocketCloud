@@ -37,11 +37,11 @@ final class Console {
                 $matches = [];
                 if (empty($tokens)) {
                     foreach (CommandManager::getInstance()->getAll() as $cmd) {
-                        if (str_starts_with($cmd->getName(), $current)) {
+                        if (str_starts_with($cmd->getName(), strtolower($current))) {
                             $matches[] = $cmd->getName();
                         } else {
                             foreach ($cmd->getAliases() as $alias) {
-                                if (str_starts_with($alias, $current)) {
+                                if (str_starts_with($alias, strtolower($current))) {
                                     $matches[] = $alias;
                                 }
                             }
@@ -55,9 +55,31 @@ final class Console {
                 if ($command instanceof ITabComplete) {
                     $matches = $command->onTabComplete(array_merge($tokens, [$current]));
                 } else if ($command instanceof Command) {
+                    $subCommands = $command->getSubCommands();
+                    if (count($subCommands) > 0) {
+                        if (isset($tokens[0])) {
+                            if (($subCommand = $command->getSubCommand($tokens[0])) !== null) {
+                                array_shift($tokens);
+                                $command = $subCommand;
+                            }
+                        } else {
+                            foreach ($subCommands as $subCommand) {
+                                if (str_starts_with($subCommand->getName(), strtolower($current))) {
+                                    $matches[] = $subCommand->getName();
+                                } else {
+                                    foreach ($subCommand->getAliases() as $alias) {
+                                        if (str_starts_with($alias, strtolower($current))) {
+                                            $matches[] = $alias;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     $param = $command->getParameter(count($tokens));
                     if ($param !== null) {
-                        $matches = $param->onTabCompleteMatch($current);
+                        $matches = array_unique(array_merge($matches, $param->onTabCompleteMatch($current)));
                     }
                 }
 

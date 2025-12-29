@@ -12,10 +12,6 @@ readonly class FloatArgument extends CommandArgument {
         return throw new ArgumentParseException();
     }
 
-    public function onTabCompleteMatch(string $currentArg): array {
-        return [];
-    }
-
     public function getType(): string {
         return "float";
     }

@@ -6,6 +6,7 @@ use pmmp\thread\ThreadSafe;
 use pmmp\thread\ThreadSafeArray;
 use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\util\trait\SingletonTrait;
+use Throwable;
 
 final class ThreadManager extends ThreadSafe {
     use SingletonTrait;
@@ -37,7 +38,7 @@ final class ThreadManager extends ThreadSafe {
                     if ($thread->isAlive()) {
                         $thread->quit();
                     }
-                } catch (\Throwable $exception) {
+                } catch (Throwable $exception) {
                     CloudLogger::get()->error("Error while stopping thread: {}", $thread->getThreadName());
                     CloudLogger::get()->exception($exception);
                     $crashedThreads++;

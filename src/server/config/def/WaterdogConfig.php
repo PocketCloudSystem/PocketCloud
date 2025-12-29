@@ -50,6 +50,7 @@ final class WaterdogConfig implements ServerProperties {
             "%server_portv6%" => $server->getCloudServerData()->getPort() + 1,
             "%max_players%" => $server->getTemplate()->getMaxPlayerCount(),
             "%template%" => $server->getTemplate()->getName(),
+            "%address%" => Network::getInstance()->getAddress()->getAddress(),
             "%port%" => Network::getInstance()->getAddress()->getPort(),
             "%encryption%" =>  MainConfig::getInstance()->isNetworkEncryptionEnabled(),
             "%language%" => "eng",
@@ -104,10 +105,11 @@ final class WaterdogConfig implements ServerProperties {
             "enable_statistics" => true,
             "enable_error_reporting" => true,
             "server-uuid" => "%uuid%",
+            "cloud-address" => "%address%",
             "cloud-port" => "%port%",
             "server-name" => "%name%",
             "template" => "%template%",
-            "encryption" => "%encryption%",
+            "network-encryption" => "%encryption%",
             "cloud-language" => "%language%",
             "cloud-path" => "%cloud_path%"
         ];

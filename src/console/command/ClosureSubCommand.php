@@ -10,12 +10,11 @@ final class ClosureSubCommand extends SubCommand {
     public function __construct(
         string $name,
         private readonly ?Closure $executeHandler,
-        bool $optional = false,
         ?string $description = null,
         ?string $usage = null,
         array $aliases = []
     ) {
-        parent::__construct($name, $optional, $description, $usage, $aliases);
+        parent::__construct($name, $description, $usage, $aliases);
     }
 
     public function run(ICommandSender $sender, string $label, array $args): bool {

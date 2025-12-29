@@ -36,7 +36,7 @@ final class Address extends ThreadSafe {
         return new self($address, $port);
     }
     
-    public static function fromArray(array $data): ?self {
+    public static function read(array $data): ?self {
         if (!Utils::containKeys($data, "address", "port")) return null;
         return new self($data["address"], $data["port"]);
     }

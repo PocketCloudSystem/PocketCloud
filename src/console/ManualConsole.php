@@ -23,7 +23,7 @@ final class ManualConsole {
     public function __construct(
         private string $prompt = "",
         private ?Closure $completionCallback = null,
-        private ?Closure $controlCHandler = null
+        private readonly ?Closure $controlCHandler = null
     ) {
         stream_set_blocking(STDIN, false);
         mb_internal_encoding("UTF-8");

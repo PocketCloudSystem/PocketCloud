@@ -96,7 +96,7 @@ final class PocketCloud {
         ($this->softwareManager = new SoftwareManager())->load();
         $this->softwareManager->downloadAll();
         $this->threadManager = new ThreadManager();
-        $this->network = new Network(Address::fromArray($this->config->getNetwork()));
+        $this->network = new Network(Address::read($this->config->getNetwork()));
         $this->asyncPool = new AsyncPool();
         $this->serverPreparator = new ServerPreparator();
         $this->templateManager = new TemplateManager();
@@ -155,7 +155,6 @@ final class PocketCloud {
 
     public function crash(): void {
         if (!$this->running) return;
-        $this->shutdown();
         try {
             $filePath = CrashDump::fromLastestError()->create();
             CloudLogger::get()->error("§cAn error has occurred and caused the Cloud to crash entirely.");
@@ -165,6 +164,7 @@ final class PocketCloud {
             CloudLogger::get()->error("§cFailed to create crashdump§8: §e" . $e->getMessage());
         }
 
+        $this->shutdown();
         echo "--- Uptime: " . round($this->getUptime(), 3) . "s - PocketCloud has crashed, waiting 60s before completely killing the process. ---" . PHP_EOL;
         sleep(60);
         @TerminalUtils::kill(getmypid());
@@ -332,7 +332,7 @@ foreach ([
 }
 
 if (checkRunning($pid)) {
-    die("[ERROR] PocketCloud is already running in a different process. (PID: $pid)");
+    die("[ERROR] PocketCloud is already running in a different process. (PID: $pid)" . PHP_EOL);
 }
 
 $classLoader = new ClassLoader();

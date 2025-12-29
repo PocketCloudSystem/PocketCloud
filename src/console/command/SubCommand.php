@@ -11,7 +11,6 @@ abstract class SubCommand {
 
     public function __construct(
         private readonly string $name,
-        private readonly bool $optional,
         private readonly ?string $description = null,
         private readonly ?string $usage = null,
         private readonly array $aliases = []
@@ -32,10 +31,6 @@ abstract class SubCommand {
 
     public function getName(): string {
         return $this->name;
-    }
-
-    public function isOptional(): bool {
-        return $this->optional;
     }
 
     public function getDescription(): ?string {
@@ -59,11 +54,11 @@ abstract class SubCommand {
      * @param array|null $aliases
      * @return ClosureSubCommand
      */
-    public static function fromClosure(string $name, Closure $executeHandler, bool $optional, ?string $description = null, ?string $usage = null, ?array $aliases = []): ClosureSubCommand {
-        return new ClosureSubCommand($name, $executeHandler, $optional, $description, $usage, $aliases);
+    public static function fromClosure(string $name, Closure $executeHandler, ?string $description = null, ?string $usage = null, ?array $aliases = []): ClosureSubCommand {
+        return new ClosureSubCommand($name, $executeHandler, $description, $usage, $aliases);
     }
 
-    public static function nonHandler(string $name, bool $optional, ?string $description = null, ?string $usage = null, ?array $aliases = []): ClosureSubCommand {
-        return new ClosureSubCommand($name, null, $optional, $description, $usage, $aliases);
+    public static function nonHandler(string $name, ?string $description = null, ?string $usage = null, ?array $aliases = []): ClosureSubCommand {
+        return new ClosureSubCommand($name, null, $description, $usage, $aliases);
     }
 }
