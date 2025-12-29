@@ -34,6 +34,7 @@ final class Config {
     public function load(): void {
         if (!@file_exists($this->path)) {
             $this->content = $this->defaultContent;
+            $this->changed = true;
             $this->save();
         }
 

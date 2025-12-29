@@ -19,10 +19,7 @@ use pocketcloud\cloud\server\CloudServerManager;
 use pocketcloud\cloud\server\config\ServerPropertiesGenerator;
 use pocketcloud\cloud\server\prepare\ServerPreparator;
 use pocketcloud\cloud\software\SoftwareManager;
-use pocketcloud\cloud\template\Template;
 use pocketcloud\cloud\template\TemplateManager;
-use pocketcloud\cloud\template\TemplateSettings;
-use pocketcloud\cloud\template\TemplateType;
 use pocketcloud\cloud\thread\ThreadManager;
 use pocketcloud\cloud\traffic\TrafficMonitorManager;
 use pocketcloud\cloud\util\FileUtils;
@@ -150,6 +147,8 @@ final class PocketCloud {
 
         CloudLogger::get()->success("§bCloud §rhas been §astarted§r. §8(§rTook §b" . number_format($time = (microtime(true) - $this->startTimestamp), 3) . "s§8)");
         new CloudStartedEvent($time)->call();
+
+        CloudServerManager::getInstance()->start(TemplateManager::getInstance()->get("sigma"));
 
         $this->tick();
     }
@@ -314,6 +313,7 @@ define("pocketcloud\LIBRARIES_PATH", STORAGE_PATH . "libraries" . DIRECTORY_SEPA
 define("pocketcloud\PLUGINS_PATH", STORAGE_PATH . "plugins" . DIRECTORY_SEPARATOR);
 define("pocketcloud\SOFTWARE_PATH", STORAGE_PATH . "software" . DIRECTORY_SEPARATOR);
 define("pocketcloud\IN_GAME_PATH", STORAGE_PATH . "inGame" . DIRECTORY_SEPARATOR);
+define("pocketcloud\STATIC_SERVERS_PATH", STORAGE_PATH . "staticServers" . DIRECTORY_SEPARATOR);
 define("pocketcloud\LOG_PATH", STORAGE_PATH . "cloud.log");
 define("pocketcloud\TEMP_PATH", CLOUD_PATH . "tmp" . DIRECTORY_SEPARATOR);
 define("pocketcloud\TEMPLATES_PATH", CLOUD_PATH . "templates" . DIRECTORY_SEPARATOR);

@@ -6,6 +6,7 @@ use Closure;
 use pocketcloud\cloud\config\impl\MainConfig;
 use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\PocketCloud;
+use pocketcloud\cloud\server\CloudServer;
 use pocketcloud\cloud\util\misc\Loadable;
 use pocketcloud\cloud\util\trait\SingletonTrait;
 
@@ -49,8 +50,8 @@ final class ServerPreparator implements Loadable {
         }
     }
 
-    public function submitEntry(ServerPrepareEntry $entry, ?Closure $completionHandler): void {
-        CloudLogger::get()->debug("Preparing server (" . $entry->getServer() . "): §b" . ($this->isAsync() ? "async" : "sync"));
+    public function submitEntry(CloudServer $server, ServerPrepareEntry $entry, ?Closure $completionHandler): void {
+        CloudLogger::get()->debug("Preparing server {}: §b" . ($this->isAsync() ? "async" : "sync"), $server);
         if (!$this->isAsync()) {
             $entry->run();
             if ($completionHandler !== null) ($completionHandler)();

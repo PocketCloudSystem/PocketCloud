@@ -99,7 +99,7 @@ final readonly class Template {
     }
 
     public function getPath(): string {
-        return TEMPLATES_PATH . $this->name . "/";
+        return TEMPLATES_PATH . $this->name . DIRECTORY_SEPARATOR;
     }
 
     public function write(): array {

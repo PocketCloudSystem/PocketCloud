@@ -34,11 +34,11 @@ final readonly class Library {
                 $archive = new ZipArchive();
                 if ($archive->open($archivePath)) {
                     $archive->extractTo(LIBRARIES_PATH);
-                    $mainDir = rtrim($archive->getNameIndex(0), "/");
+                    $mainDir = rtrim($archive->getNameIndex(0), DIRECTORY_SEPARATOR);
                     $archive->close();
 
                     if (!file_exists($libPath)) mkdir($libPath);
-                    FileUtils::rename(LIBRARIES_PATH . $mainDir . "/", $libPath);
+                    FileUtils::rename(LIBRARIES_PATH . $mainDir . DIRECTORY_SEPARATOR, $libPath);
                 }
 
                 unlink($archivePath);

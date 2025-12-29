@@ -3,6 +3,8 @@
 namespace pocketcloud\cloud\template;
 
 use pocketcloud\cloud\config\impl\MainConfig;
+use pocketcloud\cloud\server\config\ServerProperties;
+use pocketcloud\cloud\server\config\ServerPropertiesGenerator;
 use pocketcloud\cloud\software\Software;
 use pocketcloud\cloud\software\SoftwareManager;
 use pocketcloud\cloud\util\trait\EnumTrait;
@@ -40,10 +42,6 @@ final class TemplateType {
         private readonly Software $software
     ) {}
 
-    public function __toString(): string {
-        return $this->name;
-    }
-
     public function getName(): string {
         return $this->name;
     }
@@ -72,7 +70,16 @@ final class TemplateType {
         return $this->equals(self::PROXY());
     }
 
+    /** @return array<ServerProperties> */
+    public function getAssignedProperties(): array {
+        return ServerPropertiesGenerator::getInstance()->getAll($this);
+    }
+
     public function equals(TemplateType $type): bool {
         return $this->name === $type->getName();
+    }
+
+    public function __toString(): string {
+        return $this->name;
     }
 }

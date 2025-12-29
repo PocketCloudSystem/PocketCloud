@@ -130,6 +130,7 @@ abstract class Command {
     }
 
     public function getUsage(?SubCommand $subCommand = null): string {
+        if ($subCommand !== null) return $subCommand->getUsage();
         return $this->usage ?? $this->buildUsageMessage();
     }
 

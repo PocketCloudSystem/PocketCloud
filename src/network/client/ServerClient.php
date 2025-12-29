@@ -54,4 +54,8 @@ final class ServerClient {
     public function getServer(): ?CloudServer {
         return ServerClientCache::getInstance()->getServer($this);
     }
+
+    public function __toString(): string {
+        return "ServerClient[address=" . $this->getAddress() . "]";
+    }
 }

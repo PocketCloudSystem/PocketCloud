@@ -13,7 +13,6 @@ use pocketcloud\cloud\console\log\logger\cache\LogMessagesCache;
 use pocketcloud\cloud\console\log\level\CloudLogLevel;
 use pocketcloud\cloud\util\FileUtils;
 use pocketcloud\cloud\util\FormatUtils;
-use pocketcloud\cloud\util\TerminalUtils;
 use ReflectionClass;
 use ReflectionException;
 use Throwable;

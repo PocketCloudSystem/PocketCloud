@@ -2,6 +2,8 @@
 
 namespace pocketcloud\cloud\server\crash;
 
+use RuntimeException;
+
 final class CrashDumpReader {
 
     private string $filePath;

@@ -5,6 +5,7 @@ namespace pocketcloud\cloud\network\client;
 use Closure;
 use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\server\CloudServer;
+use pocketcloud\cloud\server\CloudServerManager;
 use pocketcloud\cloud\util\misc\Tickable;
 use pocketcloud\cloud\util\net\Address;
 use pocketcloud\cloud\util\trait\SingletonTrait;
@@ -21,7 +22,7 @@ final class ServerClientCache implements Tickable {
 
     public function add(CloudServer $server, ServerClient $client): void {
         if (!$this->isset($client)) {
-            CloudLogger::get()->debug("Adding client " . $client->getAddress() . " => " . $server->getName());
+            CloudLogger::get()->debug("Adding client {} => {}", $client, $server->getName());
             $this->clients[$server->getName()] = $client;
         }
     }
@@ -30,7 +31,7 @@ final class ServerClientCache implements Tickable {
         $client = $client instanceof CloudServer ? $this->get($client) : $client;
         if ($client !== null) {
             if ($this->isset($client)) {
-                CloudLogger::get()->debug("Removing client " . $client->getAddress());
+                CloudLogger::get()->debug("Removing client {}", $client);
                 unset($this->clients[array_search($client, $this->clients)]);
             }
         }

@@ -10,6 +10,7 @@ use pocketcloud\cloud\template\Template;
 use pocketcloud\cloud\util\misc\Queue;
 use pocketcloud\cloud\util\misc\Tickable;
 use pocketcloud\cloud\util\trait\SingletonTrait;
+use Ramsey\Uuid\Uuid;
 
 final class CloudServerManager implements Tickable {
     use SingletonTrait;
@@ -44,7 +45,7 @@ final class CloudServerManager implements Tickable {
                 if ($id !== -1) {
                     $port = ServerUtils::getFreePort($template->getTemplateType());
                     if ($port > 0) {
-                        $server = new CloudServer($id, $template->getName(), new CloudServerData($port, $template->getSettings()->getMaxPlayerCount(), 0), ServerStatus::STARTING());
+                        $server = new CloudServer($id, Uuid::uuid4()->toString(), $template->getName(), new CloudServerData($template->getName() . "-" . $id, $port, $template->getSettings()->getMaxPlayerCount(), 0), ServerStatus::STARTING());
                         $this->add($server);
                         $this->serverPrepareQueue->add($server);
                     }
@@ -70,7 +71,7 @@ final class CloudServerManager implements Tickable {
         if (!$this->serverPrepareQueue->isEmpty()) {
             ($server = $this->serverPrepareQueue->next())->prepare()
                 ->then(fn() => $this->serverStartQueue->add($server))
-                ->failure(fn() => CloudLogger::get()->warn("§cFailed to prepare server §e{}§c.", $server->getName()));
+                ->failure(fn() => CloudLogger::get()->warn("§cFailed to prepare server §e{}§c.", $server));
         }
 
         if (!$this->serverStartQueue->isEmpty()) $this->serverStartQueue->next()->start();

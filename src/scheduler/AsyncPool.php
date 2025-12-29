@@ -75,7 +75,7 @@ final class AsyncPool implements Tickable {
 
     public function collectTasks(): bool {
         foreach ($this->taskQueues as $worker => $queue) $this->collectTasksFromWorker($worker);
-        return array_any($this->taskQueues, fn($queue) => !$queue->isEmpty());
+        return array_any($this->taskQueues, fn(SplQueue $queue) => !$queue->isEmpty());
     }
 
     public function collectTasksFromWorker(int $worker): bool {
@@ -102,7 +102,7 @@ final class AsyncPool implements Tickable {
     }
 
     public function shutdown(): void {
-        while ($this->collectTasks()) {}
+        while ($this->collectTasks());
         foreach ($this->workers as $worker) {
             $worker->quit();
             $this->eventLoop->removeNotifier($worker->getEntry()->getNotifierId());

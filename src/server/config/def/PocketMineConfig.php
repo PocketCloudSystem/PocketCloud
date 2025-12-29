@@ -4,6 +4,7 @@ namespace pocketcloud\cloud\server\config\def;
 
 use pocketcloud\cloud\config\Config;
 use pocketcloud\cloud\config\type\ConfigTypeList;
+use pocketcloud\cloud\server\CloudServer;
 use pocketcloud\cloud\server\config\ServerProperties;
 use pocketcloud\cloud\template\TemplateType;
 use pocketcloud\cloud\util\Utils;
@@ -32,10 +33,14 @@ final class PocketMineConfig implements ServerProperties {
             $config = new Config($filePath, ConfigTypeList::YML());
             $defaultContent = $this->getDefaultContent();
             $currentContent = $config->getAll();
-            return Utils::hasAllKeys($currentContent, $defaultContent);
+            return !Utils::hasAllKeys($currentContent, $defaultContent);
         }
 
         return true;
+    }
+
+    public function replacePlaceholders(CloudServer $server): array {
+        return [];
     }
 
     public function getDefaultContent(): array {

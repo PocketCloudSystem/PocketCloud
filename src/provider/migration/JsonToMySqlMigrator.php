@@ -28,7 +28,7 @@ final class JsonToMySqlMigrator implements IMigrator {
         if (!file_exists($backupPath = STORAGE_PATH . "backups/")) mkdir(STORAGE_PATH . "backups/");
 
         if (file_exists(IN_GAME_PATH . "notifyList.json")) {
-            $list = FileUtils::jsonDecode(FileUtils::fileGetContents(IN_GAME_PATH . "notifyList.json"));
+            $list = FileUtils::decodeJsonFile(IN_GAME_PATH . "notifyList.json");
             if (!empty($list)) {
                 FileUtils::copyFile(IN_GAME_PATH . "notifyList.json", $backupPath . "notifyList.json");
                 FileUtils::unlinkFile(IN_GAME_PATH . "notifyList.json");
@@ -39,7 +39,7 @@ final class JsonToMySqlMigrator implements IMigrator {
         }
 
         if (file_exists(IN_GAME_PATH . "maintenanceList.json")) {
-            $list = FileUtils::jsonDecode(FileUtils::fileGetContents(IN_GAME_PATH . "maintenanceList.json"));
+            $list = FileUtils::decodeJsonFile(IN_GAME_PATH . "maintenanceList.json");
             if (!empty($list)) {
                 FileUtils::copyFile(IN_GAME_PATH . "maintenanceList.json", $backupPath . "maintenanceList.json");
                 FileUtils::unlinkFile(IN_GAME_PATH . "maintenanceList.json");
@@ -50,7 +50,7 @@ final class JsonToMySqlMigrator implements IMigrator {
         }
 
         if (file_exists(IN_GAME_PATH . "modules.json")) {
-            $list = FileUtils::jsonDecode(FileUtils::fileGetContents(IN_GAME_PATH . "modules.json"));
+            $list = FileUtils::decodeJsonFile(IN_GAME_PATH . "modules.json");
             if (!empty($list)) {
                 FileUtils::copyFile(IN_GAME_PATH . "modules.json", $backupPath . "modules.json");
                 FileUtils::unlinkFile(IN_GAME_PATH . "modules.json");
@@ -71,13 +71,13 @@ final class JsonToMySqlMigrator implements IMigrator {
         }
 
         if (file_exists(TEMPLATES_PATH . "templates.json")) {
-            $templatesRaw = FileUtils::jsonDecode(FileUtils::fileGetContents(TEMPLATES_PATH . "templates.json"));
+            $templatesRaw = FileUtils::decodeJsonFile(TEMPLATES_PATH . "templates.json");
             if (!empty($templatesRaw)) {
                 FileUtils::copyFile(TEMPLATES_PATH . "templates.json", $backupPath . "templates.json");
                 FileUtils::unlinkFile(TEMPLATES_PATH . "templates.json");
                 $templates = [];
                 foreach ($templatesRaw as $data) {
-                    if (($template = Template::fromArray($data)) !== null) $templates[$template->getName()] = $template;
+                    if (($template = Template::read($data)) !== null) $templates[$template->getName()] = $template;
                 }
 
                 foreach ($templates as $template) {
@@ -91,7 +91,7 @@ final class JsonToMySqlMigrator implements IMigrator {
         }
 
         if (file_exists(SERVER_GROUPS_PATH . "groups.json")) {
-            $groupsRaw = FileUtils::jsonDecode(FileUtils::fileGetContents(SERVER_GROUPS_PATH . "groups.json"));
+            $groupsRaw = FileUtils::decodeJsonFile(SERVER_GROUPS_PATH . "groups.json");
             if (!empty($groupsRaw)) {
                 FileUtils::copyFile(SERVER_GROUPS_PATH . "groups.json", SERVER_GROUPS_PATH . "groups.json");
                 FileUtils::unlinkFile(SERVER_GROUPS_PATH . "groups.json");

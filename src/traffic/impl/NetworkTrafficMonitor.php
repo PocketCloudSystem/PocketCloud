@@ -36,6 +36,6 @@ final class NetworkTrafficMonitor extends TrafficMonitor {
     }
 
     public static function parsePacketMode(string $normalMode, string $packetClass): string {
-        return $normalMode . "-" . basename(str_replace("\\", "/", $packetClass));
+        return $normalMode . "-" . basename(str_replace("\\", DIRECTORY_SEPARATOR, $packetClass));
     }
 }

@@ -181,6 +181,18 @@ final class Network extends Thread {
         $this->established = false;
     }
 
+    public function getSocket(): Socket {
+        return $this->socket;
+    }
+
+    public function isEstablished(): bool {
+        return $this->established;
+    }
+
+    public function getAddress(): Address {
+        return $this->address;
+    }
+
     public static function getInstance(): self {
         return self::$instance;
     }

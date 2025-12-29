@@ -19,7 +19,8 @@
     "ext-pcre": "*",
     "ext-json": "*",
     "ext-spl": "*",
-    "ext-igbinary": "^3.0.1"
+    "ext-igbinary": "^3.0.1",
+    "ramsey/uuid": "^4.9"
   },
   "autoload": {
     "psr-4": {

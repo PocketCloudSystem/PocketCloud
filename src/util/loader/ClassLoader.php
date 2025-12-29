@@ -19,7 +19,7 @@ final class ClassLoader extends ThreadSafe implements IClassLoader {
 
     public function addPrefix(string $namespace, string $path): void {
         $this->namespaces->synchronized(function (string $namespace, string $path): void {
-            $namespace = str_replace(["/", "//", "\\", "\\\\"], DIRECTORY_SEPARATOR, rtrim($namespace, "\\")) . DIRECTORY_SEPARATOR;
+            $namespace = str_replace([DIRECTORY_SEPARATOR, "//", "\\", "\\\\"], DIRECTORY_SEPARATOR, rtrim($namespace, "\\")) . DIRECTORY_SEPARATOR;
             if (!isset($this->namespaces[$namespace])) $this->namespaces[$namespace] = new ThreadSafeArray();
             $this->namespaces[$namespace][] = $path;
         }, $namespace, $path);
@@ -27,7 +27,7 @@ final class ClassLoader extends ThreadSafe implements IClassLoader {
 
     public function findClass(string $class): ?string {
         return $this->synchronized(function (string $class): ?string {
-            $class = str_replace(["/", "//", "\\", "\\\\"], DIRECTORY_SEPARATOR, rtrim($class, "\\"));
+            $class = str_replace([DIRECTORY_SEPARATOR, "//", "\\", "\\\\"], DIRECTORY_SEPARATOR, rtrim($class, "\\"));
 
             foreach ($this->namespaces as $prefix => $paths) {
                 if (str_starts_with($class, $prefix)) {

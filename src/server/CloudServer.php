@@ -23,6 +23,7 @@ use pocketcloud\cloud\template\TemplateManager;
 use pocketcloud\cloud\util\promise\Promise;
 use pocketcloud\cloud\util\TerminalUtils;
 use pocketcloud\cloud\util\Utils;
+use const pocketcloud\CLOUD_PATH;
 use const pocketcloud\TEMP_PATH;
 
 // TODO
@@ -36,6 +37,7 @@ final class CloudServer {
 
     public function __construct(
         private readonly int $id,
+        private readonly string $serverUuid,
         private readonly string $template,
         private readonly CloudServerData $cloudServerData,
         private ServerStatus $serverStatus
@@ -49,7 +51,7 @@ final class CloudServer {
         $promise = new Promise();
         CloudLogger::get()->info("§rPreparing the server §b" . $this->getName() . "§r...");
 
-        ServerPreparator::getInstance()->submitEntry(ServerPrepareEntry::fromServer($this), fn() => $promise->resolve());
+        ServerPreparator::getInstance()->submitEntry($this, ServerPrepareEntry::fromServer($this), fn() => $promise->resolve());
 
         return $promise;
     }
@@ -57,11 +59,11 @@ final class CloudServer {
     public function start(): void {
         #CloudServerManager::getInstance()->addToProxies($this);
         new ServerStartEvent($this)->call();
-        CloudLogger::get()->info("§aStarting §b" . $this->getName() . "§r...");
+        CloudLogger::get()->info("§aStarting §b{}§r...", $this);
         #NotifyType::STARTING()->send(["%server%" => $this->getName()]);
 
-        ServerStartMethod::current()?->startServer($this)->failure(function (): void {
-            CloudLogger::get()->warn("Failed to start server §b{}§8, §rcould not create the process...");
+        ServerStartMethod::current()?->startServer($this)->then(fn(?int $tmpPid) => $this->getCloudServerData()->setTempProcessId($tmpPid))->failure(function (): void {
+            CloudLogger::get()->warn("Failed to start server §b{}§8, §rcould not create the process...", $this);
             //TODO:
         });
     }
@@ -80,6 +82,10 @@ final class CloudServer {
         } else {
             #DisconnectPacket::create(DisconnectReason::SERVER_SHUTDOWN())->sendPacket($this);
         }
+    }
+
+    public function getServerUuid(): string {
+        return $this->serverUuid;
     }
 
     public function getName(): string {
@@ -175,7 +181,7 @@ final class CloudServer {
     }
 
     public function getPath(): string {
-        return TEMP_PATH . $this->getName() . "/";
+        return TEMP_PATH . $this->serverUuid . DIRECTORY_SEPARATOR;
     }
 
     public function getInternalCloudServerStorage(): InternalCloudServerStorage {
@@ -221,6 +227,7 @@ final class CloudServer {
     public function write(): array {
         return [
             "name" => $this->getName(),
+            "uuid" => $this->getServerUuid(),
             "id" => $this->id,
             "template" => $this->template,
             "port" => $this->getCloudServerData()->getPort(),
@@ -236,13 +243,18 @@ final class CloudServer {
         ]);
     }
 
+    public function __toString(): string {
+        return "§b" . $this->getName() . " §8[§ruuid=" . $this->serverUuid . " path=" . trim(str_replace(CLOUD_PATH, "", $this->getPath()), DIRECTORY_SEPARATOR) . "§8]§r";
+    }
+
     public static function read(array $server): ?self {
-        if (!Utils::containKeys($server, "name", "id", "template", "port", "maxPlayers", "processId", "serverStatus")) return null;
+        if (!Utils::containKeys($server, "name", "uuid", "id", "template", "port", "maxPlayers", "processId", "serverStatus")) return null;
         if (($template = TemplateManager::getInstance()->get($server["template"])) === null) return null;
         return new CloudServer(
             intval($server["id"]),
+            $server["uuid"],
             $template,
-            new CloudServerData(intval($server["port"]), intval($server["maxPlayers"]), ($server["processId"] === null ? null : intval($server["processId"]))),
+            new CloudServerData($server["name"], intval($server["port"]), intval($server["maxPlayers"]), ($server["processId"] === null ? null : intval($server["processId"]))),
             ServerStatus::get($server["serverStatus"]) ?? ServerStatus::ONLINE()
         );
     }

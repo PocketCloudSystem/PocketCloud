@@ -2,6 +2,7 @@
 
 namespace pocketcloud\cloud\group;
 
+use pocketcloud\cloud\server\CloudServer;
 use pocketcloud\cloud\template\Template;
 use pocketcloud\cloud\template\TemplateManager;
 use pocketcloud\cloud\util\FileUtils;
@@ -46,7 +47,7 @@ final class ServerGroup {
     }
 
     public function getPath(): string {
-        return SERVER_GROUPS_PATH . $this->name . "/";
+        return SERVER_GROUPS_PATH . $this->name . DIRECTORY_SEPARATOR;
     }
 
     public function getTemplates(): array {

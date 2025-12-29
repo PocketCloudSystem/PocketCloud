@@ -2,6 +2,7 @@
 
 namespace pocketcloud\cloud\server\config;
 
+use pocketcloud\cloud\server\CloudServer;
 use pocketcloud\cloud\template\TemplateType;
 
 interface ServerProperties {
@@ -11,6 +12,8 @@ interface ServerProperties {
     public function renew(string $filePath): bool;
 
     public function needsRenewal(string $filePath): bool;
+
+    public function replacePlaceholders(CloudServer $server): array;
 
     public function getDefaultContent(): array;
 

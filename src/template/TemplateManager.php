@@ -79,7 +79,7 @@ final class TemplateManager implements Loadable {
 
         new TemplateEditEvent($template, $lobby, $maintenance, $static, $maxPlayerCount, $minServerCount, $maxServerCount, $startNewPercentage, $autoStart)->call();
 
-        CloudProvider::current()->editTemplate($template, $template->toArray());
+        CloudProvider::current()->editTemplate($template, $template->write());
 
         CloudLogger::get()->success("Successfully §eedited §rthe template §b" . $template->getName() . "§r. §8(§rTook §b" . number_format(microtime(true) - $startTime, 3) . "s§8)");
         //TODO: TemplateSyncPacket::create($template, false)->broadcastPacket();

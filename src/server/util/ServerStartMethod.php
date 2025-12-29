@@ -4,7 +4,6 @@ namespace pocketcloud\cloud\server\util;
 
 use Closure;
 use InvalidArgumentException;
-use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\server\CloudServer;
 use pocketcloud\cloud\util\promise\Promise;
 use pocketcloud\cloud\util\trait\EnumTrait;
@@ -24,39 +23,47 @@ final class ServerStartMethod {
 
     protected static function init(): void {
         self::add(new ServerStartMethod("screen", function (CloudServer $server, string $startCommand): Promise {
-            $result = passthru(
-                "cd " . $server->getPath() . " && " .
-                "screen -dmS " . $server->getName() . " " . $startCommand
-            );
+            $screenName = $server->getName() . "-" . $server->getServerUuid();
+            $cmd = "cd " . $server->getPath() . " && screen -dmS $screenName bash -c 'exec $startCommand' && " .
+                "screen -ls | grep $screenName | awk -F '.' '{print $1}'";
 
-            return is_null($result) ? Promise::resolved() : Promise::rejected();
+            exec($cmd, $output, $returnVar);
+
+            if ($returnVar === 0 && isset($output[0])) {
+                $screenPid = (int) $output[0];
+                $pid = (int) trim(shell_exec("pgrep -P $screenPid"));
+                if ($pid > 0) {
+                    return Promise::resolved($pid);
+                }
+            }
+            return Promise::rejected();
         }));
 
         self::add(new ServerStartMethod("tmux", function (CloudServer $server, string $startCommand): Promise {
-            $result = passthru(
-                "cd " . $server->getPath() . " && " .
-                "tmux new-session -d -s " . $server->getName() . " bash -c '" . $startCommand . "'"
-            );
+            $paneName = $server->getName() . "-" . $server->getServerUuid();
+            $cmd = "cd " . $server->getPath() . " && " .
+                "tmux new-session -d -s $paneName bash -c '" . $startCommand . "' && " .
+                "tmux list-panes -t $paneName -F '#{pane_pid}'";
 
-            return is_null($result) ? Promise::resolved() : Promise::rejected();
+            exec($cmd, $output, $returnVar);
+
+            if ($returnVar === 0) return Promise::resolved((int) $output[0]);
+            return Promise::rejected();
         }));
 
         self::add(new ServerStartMethod("proc", function (CloudServer $server, string $startCommand): Promise {
             $descriptors = [
-                0 => ["pipe", "r"],
-                1 => ["pipe", "w"],
-                2 => ["pipe", "w"],
+                fopen("php://temp", "r"),
+                fopen("php://temp", "r"),
+                fopen("php://temp", "r")
             ];
 
             $pipes = [];
             $process = proc_open($startCommand, $descriptors, $pipes, $server->getPath());
-
             if (!is_resource($process)) return Promise::rejected();
 
-            foreach ($pipes as $pipe) fclose($pipe);
-
             $status = proc_get_status($process);
-            if ($status["running"]) return Promise::resolved();
+            if ($status["running"]) return Promise::resolved($status["pid"]);
 
             proc_close($process);
             return Promise::rejected();

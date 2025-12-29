@@ -28,7 +28,7 @@ final class Utils {
         return true;
     }
 
-    public static function fillMissingKeys(array $array, array $defaultArray): array {
+    public static function fillMissingKeys(array &$array, array $defaultArray): array {
         foreach ($defaultArray as $key => $defaultValue) {
             if (!isset($array[$key])) {
                 $array[$key] = $defaultValue;

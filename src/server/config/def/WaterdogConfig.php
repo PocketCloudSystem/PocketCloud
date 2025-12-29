@@ -3,9 +3,13 @@
 namespace pocketcloud\cloud\server\config\def;
 
 use pocketcloud\cloud\config\Config;
+use pocketcloud\cloud\config\impl\MainConfig;
 use pocketcloud\cloud\config\type\ConfigTypeList;
+use pocketcloud\cloud\network\Network;
+use pocketcloud\cloud\server\CloudServer;
 use pocketcloud\cloud\server\config\ServerProperties;
 use pocketcloud\cloud\template\TemplateType;
+use const pocketcloud\CLOUD_PATH;
 
 final class WaterdogConfig implements ServerProperties {
 
@@ -36,6 +40,21 @@ final class WaterdogConfig implements ServerProperties {
         }
 
         return true;
+    }
+
+    public function replacePlaceholders(CloudServer $server): array {
+        return [
+            "%uuid%" => $server->getServerUuid(),
+            "%name%" => $server->getName(),
+            "%server_port%" => $server->getCloudServerData()->getPort(),
+            "%server_portv6%" => $server->getCloudServerData()->getPort() + 1,
+            "%max_players%" => $server->getTemplate()->getMaxPlayerCount(),
+            "%template%" => $server->getTemplate()->getName(),
+            "%port%" => Network::getInstance()->getAddress()->getPort(),
+            "%encryption%" =>  MainConfig::getInstance()->isNetworkEncryptionEnabled(),
+            "%language%" => "eng",
+            "%cloud_path%" => CLOUD_PATH
+        ];
     }
 
     public function getDefaultContent(): array {
@@ -84,6 +103,7 @@ final class WaterdogConfig implements ServerProperties {
             "default_idle_threads" => -1,
             "enable_statistics" => true,
             "enable_error_reporting" => true,
+            "server-uuid" => "%uuid%",
             "cloud-port" => "%port%",
             "server-name" => "%name%",
             "template" => "%template%",

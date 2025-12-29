@@ -35,9 +35,26 @@ final class FileUtils {
         ) ?? false;
     }
 
+    public static function createFile(string $filePath): bool {
+        return ExceptionHandler::tryCatch(
+            function (string $filePath): bool {
+                if (@file_exists($filePath)) return true;
+                $previousPath = dirname($filePath);
+                $return = self::createDir($previousPath);
+                return $return && is_writable($previousPath) && mkdir($filePath);
+            },
+            "Failed to create file: " . $filePath,
+            null,
+            $filePath
+        ) ?? false;
+    }
+
     public static function filePutContents(string $filePath, string $content): int|false {
         return ExceptionHandler::tryCatch(
             function (string $filePath, string $content): int|false {
+                $previousPath = dirname($filePath);
+                $return = self::createDir($previousPath);
+                if (!$return) return false;
                 return file_put_contents($filePath, $content);
             },
             "Failed to write in file: " . $filePath,
@@ -46,14 +63,15 @@ final class FileUtils {
         ) ?? false;
     }
 
-    public static function fileGetContents(string $filePath): ?string {
+    public static function fileGetContents(string $filePath, string $default = ""): ?string {
         return ExceptionHandler::tryCatch(
-            function (string $filePath): string {
+            function (string $filePath, mixed $default): string {
+                if (!file_exists($filePath)) return $default;
                 return file_get_contents($filePath);
             },
             "Failed to read file: " . $filePath,
             null,
-            $filePath
+            $filePath, $default
         );
     }
 
@@ -107,7 +125,7 @@ final class FileUtils {
             function (string $directoryPath): bool {
                 if (@is_dir($directoryPath)) {
                     foreach (array_diff(scandir($directoryPath), [".", ".."]) as $file) {
-                        $filePath = rtrim($directoryPath, "/") . "/" . $file;
+                        $filePath = rtrim($directoryPath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $file;
                         if (is_file($filePath)) self::unlinkFile($filePath);
                         else if (is_dir($filePath)) self::removeDirectory($filePath);
                     }
@@ -219,10 +237,10 @@ final class FileUtils {
     }
 
     public static function cleanPath(string $path, bool $removePath = false): string {
-        if ($removePath) return ($explode = explode(DIRECTORY_SEPARATOR, str_replace(["\\", "//", "/"], DIRECTORY_SEPARATOR, $path)))[count($explode) - 1];
+        if ($removePath) return ($explode = explode(DIRECTORY_SEPARATOR, str_replace(["\\", "//", DIRECTORY_SEPARATOR], DIRECTORY_SEPARATOR, $path)))[count($explode) - 1];
         $result = str_replace([".php", "phar://"], ["", ""], $path);
-        $cleanPath = rtrim(str_replace("phar://", "", CLOUD_PATH), "/");
-        if (str_starts_with($result, $cleanPath)) $result = ltrim(str_replace($cleanPath, "pcsrc", $result), "/");
+        $cleanPath = rtrim(str_replace("phar://", "", CLOUD_PATH), DIRECTORY_SEPARATOR);
+        if (str_starts_with($result, $cleanPath)) $result = ltrim(str_replace($cleanPath, "pcsrc", $result), DIRECTORY_SEPARATOR);
         return $result;
     }
 }
