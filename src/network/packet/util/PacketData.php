@@ -2,6 +2,7 @@
 
 namespace pocketcloud\cloud\network\packet\util;
 
+use Closure;
 use JsonSerializable;
 use OutOfBoundsException;
 use pocketcloud\cloud\group\ServerGroup;
@@ -92,8 +93,20 @@ final class PacketData implements JsonSerializable {
     public function readAll(mixed &...$v): void {
         foreach ($v as &$item) {
             if ($this->isEmpty()) throw new OutOfBoundsException("Passed too many references, packet buffer is empty");
-            $nextRead = $this->read();
-            $item = $nextRead;
+            $item = $this->read();
+        }
+    }
+
+    /**
+     * @param array $refs
+     * @param array<Closure(PacketData $buffer): mixed> $readers
+     * @return void
+     */
+    public function readAllTypeSafe(array $refs, array $readers = []): void {
+        foreach ($refs as $i => &$item) {
+            if ($this->isEmpty()) throw new OutOfBoundsException("Passed too many references, packet buffer is empty");
+            $reader = $readers[$i] ?? fn(PacketData $buffer) => $buffer->read();
+            $item = $reader($this);
         }
     }
 

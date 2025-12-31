@@ -2,6 +2,7 @@
 
 namespace pocketcloud\cloud\network\packet\impl;
 
+use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\network\client\ServerClient;
 use pocketcloud\cloud\network\packet\ClientboundPacket;
 use pocketcloud\cloud\network\packet\CloudboundPacket;
@@ -24,7 +25,8 @@ final class DisconnectPacket extends CloudPacket implements ClientboundPacket, C
     }
 
     public function decodePayload(PacketData $packetData): void {
-        $packetData->readAll($this->reason);
+        $packetData->readAllTypeSafe([&$this->reason], [fn(PacketData $buffer) => $buffer->readServerDisconnectReason()]);
+        CloudLogger::get()->dump($this->reason);
     }
 
     public function getReason(): ?ServerDisconnectReason {
