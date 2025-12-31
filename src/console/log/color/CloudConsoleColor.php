@@ -2,7 +2,7 @@
 
 namespace pocketcloud\cloud\console\log\color;
 
-use pocketcloud\cloud\util\trait\EnumTrait;
+use pocketcloud\cloud\util\trait\RegistryTrait;
 
 /**
  * @method static CloudConsoleColor BLACK()
@@ -24,7 +24,7 @@ use pocketcloud\cloud\util\trait\EnumTrait;
  * @method static CloudConsoleColor RESET()
  */
 final class CloudConsoleColor {
-    use EnumTrait {
+    use RegistryTrait {
         register as _register;
     }
 

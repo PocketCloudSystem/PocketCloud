@@ -2,7 +2,7 @@
 
 namespace pocketcloud\cloud\util\trait;
 
-trait EnumTrait {
+trait RegistryTrait {
 
     /** @ignored */
     protected static ?array $members = null;

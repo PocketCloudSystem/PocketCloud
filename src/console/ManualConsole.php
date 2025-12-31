@@ -276,7 +276,6 @@ final class ManualConsole {
         $this->prompt = "";
         $this->input = "";
         TerminalUtils::clearPrompt();
-        stream_set_blocking(STDIN, true);
     }
 
     public function __destruct() {
@@ -286,6 +285,7 @@ final class ManualConsole {
 
     public function setPrompt(string $prompt): void {
         $this->prompt = $prompt;
+        $this->redraw($prompt);
     }
 
     public function setCompletionCallback(Closure $callback): void {

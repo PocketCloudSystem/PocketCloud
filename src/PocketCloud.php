@@ -10,6 +10,7 @@ use pocketcloud\cloud\console\log\level\CloudLogLevel;
 use pocketcloud\cloud\crash\CrashDump;
 use pocketcloud\cloud\event\impl\cloud\CloudStartedEvent;
 use pocketcloud\cloud\group\ServerGroupManager;
+use pocketcloud\cloud\language\Language;
 use pocketcloud\cloud\network\Network;
 use pocketcloud\cloud\plugin\CloudPluginManager;
 use pocketcloud\cloud\provider\CloudProvider;
@@ -119,7 +120,7 @@ final class PocketCloud {
         }
 
         TickableList::add(
-            $this->trafficMonitorManager, $this->serverManager
+            $this->trafficMonitorManager, $this->serverManager, $this->commandManager
         );
 
         LoadableList::add(
@@ -137,6 +138,7 @@ final class PocketCloud {
 
         CloudLogger::get()->info("The §bCloud §ris §astarting§r...");
 
+        Language::init();
         $this->network->init();
         LoadableList::loadAll();
         $this->pluginManager->enableAll();
@@ -192,7 +194,8 @@ final class PocketCloud {
     }
 
     public function addStartNotification(string $logMessage, ?CloudLogLevel $logLevel = null, mixed... $params): self {
-        $this->startNotificationQueue->add([$logLevel ?? CloudLogLevel::INFO(), $logMessage, $params]);
+        if ($this->tick > 0) CloudLogger::get()->log($logLevel, $logMessage, $params);
+        else $this->startNotificationQueue->add([$logLevel ?? CloudLogLevel::INFO(), $logMessage, $params]);
         return $this;
     }
 

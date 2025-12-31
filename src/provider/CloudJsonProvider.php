@@ -2,6 +2,8 @@
 
 namespace pocketcloud\cloud\provider;
 
+use pocketcloud\cloud\cache\InGameModuleCache;
+use pocketcloud\cloud\cache\MaintenanceListCache;
 use pocketcloud\cloud\config\Config;
 use pocketcloud\cloud\group\ServerGroup;
 use pocketcloud\cloud\template\Template;
@@ -25,13 +27,8 @@ final class CloudJsonProvider extends CloudProvider {
         $this->notificationsList = new Config(IN_GAME_PATH . "notifications.json");
         $this->maintenanceList = new Config(IN_GAME_PATH . "maintenanceList.json");
 
-        /**TODO: foreach ($this->maintenanceList->getAll() as $player => $enabled) {
-            if ($enabled) MaintenanceList::add($player);
-        }
-
-        foreach ($this->modulesConfig->getAll() as $player => $enabled) {
-            InGameModule::setModuleState($player, $enabled);
-        } */
+        foreach ($this->maintenanceList->getAll() as $player => $enabled) if ($enabled) MaintenanceListCache::add($player);
+        foreach ($this->modulesConfig->getAll() as $module => $enabled) InGameModuleCache::setModuleState($module, $enabled);
     }
 
     public function addTemplate(Template $template): void {
@@ -127,7 +124,7 @@ final class CloudJsonProvider extends CloudProvider {
     public function setModuleState(string $module, bool $enabled): void {
         $this->modulesConfig->set($module, $enabled);
         $this->modulesConfig->save();
-        //TODO: InGameModule::setModuleState($module, $enabled);
+        InGameModuleCache::setModuleState($module, $enabled);
     }
 
     public function getModuleState(string $module): Promise {
@@ -155,13 +152,13 @@ final class CloudJsonProvider extends CloudProvider {
     public function addToWhitelist(string $player): void {
         $this->maintenanceList->set($player, true);
         $this->maintenanceList->save();
-        //TODO: MaintenanceList::add($player);
+        MaintenanceListCache::add($player);
     }
 
     public function removeFromWhitelist(string $player): void {
         $this->maintenanceList->remove($player);
         $this->maintenanceList->save();
-        //TODO: MaintenanceList::remove($player);
+        MaintenanceListCache::remove($player);
     }
 
     public function isOnWhitelist(string $player): Promise {

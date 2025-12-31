@@ -1,0 +1,47 @@
+<?php
+
+namespace pocketcloud\cloud\network\packet\impl\request;
+
+use pocketcloud\cloud\console\log\CloudLogger;
+use pocketcloud\cloud\network\client\ServerClient;
+use pocketcloud\cloud\network\client\ServerClientCache;
+use pocketcloud\cloud\network\packet\data\VerifyStatus;
+use pocketcloud\cloud\network\packet\impl\response\ServerHandshakeResponsePacket;
+use pocketcloud\cloud\network\packet\RequestPacket;
+use pocketcloud\cloud\network\packet\util\PacketData;
+use pocketcloud\cloud\server\CloudServerManager;
+use pocketcloud\cloud\server\util\ServerStatus;
+
+final class ServerHandshakeRequestPacket extends RequestPacket {
+
+    public function __construct(
+        private string $serverName = "",
+        private int $processId = -1,
+        private int $maxPlayers = -1,
+    ) {}
+
+    public function handle(ServerClient $client): void {
+        if (($server = CloudServerManager::getInstance()->get($this->serverName)) !== null && ServerClientCache::getInstance()->getServer($client) === null) {
+            ServerClientCache::getInstance()->add($server, $client);
+            CloudLogger::get()->success("The server §b{} §rhas §aconnected §rto the cloud.", $server->getName());
+            $server->getCloudServerData()->setMaxPlayers($this->maxPlayers);
+            $server->getCloudServerData()->setProcessId($this->processId);
+            $server->setVerifyStatus(VerifyStatus::VERIFIED);
+            $server->sync();
+            $this->sendResponse(new ServerHandshakeResponsePacket(VerifyStatus::VERIFIED), $client);
+            //TODO: Network::getInstance()->broadcastPacket(new ServerSyncPacket($server), $client);
+            $server->setServerStatus(ServerStatus::ONLINE);
+        } else {
+            CloudLogger::get()->warn("Denied server handshake request from §b{} §8(§b{}§8)§r, duplicate server...", $this->serverName, $client->getAddress());
+            $this->sendResponse(new ServerHandshakeResponsePacket(VerifyStatus::DENIED), $client);
+        }
+    }
+
+    public function encodePayload(PacketData $packetData): void {}
+
+    public function decodePayload(PacketData $packetData): void {
+        $this->serverName = $packetData->readString();
+        $this->processId = $packetData->readInt();
+        $this->maxPlayers = $packetData->readInt();
+    }
+}

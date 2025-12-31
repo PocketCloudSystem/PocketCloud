@@ -5,13 +5,14 @@ namespace pocketcloud\cloud\player;
 use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\event\impl\player\PlayerKickEvent;
 use pocketcloud\cloud\server\CloudServer;
+use pocketcloud\cloud\server\CloudServerManager;
 use pocketcloud\cloud\util\Utils;
 
 final class CloudPlayer {
 
     public function __construct(
         private readonly string $name,
-        private readonly string $host,
+        private readonly string $address,
         private readonly string $xboxUserId,
         private readonly string $uniqueId,
         private ?string $currentServer = null,
@@ -71,8 +72,8 @@ final class CloudPlayer {
         return $this->name;
     }
 
-    public function getHost(): string {
-        return $this->host;
+    public function getAddress(): string {
+        return $this->address;
     }
 
     public function getXboxUserId(): string {
@@ -84,13 +85,11 @@ final class CloudPlayer {
     }
 
     public function getCurrentServer(): ?CloudServer {
-        return null;
-        #TODO: return $this->currentServer === null ? null : CloudServerManager::getInstance()->get($this->currentServer);
+        return $this->currentServer === null ? null : CloudServerManager::getInstance()->get($this->currentServer);
     }
 
     public function getCurrentProxy(): ?CloudServer {
-        return null;
-        #TODO: return $this->currentProxy === null ? null : CloudServerManager::getInstance()->get($this->currentProxy);
+        return $this->currentProxy === null ? null : CloudServerManager::getInstance()->get($this->currentProxy);
     }
 
     public function getCurrentServerName(): ?string {
@@ -104,19 +103,19 @@ final class CloudPlayer {
     public function write(): array {
         return [
             "name" => $this->name,
-            "host" => $this->host,
+            "address" => $this->address,
             "xboxUserId" => $this->xboxUserId,
             "uniqueId" => $this->uniqueId,
-            "currentServer" => $this->getCurrentServerName(),
-            "currentProxy" => $this->getCurrentProxyName()
+            "currentServer" => $this->currentServer,
+            "currentProxy" => $this->currentProxy
         ];
     }
 
     public static function read(array $player): ?self {
-        if (!Utils::containKeys($player, "name", "host", "xboxUserId", "uniqueId")) return null;
+        if (!Utils::containKeys($player, "name", "address", "xboxUserId", "uniqueId")) return null;
         return new CloudPlayer(
             $player["name"],
-            $player["host"],
+            $player["address"],
             $player["xboxUserId"],
             $player["uniqueId"],
             (!isset($player["currentServer"]) ? null : $player["currentServer"]),

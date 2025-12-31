@@ -2,7 +2,7 @@
 
 namespace pocketcloud\cloud\config\type;
 
-use pocketcloud\cloud\util\trait\EnumTrait;
+use pocketcloud\cloud\util\trait\RegistryTrait;
 
 /**
  * @method static ConfigType JSON();
@@ -11,7 +11,7 @@ use pocketcloud\cloud\util\trait\EnumTrait;
  * @method static ConfigType PROPERTIES();
  */
 final class ConfigTypeList {
-    use EnumTrait {
+    use RegistryTrait {
         register as public;
     }
 

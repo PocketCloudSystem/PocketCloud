@@ -54,7 +54,9 @@ final class PocketMineServerProperties implements ServerProperties {
             "%port%" => Network::getInstance()->getAddress()->getPort(),
             "%encryption%" =>  MainConfig::getInstance()->isNetworkEncryptionEnabled(),
             "%language%" => "eng",
-            "%cloud_path%" => CLOUD_PATH
+            "%cloud_path%" => CLOUD_PATH,
+            "%timeout%" => $server->getTemplate()->getTemplateType()->getServerTimeout(),
+            "%auth_key%" => Network::getInstance()->getAuthenticationKey()
         ];
     }
 
@@ -64,6 +66,8 @@ final class PocketMineServerProperties implements ServerProperties {
             "motd" => "§b%name%",
             "server-port" => "%server_port%",
             "server-portv6" => "%server_portv6%",
+            "server-ip" => "127.0.0.1",
+            "server-ipv6" => "::1",
             "enable-ipv6" => "on",
             "white-list" => "off",
             "max-players" => "%max_players%",
@@ -87,7 +91,9 @@ final class PocketMineServerProperties implements ServerProperties {
             "cloud-port" => "%port%",
             "network-encryption" => "%encryption%",
             "cloud-language" => "%language%",
-            "cloud-path" => "%cloud_path%"
+            "cloud-path" => "%cloud_path%",
+            "server-timeout" => "%timeout%",
+            "auth-key" => "%auth_key%"
         ];
     }
 

@@ -53,6 +53,7 @@ final class TaskScheduler implements Tickable {
                 unset($this->tasks[$id]);
                 continue;
             }
+
             $task->onUpdate($currentTick);
         }
     }

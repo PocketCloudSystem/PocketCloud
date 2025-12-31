@@ -3,7 +3,11 @@
 namespace pocketcloud\cloud\network\packet;
 
 use pocketcloud\cloud\network\client\ServerClient;
+use pocketcloud\cloud\network\Network;
 use pocketcloud\cloud\network\packet\util\PacketData;
+use pocketcloud\cloud\server\CloudServer;
+use pocketcloud\cloud\template\TemplateType;
+use pocketcloud\cloud\util\promise\Promise;
 use ReflectionClass;
 use RuntimeException;
 
@@ -14,7 +18,7 @@ use RuntimeException;
 abstract class CloudPacket implements Packet {
 
     private bool $encoded = false;
-    private ?int $sentTimestamp = null;
+    private ?float $sentTimestamp = null;
 
     public function encode(PacketData $packetData): void {
         if ($this->encoded) throw new RuntimeException("Packet " . $this->getName() . " has already been encoded");
@@ -34,6 +38,17 @@ abstract class CloudPacket implements Packet {
 
     abstract public function handle(ServerClient $client): void;
 
+    public function sendPacket(ServerClient|CloudServer $client): bool {
+        if (!$this instanceof ClientboundPacket) return false;
+        if ($client instanceof CloudServer) return $client->sendPacket($this);
+        return Network::getInstance()->sendPacket($this, $client);
+    }
+
+    public function broadcastPacket(ServerClient|TemplateType ...$excluded): Promise {
+        if (!$this instanceof ClientboundPacket) return Promise::rejected("No ClientboundPacket");
+        return Network::getInstance()->broadcastPacket($this, ...$excluded);
+    }
+
     final public function getName(): string {
         return new ReflectionClass($this)->getShortName();
     }
@@ -42,7 +57,7 @@ abstract class CloudPacket implements Packet {
         return $this->encoded;
     }
 
-    public function getSentTimestamp(): ?int {
+    public function getSentTimestamp(): ?float {
         return $this->sentTimestamp;
     }
 }

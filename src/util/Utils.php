@@ -4,6 +4,8 @@ namespace pocketcloud\cloud\util;
 
 use Exception;
 use InvalidArgumentException;
+use pocketcloud\cloud\console\log\CloudLogger;
+use Random\RandomException;
 use ReflectionException;
 use ReflectionFunction;
 use ReflectionMethod;
@@ -29,13 +31,16 @@ final class Utils {
         return true;
     }
 
-    public static function fillMissingKeys(array &$array, array $defaultArray): array {
+    public static function fillMissingKeys(array &$array, array $defaultArray, ?int &$affectedKeys = 0): array {
         foreach ($defaultArray as $key => $defaultValue) {
             if (!isset($array[$key])) {
+                $affectedKeys++;
                 $array[$key] = $defaultValue;
             } else if (is_array($defaultValue) && is_array($array[$key])) {
-                $array[$key] = self::fillMissingKeys($array[$key], $defaultValue);
+                $affectedKeys++;
+                $array[$key] = self::fillMissingKeys($array[$key], $defaultValue, $affectedKeys);
             } else if (is_array($defaultValue) && !is_array($array[$key])) {
+                $affectedKeys++;
                 $array[$key] = $defaultValue;
             }
         }
@@ -43,11 +48,27 @@ final class Utils {
         return $array;
     }
 
-    public static function generateString(int $length = 5): string {
-        $characters = "1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        $string = "";
-        for ($i = 0; $i < $length; $i++) $string .= $characters[mt_rand(0, (strlen($characters) - 1))];
-        return $string;
+    public static function generateString(int $length = 5, bool $uppercase = true, bool $lowercase = false, bool $numbers = true, bool $specialCharacters = false): string {
+        $pool = "";
+        if ($uppercase) $pool .= "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        if ($lowercase) $pool .= "abcdefghijklmnopqrstuvwxyz";
+        if ($numbers) $pool .= "0123456789";
+        if ($specialCharacters) $pool .= "!@#$%^&*()-_=+[]{}<>?";
+        if ($pool === "") throw new InvalidArgumentException("Character pool must not be empty");
+
+        $result = "";
+        $maxIndex = strlen($pool) - 1;
+
+        for ($i = 0; $i < $length; $i++) {
+            try {
+                $result .= $pool[random_int(0, $maxIndex)];
+            } catch (RandomException $e) {
+                CloudLogger::get()->exception($e);
+                $result .= $pool[mt_rand(0, $maxIndex)];
+            }
+        }
+
+        return $result;
     }
 
     /** @author PMMP https://github.com/pmmp/PocketMine-MP/blob/50430762cf4a93a19a5621f9d0157e8009a8c15c/src/command/utils/CommandStringHelper.php#L48 */

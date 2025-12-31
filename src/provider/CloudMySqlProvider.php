@@ -2,6 +2,8 @@
 
 namespace pocketcloud\cloud\provider;
 
+use pocketcloud\cloud\cache\InGameModuleCache;
+use pocketcloud\cloud\cache\MaintenanceListCache;
 use pocketcloud\cloud\config\impl\MainConfig;
 use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\group\ServerGroup;
@@ -35,11 +37,11 @@ final class CloudMySqlProvider extends CloudProvider {
             }
         });
 
-        /**TODO: foreach (InGameModule::getAll() as $value) {
-            $this->getModuleState($value)->then(fn(bool $v) => InGameModule::setModuleState($value, $v));
+        foreach (InGameModuleCache::getAll() as $value) {
+            $this->getModuleState($value)->then(fn(bool $v) => InGameModuleCache::setModuleState($value, $v));
         }
 
-        $this->getWhitelist()->then(fn(array $list) => MaintenanceList::sync($list)); */
+        $this->getWhitelist()->then(fn(array $list) => MaintenanceListCache::sync($list));
     }
 
     public function addTemplate(Template $template): void {
@@ -168,7 +170,7 @@ final class CloudMySqlProvider extends CloudProvider {
     }
 
     public function setModuleState(string $module, bool $enabled): void {
-        //TODO: InGameModule::setModuleState($module, $enabled);
+        InGameModuleCache::setModuleState($module, $enabled);
         DatabaseQueries::setModuleState($module, $enabled)->execute();
     }
 
@@ -200,12 +202,12 @@ final class CloudMySqlProvider extends CloudProvider {
 
     public function addToWhitelist(string $player): void {
         DatabaseQueries::addToWhitelist($player)->execute();
-        //TODO: MaintenanceList::add($player);
+         MaintenanceListCache::add($player);
     }
 
     public function removeFromWhitelist(string $player): void {
         DatabaseQueries::removeFromWhitelist($player)->execute();
-        //TODO: MaintenanceList::remove($player);
+        MaintenanceListCache::remove($player);
     }
 
     public function isOnWhitelist(string $player): Promise {

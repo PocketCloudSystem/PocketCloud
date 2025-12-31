@@ -2,6 +2,8 @@
 
 namespace pocketcloud\cloud\network;
 
+use ErrorException;
+use JsonException;
 use LogicException;
 use pmmp\thread\ThreadSafeArray;
 use pocketcloud\cloud\config\impl\MainConfig;
@@ -10,10 +12,12 @@ use pocketcloud\cloud\event\impl\network\NetworkPacketPreSendEvent;
 use pocketcloud\cloud\event\impl\network\NetworkPacketReceiveEvent;
 use pocketcloud\cloud\event\impl\network\NetworkPacketReceivePreProcessEvent;
 use pocketcloud\cloud\event\impl\network\NetworkPacketSendEvent;
+use pocketcloud\cloud\exception\PacketException;
 use pocketcloud\cloud\exception\SocketException;
 use pocketcloud\cloud\network\client\ServerClient;
 use pocketcloud\cloud\network\client\ServerClientCache;
 use pocketcloud\cloud\network\packet\ClientboundPacket;
+use pocketcloud\cloud\network\packet\PacketPool;
 use pocketcloud\cloud\network\packet\UnhandledPacket;
 use pocketcloud\cloud\network\packet\util\PacketSerializer;
 use pocketcloud\cloud\PocketCloud;
@@ -25,6 +29,7 @@ use pocketcloud\cloud\traffic\TrafficMonitorManager;
 use pocketcloud\cloud\util\net\Address;
 use pocketcloud\cloud\util\promise\Promise;
 use pocketcloud\cloud\util\trait\SingletonTrait;
+use pocketcloud\cloud\util\Utils;
 use pocketmine\snooze\SleeperHandlerEntry;
 use Socket;
 
@@ -35,10 +40,14 @@ final class Network extends Thread {
     private SleeperHandlerEntry $handlerEntry;
     private Socket $socket;
     private bool $established = false;
+    private string $authenticationKey;
 
     public function __construct(private readonly Address $address) {
         self::setInstance($this);
         $this->buffer = new ThreadSafeArray();
+        $this->authenticationKey = Utils::generateString(mt_rand(32, 64));
+
+        PacketPool::init();
 
         $this->handlerEntry = PocketCloud::getInstance()->getSleeperHandler()->addNotifier(function (): void {
             /** @var UnhandledPacket $unhandledPacket */
@@ -59,17 +68,22 @@ final class Network extends Thread {
 
                 if (MainConfig::getInstance()->isNetworkOnlyLocal() && !$unhandledPacket->getAddress()->isLocal()) $continue = false;
                 if ($continue) {
-                    if (($packet = $unhandledPacket->buildCloudPacket($encryption)) !== null) {
-                        TrafficMonitorManager::getInstance()->callHandlers(
-                            TrafficMonitorManager::TRAFFIC_NETWORK,
-                            NetworkTrafficMonitor::parsePacketMode(NetworkTrafficMonitor::NETWORK_MODE_PACKET_IN, $packet::class),
-                            $packet, $unhandledPacket->getAddress()
-                        );
+                    try {
+                        if (($packet = $unhandledPacket->buildCloudPacket($encryption, $this->authenticationKey)) !== null) {
+                            TrafficMonitorManager::getInstance()->callHandlers(
+                                TrafficMonitorManager::TRAFFIC_NETWORK,
+                                NetworkTrafficMonitor::parsePacketMode(NetworkTrafficMonitor::NETWORK_MODE_PACKET_IN, $packet::class),
+                                $packet, $unhandledPacket->getAddress()
+                            );
 
-                        ($ev = new NetworkPacketReceiveEvent($packet, $client))->call();
-                        if (!$ev->isCancelled()) $packet->handle($client);
-                    } else CloudLogger::get()->debug("Received an unknown packet from §b{}§r, ignoring...", $unhandledPacket->getAddress())->debug("Packet buffer: " . $unhandledPacket->getBuffer()); # Both of this is using debug due to the potential risks
-                } else CloudLogger::get()->debug("Received an external packet from §b{}§r, ignoring...", $unhandledPacket->getAddress())->debug("Packet buffer: " . $unhandledPacket->getBuffer());    # that are caused by warn() (flooding the console visibly basically)
+                            ($ev = new NetworkPacketReceiveEvent($packet, $client))->call();
+                            if (!$ev->isCancelled()) $packet->handle($client);
+                        } else CloudLogger::get()->debug("Received an unknown packet from §b{}§r, ignoring...", $unhandledPacket->getAddress())->debug("Packet buffer: " . $unhandledPacket->getBuffer());
+                    } catch (PacketException|JsonException $e) {
+                        CloudLogger::get()->warn("§cFailed to decode packet from §b{}§8: §e{}", $client->getAddress(), $e->getMessage())
+                            ->debug($unhandledPacket->getBuffer());
+                    }
+                } else CloudLogger::get()->debug("Received an external packet from §b{}§r, ignoring...", $unhandledPacket->getAddress())->debug("Packet buffer: " . $unhandledPacket->getBuffer());
             }
         });
     }
@@ -103,11 +117,14 @@ final class Network extends Thread {
         }
     }
 
+    /**
+     * @throws ErrorException
+     */
     public function sendPacket(ClientboundPacket $packet, ServerClient $client): bool {
         if (!$this->established) return false;
         ($ev = new NetworkPacketPreSendEvent($packet, $client))->call();
         if ($ev->isCancelled()) return false;
-        $buffer = PacketSerializer::encode($packet, MainConfig::getInstance()->isNetworkEncryptionEnabled());
+        $buffer = PacketSerializer::encode($packet, MainConfig::getInstance()->isNetworkEncryptionEnabled(), $this->authenticationKey);
         if ($buffer === null) return false;
         $success = $this->write($buffer, $client->getAddress());
         TrafficMonitorManager::getInstance()->callHandlers(
@@ -120,9 +137,11 @@ final class Network extends Thread {
         return $success;
     }
 
-    public function broadcastPacket(ClientboundPacket $packet, ServerClient|TemplateType... $exclusions): Promise {
+    /**
+     * @throws ErrorException
+     */public function broadcastPacket(ClientboundPacket $packet, ServerClient|TemplateType ...$exclusions): Promise {
         if (!$this->established) return Promise::all([]);
-        $buffer = PacketSerializer::encode($packet, MainConfig::getInstance()->isNetworkEncryptionEnabled());
+        $buffer = PacketSerializer::encode($packet, MainConfig::getInstance()->isNetworkEncryptionEnabled(), $this->authenticationKey);
         if ($buffer === null) return Promise::rejected("Buffer null");
         $promises = [];
         foreach (ServerClientCache::getInstance()->getAll() as $client) {
@@ -188,6 +207,10 @@ final class Network extends Thread {
 
     public function isEstablished(): bool {
         return $this->established;
+    }
+
+    public function getAuthenticationKey(): string {
+        return $this->authenticationKey;
     }
 
     public function getAddress(): Address {

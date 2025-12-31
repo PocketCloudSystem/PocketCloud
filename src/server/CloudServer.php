@@ -8,8 +8,12 @@ use pocketcloud\cloud\event\impl\server\ServerCrashEvent;
 use pocketcloud\cloud\event\impl\server\ServerStartEvent;
 use pocketcloud\cloud\event\impl\server\ServerStopEvent;
 use pocketcloud\cloud\network\client\ServerClientCache;
+use pocketcloud\cloud\network\packet\ClientboundPacket;
 use pocketcloud\cloud\network\packet\CloudPacket;
-use pocketcloud\cloud\network\packet\impl\type\VerifyStatus;
+use pocketcloud\cloud\network\packet\data\NotificationType;
+use pocketcloud\cloud\network\packet\data\ServerDisconnectReason;
+use pocketcloud\cloud\network\packet\data\VerifyStatus;
+use pocketcloud\cloud\network\packet\impl\DisconnectPacket;
 use pocketcloud\cloud\player\CloudPlayer;
 use pocketcloud\cloud\player\CloudPlayerManager;
 use pocketcloud\cloud\server\crash\CrashChecker;
@@ -17,6 +21,7 @@ use pocketcloud\cloud\server\data\CloudServerData;
 use pocketcloud\cloud\server\data\InternalCloudServerStorage;
 use pocketcloud\cloud\server\prepare\ServerPreparator;
 use pocketcloud\cloud\server\prepare\ServerPrepareEntry;
+use pocketcloud\cloud\server\util\CloudServerCommonsTrait;
 use pocketcloud\cloud\server\util\ServerStartMethod;
 use pocketcloud\cloud\server\util\ServerStatus;
 use pocketcloud\cloud\template\Template;
@@ -30,6 +35,7 @@ use const pocketcloud\TEMP_PATH;
 
 // TODO
 final class CloudServer {
+    use CloudServerCommonsTrait;
 
     private int $lastCheckTime;
     private int $startTime;
@@ -51,7 +57,7 @@ final class CloudServer {
 
     public function prepare(): Promise {
         $promise = new Promise();
-        CloudLogger::get()->info("§rPreparing the server §b" . $this->getName() . "§r...");
+        CloudLogger::get()->info("§rPreparing the server §b{}§r...", $this->getName());
 
         ServerPreparator::getInstance()->submitEntry($this, ServerPrepareEntry::fromServer($this), fn() => $promise->resolve());
 
@@ -62,45 +68,32 @@ final class CloudServer {
         #CloudServerManager::getInstance()->addToProxies($this);
         new ServerStartEvent($this)->call();
         CloudLogger::get()->info("§aStarting §b{}§r...", $this);
-        #NotifyType::STARTING()->send(["%server%" => $this->getName()]);
+        NotificationType::SERVER_STARTING->notify(["%server%" => $this->getName()]);
 
         ServerStartMethod::current()?->startServer($this)->then(fn(?int $tmpPid) => $this->getCloudServerData()->setTempProcessId($tmpPid))->failure(function (): void {
             CloudLogger::get()->warn("Failed to start server §b{}§8, §rcould not create the process...", $this);
-            //TODO:
+            NotificationType::SERVER_START_FAILED->notify(["server" => $this->getName(), "reason" => "Failed to create process"]);
+            $this->remove();
+            $this->deleteTmpDir();
         });
     }
 
     public function stop(bool $force = false): void {
         new ServerStopEvent($this, $force)->call();
-        CloudLogger::get()->info("§cStopping §b" . $this->getName() . "§r...");
-        #NotifyType::STOPPING()->send(["%server%" => $this->getName()]);
-        $this->setServerStatus(ServerStatus::STOPPING());
+        CloudLogger::get()->info("§cStopping §b{}§r...", $this->getName());
+        NotificationType::SERVER_STOPPING->notify(["%server%" => $this->getName()]);
+        $this->setServerStatus(ServerStatus::STOPPING);
         $this->setStopTime(time());
 
         if ($force) {
-            if ($this->getCloudServerData()->getProcessId() !== null) TerminalUtils::kill($this->getCloudServerData()->getProcessId());
-            $this->setServerStatus(ServerStatus::OFFLINE());
-
-            CloudServerManager::getInstance()->remove($this);
-            ServerClientCache::getInstance()->remove($this);
-
-            if (CrashChecker::checkCrashed($this, $crashData)) {
-                CloudLogger::get()->warn("The server §b{} §ccrashed§r!", $this->getName());
-                $this->printCrashStackTrace($crashData);
-                new ServerCrashEvent($this, $crashData)->call();
-                CrashChecker::writeCrashFile($this, $crashData);
-                #NotifyType::CRASHED()->send(["%server%" => $server->getName()]);
-            }
-
-            if (!$this->getTemplate()->getSettings()->isStatic()) FileUtils::removeDirectory($this->getPath());
+            $this->setServerStatus(ServerStatus::OFFLINE);
+            $this->killProcess();
+            $this->remove();
+            $this->checkForCrash();
+            $this->deleteTmpDir();
         } else {
-            #DisconnectPacket::create(DisconnectReason::SERVER_SHUTDOWN())->sendPacket($this);
+            DisconnectPacket::create(ServerDisconnectReason::SERVER_SHUTDOWN)->sendPacket($this);
         }
-    }
-
-    public function printCrashStackTrace(array $crashData): void {
-        CloudLogger::get()->info("§8[§cERROR§8/§e{}§r§8] §cUnhandled §e{}§c: §e{} §cwas thrown in §e{} §cat line §e{}", $this->getName(), $crashData["error"]["type"], $crashData["error"]["message"] ?? "Unknown error", $crashData["error"]["file"], $crashData["error"]["line"]);
-        foreach ($crashData["trace"] as $message) CloudLogger::get()->error("§c" . $message);
     }
 
     public function getServerUuid(): string {
@@ -172,7 +165,7 @@ final class CloudServer {
         $this->verifyStatus = $verifyStatus;
     }
 
-    public function sendPacket(CloudPacket $packet): bool {
+    public function sendPacket(ClientboundPacket $packet): bool {
         return ServerClientCache::getInstance()->get($this)?->sendPacket($packet) ?? false;
     }
 
@@ -274,7 +267,7 @@ final class CloudServer {
             $server["uuid"],
             $template,
             new CloudServerData($server["name"], intval($server["port"]), intval($server["maxPlayers"]), ($server["processId"] === null ? null : intval($server["processId"]))),
-            ServerStatus::get($server["serverStatus"]) ?? ServerStatus::ONLINE()
+            ServerStatus::fromName($server["serverStatus"]) ?? ServerStatus::ONLINE
         );
     }
 }

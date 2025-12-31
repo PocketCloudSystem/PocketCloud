@@ -108,6 +108,14 @@ final class Console {
         }
     }
 
+    public function setPrompt(string $prompt): void {
+        $this->manualConsole?->setPrompt($prompt);
+    }
+
+    public function restorePrompt(): void {
+        $this->setPrompt(CloudConsoleColor::toColoredString("§c" . TerminalUtils::getCurrentUser() . "§8@§bcloud §7» §r"));
+    }
+
     public function remove(): void {
         $this->manualConsole->close();
         ShutdownHandler::remove();

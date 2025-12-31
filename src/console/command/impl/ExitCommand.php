@@ -14,12 +14,15 @@ final class ExitCommand extends Command {
         parent::__construct("exit", "Stop the cloud");
         $this->addParameter(new BoolArgument(
             "confirmation",
-            false
+            true
         ));
     }
 
     public function run(ICommandSender $sender, string $label, array $args, ?SubCommand $subCommand = null): bool {
-        if ($args["confirmation"]) PocketCloud::getInstance()->shutdown();
+        if ($args["confirmation"] ?? false) PocketCloud::getInstance()->shutdown();
+        else $this->waitForConfirmation($sender, "§bAre you sure you want to stop the cloud?", ["yes", "true", "y", "t"])->then(function (bool $response): void {
+            if ($response) PocketCloud::getInstance()->shutdown();
+        });
         return true;
     }
 }

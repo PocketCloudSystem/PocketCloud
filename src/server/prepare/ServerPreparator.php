@@ -51,7 +51,7 @@ final class ServerPreparator implements Loadable {
     }
 
     public function submitEntry(CloudServer $server, ServerPrepareEntry $entry, ?Closure $completionHandler): void {
-        CloudLogger::get()->debug("Preparing server {}: §b" . ($this->isAsync() ? "async" : "sync"), $server);
+        CloudLogger::get()->debug("Preparing server {}: §b{}", $server->getName(), ($this->isAsync() ? "async" : "sync"));
         if (!$this->isAsync()) {
             $entry->run();
             if ($completionHandler !== null) ($completionHandler)();

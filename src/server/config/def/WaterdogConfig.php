@@ -54,7 +54,9 @@ final class WaterdogConfig implements ServerProperties {
             "%port%" => Network::getInstance()->getAddress()->getPort(),
             "%encryption%" =>  MainConfig::getInstance()->isNetworkEncryptionEnabled(),
             "%language%" => "eng",
-            "%cloud_path%" => CLOUD_PATH
+            "%cloud_path%" => CLOUD_PATH,
+            "%timeout%" => $server->getTemplate()->getTemplateType()->getServerTimeout(),
+            "%auth_key%" => Network::getInstance()->getAuthenticationKey()
         ];
     }
 
@@ -111,7 +113,9 @@ final class WaterdogConfig implements ServerProperties {
             "template" => "%template%",
             "network-encryption" => "%encryption%",
             "cloud-language" => "%language%",
-            "cloud-path" => "%cloud_path%"
+            "cloud-path" => "%cloud_path%",
+            "server-timeout" => "%timeout%",
+            "auth-key" => "%auth_key%"
         ];
     }
 

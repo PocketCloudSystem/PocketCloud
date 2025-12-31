@@ -3,7 +3,13 @@
 namespace pocketcloud\cloud\network\packet;
 
 use pocketcloud\cloud\console\log\CloudLogger;
+use pocketcloud\cloud\network\packet\impl\CloudNotificationPacket;
+use pocketcloud\cloud\network\packet\impl\DisconnectPacket;
+use pocketcloud\cloud\network\packet\impl\KeepAlivePacket;
+use pocketcloud\cloud\network\packet\impl\request\ServerHandshakeRequestPacket;
+use pocketcloud\cloud\network\packet\impl\response\ServerHandshakeResponsePacket;
 use pocketcloud\cloud\util\trait\SingletonTrait;
+use ReflectionClass;
 
 final class PacketPool {
     use SingletonTrait;
@@ -17,12 +23,17 @@ final class PacketPool {
 
     public function __construct() {
         self::setInstance($this);
+        $this->register(ServerHandshakeRequestPacket::class);
+        $this->register(ServerHandshakeResponsePacket::class);
+        $this->register(DisconnectPacket::class);
+        $this->register(KeepAlivePacket::class);
+        $this->register(CloudNotificationPacket::class);
     }
 
     public function register(string $packetClass): void {
         if (!is_subclass_of($packetClass, CloudPacket::class)) return;
-        CloudLogger::get()->debug("Registering packet " . basename($packetClass) . " (" . $packetClass . ")");
-        $this->packets[basename($packetClass)] = $packetClass;
+        CloudLogger::get()->forceDebug("Registering packet " . ($packetName = new ReflectionClass($packetClass)->getShortName()) . " (" . $packetClass . ")");
+        $this->packets[$packetName] = $packetClass;
     }
 
     public function get(string $pid): ?CloudPacket {

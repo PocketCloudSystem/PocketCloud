@@ -6,14 +6,22 @@ use pocketcloud\cloud\console\command\impl\ExitCommand;
 use pocketcloud\cloud\console\command\impl\HelpCommand;
 use pocketcloud\cloud\console\command\impl\server\ServerCommand;
 use pocketcloud\cloud\console\command\sender\ICommandSender;
+use pocketcloud\cloud\console\Console;
+use pocketcloud\cloud\console\log\color\CloudConsoleColor;
+use pocketcloud\cloud\PocketCloud;
+use pocketcloud\cloud\util\FormatUtils;
 use pocketcloud\cloud\util\misc\Loadable;
+use pocketcloud\cloud\util\misc\Tickable;
+use pocketcloud\cloud\util\promise\Promise;
 use pocketcloud\cloud\util\trait\SingletonTrait;
 
-final class CommandManager implements Loadable {
+final class CommandManager implements Loadable, Tickable {
     use SingletonTrait;
 
     /** @var array<Command> */
     private array $commands = [];
+    private array $confirmationPromises = [];
+    private ?array $currentConfirmationData = null;
 
     public function __construct() {
         self::setInstance($this);
@@ -26,11 +34,9 @@ final class CommandManager implements Loadable {
         $this->register(new ServerCommand());
     }
 
-    public function handleInput(ICommandSender $sender, string $name, array $args): bool {
-        if (($command = $this->get($name)) === null) return false;
-
-        $command->handle($sender, $name, $args);
-        return true;
+    public function waitForConfirmation(Command $command, ICommandSender $sender, string $prompt, array $keywordsAccept, int $timeout = 10): Promise {
+        $this->confirmationPromises[$command->getName()] = [$command->getName(), $sender, $prompt, PocketCloud::getInstance()->getTick() + (20 * $timeout), $promise = new Promise(), $keywordsAccept];
+        return $promise;
     }
 
     public function register(Command $command): void {
@@ -40,6 +46,51 @@ final class CommandManager implements Loadable {
     public function remove(Command|string $command): void {
         $command = strtolower($command instanceof Command ? $command->getName() : $command);
         if (isset($this->commands[$command])) unset($this->commands[$command]);
+    }
+
+    public function handleInput(ICommandSender $sender, string $name, array $args): bool {
+        if ($this->currentConfirmationData !== null) {
+            /** @var ICommandSender $sender */
+            [, $sender, , , $promise, $keywordsAccept] = $this->currentConfirmationData;
+            if (in_array(strtolower($name), $keywordsAccept)) {
+                $this->currentConfirmationData = null;
+                $promise->resolve(true);
+                return true;
+            } else {
+                $sender->warn("§cCancelled the confirmation.");
+                Console::getInstance()->restorePrompt();
+                $promise->resolve(false);
+                $this->currentConfirmationData = null;
+                return true;
+            }
+        }
+
+        if (($command = $this->get($name)) === null) return false;
+
+        $command->handle($sender, $name, $args);
+        return true;
+    }
+
+    public function tick(int $currentTick): void {
+        if ($this->currentConfirmationData !== null) {
+            /** @var ICommandSender $sender */
+            [, $sender, , $expireTick, $promise] = $this->currentConfirmationData;
+            if ($expireTick <= PocketCloud::getInstance()->getTick()) {
+                $this->currentConfirmationData = null;
+                $promise->reject();
+                $sender->warn("§cConfirmation timed out.");
+                Console::getInstance()->restorePrompt();
+            }
+
+            return;
+        }
+
+        if (!empty($this->confirmationPromises)) {
+            $this->currentConfirmationData = array_shift($this->confirmationPromises);
+            [, , $prompt, , , $keywordsAccept] = $this->currentConfirmationData;
+            $actualPrompt = CloudConsoleColor::toColoredString(trim($prompt) . " §8(" . FormatUtils::interpolate("§rType §8'§a{}§8'§r.", [implode("§8', §8'§a", $keywordsAccept)]) . "§8)§r ");
+            Console::getInstance()->setPrompt($actualPrompt);
+        }
     }
 
     public function get(string $name): ?Command {

@@ -2,7 +2,7 @@
 
 namespace pocketcloud\cloud\console\log\level;
 
-use pocketcloud\cloud\util\trait\EnumTrait;
+use pocketcloud\cloud\util\trait\RegistryTrait;
 
 /**
  * @method static CloudLogLevel INFO()
@@ -12,7 +12,7 @@ use pocketcloud\cloud\util\trait\EnumTrait;
  * @method static CloudLogLevel SUCCESS()
  */
 final class CloudLogLevel {
-    use EnumTrait;
+    use RegistryTrait;
 
     protected static function init(): void {
         self::register("info", new CloudLogLevel("INFO", "§bINFO"));

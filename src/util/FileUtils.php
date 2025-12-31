@@ -140,75 +140,75 @@ final class FileUtils {
         ) ?? false;
     }
 
-    public static function encodeJson(array $jsonArray): ?string {
+    public static function encodeJson(array $jsonArray, int $flags = 0, int $depth = 512): ?string {
         return ExceptionHandler::tryCatch(
-            function (array $jsonArray): ?string {
-                $encode = json_encode($jsonArray, JSON_THROW_ON_ERROR);
+            function (array $jsonArray, int $flags, int $depth): ?string {
+                $encode = json_encode($jsonArray, JSON_THROW_ON_ERROR | $flags, $depth);
                 return is_string($encode) ? $encode : null;
             },
             "Failed to encode json string",
             null,
-            $jsonArray
+            $jsonArray, $flags, $depth
         );
     }
 
-    public static function encodeJsonFile(string $filePath, array $jsonArray): ?bool {
+    public static function encodeJsonFile(string $filePath, array $jsonArray, int $flags = 0, int $depth = 512): ?bool {
         return ExceptionHandler::tryCatch(
-            function (string $filePath, array $jsonArray): ?string {
-                $encode = json_encode($jsonArray, JSON_THROW_ON_ERROR);
+            function (string $filePath, array $jsonArray, int $flags, int $depth): ?string {
+                $encode = json_encode($jsonArray, JSON_THROW_ON_ERROR | $flags, $depth);
                 if (is_string($encode)) return is_int(file_put_contents($filePath, $encode));
                 return is_string($encode) ? $encode : null;
             },
             "Failed to encode & place json string into a file",
             null,
-            $filePath, $jsonArray
+            $filePath, $jsonArray, $flags, $depth
         );
     }
 
-    public static function decodeJson(string $jsonString, int $depth = 512): ?array {
+    public static function decodeJson(string $jsonString, int $depth = 512, int $flags = 0): ?array {
         return ExceptionHandler::tryCatch(
-            function (string $jsonString, int $depth): ?array {
-                $decode = json_decode($jsonString, true, $depth, JSON_THROW_ON_ERROR);
+            function (string $jsonString, int $depth, int $flags): ?array {
+                $decode = json_decode($jsonString, true, $depth, JSON_THROW_ON_ERROR | $flags);
                 return is_array($decode) ? $decode : null;
             },
             "Failed to decode json string: " . $jsonString,
             null,
-            $jsonString, $depth
+            $jsonString, $depth, $flags
         );
     }
 
-    public static function decodeJsonFile(string $filePath, int $depth = 512): ?array {
+    public static function decodeJsonFile(string $filePath, int $depth = 512, int $flags = 0): ?array {
         return ExceptionHandler::tryCatch(
-            function (string $filePath, int $depth): ?array {
-                $decode = json_decode(file_get_contents($filePath), true, $depth, JSON_THROW_ON_ERROR);
+            function (string $filePath, int $depth, int $flags): ?array {
+                $decode = json_decode(file_get_contents($filePath), true, $depth, JSON_THROW_ON_ERROR | $flags);
                 return is_array($decode) ? $decode : null;
             },
             "Failed to decode json file: " . $filePath,
             null,
-            $filePath, $depth
+            $filePath, $depth, $flags
         );
     }
 
-    public static function emitYaml(mixed $yamlData): string {
+    public static function emitYaml(mixed $yamlData, int $encoding = YAML_ANY_ENCODING, int $linebreak = YAML_ANY_BREAK): string {
         return ExceptionHandler::tryCatch(
-            function (mixed $yamlData): ?string {
-                $emitted = yaml_emit($yamlData);
+            function (mixed $yamlData, int $encoding, int $linebreak): ?string {
+                $emitted = yaml_emit($yamlData, $encoding, $linebreak);
                 return is_string($emitted) ? $emitted : null;
             },
             "Failed to emit yaml data",
             null,
-            $yamlData
+            $yamlData, $encoding, $linebreak
         );
     }
 
-    public static function emitYamlFile(string $filePath, mixed $yamlData): bool {
+    public static function emitYamlFile(string $filePath, mixed $yamlData, int $encoding = YAML_ANY_ENCODING, int $linebreak = YAML_ANY_BREAK): bool {
         return ExceptionHandler::tryCatch(
-            function (string $filePath, mixed $yamlData): bool {
-                return yaml_emit_file($filePath, $yamlData);
+            function (string $filePath, mixed $yamlData, int $encoding, int $linebreak): bool {
+                return yaml_emit_file($filePath, $yamlData, $encoding, $linebreak);
             },
             "Failed to emit & place yaml string into file",
             null,
-            $filePath, $yamlData
+            $filePath, $yamlData, $encoding, $linebreak
         );
     }
 

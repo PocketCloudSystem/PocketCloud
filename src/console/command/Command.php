@@ -7,6 +7,7 @@ use pocketcloud\cloud\console\command\argument\exception\NoArgumentFoundExceptio
 use pocketcloud\cloud\console\command\sender\ICommandSender;
 use pocketcloud\cloud\console\command\util\CommandParameterTrait;
 use pocketcloud\cloud\console\log\level\CloudLogLevel;
+use pocketcloud\cloud\util\promise\Promise;
 
 abstract class Command {
     use CommandParameterTrait;
@@ -22,6 +23,10 @@ abstract class Command {
         private readonly ?string $usage = null,
         private readonly array $aliases = []
     ) {}
+
+    final public function waitForConfirmation(ICommandSender $sender, string $prompt, array $keywordsAccept, int $timeout = 10): Promise {
+        return CommandManager::getInstance()->waitForConfirmation($this, $sender, $prompt, $keywordsAccept, $timeout);
+    }
 
     public function enableUseRegularHandlerForSubCommands(bool $val = true): self {
         $this->useRegularHandlerForSubCommands = $val;

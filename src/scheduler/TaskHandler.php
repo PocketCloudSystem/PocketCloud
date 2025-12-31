@@ -4,21 +4,23 @@ namespace pocketcloud\cloud\scheduler;
 
 use pocketcloud\cloud\exception\TaskCancelException;
 use pocketcloud\cloud\plugin\CloudPlugin;
+use pocketcloud\cloud\PocketCloud;
 
 final class TaskHandler {
 
     private int $id;
+    private int $nextRun;
     private bool $cancelled = false;
-    private int $last = 0;
 
     public function __construct(
         private readonly Task $task,
-        private int $delay,
+        private readonly int $delay,
         private readonly int $period,
         private readonly bool $repeat,
         private readonly CloudPlugin $owner
     ) {
         $this->id = mt_rand(PHP_INT_MIN, PHP_INT_MAX);
+        $this->nextRun = PocketCloud::getInstance()->getTick() + $this->delay;
     }
 
     public function cancel(): void {
@@ -33,22 +35,8 @@ final class TaskHandler {
     }
 
     public function onUpdate(int $tick): void {
-        if ($this->delay > 0) {
-            if (--$this->delay == 0) {
-                $this->last = $tick;
-                try {
-                    $this->task->onRun();
-                } catch (TaskCancelException) {
-                    $this->cancel();
-                } finally {
-                    if (!$this->isRepeat()) $this->cancel();
-                }
-            }
-            return;
-        }
-
-        if ($tick >= ($this->last + $this->period)) {
-            $this->last = $tick;
+        if ($tick >= $this->nextRun) {
+            $this->nextRun = $tick + $this->period;
             try {
                 $this->task->onRun();
             } catch (TaskCancelException) {

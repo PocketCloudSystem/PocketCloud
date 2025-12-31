@@ -3,7 +3,7 @@
 namespace pocketcloud\cloud\provider\database;
 
 use pocketcloud\cloud\template\TemplateHelper;
-use pocketcloud\cloud\util\trait\EnumTrait;
+use pocketcloud\cloud\util\trait\RegistryTrait;
 use r3pt1s\mysql\query\QueryBuilder;
 
 /**
@@ -31,7 +31,7 @@ use r3pt1s\mysql\query\QueryBuilder;
  * @method static QueryBuilder getWhitelist()
  */
 final class DatabaseQueries {
-    use EnumTrait;
+    use RegistryTrait;
 
     protected static function init(): void {
         self::register("createTables", function (): QueryBuilder {

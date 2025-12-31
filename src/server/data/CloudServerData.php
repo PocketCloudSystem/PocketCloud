@@ -28,6 +28,7 @@ final class CloudServerData {
 
     public function setProcessId(?int $processId): void {
         if ($this->processId !== null) throw new LogicException("The process id has already been set");
+        CloudLogger::get()->forceDebug("Set process id of {} to {}, matches temp process id?: {}", $this->serverName, $processId ?? "NULL", $this->tempProcessId !== null && $this->tempProcessId === $processId ? "Yes" : "No");
         $this->processId = $processId;
     }
 

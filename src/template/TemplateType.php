@@ -7,7 +7,7 @@ use pocketcloud\cloud\server\config\ServerProperties;
 use pocketcloud\cloud\server\config\ServerPropertiesGenerator;
 use pocketcloud\cloud\software\Software;
 use pocketcloud\cloud\software\SoftwareManager;
-use pocketcloud\cloud\util\trait\EnumTrait;
+use pocketcloud\cloud\util\trait\RegistryTrait;
 use const pocketcloud\GLOBAL_TEMPLATES_PATH;
 
 /**
@@ -15,7 +15,7 @@ use const pocketcloud\GLOBAL_TEMPLATES_PATH;
  * @method static TemplateType PROXY()
  */
 final class TemplateType {
-    use EnumTrait;
+    use RegistryTrait;
 
     protected static function init(): void {
         self::add(new TemplateType("server", SoftwareManager::getInstance()->get("PocketMine-MP")));

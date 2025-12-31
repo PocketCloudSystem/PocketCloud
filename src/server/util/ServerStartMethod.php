@@ -6,7 +6,7 @@ use Closure;
 use InvalidArgumentException;
 use pocketcloud\cloud\server\CloudServer;
 use pocketcloud\cloud\util\promise\Promise;
-use pocketcloud\cloud\util\trait\EnumTrait;
+use pocketcloud\cloud\util\trait\RegistryTrait;
 use pocketcloud\cloud\util\Utils;
 use const pocketcloud\BINARIES_PATH;
 use const pocketcloud\SOFTWARE_PATH;
@@ -17,7 +17,7 @@ use const pocketcloud\SOFTWARE_PATH;
  * @method static ServerStartMethod PROC()
  */
 final class ServerStartMethod {
-    use EnumTrait;
+    use RegistryTrait;
 
     private static ?self $current = null;
 
