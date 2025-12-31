@@ -7,16 +7,28 @@ use pocketcloud\cloud\event\impl\server\ServerCrashEvent;
 use pocketcloud\cloud\event\impl\server\ServerDisconnectEvent;
 use pocketcloud\cloud\network\client\ServerClientCache;
 use pocketcloud\cloud\network\packet\data\NotificationType;
+use pocketcloud\cloud\network\packet\data\ServerCommandExecutionResult;
 use pocketcloud\cloud\server\CloudServerManager;
 use pocketcloud\cloud\server\crash\CrashChecker;
 use pocketcloud\cloud\util\FileUtils;
+use pocketcloud\cloud\util\promise\Promise;
 use pocketcloud\cloud\util\TerminalUtils;
 
-trait CloudServerCommonsTrait {
+trait CloudServerActionsTrait {
+
+    private array $commandExecutionOrders = [];
 
     public function printCrashStackTrace(array $crashData): void {
         CloudLogger::get()->info("§8[§cERROR§8/§e{}§r§8] §cUnhandled §e{}§c: §e{} §cwas thrown in §e{} §cat line §e{}", $this->getName(), $crashData["error"]["type"], $crashData["error"]["message"] ?? "Unknown error", $crashData["error"]["file"], $crashData["error"]["line"]);
         foreach ($crashData["trace"] as $message) CloudLogger::get()->error("§c" . $message);
+    }
+
+    /**
+     * @param string $commandLine
+     * @return Promise<ServerCommandExecutionResult>
+     */
+    public function executeCommand(string $commandLine): Promise {
+        return Promise::rejected();
     }
     
     public function handleDisconnect(): void {
@@ -32,6 +44,15 @@ trait CloudServerCommonsTrait {
         $this->killProcess();
         $this->remove();
         $this->deleteTmpDir();
+    }
+
+    public function saveFiles(): void {
+        foreach ($this->getTemplate()->getTemplateType()->getSavableFiles() as $file) {
+            $filePath = $this->getPath() . $file;
+            $destinationPath = $this->getTemplate()->getPath() . $file;
+            if (is_file($filePath)) FileUtils::copyfile($filePath, $destinationPath);
+            else FileUtils::copyDirectory($filePath, $destinationPath);
+        }
     }
 
     public function remove(): void {

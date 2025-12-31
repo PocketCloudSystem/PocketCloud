@@ -11,7 +11,7 @@ readonly class IntegerArgument extends CommandArgument {
     /**
      * @param string $name
      * @param bool $optional
-     * @param Closure|null $integerProcessClosure (function (int $number): int {}) Pre-process the integer before it is getting passed to the arguments
+     * @param Closure(int $number): int|null $integerProcessClosure Pre-process the integer before it is getting passed to the arguments
      * @param string|null $customErrorMessage
      */
     public function __construct(

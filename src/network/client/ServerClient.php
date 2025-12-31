@@ -36,7 +36,7 @@ final class ServerClient {
     /**
      * @param CloudPacket $packet
      * @param int $ticks delay in ticks (20 = 1s)
-     * @param Closure|null $onSend function(ServerClient $client, CloudPacket $packet, bool $success): void {}
+     * @param Closure(ServerClient $client, CloudPacket $packet, bool $success): void|null $onSend
      * @return void
      */
     public function sendDelayedPacket(CloudPacket $packet, int $ticks, ?Closure $onSend = null): void {

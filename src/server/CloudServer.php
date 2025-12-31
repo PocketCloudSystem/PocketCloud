@@ -7,6 +7,7 @@ use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\event\impl\server\ServerCrashEvent;
 use pocketcloud\cloud\event\impl\server\ServerStartEvent;
 use pocketcloud\cloud\event\impl\server\ServerStopEvent;
+use pocketcloud\cloud\network\client\ServerClient;
 use pocketcloud\cloud\network\client\ServerClientCache;
 use pocketcloud\cloud\network\packet\ClientboundPacket;
 use pocketcloud\cloud\network\packet\CloudPacket;
@@ -21,7 +22,7 @@ use pocketcloud\cloud\server\data\CloudServerData;
 use pocketcloud\cloud\server\data\InternalCloudServerStorage;
 use pocketcloud\cloud\server\prepare\ServerPreparator;
 use pocketcloud\cloud\server\prepare\ServerPrepareEntry;
-use pocketcloud\cloud\server\util\CloudServerCommonsTrait;
+use pocketcloud\cloud\server\util\CloudServerActionsTrait;
 use pocketcloud\cloud\server\util\ServerStartMethod;
 use pocketcloud\cloud\server\util\ServerStatus;
 use pocketcloud\cloud\template\Template;
@@ -35,7 +36,7 @@ use const pocketcloud\TEMP_PATH;
 
 // TODO
 final class CloudServer {
-    use CloudServerCommonsTrait;
+    use CloudServerActionsTrait;
 
     private int $lastCheckTime;
     private int $startTime;
@@ -172,7 +173,7 @@ final class CloudServer {
     /**
      * @param CloudPacket $packet
      * @param int $ticks delay in ticks (20 = 1s)
-     * @param Closure|null $onSend function(ServerClient $client, CloudPacket $packet, bool $success): void {}
+     * @param Closure(ServerClient $client, CloudPacket $packet, bool $success): void|null $onSend
      * @return void
      */
     public function sendDelayedPacket(CloudPacket $packet, int $ticks, ?Closure $onSend = null): void {

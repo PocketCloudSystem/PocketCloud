@@ -7,6 +7,7 @@ use pocketcloud\cloud\console\command\impl\HelpCommand;
 use pocketcloud\cloud\console\command\impl\server\ServerCommand;
 use pocketcloud\cloud\console\command\sender\ICommandSender;
 use pocketcloud\cloud\console\Console;
+use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\console\log\color\CloudConsoleColor;
 use pocketcloud\cloud\PocketCloud;
 use pocketcloud\cloud\util\FormatUtils;
@@ -35,7 +36,7 @@ final class CommandManager implements Loadable, Tickable {
     }
 
     public function waitForConfirmation(Command $command, ICommandSender $sender, string $prompt, array $keywordsAccept, int $timeout = 10): Promise {
-        $this->confirmationPromises[$command->getName()] = [$command->getName(), $sender, $prompt, PocketCloud::getInstance()->getTick() + (20 * $timeout), $promise = new Promise(), $keywordsAccept];
+        $this->confirmationPromises[] = [$command->getName(), $sender, $prompt, PocketCloud::getInstance()->getTick() + (20 * $timeout), $promise = new Promise(), $keywordsAccept];
         return $promise;
     }
 
@@ -67,6 +68,7 @@ final class CommandManager implements Loadable, Tickable {
 
         if (($command = $this->get($name)) === null) return false;
 
+        CloudLogger::get()->dump($args);
         $command->handle($sender, $name, $args);
         return true;
     }

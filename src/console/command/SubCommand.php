@@ -47,7 +47,7 @@ abstract class SubCommand {
 
     /**
      * @param string $name
-     * @param Closure $executeHandler (function (ICommandSender $sender, string $label, array $args): bool {})
+     * @param Closure(ICommandSender $sender, string $label, array $args): bool $executeHandler
      * @param string|null $description
      * @param string|null $usage
      * @param array|null $aliases

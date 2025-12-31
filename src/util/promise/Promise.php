@@ -5,6 +5,7 @@ namespace pocketcloud\cloud\util\promise;
 use Closure;
 use Throwable;
 
+/** @template TValue */
 final class Promise {
 
     private bool $resolved = false;
@@ -17,6 +18,10 @@ final class Promise {
     /** @var Closure[] */
     private array $failure = [];
 
+    /**
+     * @param TValue $value
+     * @return $this|self
+     */
     public function resolve(mixed $value = null): self {
         if ($this->resolved || $this->rejected) return $this;
 
@@ -43,6 +48,10 @@ final class Promise {
         return $this->clear();
     }
 
+    /**
+     * @param Closure(TValue $result): void $onSuccess
+     * @return Promise
+     */
     public function then(Closure $onSuccess): Promise {
         $next = new Promise();
 

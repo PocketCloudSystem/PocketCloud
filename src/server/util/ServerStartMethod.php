@@ -4,8 +4,10 @@ namespace pocketcloud\cloud\server\util;
 
 use Closure;
 use InvalidArgumentException;
+use LogicException;
 use pocketcloud\cloud\server\CloudServer;
 use pocketcloud\cloud\util\promise\Promise;
+use pocketcloud\cloud\util\TerminalUtils;
 use pocketcloud\cloud\util\trait\RegistryTrait;
 use pocketcloud\cloud\util\Utils;
 use const pocketcloud\BINARIES_PATH;
@@ -37,7 +39,7 @@ final class ServerStartMethod {
                 }
             }
             return Promise::rejected();
-        }));
+        }, fn(): bool => TerminalUtils::checkCommand("screen")));
 
         self::add(new ServerStartMethod("tmux", function (CloudServer $server, string $startCommand): Promise {
             $paneName = $server->getName() . "-" . $server->getServerUuid();
@@ -49,7 +51,7 @@ final class ServerStartMethod {
 
             if ($returnVar === 0) return Promise::resolved((int) $output[0]);
             return Promise::rejected();
-        }));
+        }, fn(): bool => TerminalUtils::checkCommand("tmux")));
 
         self::add(new ServerStartMethod("proc", function (CloudServer $server, string $startCommand): Promise {
             $descriptors = [
@@ -67,7 +69,7 @@ final class ServerStartMethod {
 
             proc_close($process);
             return Promise::rejected();
-        }));
+        }, fn(): bool => function_exists("proc_open") && function_exists("proc_get_status") && function_exists("proc_close")));
     }
 
     public static function add(ServerStartMethod $method): void {
@@ -75,6 +77,7 @@ final class ServerStartMethod {
     }
 
     public static function set(ServerStartMethod $method): void {
+        if (!$method->isAvailable()) throw new LogicException("Start method '" . $method->getName() . "' is not available");
         self::$current = $method;
     }
 
@@ -85,9 +88,11 @@ final class ServerStartMethod {
 
     public function __construct(
         private readonly string $name,
-        private readonly Closure $startHandler
+        private readonly Closure $startHandler,
+        private readonly Closure $checkAvailabilityHandler
     ) {
         Utils::validateCallbackSignature($this->startHandler, [CloudServer::class, "string"], Promise::class);
+        Utils::validateCallbackSignature($this->checkAvailabilityHandler, [], "bool");
     }
 
     public function startServer(CloudServer $server): Promise {
@@ -98,6 +103,10 @@ final class ServerStartMethod {
                 SOFTWARE_PATH
             ], $server->getTemplate()->getTemplateType()->getSoftware()->getStartCommand()
         ));
+    }
+
+    public function isAvailable(): bool {
+        return ($this->checkAvailabilityHandler)();
     }
 
     public function getName(): string {

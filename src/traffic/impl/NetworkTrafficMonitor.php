@@ -3,8 +3,10 @@
 namespace pocketcloud\cloud\traffic\impl;
 
 use Closure;
+use pocketcloud\cloud\network\packet\CloudPacket;
 use pocketcloud\cloud\traffic\TrafficMonitor;
 use pocketcloud\cloud\traffic\TrafficMonitorManager;
+use pocketcloud\cloud\util\net\Address;
 
 final class NetworkTrafficMonitor extends TrafficMonitor {
 
@@ -17,7 +19,7 @@ final class NetworkTrafficMonitor extends TrafficMonitor {
 
     /**
      * @param string $packetClass
-     * @param Closure $handler function (CloudPacket $packet, Address $source)
+     * @param Closure(CloudPacket $packet, Address $address): void $handler
      * @return self
      */
     public function monitorPacketIn(string $packetClass, Closure $handler): self {
@@ -27,7 +29,7 @@ final class NetworkTrafficMonitor extends TrafficMonitor {
 
     /**
      * @param string $packetClass
-     * @param Closure $handler function (CloudPacket $packet, Address $destination, bool $success)
+     * @param Closure(CloudPacket $packet, Address $destination, bool $success): void $handler
      * @return self
      */
     public function monitorPacketOut(string $packetClass, Closure $handler): self {

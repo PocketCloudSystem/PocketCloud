@@ -55,6 +55,10 @@ final class CloudServerManager implements Tickable {
         }
     }
 
+    public function save(CloudServer $server): void {
+
+    }
+
     public function stop(CloudServer|Template|ServerGroup|string $source, bool $force): array {
         if ($source instanceof CloudServer) {
             $affectedServers = [$source];

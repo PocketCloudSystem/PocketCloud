@@ -28,4 +28,12 @@ final class TerminalUtils {
             exec("kill -9 $pid > /dev/null 2>&1");
         }
     }
+
+    public static function checkCommand(string $command): bool {
+        if (PHP_OS_FAMILY == "Linux") {
+            $output = shell_exec(sprintf("which %s", escapeshellarg($command)));
+            return $output !== null && $output !== false;
+        }
+        return false;
+    }
 }

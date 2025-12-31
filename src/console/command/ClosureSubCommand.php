@@ -7,6 +7,13 @@ use pocketcloud\cloud\console\command\sender\ICommandSender;
 
 final class ClosureSubCommand extends SubCommand {
 
+    /**
+     * @param string $name
+     * @param Closure(ICommandSender $sender, string $label, array $args): bool|null $executeHandler
+     * @param string|null $description
+     * @param string|null $usage
+     * @param array $aliases
+     */
     public function __construct(
         string $name,
         private readonly ?Closure $executeHandler,

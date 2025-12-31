@@ -3,6 +3,7 @@
 namespace pocketcloud\cloud\network\packet\util;
 
 use JsonSerializable;
+use OutOfBoundsException;
 use pocketcloud\cloud\group\ServerGroup;
 use pocketcloud\cloud\network\packet\data\LogType;
 use pocketcloud\cloud\network\packet\data\ServerCommandExecutionResult;
@@ -22,6 +23,22 @@ final class PacketData implements JsonSerializable {
     public function write(mixed $v): self {
         $this->data[] = $v;
         return $this;
+    }
+
+    public function writeAll(mixed ...$v): void {
+        foreach ($v as $item) {
+            if ($item instanceof Template) $this->writeTemplate($item);
+            else if ($item instanceof CloudServer) $this->writeServer($item);
+            else if ($item instanceof ServerGroup) $this->writeServerGroup($item);
+            else if ($item instanceof CloudPlayer) $this->writePlayer($item);
+            else if ($item instanceof ServerCommandExecutionResult) $this->writeServerCommandExecutionResult($item);
+            else if ($item instanceof LogType) $this->writeLogType($item);
+            else if ($item instanceof ServerStatus) $this->writeServerStatus($item);
+            else if ($item instanceof ServerDisconnectReason) $this->writeServerDisconnectReason($item);
+            else if ($item instanceof ServerErrorReason) $this->writeServerErrorReason($item);
+            else if ($item instanceof VerifyStatus) $this->writeVerifyStatus($item);
+            else if ($item instanceof TextType) $this->writeTextType($item);
+        }
     }
 
     public function writeTemplate(Template $template): self {
@@ -70,6 +87,14 @@ final class PacketData implements JsonSerializable {
 
     public function read(): mixed {
         return array_shift($this->data);
+    }
+
+    public function readAll(mixed &...$v): void {
+        foreach ($v as &$item) {
+            if ($this->isEmpty()) throw new OutOfBoundsException("Passed too many references, packet buffer is empty");
+            $nextRead = $this->read();
+            $item = $nextRead;
+        }
     }
 
     public function readString(): ?string {

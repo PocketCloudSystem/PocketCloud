@@ -3,6 +3,7 @@
 namespace pocketcloud\cloud\traffic;
 
 use Closure;
+use pocketcloud\cloud\util\net\Address;
 
 abstract class TrafficMonitor {
 
@@ -34,7 +35,7 @@ abstract class TrafficMonitor {
     }
 
     /**
-     * @param Closure $handler function (string $buffer, int $bytesIn, Address $source): void;
+     * @param Closure(string $buffer, int $bytesIn, Address $source): void $handler
      * @return self
      */
     public function monitorIn(Closure $handler): self {
@@ -43,7 +44,7 @@ abstract class TrafficMonitor {
     }
 
     /**
-     * @param Closure $handler function (string $buffer, int $bytesOut, Address $destination): void;
+     * @param Closure(string $buffer, int $bytesOut, Address $destination): void $handler
      * @return self
      */
     public function monitorOut(Closure $handler): self {

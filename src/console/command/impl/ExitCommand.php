@@ -23,6 +23,7 @@ final class ExitCommand extends Command {
         else $this->waitForConfirmation($sender, "§bAre you sure you want to stop the cloud?", ["yes", "true", "y", "t"])->then(function (bool $response): void {
             if ($response) PocketCloud::getInstance()->shutdown();
         });
+
         return true;
     }
 }

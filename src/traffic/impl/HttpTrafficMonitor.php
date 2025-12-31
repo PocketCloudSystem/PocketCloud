@@ -5,6 +5,7 @@ namespace pocketcloud\cloud\traffic\impl;
 use Closure;
 use pocketcloud\cloud\traffic\TrafficMonitor;
 use pocketcloud\cloud\traffic\TrafficMonitorManager;
+use pocketcloud\cloud\util\net\Address;
 
 final class HttpTrafficMonitor extends TrafficMonitor {
 
@@ -16,7 +17,7 @@ final class HttpTrafficMonitor extends TrafficMonitor {
     }
 
     /**
-     * @param Closure $handler function (Request $request, Address $source)
+     * @param Closure(Request $request, Address $source): void $handler function
      * @return self
      */
     public function monitorRequestIn(Closure $handler): self {
@@ -25,7 +26,7 @@ final class HttpTrafficMonitor extends TrafficMonitor {
     }
 
     /**
-     * @param Closure $handler function (Request $request, Response $response, Address $destination)
+     * @param Closure(Request $request, Response $response, Address $destination): void $handler
      * @return self
      */
     public function monitorResponseOut(Closure $handler): self {

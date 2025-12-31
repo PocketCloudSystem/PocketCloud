@@ -18,8 +18,15 @@ final class TemplateType {
     use RegistryTrait;
 
     protected static function init(): void {
-        self::add(new TemplateType("server", SoftwareManager::getInstance()->get("PocketMine-MP")));
-        self::add(new TemplateType("proxy", SoftwareManager::getInstance()->get("WaterdogPE")));
+        self::add(new TemplateType("server", SoftwareManager::getInstance()->get("PocketMine-MP"), [
+            "crashdumps", "log_archive", "players", "plugin_data", "plugins", "resource_packs",
+            "virions", "worlds", "pocketmine.yml", "banned-ips.txt", "banned-players.txt", "ops.txt",
+            "plugin_list.yml", "server.log", "white-list.txt"
+        ]));
+
+        self::add(new TemplateType("proxy", SoftwareManager::getInstance()->get("WaterdogPE"), [
+            "logs", "packs", "plugins", "lang.ini"
+        ]));
     }
 
     public static function add(TemplateType $type): void {
@@ -39,7 +46,8 @@ final class TemplateType {
 
     public function __construct(
         private readonly string $name,
-        private readonly Software $software
+        private readonly Software $software,
+        private readonly array $savableFiles
     ) {}
 
     public function getName(): string {
@@ -68,6 +76,10 @@ final class TemplateType {
 
     public function isProxy(): bool {
         return $this->equals(self::PROXY());
+    }
+
+    public function getSavableFiles(): array {
+        return $this->savableFiles;
     }
 
     /** @return array<ServerProperties> */

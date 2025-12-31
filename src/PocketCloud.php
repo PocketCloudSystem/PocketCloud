@@ -178,8 +178,8 @@ final class PocketCloud {
         CloudLogger::get()->info("§cShutting down §bPocket§3Cloud§r...");
         $this->running = false;
 
-        $this->serverManager->stopAll(true);
-        $this->network->close();
+        if (isset($this->serverManager)) $this->serverManager->stopAll(true);
+        if (isset($this->network)) $this->network->close();
         $this->console->remove();
     }
 
@@ -295,10 +295,10 @@ final class PocketCloud {
 
 error_reporting(-1);
 
-checkPlatform();
-
 $autoloadPath = dirname(__FILE__, 2) . "/vendor/autoload.php";
 require_once $autoloadPath;
+
+checkPlatform();
 
 define("pocketcloud\VENDOR_AUTOLOAD_PATH", $autoloadPath);
 define("pocketcloud\IS_PHAR", Phar::running() !== "");
@@ -390,7 +390,7 @@ function releaseLockFile(mixed $lockFile): void {
 
 function checkPlatform(): void {
     if (PHP_OS_FAMILY == "Windows") {
-        die("[ERROR] You can't use PocketCloud on a windows machine.");
+        die("[ERROR] You can't use PocketCloud on a windows machine." . PHP_EOL);
     }
 
     $messages = [];
@@ -425,6 +425,10 @@ function checkPlatform(): void {
         if (version_compare($pmmpThreadVersion, "6.1.0") < 0 || version_compare($pmmpThreadVersion, "7.0.0") >= 0) {
             $messages[] = "[WARN] pmmpthread ^6.1.0 is required, while you have $pmmpThreadVersion.";
         }
+    }
+
+    if (!TerminalUtils::checkCommand("java")) {
+        $messages[] = "[ERROR] Java is required. Please install at least Java 17.";
     }
 
     if (count($messages) > 0) {

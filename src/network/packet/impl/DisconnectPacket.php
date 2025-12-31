@@ -24,7 +24,7 @@ final class DisconnectPacket extends CloudPacket implements ClientboundPacket, C
     }
 
     public function decodePayload(PacketData $packetData): void {
-        $this->reason = $packetData->readServerDisconnectReason();
+        $packetData->readAll($this->reason);
     }
 
     public function getReason(): ?ServerDisconnectReason {
