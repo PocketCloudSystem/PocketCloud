@@ -14,10 +14,11 @@ use pocketcloud\cloud\network\packet\data\NotificationType;
 use pocketcloud\cloud\network\packet\data\ServerDisconnectReason;
 use pocketcloud\cloud\network\packet\data\VerifyStatus;
 use pocketcloud\cloud\network\packet\impl\DisconnectPacket;
+use pocketcloud\cloud\network\packet\impl\LanguageSyncPacket;
 use pocketcloud\cloud\player\CloudPlayer;
 use pocketcloud\cloud\player\CloudPlayerManager;
 use pocketcloud\cloud\server\data\CloudServerData;
-use pocketcloud\cloud\server\data\InternalCloudServerStorage;
+use pocketcloud\cloud\server\data\CloudServerStorage;
 use pocketcloud\cloud\server\prepare\ServerPreparator;
 use pocketcloud\cloud\server\prepare\ServerPrepareEntry;
 use pocketcloud\cloud\server\util\CloudServerActionsTrait;
@@ -39,18 +40,19 @@ final class CloudServer implements Tickable {
     private int $startTime;
     private int $stopTime = 0;
     private VerifyStatus $verifyStatus;
-    private InternalCloudServerStorage $internalCloudServerStorage;
+    private CloudServerStorage $serverStorage;
 
     public function __construct(
         private readonly int $id,
         private readonly string $serverUuid,
         private readonly string $template,
-        private readonly CloudServerData $cloudServerData,
-        private ServerStatus $serverStatus
+        private readonly CloudServerData $serverData,
+        private ServerStatus $serverStatus,
+        array $serverStorage = []
     ) {
         $this->startTime = time();
         $this->verifyStatus = VerifyStatus::NOT_APPLIED;
-        $this->internalCloudServerStorage = new InternalCloudServerStorage($this);
+        $this->serverStorage = new CloudServerStorage($this, $serverStorage);
     }
 
     public function tick(int $currentTick): void {
@@ -72,7 +74,7 @@ final class CloudServer implements Tickable {
         CloudLogger::get()->info("§aStarting §b{}§r...", $this);
         NotificationType::SERVER_STARTING->notify(["%server%" => $this->getName()]);
 
-        ServerStartMethod::current()?->startServer($this)->then(fn(?int $tmpPid) => $this->getCloudServerData()->setTempProcessId($tmpPid))->failure(function (): void {
+        ServerStartMethod::current()?->startServer($this)->then(fn(?int $tmpPid) => $this->serverData->setTempProcessId($tmpPid))->failure(function (): void {
             CloudLogger::get()->warn("Failed to start server §b{}§8, §rcould not create the process...", $this);
             NotificationType::SERVER_START_FAILED->notify(["server" => $this->getName(), "reason" => "Failed to create process"]);
             $this->remove();
@@ -119,6 +121,8 @@ final class CloudServer implements Tickable {
         foreach (Language::getAll() as $lang) {
         $packets[] = LanguageSyncPacket::create($lang->getName(), $lang->getMessages());
         }*/
+
+        $packets[] = LanguageSyncPacket::fromLanguage();
 
         foreach ($packets as $packet) $this->sendPacket($packet);
     }
@@ -177,17 +181,20 @@ final class CloudServer implements Tickable {
         return ServerClientCache::getInstance()->get($this);
     }
 
-    public function getCloudPlayer(string $name): ?CloudPlayer {
-        return array_find($this->getCloudPlayers(), fn(CloudPlayer $player) => $player->getName() == $name);
+    public function getPlayer(string $name): ?CloudPlayer {
+        return array_find($this->getPlayers(), fn(CloudPlayer $player) => $player->getName() == $name ||
+            $player->getUniqueId() == $name ||
+            $player->getXboxUserId() == $name
+        );
     }
 
     /** @return array<CloudPlayer> */
-    public function getCloudPlayers(): array {
+    public function getPlayers(): array {
         return array_filter(CloudPlayerManager::getInstance()->getAll(), fn(CloudPlayer $player) => ($this->getTemplate()->getTemplateType()->isServer() ? $player->getCurrentServer() === $this : $player->getCurrentProxy() === $this));
     }
 
-    public function getCloudPlayerCount(): int {
-        return count($this->getCloudPlayers());
+    public function getPlayerCount(): int {
+        return count($this->getPlayers());
     }
 
     public function getPath(): string {
@@ -214,8 +221,8 @@ final class CloudServer implements Tickable {
         return $this->template;
     }
 
-    public function getCloudServerData(): CloudServerData {
-        return $this->cloudServerData;
+    public function getServerData(): CloudServerData {
+        return $this->serverData;
     }
 
     public function getServerStatus(): ServerStatus {
@@ -230,8 +237,8 @@ final class CloudServer implements Tickable {
         return $this->lastCheckTime;
     }
 
-    public function getInternalCloudServerStorage(): InternalCloudServerStorage {
-        return $this->internalCloudServerStorage;
+    public function getServerStorage(): CloudServerStorage {
+        return $this->serverStorage;
     }
 
     public function getStopTime(): float {
@@ -245,36 +252,31 @@ final class CloudServer implements Tickable {
     public function write(): array {
         return [
             "name" => $this->getName(),
-            "uuid" => $this->getServerUuid(),
+            "uuid" => $this->serverUuid,
             "id" => $this->id,
             "template" => $this->template,
-            "port" => $this->getCloudServerData()->getPort(),
-            "maxPlayers" => $this->getCloudServerData()->getMaxPlayers(),
-            "processId" => $this->getCloudServerData()->getProcessId(),
-            "serverStatus" => $this->getServerStatus()->getName()
+            "port" => $this->serverData->getPort(),
+            "maxPlayers" => $this->serverData->getMaxPlayers(),
+            "processId" => $this->serverData->getProcessId(),
+            "serverStatus" => $this->serverStatus->getName(),
+            "internalStorage" => $this->serverStorage->getAll()
         ];
-    }
-
-    public function detailedWrite(): array {
-        return array_merge($this->write(), [
-            "path" => $this->getPath(),
-            "internalStorage" => $this->internalCloudServerStorage->getAll()
-        ]);
     }
 
     public function __toString(): string {
         return "§b" . $this->getName() . " §8[§ruuid=" . $this->serverUuid . " path=" . trim(str_replace(CLOUD_PATH, "", $this->getPath()), DIRECTORY_SEPARATOR) . "§8]§r";
     }
 
-    public static function read(array $server): ?self {
-        if (!Utils::containKeys($server, "name", "uuid", "id", "template", "port", "maxPlayers", "processId", "serverStatus")) return null;
-        if (($template = TemplateManager::getInstance()->get($server["template"])) === null) return null;
+    public static function read(array $data): ?self {
+        if (!Utils::containKeys($data, "name", "uuid", "id", "template", "port", "maxPlayers", "processId", "serverStatus")) return null;
+        if (($template = TemplateManager::getInstance()->get($data["template"])) === null) return null;
         return new CloudServer(
-            intval($server["id"]),
-            $server["uuid"],
+            intval($data["id"]),
+            $data["uuid"],
             $template,
-            new CloudServerData($server["name"], intval($server["port"]), intval($server["maxPlayers"]), ($server["processId"] === null ? null : intval($server["processId"]))),
-            ServerStatus::fromName($server["serverStatus"]) ?? ServerStatus::ONLINE
+            new CloudServerData($data["name"], intval($data["port"]), intval($data["maxPlayers"]), ($data["processId"] === null ? null : intval($data["processId"]))),
+            ServerStatus::fromName($data["serverStatus"]) ?? ServerStatus::ONLINE,
+            $data["internalStorage"] ?? []
         );
     }
 }

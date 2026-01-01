@@ -27,10 +27,11 @@ final class ServerPrepareEntry extends ThreadSafe {
         if (file_exists($this->serverPath) && !$this->static) FileUtils::removeDirectory($this->serverPath);
         $copyFromSources = $this->alwaysCopyToStaticServers || !$this->static;
         if ($copyFromSources) {
-            FileUtils::copyDirectory(GLOBAL_TEMPLATES_PATH . strtolower($this->templateType) . DIRECTORY_SEPARATOR, $this->serverPath);
             if ($this->group !== null) FileUtils::copyDirectory(SERVER_GROUPS_PATH . $this->group . DIRECTORY_SEPARATOR, $this->serverPath);
             FileUtils::copyDirectory($this->templatePath, $this->serverPath);
         }
+
+        FileUtils::copyDirectory(GLOBAL_TEMPLATES_PATH . strtolower($this->templateType) . DIRECTORY_SEPARATOR, $this->serverPath);
 
         foreach ($this->propertiesData as $properties) {
             [$fileName, $replacements] = $properties;

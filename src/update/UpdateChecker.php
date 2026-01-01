@@ -8,7 +8,6 @@ use pocketcloud\cloud\PocketCloud;
 use pocketcloud\cloud\update\def\CloudPluginsUpdateChecker;
 use pocketcloud\cloud\update\def\CloudUpdateChecker;
 use pocketcloud\cloud\update\def\SoftwareUpdateChecker;
-use pocketcloud\cloud\util\promise\Promise;
 use pocketcloud\cloud\util\trait\SingletonTrait;
 use ReflectionClass;
 
@@ -37,7 +36,7 @@ final class UpdateChecker {
                 [$needsUpdate] = ($result = array_values($result));
                 if (!$needsUpdate) return;
                 if (!MainConfig::getInstance()->isExecuteUpdates()) {
-                    CloudLogger::get()->debug("Skipping updates for {}, as it is disabled in the config", new ReflectionClass($updateChecker)->getShortName());
+                    CloudLogger::get()->debug("Skipping updates for {}, as it is disabled in the config", $updateChecker::class);
                     return;
                 }
 

@@ -7,6 +7,7 @@ use pocketcloud\cloud\config\impl\MainConfig;
 use pocketcloud\cloud\console\command\CommandManager;
 use pocketcloud\cloud\console\Console;
 use pocketcloud\cloud\console\log\level\CloudLogLevel;
+use pocketcloud\cloud\console\log\logger\Logger;
 use pocketcloud\cloud\crash\CrashDump;
 use pocketcloud\cloud\event\impl\cloud\CloudStartedEvent;
 use pocketcloud\cloud\group\ServerGroupManager;
@@ -39,6 +40,8 @@ use pocketcloud\cloud\util\Utils;
 use pocketcloud\cloud\util\VersionInfo;
 use pocketmine\snooze\SleeperHandler;
 use Ramsey\Uuid\UuidInterface;
+use ReflectionException;
+use RuntimeException;
 use Throwable;
 use const pocketcloud\BINARIES_PATH;
 use const pocketcloud\CLOUD_PATH;
@@ -64,6 +67,7 @@ final class PocketCloud {
     private int $tick = 0;
     private float $startTimestamp = 0;
 
+    private Logger $logger;
     private Console $console;
     private CommandManager $commandManager;
     private LibraryManager $libraryManager;
@@ -97,14 +101,22 @@ final class PocketCloud {
         $this->startTimestamp = microtime(true);
         $this->running = true;
 
+        CloudLogger::set($this->logger = new Logger(LOG_PATH, false, true));
         $this->console = new Console();
         $this->commandManager = new CommandManager();
         ($this->libraryManager = new LibraryManager())->load();
         $this->config = new MainConfig();
         $this->sleeperHandler = new SleeperHandler();
         $this->startNotificationQueue = Queue::fromType([]);
-        ($this->softwareManager = new ServerSoftwareManager())->load();
-        $this->softwareManager->downloadAll();
+        try {
+            ($this->softwareManager = new ServerSoftwareManager())->load();
+            $this->softwareManager->downloadAll();
+        } catch (ReflectionException $e) {
+            $this->getLogger()->error("§cFailed to load server software, shutting down...");
+            $this->getLogger()->exception($e);
+            $this->shutdown();
+            return;
+        }
 
         $i = 0;
         foreach (TemplateType::getAll() as $type) {
@@ -257,6 +269,10 @@ final class PocketCloud {
         return microtime(true) - $this->startTimestamp;
     }
 
+    public function getLogger(): Logger {
+        return $this->logger;
+    }
+
     public function getConsole(): Console {
         return $this->console;
     }
@@ -323,6 +339,10 @@ final class PocketCloud {
 
     public function getPluginManager(): CloudPluginManager {
         return $this->pluginManager;
+    }
+
+    public function getUpdateChecker(): UpdateChecker {
+        return $this->updateChecker;
     }
 
     public function getCloudUniqueId(): UuidInterface {
@@ -420,9 +440,9 @@ function checkRunning(?int &$pid = null): bool {
     return false;
 }
 
-function createLockFile(): mixed {
+function createLockFile() {
     $file = fopen(STORAGE_PATH . "cloud.lock", "a+b");
-    if ($file === false) return null;
+    if ($file === false) throw new RuntimeException("Failed to create cloud.lock file");
     if (!flock($file, LOCK_EX | LOCK_NB)) flock($file, LOCK_SH);
     ftruncate($file, 0);
     fwrite($file, (string) getmypid());

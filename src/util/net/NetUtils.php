@@ -16,9 +16,6 @@ final class NetUtils {
         return $ok === false;
     }
 
-    /**
-     * @throws ErrorException
-     */
     public static function download(string $url, string $fileLocation): bool {
         return ExceptionHandler::tryCatch(function (string $url, string $fileLocation): bool {
             if (!@file_exists(dirname($fileLocation))) mkdir(dirname($fileLocation), 0777, true);

@@ -15,7 +15,7 @@ use const pocketcloud\BINARIES_PATH;
 final class BinaryDownloader {
 
     public static function downloadBinary(string $downloadUrl, string $templateType): ?bool {
-        if (file_exists(BINARIES_PATH . "$templateType/") && array_diff(scandir(BINARIES_PATH . "$templateType/"), [".", ".."]) > 0) return null;
+        if (file_exists(BINARIES_PATH . "$templateType/") && count(array_diff(scandir(BINARIES_PATH . "$templateType/"), [".", ".."])) > 0) return null;
         @mkdir(BINARIES_PATH . "$templateType/");
         CloudLogger::get()->info("Downloading §b$templateType binaries §8(§b{}§8)§r...", $downloadUrl);
 

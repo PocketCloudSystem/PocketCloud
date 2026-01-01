@@ -13,7 +13,6 @@ use pocketcloud\cloud\event\impl\network\NetworkPacketReceiveEvent;
 use pocketcloud\cloud\event\impl\network\NetworkPacketReceivePreProcessEvent;
 use pocketcloud\cloud\event\impl\network\NetworkPacketSendEvent;
 use pocketcloud\cloud\exception\PacketException;
-use pocketcloud\cloud\exception\SocketException;
 use pocketcloud\cloud\network\client\ServerClient;
 use pocketcloud\cloud\network\client\ServerClientCache;
 use pocketcloud\cloud\network\packet\ClientboundPacket;
@@ -31,6 +30,7 @@ use pocketcloud\cloud\util\promise\Promise;
 use pocketcloud\cloud\util\trait\SingletonTrait;
 use pocketcloud\cloud\util\Utils;
 use pocketmine\snooze\SleeperHandlerEntry;
+use RuntimeException;
 use Socket;
 
 final class Network extends Thread {
@@ -91,13 +91,13 @@ final class Network extends Thread {
     public function init(): void {
         if ($this->established) throw new LogicException("Socket has already been established");
         $socket = @socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
-        if (!$socket) throw new SocketException(socket_strerror(socket_last_error()));
+        if (!$socket) throw new RuntimeException(socket_strerror(socket_last_error()));
         $this->socket = $socket;
         if (@socket_bind($socket, $this->address->getAddress(), $this->address->getPort())) {
             $this->established = true;
             socket_set_option($this->socket, SOL_SOCKET, SO_SNDBUF, 1024 * 1024 * 8);
             socket_set_option($this->socket, SOL_SOCKET, SO_RCVBUF, 1024 * 1024 * 8);
-        } else throw new SocketException(socket_strerror(socket_last_error()));
+        } else throw new RuntimeException(socket_strerror(socket_last_error()));
 
         CloudLogger::get()->success("§bNetwork connection §rhas been §aestablished §ron §b{}§r.", $this->address);
         $this->start();
@@ -117,9 +117,6 @@ final class Network extends Thread {
         }
     }
 
-    /**
-     * @throws ErrorException
-     */
     public function sendPacket(ClientboundPacket $packet, ServerClient $client): bool {
         if (!$this->established) return false;
         ($ev = new NetworkPacketPreSendEvent($packet, $client))->call();
@@ -137,9 +134,7 @@ final class Network extends Thread {
         return $success;
     }
 
-    /**
-     * @throws ErrorException
-     */public function broadcastPacket(ClientboundPacket $packet, ServerClient|TemplateType ...$exclusions): Promise {
+    public function broadcastPacket(ClientboundPacket $packet, ServerClient|TemplateType ...$exclusions): Promise {
         if (!$this->established) return Promise::all([]);
         $buffer = PacketSerializer::encode($packet, MainConfig::getInstance()->isNetworkEncryptionEnabled(), $this->authenticationKey);
         if ($buffer === null) return Promise::rejected("Buffer null");

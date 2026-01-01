@@ -15,6 +15,7 @@ use pocketcloud\cloud\util\promise\Promise;
 use pocketcloud\cloud\util\trait\RegistryTrait;
 use pocketcloud\cloud\util\Utils;
 use pocketcloud\cloud\util\VersionInfo;
+use ReflectionException;
 use Throwable;
 use ZipArchive;
 use const pocketcloud\GLOBAL_TEMPLATES_PATH;
@@ -118,6 +119,9 @@ final class TemplateType {
         return self::$members;
     }
 
+    /**
+     * @throws ReflectionException
+     */
     public function __construct(
         private readonly string $name,
         private readonly ServerSoftware $software,

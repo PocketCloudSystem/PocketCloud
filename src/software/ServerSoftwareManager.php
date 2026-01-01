@@ -10,6 +10,7 @@ use pocketcloud\cloud\util\net\NetUtils;
 use pocketcloud\cloud\util\misc\Loadable;
 use pocketcloud\cloud\util\promise\Promise;
 use pocketcloud\cloud\util\trait\SingletonTrait;
+use ReflectionException;
 use const pocketcloud\SOFTWARE_PATH;
 
 final class ServerSoftwareManager implements Loadable {
@@ -21,7 +22,10 @@ final class ServerSoftwareManager implements Loadable {
     public function __construct() {
         self::setInstance($this);
     }
-    
+
+    /**
+     * @throws ReflectionException
+     */
     public function load(): void {
         $this->register(new ServerSoftware(
             "PocketMine-MP", 

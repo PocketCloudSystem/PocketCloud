@@ -4,7 +4,6 @@ namespace pocketcloud\cloud\server;
 
 use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\group\ServerGroup;
-use pocketcloud\cloud\network\packet\data\ServerCommandExecutionResult;
 use pocketcloud\cloud\server\data\CloudServerData;
 use pocketcloud\cloud\server\util\ServerStatus;
 use pocketcloud\cloud\server\util\ServerUtils;
@@ -96,13 +95,13 @@ final class CloudServerManager implements Tickable {
     public function add(CloudServer $server): void {
         if (!isset($this->servers[$server->getName()])) $this->servers[$server->getName()] = $server;
         ServerUtils::addId($server->getTemplate(), $server->getId());
-        ServerUtils::addPort($server->getCloudServerData()->getPort());
+        ServerUtils::addPort($server->getServerData()->getPort());
     }
 
     public function remove(CloudServer $server): void {
         if (isset($this->servers[$server->getName()])) unset($this->servers[$server->getName()]);
         ServerUtils::removeId($server->getTemplate(), $server->getId());
-        ServerUtils::removePort($server->getCloudServerData()->getPort());
+        ServerUtils::removePort($server->getServerData()->getPort());
     }
 
     public function checkCapacity(Template $template): bool {

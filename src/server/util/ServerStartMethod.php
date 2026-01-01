@@ -10,6 +10,7 @@ use pocketcloud\cloud\util\promise\Promise;
 use pocketcloud\cloud\util\TerminalUtils;
 use pocketcloud\cloud\util\trait\RegistryTrait;
 use pocketcloud\cloud\util\Utils;
+use ReflectionException;
 use const pocketcloud\BINARIES_PATH;
 use const pocketcloud\SOFTWARE_PATH;
 
@@ -86,6 +87,9 @@ final class ServerStartMethod {
         return self::$current;
     }
 
+    /**
+     * @throws ReflectionException
+     */
     public function __construct(
         private readonly string $name,
         private readonly Closure $startHandler,

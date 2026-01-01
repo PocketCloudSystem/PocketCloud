@@ -2,21 +2,15 @@
 
 namespace pocketcloud\cloud\network\packet\util;
 
-use ErrorException;
 use JsonException;
 use pocketcloud\cloud\console\handler\ExceptionHandler;
-use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\exception\PacketException;
 use pocketcloud\cloud\network\packet\ClientboundPacket;
 use pocketcloud\cloud\network\packet\CloudboundPacket;
-use pocketcloud\cloud\network\packet\CloudPacket;
 use pocketcloud\cloud\network\packet\PacketPool;
 
 final class PacketSerializer {
 
-    /**
-     * @throws ErrorException
-     */
     public static function encode(ClientboundPacket $packet, bool $encryptionEnabled, string $authenticationKey): ?string {
         return ExceptionHandler::tryCatch(function (ClientboundPacket $packet, bool $encryptionEnabled, string $authenticationKey): string {
             $packet->encode($buffer = new PacketData());
@@ -28,7 +22,7 @@ final class PacketSerializer {
     }
 
     /**
-     * @throws JsonException|PacketException
+     * @throws PacketException|JsonException
      */
     public static function decode(string $buffer, bool $encryptionEnabled, string $authenticationKey): ?CloudboundPacket {
         if ($buffer == "") return null;

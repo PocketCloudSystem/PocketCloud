@@ -55,14 +55,14 @@ final class CommandManager implements Loadable, Tickable {
             if (in_array(strtolower($name), $keywordsAccept)) {
                 $this->currentConfirmationData = null;
                 $promise->resolve(true);
-                return true;
             } else {
                 $sender->warn("§cCancelled the confirmation.");
                 Console::getInstance()->restorePrompt();
                 $promise->resolve(false);
                 $this->currentConfirmationData = null;
-                return true;
             }
+
+            return true;
         }
 
         if (($command = $this->get($name)) === null) return false;

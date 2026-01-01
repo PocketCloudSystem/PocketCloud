@@ -46,8 +46,8 @@ final class PocketMineServerProperties implements ServerProperties {
         return [
             "%uuid%" => $server->getServerUuid(),
             "%name%" => $server->getName(),
-            "%server_port%" => $server->getCloudServerData()->getPort(),
-            "%server_portv6%" => $server->getCloudServerData()->getPort() + 1,
+            "%server_port%" => $server->getServerData()->getPort(),
+            "%server_portv6%" => $server->getServerData()->getPort() + 1,
             "%max_players%" => $server->getTemplate()->getMaxPlayerCount(),
             "%template%" => $server->getTemplate()->getName(),
             "%address%" => Network::getInstance()->getAddress()->getAddress(),

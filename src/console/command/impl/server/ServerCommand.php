@@ -26,7 +26,7 @@ final class ServerCommand extends Command {
 
         $this->registerSubCommand(SubCommand::fromClosure("start", function (ICommandSender $sender, string $label, array $args): bool {
             $template = $args["template"];
-            $amount = $args["amount"] ?? 0;
+            $amount = $args["amount"] ?? 1;
             CloudServerManager::getInstance()->start($template, $amount);
             return true;
         })->addParameter(new TemplateArgument("template", false))->addParameter(new IntegerArgument("amount", true, function (int $number): int {
@@ -73,7 +73,7 @@ final class ServerCommand extends Command {
                 $sender->info("Servers §8(§b{}§8/§b{}§8)§r:", count($servers = CloudServerManager::getInstance()->getAll($template)), $template?->getName() ?? "All");
                 foreach ($servers as $server) {
                     $sender->info(FormatUtils::implodeWithKeys(
-                        array_diff_key($server->write(), ["uuid" => null, "id" => null]),
+                        array_diff_key($server->write(), ["uuid" => null, "id" => null, "internalStorage" => null, "path" => null]),
                         " §8| §r",
                         "§r: §b",
                         fn(string $key) => ucfirst($key)
@@ -91,7 +91,7 @@ final class ServerCommand extends Command {
             /** @var CloudServer $server */
             $server = $args["server"];
             $formatted = FormatUtils::implodeWithKeys(
-                $server->detailedWrite(),
+                array_merge($server->write(), ["path" => $server->getPath()]),
                 "\n",
                 "§r: §b",
                 fn(string $key) => ucfirst($key),

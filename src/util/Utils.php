@@ -13,6 +13,7 @@ use ReflectionException;
 use ReflectionFunction;
 use ReflectionMethod;
 use ReflectionNamedType;
+use RuntimeException;
 
 final class Utils {
 
@@ -84,7 +85,7 @@ final class Utils {
             for ($i = 1; $i <= 2; ++$i) {
                 if ($matches[$i][$k] !== "") {
                     $match = $matches[$i][$k];
-                    $args[] = preg_replace('/\\\\([\\\\"])/u', '$1', $match) ?? throw new Exception(preg_last_error_msg());
+                    $args[] = preg_replace('/\\\\([\\\\"])/u', '$1', $match) ?? throw new RuntimeException(preg_last_error_msg());
                     break;
                 }
             }
@@ -108,7 +109,7 @@ final class Utils {
             $type = $param->getType();
 
             if (!$type instanceof ReflectionNamedType) throw new InvalidArgumentException("Parameter #$i must have a type");
-            if ($type->getName() !== $expected) throw new InvalidArgumentException("Parameter #$i must be of type {$expected}");
+            if ($type->getName() !== $expected) throw new InvalidArgumentException("Parameter #$i must be of type $expected");
         }
 
         if ($expectedReturnType !== null) {

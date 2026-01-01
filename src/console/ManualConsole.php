@@ -5,6 +5,7 @@ namespace pocketcloud\cloud\console;
 use Closure;
 use Exception;
 use pocketcloud\cloud\util\TerminalUtils;
+use RuntimeException;
 
 /** @author ChatGPT + Gemini (thanks bro) */
 final class ManualConsole {
@@ -266,7 +267,7 @@ final class ManualConsole {
     }
 
     public function ensureOpen(): void {
-        if ($this->closed) throw new Exception("Console is already closed");
+        if ($this->closed) throw new RuntimeException("Console is already closed");
     }
 
     public function close(): void {

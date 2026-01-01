@@ -2,10 +2,9 @@
 
 namespace pocketcloud\cloud\group;
 
-use pocketcloud\cloud\server\CloudServer;
+use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\template\Template;
 use pocketcloud\cloud\template\TemplateManager;
-use pocketcloud\cloud\util\FileUtils;
 use pocketcloud\cloud\util\Utils;
 use const pocketcloud\SERVER_GROUPS_PATH;
 
@@ -15,10 +14,6 @@ final class ServerGroup {
         private readonly string $name,
         private array $templates
     ) {}
-
-    public function copyDataTo(CloudServer $server): void {
-        FileUtils::copyDirectory($this->getPath(), $server->getPath());
-    }
 
     public function add(Template $template): void {
         if (!$this->is($template)) $this->templates[] = $template->getName();
@@ -61,6 +56,7 @@ final class ServerGroup {
         $templates = [];
         foreach ((is_array($data["templates"]) ? $data["templates"] : []) as $name) {
             if (TemplateManager::getInstance()->check($name)) $templates[] = $name;
+            else CloudLogger::get()->debug("Indexing ServerGroup {}, missing template {}, skipping...", $data["name"], $name);
         }
 
         return new self(

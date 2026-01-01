@@ -8,10 +8,12 @@ use pocketcloud\cloud\network\packet\impl\CommandAnswerPacket;
 use pocketcloud\cloud\network\packet\impl\CommandExecutePacket;
 use pocketcloud\cloud\network\packet\impl\DisconnectPacket;
 use pocketcloud\cloud\network\packet\impl\KeepAlivePacket;
+use pocketcloud\cloud\network\packet\impl\LanguageSyncPacket;
 use pocketcloud\cloud\network\packet\impl\request\ServerHandshakeRequestPacket;
 use pocketcloud\cloud\network\packet\impl\response\ServerHandshakeResponsePacket;
 use pocketcloud\cloud\util\trait\SingletonTrait;
 use ReflectionClass;
+use ReflectionException;
 
 final class PacketPool {
     use SingletonTrait;
@@ -32,12 +34,18 @@ final class PacketPool {
         $this->register(CloudNotificationPacket::class);
         $this->register(CommandExecutePacket::class);
         $this->register(CommandAnswerPacket::class);
+        $this->register(LanguageSyncPacket::class);
     }
 
     public function register(string $packetClass): void {
         if (!is_subclass_of($packetClass, CloudPacket::class)) return;
-        CloudLogger::get()->debug("Registering packet " . ($packetName = new ReflectionClass($packetClass)->getShortName()) . " (" . $packetClass . ")");
-        $this->packets[$packetName] = $packetClass;
+        try {
+            CloudLogger::get()->debug("Registering packet " . ($packetName = new ReflectionClass($packetClass)->getShortName()) . " (" . $packetClass . ")");
+            $this->packets[$packetName] = $packetClass;
+        } catch (ReflectionException $e) {
+            CloudLogger::get()->error("§cFailed to register packet §e{}§c." . $packetClass);
+            CloudLogger::get()->exception($e);
+        }
     }
 
     public function get(string $pid): ?CloudPacket {

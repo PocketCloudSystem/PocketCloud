@@ -15,4 +15,8 @@ final class ServerHandshakeResponsePacket extends ResponsePacket {
     }
 
     public function decodePayload(PacketData $packetData): void {}
+
+    public static function create(VerifyStatus $verifyStatus): self {
+        return new self($verifyStatus);
+    }
 }

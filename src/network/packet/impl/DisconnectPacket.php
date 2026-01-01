@@ -2,7 +2,6 @@
 
 namespace pocketcloud\cloud\network\packet\impl;
 
-use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\network\client\ServerClient;
 use pocketcloud\cloud\network\packet\ClientboundPacket;
 use pocketcloud\cloud\network\packet\CloudboundPacket;

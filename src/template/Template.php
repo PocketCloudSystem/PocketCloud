@@ -127,7 +127,7 @@ final readonly class Template {
     public function detailedWrite(): array {
         $playerCount = 0;
         $serverCount = count(CloudServerManager::getInstance()->getAll($this));
-        foreach (CloudServerManager::getInstance()->getAll($this) as $server) $playerCount += $server->getCloudPlayerCount();
+        foreach (CloudServerManager::getInstance()->getAll($this) as $server) $playerCount += $server->getPlayerCount();
         return array_merge($this->write(), [
             "playerCount" => $playerCount,
             "serverCount" => $serverCount

@@ -215,7 +215,7 @@ echo " */" . PHP_EOL;
 
 # some tests for LanguageSyncPacket
 
-$encoded = base64_encode(gzencode(json_encode($messages, JSON_INVALID_UTF8_IGNORE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)));
+$encoded = base64_encode(gzencode($origin = json_encode($messages, JSON_INVALID_UTF8_IGNORE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)));
 $array = ["WhatEver", 1324.23273, "asdasd", $encoded];
 $s = zlib_encode(json_encode($array, JSON_THROW_ON_ERROR | JSON_INVALID_UTF8_IGNORE), ZLIB_ENCODING_DEFLATE);
 $d = json_decode(zlib_decode($s), true);
@@ -226,6 +226,8 @@ echo PHP_EOL;
 var_dump(strlen($d[3]));
 echo $d[3] . PHP_EOL;
 
+var_dump(strlen($origin) . " bytes");
+var_dump(strlen($encoded) . " bytes");
 
 $decoded = json_decode(gzdecode(base64_decode($d[3])), true, JSON_THROW_ON_ERROR);
 $encoded2 = base64_encode(gzencode(json_encode($decoded, JSON_INVALID_UTF8_IGNORE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)));

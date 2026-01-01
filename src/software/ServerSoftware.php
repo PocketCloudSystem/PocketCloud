@@ -5,6 +5,7 @@ namespace pocketcloud\cloud\software;
 use Closure;
 use pocketcloud\cloud\util\promise\Promise;
 use pocketcloud\cloud\util\Utils;
+use ReflectionException;
 use const pocketcloud\SOFTWARE_PATH;
 
 final readonly class ServerSoftware {
@@ -17,6 +18,7 @@ final readonly class ServerSoftware {
      * @param array $aliases
      * @param Closure(ServerSoftware $software): Promise<bool> $checkForUpdateClosure
      * @param Closure(ServerSoftware $software): Promise<bool> $updateClosure
+     * @throws ReflectionException
      */
     public function __construct(
         private string $name,

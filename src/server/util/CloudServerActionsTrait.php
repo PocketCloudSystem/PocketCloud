@@ -89,7 +89,7 @@ trait CloudServerActionsTrait {
     }
 
     public function killProcess(): void {
-        if ($this->getCloudServerData()->getProcessId() !== 0) TerminalUtils::kill($this->getCloudServerData()->getProcessId());
+        if ($this->getServerData()->getProcessId() !== 0) TerminalUtils::kill($this->getServerData()->getProcessId());
     }
 
     public function checkForCrash(): bool {

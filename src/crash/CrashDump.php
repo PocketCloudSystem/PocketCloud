@@ -2,6 +2,7 @@
 
 namespace pocketcloud\cloud\crash;
 
+use JsonException;
 use pocketcloud\cloud\util\ErrorUtils;
 use pocketcloud\cloud\util\FileUtils;
 use pocketcloud\cloud\util\FormatUtils;
@@ -21,6 +22,9 @@ final class CrashDump {
     private array $trace;
     private string $encodedData;
 
+    /**
+     * @throws JsonException
+     */
     public function __construct(private readonly array $crashData) {
         $this->type = $this->crashData["type"];
         $this->message = $this->crashData["message"];
@@ -84,6 +88,9 @@ final class CrashDump {
         fwrite($this->cFile, $line . PHP_EOL);
     }
 
+    /**
+     * @throws JsonException
+     */
     public static function fromLastestError(): CrashDump {
         $latestErrorInfo = ErrorUtils::latestError(2);
         if ($latestErrorInfo === null) throw new RuntimeException("Failed to create crashdump, no latest error available");

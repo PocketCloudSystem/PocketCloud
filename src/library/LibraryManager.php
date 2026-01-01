@@ -5,9 +5,9 @@ namespace pocketcloud\cloud\library;
 use pocketcloud\cloud\config\Config;
 use pocketcloud\cloud\config\type\ConfigTypeList;
 use pocketcloud\cloud\console\log\CloudLogger;
-use pocketcloud\cloud\exception\LibraryLoadFailedException;
 use pocketcloud\cloud\util\misc\Loadable;
 use pocketcloud\cloud\util\trait\SingletonTrait;
+use RuntimeException;
 use const pocketcloud\LIBRARIES_PATH;
 
 final class LibraryManager implements Loadable {
@@ -72,11 +72,11 @@ final class LibraryManager implements Loadable {
                 $this->libraries[$library->getName()] = $library;
                 if (!$library->check()) {
                     if (!$library->download())
-                        throw new LibraryLoadFailedException("Library '" . $library->getName() . "' is not available");
+                        throw new RuntimeException("Library '" . $library->getName() . "' is not available");
                 }
 
                 if (!$library->load() && !$library->isBridgeOnly())
-                    throw new LibraryLoadFailedException("Library '" . $library->getName() . "' with namespace folder: " . $library->getNamespaceFolder() . " is not available");
+                    throw new RuntimeException("Library '" . $library->getName() . "' with namespace folder: " . $library->getNamespaceFolder() . " is not available");
             }
         }
     }

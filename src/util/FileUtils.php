@@ -33,20 +33,6 @@ final class FileUtils {
         ) ?? false;
     }
 
-    public static function createFile(string $filePath): bool {
-        return ExceptionHandler::tryCatch(
-            function (string $filePath): bool {
-                if (@file_exists($filePath)) return true;
-                $previousPath = dirname($filePath);
-                $return = self::createDir($previousPath);
-                return $return && is_writable($previousPath) && mkdir($filePath);
-            },
-            "Failed to create file: " . $filePath,
-            null,
-            $filePath
-        ) ?? false;
-    }
-
     public static function filePutContents(string $filePath, string $content): int|false {
         return ExceptionHandler::tryCatch(
             function (string $filePath, string $content): int|false {

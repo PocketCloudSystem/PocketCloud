@@ -56,15 +56,15 @@ readonly class CloudPluginDescription {
         ];
     }
 
-    public static function read(array $description): ?self {
-        if (!Utils::containKeys($description, "name", "main", "version")) return null;
+    public static function read(array $data): ?self {
+        if (!Utils::containKeys($data, "name", "main", "version")) return null;
         return new CloudPluginDescription(
-            $description["name"],
-            $description["main"],
-            (string) $description["version"],
-            $description["src-namespace-prefix"] ?? "",
-            ($description["authors"] ?? (isset($description["author"]) ? [$description["author"]] : [])),
-            $description["description"] ?? null
+            $data["name"],
+            $data["main"],
+            (string) $data["version"],
+            $data["src-namespace-prefix"] ?? "",
+            ($data["authors"] ?? (isset($data["author"]) ? [$data["author"]] : [])),
+            $data["description"] ?? null
         );
     }
 }

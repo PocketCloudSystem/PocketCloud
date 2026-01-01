@@ -3,7 +3,6 @@
 namespace pocketcloud\cloud\server\config;
 
 use pocketcloud\cloud\console\log\CloudLogger;
-use pocketcloud\cloud\exception\PropertiesGenerateException;
 use pocketcloud\cloud\server\config\def\PocketMineConfig;
 use pocketcloud\cloud\server\config\def\PocketMineServerProperties;
 use pocketcloud\cloud\server\config\def\WaterdogConfig;
@@ -31,9 +30,7 @@ final class ServerPropertiesGenerator implements Loadable {
         if (!isset($this->defaultConfigFiles[$properties->getTemplateType()->getName()])) $this->defaultConfigFiles[$properties->getTemplateType()->getName()] = [];
         $this->defaultConfigFiles[$properties->getTemplateType()->getName()][] = $properties;
 
-        if (!file_exists($properties->getTemplateType()->getGlobalTemplatePath())) {
-            throw new PropertiesGenerateException("The global template path for template type '" . $properties->getTemplateType()->getName() . "' does not exist");
-        }
+        if (!@file_exists($properties->getTemplateType()->getGlobalTemplatePath())) mkdir($properties->getTemplateType()->getGlobalTemplatePath(), 0777, true);
 
         if ($properties->needsRenewal($propertiesPath = $properties->getTemplateType()->getGlobalTemplatePath() . $properties->getFileName()) || !@file_exists($propertiesPath)) {
             CloudLogger::get()->info("§aUpdating §rserver properties/config§8: §b{}§8...", $properties->getFileName());

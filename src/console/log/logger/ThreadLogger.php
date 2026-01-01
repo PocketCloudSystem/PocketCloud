@@ -10,12 +10,12 @@ use pmmp\thread\Thread;
 use pmmp\thread\ThreadSafe;
 use pmmp\thread\ThreadSafeArray;
 use pocketcloud\cloud\console\log\color\CloudConsoleColor;
-use pocketcloud\cloud\exception\NoLoggerAvailableException;
 use pocketcloud\cloud\console\log\level\CloudLogLevel;
 use pocketcloud\cloud\util\FileUtils;
 use pocketmine\snooze\SleeperHandlerEntry;
 use ReflectionClass;
 use ReflectionException;
+use RuntimeException;
 use Throwable;
 
 class ThreadLogger extends ThreadSafe implements ILogger {
@@ -85,11 +85,8 @@ class ThreadLogger extends ThreadSafe implements ILogger {
     }
 
 
-    /**
-     * @throws NoLoggerAvailableException
-     */
     public function log(CloudLogLevel $logLevel, string $message, ...$params): self {
-        if (Thread::getCurrentThread() === null) throw new NoLoggerAvailableException("A instance of ThreadLogger can't be used to log outside of a thread");
+        if (Thread::getCurrentThread() === null) throw new RuntimeException("A instance of ThreadLogger can't be used to log outside of a thread");
         try {
             $time = new DateTime("now", new DateTimeZone(ini_get("date.timezone")));
         } catch (DateInvalidTimeZoneException|DateMalformedStringException) {

@@ -20,6 +20,9 @@ final class ExceptionHandler {
         PocketCloud::getInstance()->crash();
     }
 
+    /**
+     * @throws ErrorException
+     */
     public static function handleError(int $errno, string $error, string $file, int $line): bool {
         if (!(error_reporting() & $errno)) return false;
 
@@ -45,14 +48,14 @@ final class ExceptionHandler {
         set_exception_handler(self::handleException(...));
     }
 
-    public static function tryCatch(Closure $processClosure, ?string $message = null, ?Closure $onExceptionClosure = null, mixed ...$params): mixed {
-        set_error_handler(function (int $errno, string $error, string $file, int $line) {
-            if (!(error_reporting() & $errno)) {
-                return false;
-            }
-
+    public static function throwAll(): Closure {
+        return function (int $errno, string $error, string $file, int $line) {
             throw new ErrorException($error, 0, $errno, $file, $line);
-        });
+        };
+    }
+
+    public static function tryCatch(Closure $processClosure, ?string $message = null, ?Closure $onExceptionClosure = null, mixed ...$params): mixed {
+        set_error_handler(self::throwAll(...));
 
         try {
             return $processClosure(...$params);

@@ -3,9 +3,11 @@
 namespace pocketcloud\cloud\event;
 
 use Closure;
+use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\plugin\CloudPlugin;
 use pocketcloud\cloud\util\trait\SingletonTrait;
 use ReflectionClass;
+use ReflectionException;
 
 final class EventManager {
     use SingletonTrait;
@@ -25,7 +27,11 @@ final class EventManager {
         foreach ($reflection->getMethods() as $method) {
             if (!$method->isAbstract() && !$method->isStatic() && $method->isPublic() && $method->getNumberOfParameters() == 1) {
                 $event = $method->getParameters()[0]->getType()->getName();
-                if (is_subclass_of($event, Event::class)) $this->handlers[$plugin->getDescription()->getFullName()][$event][] = $method->getClosure($listener);
+                if (is_subclass_of($event, Event::class)) try {
+                    $this->handlers[$plugin->getDescription()->getFullName()][$event][] = $method->getClosure($listener);
+                } catch (ReflectionException $e) {
+                    $plugin->getLogger()->exception($e);
+                }
             }
         }
     }
