@@ -2,6 +2,7 @@
 
 namespace pocketcloud\cloud\provider\migration;
 
+use pocketcloud\cloud\cache\InGameModuleCache;
 use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\group\ServerGroup;
 use pocketcloud\cloud\provider\CloudProvider;
@@ -55,11 +56,12 @@ final class JsonToMySqlMigrator implements IMigrator {
                 FileUtils::copyFile(IN_GAME_PATH . "modules.json", $backupPath . "modules.json");
                 FileUtils::unlinkFile(IN_GAME_PATH . "modules.json");
                 $convertOldName = fn(string $oldModule) => match ($oldModule) {
-                    "signModule" => InGameModule::SIGN_MODULE,
-                    "npcModule" => InGameModule::NPC_MODULE,
-                    "hubCommandModule" => InGameModule::HUB_COMMAND_MODULE,
+                    "signModule" => InGameModuleCache::SIGN_MODULE,
+                    "npcModule" => InGameModuleCache::NPC_MODULE,
+                    "hubCommandModule" => InGameModuleCache::HUB_COMMAND_MODULE,
                     default => null
                 };
+
                 foreach ($list as $module => $enabled) {
                     if (($module = $convertOldName($module)) !== null) {
                         QueryBuilder::table(DatabaseTables::MODULES)

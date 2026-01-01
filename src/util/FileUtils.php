@@ -25,9 +25,7 @@ final class FileUtils {
         return ExceptionHandler::tryCatch(
             function (string $path): bool {
                 if (@file_exists($path)) return true;
-                $previousPath = dirname($path);
-                $return = self::createDir($previousPath);
-                return $return && is_writable($previousPath) && mkdir($path);
+                return mkdir($path, 0777, true);
             },
             "Failed to create directory: " . $path,
             null,

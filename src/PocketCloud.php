@@ -19,10 +19,13 @@ use pocketcloud\cloud\server\binary\BinaryDownloader;
 use pocketcloud\cloud\server\CloudServerManager;
 use pocketcloud\cloud\server\config\ServerPropertiesGenerator;
 use pocketcloud\cloud\server\prepare\ServerPreparator;
-use pocketcloud\cloud\software\SoftwareManager;
+use pocketcloud\cloud\software\ServerSoftwareManager;
 use pocketcloud\cloud\template\TemplateManager;
+use pocketcloud\cloud\template\TemplateType;
 use pocketcloud\cloud\thread\ThreadManager;
 use pocketcloud\cloud\traffic\TrafficMonitorManager;
+use pocketcloud\cloud\update\UpdateChecker;
+use pocketcloud\cloud\util\bStats\CloudMetrics;
 use pocketcloud\cloud\util\FileUtils;
 use pocketcloud\cloud\util\misc\Queue;
 use pocketcloud\cloud\library\LibraryManager;
@@ -32,8 +35,10 @@ use pocketcloud\cloud\util\misc\LoadableList;
 use pocketcloud\cloud\util\misc\TickableList;
 use pocketcloud\cloud\util\net\Address;
 use pocketcloud\cloud\util\TerminalUtils;
+use pocketcloud\cloud\util\Utils;
 use pocketcloud\cloud\util\VersionInfo;
 use pocketmine\snooze\SleeperHandler;
+use Ramsey\Uuid\UuidInterface;
 use Throwable;
 use const pocketcloud\BINARIES_PATH;
 use const pocketcloud\CLOUD_PATH;
@@ -62,10 +67,10 @@ final class PocketCloud {
     private Console $console;
     private CommandManager $commandManager;
     private LibraryManager $libraryManager;
+    private MainConfig $config;
     private SleeperHandler $sleeperHandler;
     private Queue $startNotificationQueue;
-    private MainConfig $config;
-    private SoftwareManager $softwareManager;
+    private ServerSoftwareManager $softwareManager;
     private ThreadManager $threadManager;
     private Network $network;
     private AsyncPool $asyncPool;
@@ -76,6 +81,10 @@ final class PocketCloud {
     private CloudServerManager $serverManager;
     private TrafficMonitorManager $trafficMonitorManager;
     private CloudPluginManager $pluginManager;
+    private UpdateChecker $updateChecker;
+
+    private UuidInterface $cloudUniqueId;
+    private CloudMetrics $metrics;
 
     public function __construct(
         private readonly ClassLoader $classLoader
@@ -91,11 +100,31 @@ final class PocketCloud {
         $this->console = new Console();
         $this->commandManager = new CommandManager();
         ($this->libraryManager = new LibraryManager())->load();
+        $this->config = new MainConfig();
         $this->sleeperHandler = new SleeperHandler();
         $this->startNotificationQueue = Queue::fromType([]);
-        $this->config = new MainConfig();
-        ($this->softwareManager = new SoftwareManager())->load();
+        ($this->softwareManager = new ServerSoftwareManager())->load();
         $this->softwareManager->downloadAll();
+
+        $i = 0;
+        foreach (TemplateType::getAll() as $type) {
+            if (!$type->checkBridge()) {
+                CloudLogger::get()->forceDebug("Starting download for bridge plugin: §b{}", $type->getRelativeBridgeFileLocation());
+                if ($type->download()) {
+                    CloudLogger::get()->success("Successfully downloaded bridge plugin: §b{} §8(§b{}§8)", $type->getRelativeBridgeFileLocation(), $type->getBridgeFileLocation());
+                } else {
+                    $i++;
+                    CloudLogger::get()->error("Failed to download bridge plugin: §b{} §8(§b{}§8)", $type->getRelativeBridgeFileLocation());
+                }
+            }
+        }
+
+        if ($i > 0) {
+            CloudLogger::get()->warn("At least one bridge plugin download failed, shutting down...");
+            $this->shutdown();
+            return;
+        }
+
         $this->threadManager = new ThreadManager();
         $this->network = new Network(Address::read($this->config->getNetwork()));
         $this->asyncPool = new AsyncPool();
@@ -106,10 +135,21 @@ final class PocketCloud {
         $this->serverManager = new CloudServerManager();
         $this->trafficMonitorManager = new TrafficMonitorManager();
         $this->pluginManager = new CloudPluginManager();
+        $this->updateChecker = new UpdateChecker();
 
-        $this->console->register();
+        $this->cloudUniqueId = Utils::getMachineUniqueId($this->network->getAddress()->getAddress() . $this->network->getAddress()->getPort());
+        $this->metrics = new CloudMetrics($this->cloudUniqueId, $this->config);
 
+        $this->updateChecker->checkForUpdates();
         CloudProvider::select();
+
+        if ($this->config->isStartUpDelay()) {
+            CloudLogger::get()->info("§bPocket§3Cloud §rwill §astart §rin 3 seconds...");
+            sleep(3);
+        }
+
+        $this->console->install();
+        $this->console->register();
 
         if (array_any($this->config->getAllBinaries(), fn(string $url, string $templateType) => BinaryDownloader::downloadBinary($url, $templateType) === true)) {
             $this->addStartNotification("§8====== §cATTENTION! §8======", CloudLogLevel::WARN())
@@ -120,7 +160,8 @@ final class PocketCloud {
         }
 
         TickableList::add(
-            $this->trafficMonitorManager, $this->serverManager, $this->commandManager
+            $this->trafficMonitorManager, $this->serverManager, $this->commandManager, $this->metrics,
+            $this->asyncPool
         );
 
         LoadableList::add(
@@ -240,7 +281,7 @@ final class PocketCloud {
         return $this->config;
     }
 
-    public function getSoftwareManager(): SoftwareManager {
+    public function getSoftwareManager(): ServerSoftwareManager {
         return $this->softwareManager;
     }
 
@@ -282,6 +323,14 @@ final class PocketCloud {
 
     public function getPluginManager(): CloudPluginManager {
         return $this->pluginManager;
+    }
+
+    public function getCloudUniqueId(): UuidInterface {
+        return $this->cloudUniqueId;
+    }
+
+    public function getMetrics(): CloudMetrics {
+        return $this->metrics;
     }
 
     public function getClassLoader(): ClassLoader {

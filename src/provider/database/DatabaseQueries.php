@@ -46,6 +46,7 @@ final class DatabaseQueries {
                     "maxServerCount" => "INTEGER",
                     "startNewPercentage" => "FLOAT",
                     "autoStart" => "BOOL",
+                    "alwaysCopyToStaticServers" => "BOOL",
                     "templateType" => "VARCHAR(10)"
                 ])
                 ->changeTable(DatabaseTables::SERVER_GROUPS)

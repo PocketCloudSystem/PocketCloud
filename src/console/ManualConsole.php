@@ -257,8 +257,11 @@ final class ManualConsole {
         $out = ob_get_clean();
         $out = str_replace("\t", "    ", $out);
 
-        echo "\033[2K\r";
-        echo rtrim($out) . PHP_EOL;
+        foreach (explode(PHP_EOL, $out) as $line) {
+            echo "\033[2K\r";
+            echo $line . PHP_EOL;
+        }
+
         $this->redraw($this->prompt);
     }
 

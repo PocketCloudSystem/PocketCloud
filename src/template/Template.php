@@ -114,6 +114,7 @@ final readonly class Template {
             "lobby" => $this->templateSettings->isLobby(),
             "maintenance" => $this->templateSettings->isMaintenance(),
             "static" => $this->templateSettings->isStatic(),
+            "alwaysCopyToStaticServers" => $this->templateSettings->isAlwaysCopyToStaticServers(),
             "maxPlayerCount" => $this->templateSettings->getMaxPlayerCount(),
             "minServerCount" => $this->templateSettings->getMinServerCount(),
             "maxServerCount" => $this->templateSettings->getMaxServerCount(),

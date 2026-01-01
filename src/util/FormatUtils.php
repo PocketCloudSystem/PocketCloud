@@ -2,6 +2,8 @@
 
 namespace pocketcloud\cloud\util;
 
+use Closure;
+
 final class FormatUtils {
 
     public static function bytes(int $bytes): string {
@@ -49,5 +51,25 @@ final class FormatUtils {
         } else {
             return round($ms * 1_000_000, $precision) . "ns";
         }
+    }
+
+    /**
+     * @param array $array
+     * @param string $separator
+     * @param string $keyValueSeparator
+     * @param Closure(mixed $key): mixed|null $keyProcessHandler
+     * @param Closure(mixed $processedKey, mixed $value): mixed|null $valueProcessHandler
+     * @return string
+     */
+    public static function implodeWithKeys(array $array, string $separator = ", ", string $keyValueSeparator = ": ", ?Closure $keyProcessHandler = null, ?Closure $valueProcessHandler = null): string {
+        $parts = [];
+
+        foreach ($array as $key => $value) {
+            if ($keyProcessHandler !== null) $key = $keyProcessHandler($key);
+            if ($valueProcessHandler !== null) $value = $valueProcessHandler($key, $value);
+            $parts[] = $key . $keyValueSeparator . $value;
+        }
+
+        return implode($separator, $parts);
     }
 }

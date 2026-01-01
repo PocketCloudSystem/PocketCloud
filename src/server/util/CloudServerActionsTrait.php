@@ -8,6 +8,7 @@ use pocketcloud\cloud\event\impl\server\ServerDisconnectEvent;
 use pocketcloud\cloud\network\client\ServerClientCache;
 use pocketcloud\cloud\network\packet\data\NotificationType;
 use pocketcloud\cloud\network\packet\data\ServerCommandExecutionResult;
+use pocketcloud\cloud\network\packet\impl\CommandExecutePacket;
 use pocketcloud\cloud\server\CloudServerManager;
 use pocketcloud\cloud\server\crash\CrashChecker;
 use pocketcloud\cloud\util\FileUtils;
@@ -16,7 +17,16 @@ use pocketcloud\cloud\util\TerminalUtils;
 
 trait CloudServerActionsTrait {
 
+    /** @var array<array{Promise, int}> */
     private array $commandExecutionOrders = [];
+
+    public function tickCommandOrders(): void {
+        foreach ($this->commandExecutionOrders as $id => $order) {
+            if (($order[1] + 5) <= time()) {
+                $this->handleFailedCommandResponse($id);
+            }
+        }
+    }
 
     public function printCrashStackTrace(array $crashData): void {
         CloudLogger::get()->info("§8[§cERROR§8/§e{}§r§8] §cUnhandled §e{}§c: §e{} §cwas thrown in §e{} §cat line §e{}", $this->getName(), $crashData["error"]["type"], $crashData["error"]["message"] ?? "Unknown error", $crashData["error"]["file"], $crashData["error"]["line"]);
@@ -28,7 +38,25 @@ trait CloudServerActionsTrait {
      * @return Promise<ServerCommandExecutionResult>
      */
     public function executeCommand(string $commandLine): Promise {
-        return Promise::rejected();
+        $promise = new Promise();
+        if (($client = $this->getServerClient()) === null) return Promise::rejected("Not verified yet");
+        if (!CommandExecutePacket::create($commandLine, $id = uniqid("command-"))->sendPacket($client)) return Promise::rejected("Failed to send packet");
+        $this->commandExecutionOrders[$id] = [$promise, time()];
+        return $promise;
+    }
+
+    public function handleCommandResponse(ServerCommandExecutionResult $result): void {
+        if (isset($this->commandExecutionOrders[$result->getId()])) {
+            $this->commandExecutionOrders[$result->getId()][0]->resolve($result);
+            unset($this->commandExecutionOrders[$result->getId()]);
+        }
+    }
+
+    public function handleFailedCommandResponse(string $id): void {
+        if (isset($this->commandExecutionOrders[$id])) {
+            $this->commandExecutionOrders[$id][0]->reject("Request timeout");
+            unset($this->commandExecutionOrders[$id]);
+        }
     }
     
     public function handleDisconnect(): void {

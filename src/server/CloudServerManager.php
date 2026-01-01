@@ -4,12 +4,14 @@ namespace pocketcloud\cloud\server;
 
 use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\group\ServerGroup;
+use pocketcloud\cloud\network\packet\data\ServerCommandExecutionResult;
 use pocketcloud\cloud\server\data\CloudServerData;
 use pocketcloud\cloud\server\util\ServerStatus;
 use pocketcloud\cloud\server\util\ServerUtils;
 use pocketcloud\cloud\template\Template;
 use pocketcloud\cloud\util\misc\Queue;
 use pocketcloud\cloud\util\misc\Tickable;
+use pocketcloud\cloud\util\promise\Promise;
 use pocketcloud\cloud\util\trait\SingletonTrait;
 use Ramsey\Uuid\Uuid;
 
@@ -55,8 +57,20 @@ final class CloudServerManager implements Tickable {
         }
     }
 
-    public function save(CloudServer $server): void {
+    public function save(CloudServer $server): Promise {
+        $promise = new Promise();
+        $saveCommandLine = $server->getTemplate()->getTemplateType()->getSaveCommandLine();
+        if ($saveCommandLine === null) {
+            $server->saveFiles();
+            return Promise::resolved();
+        }
 
+        $server->executeCommand("save-all")->then(function () use ($server, $promise) {
+            $server->saveFiles();
+            $promise->resolve();
+        })->failure(fn() => $promise->reject("Request timeout"));
+
+        return $promise;
     }
 
     public function stop(CloudServer|Template|ServerGroup|string $source, bool $force): array {
@@ -98,6 +112,7 @@ final class CloudServerManager implements Tickable {
     public function tick(int $currentTick): void {
         //keep alive, timeout,... etc
         // ABOVE > QUEUES (first the above, then the queues, SERVER BY SERVER (1 server/tick).
+        foreach ($this->servers as $server) $server->tick($currentTick);
 
         if (!$this->serverPrepareQueue->isEmpty()) {
             ($server = $this->serverPrepareQueue->next())->prepare()

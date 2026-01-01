@@ -9,23 +9,28 @@ use pocketcloud\cloud\network\packet\util\PacketData;
 
 final class CommandExecutePacket extends CloudPacket implements ClientboundPacket {
 
-    public function __construct(private readonly string $commandLine = "") {}
+    public function __construct(
+        private readonly string $commandLine = "",
+        private readonly string $id = ""
+    ) {}
 
     public function handle(ServerClient $client): void {}
 
     public function encodePayload(PacketData $packetData): void {
-        $packetData->write($this->commandLine);
+        $packetData->writeAll($this->commandLine, $this->id);
     }
 
-    public function decodePayload(PacketData $packetData): void {
-        $packetData->readAll($this->commandLine);
-    }
+    public function decodePayload(PacketData $packetData): void {}
 
     public function getCommandLine(): string {
         return $this->commandLine;
     }
 
-    public static function create(string $commandLine): self {
-        return new self($commandLine);
+    public function getId(): string {
+        return $this->id;
+    }
+
+    public static function create(string $commandLine, string $id): self {
+        return new self($commandLine, $id);
     }
 }

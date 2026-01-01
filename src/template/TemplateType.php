@@ -2,12 +2,21 @@
 
 namespace pocketcloud\cloud\template;
 
+use Closure;
+use Phar;
 use pocketcloud\cloud\config\impl\MainConfig;
+use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\server\config\ServerProperties;
 use pocketcloud\cloud\server\config\ServerPropertiesGenerator;
-use pocketcloud\cloud\software\Software;
-use pocketcloud\cloud\software\SoftwareManager;
+use pocketcloud\cloud\software\ServerSoftware;
+use pocketcloud\cloud\software\ServerSoftwareManager;
+use pocketcloud\cloud\util\net\NetUtils;
+use pocketcloud\cloud\util\promise\Promise;
 use pocketcloud\cloud\util\trait\RegistryTrait;
+use pocketcloud\cloud\util\Utils;
+use pocketcloud\cloud\util\VersionInfo;
+use Throwable;
+use ZipArchive;
 use const pocketcloud\GLOBAL_TEMPLATES_PATH;
 
 /**
@@ -18,15 +27,80 @@ final class TemplateType {
     use RegistryTrait;
 
     protected static function init(): void {
-        self::add(new TemplateType("server", SoftwareManager::getInstance()->get("PocketMine-MP"), [
+        self::add(new TemplateType("server", ServerSoftwareManager::getInstance()->get("PocketMine-MP"), [
             "crashdumps", "log_archive", "players", "plugin_data", "plugins", "resource_packs",
             "virions", "worlds", "pocketmine.yml", "banned-ips.txt", "banned-players.txt", "ops.txt",
             "plugin_list.yml", "server.log", "white-list.txt"
-        ]));
+        ], "save-all", "plugins/CloudBridge.phar", function (TemplateType $type): bool {
+            return NetUtils::download("https://github.com/PocketCloudSystem/CloudBridge/releases/latest/download/CloudBridge.phar", $type->getBridgeFileLocation());
+        }, function (TemplateType $type): Promise {
+            $ch = curl_init("https://api.github.com/repos/PocketCloudSystem/CloudBridge/releases/latest");
+            curl_setopt_array($ch, [
+                    CURLOPT_SSL_VERIFYPEER => false,
+                    CURLOPT_SSL_VERIFYHOST => false,
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_HEADER => false,
+                    CURLOPT_USERAGENT => "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1)"
+                ]
+            );
 
-        self::add(new TemplateType("proxy", SoftwareManager::getInstance()->get("WaterdogPE"), [
+            $result = curl_exec($ch);
+            $data = json_decode($result, true, flags: JSON_THROW_ON_ERROR);
+            if (is_array($data) && isset($data["tag_name"])) {
+                $phar = new Phar($type->getBridgeFileLocation());
+                if (isset($phar["plugin.yml"])) {
+                    $yaml = yaml_parse($phar["plugin.yml"]->getContent());
+                    if (isset($yaml["version"])) {
+                        if (version_compare($data["tag_name"], $yaml["version"], ">") && !VersionInfo::BETA) {
+                            CloudLogger::get()->warn("§cYour version of the §bCloudBridge §cis outdated!");
+                            return Promise::resolved([true]);
+                        }
+                    } else return Promise::resolved([true]);
+                } else return Promise::resolved([true]);
+            }
+
+            return Promise::resolved(false);
+        }, function (TemplateType $type): Promise {
+            return Promise::resolved(NetUtils::download("https://github.com/PocketCloudSystem/CloudBridge/releases/latest/download/CloudBridge.phar", $type->getBridgeFileLocation()));
+        }));
+
+        self::add(new TemplateType("proxy", ServerSoftwareManager::getInstance()->get("WaterdogPE"), [
             "logs", "packs", "plugins", "lang.ini"
-        ]));
+        ], null, "plugins/CloudBridge.jar", function (TemplateType $type): bool {
+            return NetUtils::download("https://github.com/PocketCloudSystem/CloudBridge-Proxy/releases/latest/download/CloudBridge.jar", $type->getBridgeFileLocation());
+        }, function (TemplateType $type): Promise {
+            $ch = curl_init("https://api.github.com/repos/PocketCloudSystem/CloudBridge-Proxy/releases/latest");
+            curl_setopt_array($ch, [
+                    CURLOPT_SSL_VERIFYPEER => false,
+                    CURLOPT_SSL_VERIFYHOST => false,
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_HEADER => false,
+                    CURLOPT_USERAGENT => "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1)"
+                ]
+            );
+
+            $result = curl_exec($ch);
+            $data = json_decode($result, true, flags: JSON_THROW_ON_ERROR);
+            if (is_array($data) && isset($data["tag_name"])) {
+                try {
+                    $zip = new ZipArchive();
+                    if ($zip->open($type->getBridgeFileLocation())) {
+                        $yaml = yaml_parse($zip->getFromName("plugin.yml"));
+                        $zip->close();
+                        if (version_compare($data["tag_name"], $yaml["version"], ">") && !VersionInfo::BETA) {
+                            CloudLogger::get()->warn("§cYour version of the §bCloudBridge-Proxy §cis outdated!");
+                            return Promise::resolved([true]);
+                        }
+                    }
+                } catch (Throwable $exception) {
+                    return Promise::rejected($exception->getMessage());
+                }
+            }
+
+            return Promise::resolved(false);
+        }, function (TemplateType $type): Promise {
+            return Promise::resolved(NetUtils::download("https://github.com/PocketCloudSystem/CloudBridge-Proxy/releases/latest/download/CloudBridge.jar", $type->getBridgeFileLocation()));
+        }));
     }
 
     public static function add(TemplateType $type): void {
@@ -46,9 +120,36 @@ final class TemplateType {
 
     public function __construct(
         private readonly string $name,
-        private readonly Software $software,
-        private readonly array $savableFiles
-    ) {}
+        private readonly ServerSoftware $software,
+        private readonly array $savableFiles,
+        private readonly ?string $saveCommandLine,
+        private readonly string $bridgeFileLocation,
+        private readonly Closure $bridgePluginDownloadClosure,
+        private readonly Closure $bridgePluginUpdateCheckClosure,
+        private readonly Closure $bridgePluginUpdateClosure
+
+    ) {
+        Utils::validateCallbackSignature($this->bridgePluginDownloadClosure, [TemplateType::class], "bool");
+        Utils::validateCallbackSignature($this->bridgePluginUpdateCheckClosure, [TemplateType::class], Promise::class);
+        Utils::validateCallbackSignature($this->bridgePluginUpdateClosure, [TemplateType::class], Promise::class);
+    }
+
+    public function download(): bool {
+        return ($this->bridgePluginDownloadClosure)($this);
+    }
+
+    public function checkForUpdate(): Promise {
+        if (!@file_exists($this->getBridgeFileLocation())) return Promise::resolved(true);
+        return ($this->bridgePluginUpdateCheckClosure)($this);
+    }
+
+    public function update(): Promise {
+        return ($this->bridgePluginDownloadClosure)($this);
+    }
+
+    public function checkBridge(): bool {
+        return @file_exists($this->getBridgeFileLocation());
+    }
 
     public function getName(): string {
         return $this->name;
@@ -66,8 +167,36 @@ final class TemplateType {
         return MainConfig::getInstance()->getServerPortRange($this->name);
     }
 
-    public function getSoftware(): Software {
+    public function getSoftware(): ServerSoftware {
         return $this->software;
+    }
+
+    public function getSavableFiles(): array {
+        return $this->savableFiles;
+    }
+
+    public function getSaveCommandLine(): ?string {
+        return $this->saveCommandLine;
+    }
+
+    public function getRelativeBridgeFileLocation(): string {
+        return $this->bridgeFileLocation;
+    }
+
+    public function getBridgeFileLocation(): string {
+        return $this->getGlobalTemplatePath() . $this->bridgeFileLocation;
+    }
+
+    public function getBridgePluginDownloadClosure(): Closure {
+        return $this->bridgePluginDownloadClosure;
+    }
+
+    public function getBridgePluginUpdateCheckClosure(): Closure {
+        return $this->bridgePluginUpdateCheckClosure;
+    }
+
+    public function getBridgePluginUpdateClosure(): Closure {
+        return $this->bridgePluginUpdateClosure;
     }
 
     public function isServer(): bool {
@@ -76,10 +205,6 @@ final class TemplateType {
 
     public function isProxy(): bool {
         return $this->equals(self::PROXY());
-    }
-
-    public function getSavableFiles(): array {
-        return $this->savableFiles;
     }
 
     /** @return array<ServerProperties> */

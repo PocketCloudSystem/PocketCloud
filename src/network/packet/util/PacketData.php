@@ -39,6 +39,7 @@ final class PacketData implements JsonSerializable {
             else if ($item instanceof ServerErrorReason) $this->writeServerErrorReason($item);
             else if ($item instanceof VerifyStatus) $this->writeVerifyStatus($item);
             else if ($item instanceof TextType) $this->writeTextType($item);
+            else $this->write($item);
         }
     }
 

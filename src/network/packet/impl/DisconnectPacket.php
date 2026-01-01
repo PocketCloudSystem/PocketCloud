@@ -21,12 +21,11 @@ final class DisconnectPacket extends CloudPacket implements ClientboundPacket, C
     }
 
     public function encodePayload(PacketData $packetData): void {
-        $packetData->writeServerDisconnectReason($this->reason);
+        $packetData->writeAll($this->reason);
     }
 
     public function decodePayload(PacketData $packetData): void {
-        $packetData->readAllTypeSafe([&$this->reason], [fn(PacketData $buffer) => $buffer->readServerDisconnectReason()]);
-        CloudLogger::get()->dump($this->reason);
+        $packetData->readAllTypeSafe([&$this->reason], [fn() => $packetData->readServerDisconnectReason()]);
     }
 
     public function getReason(): ?ServerDisconnectReason {

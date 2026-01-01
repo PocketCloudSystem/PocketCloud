@@ -25,6 +25,8 @@ abstract class AsyncTask extends Runnable {
         } finally {
             $this->done = true;
         }
+
+        AsyncWorker::getNotifier()->wakeupSleeper();
     }
 
     abstract public function onRun(): void;

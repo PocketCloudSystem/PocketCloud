@@ -4,7 +4,6 @@ namespace pocketcloud\cloud\server;
 
 use Closure;
 use pocketcloud\cloud\console\log\CloudLogger;
-use pocketcloud\cloud\event\impl\server\ServerCrashEvent;
 use pocketcloud\cloud\event\impl\server\ServerStartEvent;
 use pocketcloud\cloud\event\impl\server\ServerStopEvent;
 use pocketcloud\cloud\network\client\ServerClient;
@@ -17,7 +16,6 @@ use pocketcloud\cloud\network\packet\data\VerifyStatus;
 use pocketcloud\cloud\network\packet\impl\DisconnectPacket;
 use pocketcloud\cloud\player\CloudPlayer;
 use pocketcloud\cloud\player\CloudPlayerManager;
-use pocketcloud\cloud\server\crash\CrashChecker;
 use pocketcloud\cloud\server\data\CloudServerData;
 use pocketcloud\cloud\server\data\InternalCloudServerStorage;
 use pocketcloud\cloud\server\prepare\ServerPreparator;
@@ -27,15 +25,14 @@ use pocketcloud\cloud\server\util\ServerStartMethod;
 use pocketcloud\cloud\server\util\ServerStatus;
 use pocketcloud\cloud\template\Template;
 use pocketcloud\cloud\template\TemplateManager;
-use pocketcloud\cloud\util\FileUtils;
+use pocketcloud\cloud\util\misc\Tickable;
 use pocketcloud\cloud\util\promise\Promise;
-use pocketcloud\cloud\util\TerminalUtils;
 use pocketcloud\cloud\util\Utils;
 use const pocketcloud\CLOUD_PATH;
 use const pocketcloud\TEMP_PATH;
 
 // TODO
-final class CloudServer {
+final class CloudServer implements Tickable {
     use CloudServerActionsTrait;
 
     private int $lastCheckTime;
@@ -54,6 +51,10 @@ final class CloudServer {
         $this->startTime = time();
         $this->verifyStatus = VerifyStatus::NOT_APPLIED;
         $this->internalCloudServerStorage = new InternalCloudServerStorage($this);
+    }
+
+    public function tick(int $currentTick): void {
+        $this->tickCommandOrders();
     }
 
     public function prepare(): Promise {
@@ -97,6 +98,102 @@ final class CloudServer {
         }
     }
 
+    public function sync(): void {
+        $packets = [];
+
+        /**
+        foreach (TemplateManager::getInstance()->getAll() as $template) $packets[] = TemplateSyncPacket::create($template, false);
+        foreach (CloudServerManager::getInstance()->getAll() as $server) {
+        $packets[] = ServerSyncPacket::create($server, false);
+        if ($this->getTemplate()->getTemplateType()->isProxy() && $server->getTemplate()->getTemplateType()->isServer()) $packets[] = ProxyRegisterServerPacket::create($server->getName(), $server->getCloudServerData()->getPort());
+        }
+
+        foreach (CloudPlayerManager::getInstance()->getAll() as $player) $packets[] = PlayerSyncPacket::create($player, false);
+
+        if ($this->getTemplate()->getTemplateType()->isServer()) {
+        $packets[] = ModuleSyncPacket::create();
+        $packets[] = LibrarySyncPacket::create();
+        }
+
+        /** @var Language $lang
+        foreach (Language::getAll() as $lang) {
+        $packets[] = LanguageSyncPacket::create($lang->getName(), $lang->getMessages());
+        }*/
+
+        foreach ($packets as $packet) $this->sendPacket($packet);
+    }
+
+    /**
+     * @param CloudPacket $packet
+     * @param int $ticks delay in ticks (20 = 1s)
+     * @param Closure(ServerClient $client, CloudPacket $packet, bool $success): void|null $onSend
+     * @return void
+     */
+    public function sendDelayedPacket(CloudPacket $packet, int $ticks, ?Closure $onSend = null): void {
+        $this->getServerClient()?->sendDelayedPacket($packet, $ticks, $onSend);
+    }
+
+    public function sendPacket(ClientboundPacket $packet): bool {
+        return $this->getServerClient()?->sendPacket($packet) ?? false;
+    }
+
+    public function retrieveLogs(): ?array {
+        $basePath = $this->getPath();
+        $logFile = $this->getTemplate()->getTemplateType()->isServer() ? "server.log" : "logs/server.log";
+
+        if (file_exists($basePath . $logFile)) {
+            return explode("\n", file_get_contents($basePath . $logFile));
+        }
+
+        return null;
+    }
+
+    public function setServerStatus(ServerStatus $serverStatus): void {
+        $this->serverStatus = $serverStatus;
+        #ServerSyncPacket::create($this, false)->broadcastPacket();
+    }
+
+    public function setLastCheckTime(float $lastCheckTime): void {
+        $this->lastCheckTime = $lastCheckTime;
+    }
+
+    public function setStopTime(float $stopTime): void {
+        $this->stopTime = $stopTime;
+    }
+
+    public function setVerifyStatus(VerifyStatus $verifyStatus): void {
+        $this->verifyStatus = $verifyStatus;
+    }
+
+    public function checkAlive(): bool {
+        $timeout = $this->getTemplate()->getTemplateType()->getServerTimeout();
+        if ((time() - $this->startTime) < $timeout) return true;
+        if (!isset($this->lastCheckTime)) return false;
+        if ((time() - $this->lastCheckTime) < $timeout) return true;
+        return false;
+    }
+
+    public function getServerClient(): ?ServerClient {
+        return ServerClientCache::getInstance()->get($this);
+    }
+
+    public function getCloudPlayer(string $name): ?CloudPlayer {
+        return array_find($this->getCloudPlayers(), fn(CloudPlayer $player) => $player->getName() == $name);
+    }
+
+    /** @return array<CloudPlayer> */
+    public function getCloudPlayers(): array {
+        return array_filter(CloudPlayerManager::getInstance()->getAll(), fn(CloudPlayer $player) => ($this->getTemplate()->getTemplateType()->isServer() ? $player->getCurrentServer() === $this : $player->getCurrentProxy() === $this));
+    }
+
+    public function getCloudPlayerCount(): int {
+        return count($this->getCloudPlayers());
+    }
+
+    public function getPath(): string {
+        return TEMP_PATH . $this->serverUuid . DIRECTORY_SEPARATOR;
+    }
+
     public function getServerUuid(): string {
         return $this->serverUuid;
     }
@@ -133,12 +230,8 @@ final class CloudServer {
         return $this->lastCheckTime;
     }
 
-    public function checkAlive(): bool {
-        $timeout = $this->getTemplate()->getTemplateType()->getServerTimeout();
-        if ((time() - $this->startTime) < $timeout) return true;
-        if (!isset($this->lastCheckTime)) return false;
-        if ((time() - $this->lastCheckTime) < $timeout) return true;
-        return false;
+    public function getInternalCloudServerStorage(): InternalCloudServerStorage {
+        return $this->internalCloudServerStorage;
     }
 
     public function getStopTime(): float {
@@ -147,94 +240,6 @@ final class CloudServer {
 
     public function getVerifyStatus(): VerifyStatus {
         return $this->verifyStatus;
-    }
-
-    public function setServerStatus(ServerStatus $serverStatus): void {
-        $this->serverStatus = $serverStatus;
-        #ServerSyncPacket::create($this, false)->broadcastPacket();
-    }
-
-    public function setLastCheckTime(float $lastCheckTime): void {
-        $this->lastCheckTime = $lastCheckTime;
-    }
-
-    public function setStopTime(float $stopTime): void {
-        $this->stopTime = $stopTime;
-    }
-
-    public function setVerifyStatus(VerifyStatus $verifyStatus): void {
-        $this->verifyStatus = $verifyStatus;
-    }
-
-    public function sendPacket(ClientboundPacket $packet): bool {
-        return ServerClientCache::getInstance()->get($this)?->sendPacket($packet) ?? false;
-    }
-
-    /**
-     * @param CloudPacket $packet
-     * @param int $ticks delay in ticks (20 = 1s)
-     * @param Closure(ServerClient $client, CloudPacket $packet, bool $success): void|null $onSend
-     * @return void
-     */
-    public function sendDelayedPacket(CloudPacket $packet, int $ticks, ?Closure $onSend = null): void {
-        ServerClientCache::getInstance()->get($this)?->sendDelayedPacket($packet, $ticks, $onSend);
-    }
-
-    public function getCloudPlayer(string $name): ?CloudPlayer {
-        return array_find($this->getCloudPlayers(), fn(CloudPlayer $player) => $player->getName() == $name);
-    }
-
-    /** @return array<CloudPlayer> */
-    public function getCloudPlayers(): array {
-        return array_filter(CloudPlayerManager::getInstance()->getAll(), fn(CloudPlayer $player) => ($this->getTemplate()->getTemplateType()->isServer() ? $player->getCurrentServer() === $this : $player->getCurrentProxy() === $this));
-    }
-
-    public function getCloudPlayerCount(): int {
-        return count($this->getCloudPlayers());
-    }
-
-    public function getPath(): string {
-        return TEMP_PATH . $this->serverUuid . DIRECTORY_SEPARATOR;
-    }
-
-    public function getInternalCloudServerStorage(): InternalCloudServerStorage {
-        return $this->internalCloudServerStorage;
-    }
-
-    public function retrieveLogs(): ?array {
-        $basePath = $this->getPath();
-        $logFile = $this->getTemplate()->getTemplateType()->isServer() ? "server.log" : "logs/server.log";
-
-        if (file_exists($basePath . $logFile)) {
-            return explode("\n", file_get_contents($basePath . $logFile));
-        }
-
-        return null;
-    }
-
-    public function sync(): void {
-        $packets = [];
-
-        /**
-        foreach (TemplateManager::getInstance()->getAll() as $template) $packets[] = TemplateSyncPacket::create($template, false);
-        foreach (CloudServerManager::getInstance()->getAll() as $server) {
-            $packets[] = ServerSyncPacket::create($server, false);
-            if ($this->getTemplate()->getTemplateType()->isProxy() && $server->getTemplate()->getTemplateType()->isServer()) $packets[] = ProxyRegisterServerPacket::create($server->getName(), $server->getCloudServerData()->getPort());
-        }
-
-        foreach (CloudPlayerManager::getInstance()->getAll() as $player) $packets[] = PlayerSyncPacket::create($player, false);
-
-        if ($this->getTemplate()->getTemplateType()->isServer()) {
-            $packets[] = ModuleSyncPacket::create();
-            $packets[] = LibrarySyncPacket::create();
-        }
-
-        /** @var Language $lang
-        foreach (Language::getAll() as $lang) {
-            $packets[] = LanguageSyncPacket::create($lang->getName(), $lang->getMessages());
-        }*/
-
-        foreach ($packets as $packet) $this->sendPacket($packet);
     }
 
     public function write(): array {
@@ -252,6 +257,7 @@ final class CloudServer {
 
     public function detailedWrite(): array {
         return array_merge($this->write(), [
+            "path" => $this->getPath(),
             "internalStorage" => $this->internalCloudServerStorage->getAll()
         ]);
     }

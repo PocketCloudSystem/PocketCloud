@@ -2,6 +2,8 @@
 
 namespace pocketcloud\cloud\util\net;
 
+use ErrorException;
+use pocketcloud\cloud\console\handler\ExceptionHandler;
 use RuntimeException;
 
 final class NetUtils {
@@ -14,32 +16,37 @@ final class NetUtils {
         return $ok === false;
     }
 
+    /**
+     * @throws ErrorException
+     */
     public static function download(string $url, string $fileLocation): bool {
-        $tmpFile = $fileLocation . ".tmp";
-        $file = fopen($tmpFile, "wb");
-        if (!$file) return false;
+        return ExceptionHandler::tryCatch(function (string $url, string $fileLocation): bool {
+            if (!@file_exists(dirname($fileLocation))) mkdir(dirname($fileLocation), 0777, true);
+            $tmpFile = $fileLocation . ".tmp";
+            $file = fopen($tmpFile, "wb");
+            if (!$file) return false;
 
-        $ch = curl_init($url);
-        curl_setopt($ch, CURLOPT_FILE, $file);
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-        curl_setopt($ch, CURLOPT_FAILONERROR, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 60);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 15);
+            $ch = curl_init($url);
+            curl_setopt($ch, CURLOPT_FILE, $file);
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+            curl_setopt($ch, CURLOPT_FAILONERROR, true);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 60);
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 15);
 
-        $success = curl_exec($ch);
-        $err = curl_errno($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $success = curl_exec($ch);
+            $err = curl_errno($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
-        curl_close($ch);
-        fclose($file);
+            curl_close($ch);
+            fclose($file);
 
-        if ($success === false || $err !== 0 || $httpCode >= 400) {
-            @unlink($tmpFile);
-            return false;
-        }
+            if ($success === false || $err !== 0 || $httpCode >= 400) {
+                @unlink($tmpFile);
+                return false;
+            }
 
-        rename($tmpFile, $fileLocation);
-        return true;
+            return rename($tmpFile, $fileLocation);
+        }, "Failed to download: " . $url, null, $url, $fileLocation) ?? false;
     }
 
 

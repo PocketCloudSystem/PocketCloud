@@ -5,6 +5,9 @@ namespace pocketcloud\cloud\util;
 use Exception;
 use InvalidArgumentException;
 use pocketcloud\cloud\console\log\CloudLogger;
+use pocketmine\utils\AssumptionFailedError;
+use Ramsey\Uuid\Uuid;
+use Ramsey\Uuid\UuidInterface;
 use Random\RandomException;
 use ReflectionException;
 use ReflectionFunction;
@@ -12,6 +15,8 @@ use ReflectionMethod;
 use ReflectionNamedType;
 
 final class Utils {
+
+    private static ?UuidInterface $machineUniqueId = null;
 
     public static function containKeys(array $array, string|int ...$keys): bool {
         return array_all($keys, fn(string|int $key) => isset($array[$key]));
@@ -113,5 +118,51 @@ final class Utils {
                 throw new InvalidArgumentException("Invalid return type");
             }
         }
+    }
+
+    /** @author PMMP https://github.com/pmmp/PocketMine-MP/blob/50430762cf4a93a19a5621f9d0157e8009a8c15c/src/utils/Utils.php#L200 */
+    public static function getMachineUniqueId(string $extra = ""): UuidInterface {
+        if (self::$machineUniqueId !== null && $extra === "") return self::$machineUniqueId;
+        $machine = php_uname();
+        $cpuinfo = @file("/proc/cpuinfo");
+        if ($cpuinfo !== false) {
+            $cpuinfoLines = preg_grep("/(model name|Processor|Serial)/", $cpuinfo);
+            if ($cpuinfoLines === false) throw new AssumptionFailedError("Pattern is valid, so this shouldn't fail ...");
+            $machine .= implode("", $cpuinfoLines);
+        }
+
+        $machine .= sys_get_temp_dir();
+        $machine .= $extra;
+
+        if (file_exists("/etc/machine-id")) {
+            $machine .= file_get_contents("/etc/machine-id");
+        } else {
+            @exec("ifconfig 2>/dev/null", $mac);
+            $mac = implode("\n", $mac);
+            if (preg_match_all("#HWaddr[ \t]{1,}([0-9a-f:]{17})#", $mac, $matches) > 0) {
+                foreach ($matches[1] as $i => $v) {
+                    if ($v === "00:00:00:00:00:00") {
+                        unset($matches[1][$i]);
+                    }
+                }
+
+                $machine .= implode(" ", $matches[1]); //Mac Addresses
+            }
+        }
+
+        $data = $machine . PHP_MAXPATHLEN;
+        $data .= PHP_INT_MAX;
+        $data .= PHP_INT_SIZE;
+        $data .= get_current_user();
+        foreach (get_loaded_extensions() as $ext) {
+            $data .= $ext . ":" . phpversion($ext);
+        }
+
+        //TODO: use of NIL as namespace is a hack; it works for now, but we should have a proper namespace UUID
+        $uuid = Uuid::uuid3(Uuid::NIL, $data);
+
+        if ($extra === "") self::$machineUniqueId = $uuid;
+
+        return $uuid;
     }
 }

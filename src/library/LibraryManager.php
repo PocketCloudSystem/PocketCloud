@@ -52,6 +52,13 @@ final class LibraryManager implements Loadable {
                 "dktapps/pmforms",
                 "src/",
                 true
+            ),
+            new Library(
+                "bStats-PMMP",
+                "https://github.com/PocketCloudSystem/bStats-PMMP/archive/refs/heads/master.zip",
+                "xxFLORII/bStats",
+                "src/",
+                false
             )
         ] as $library) {
             $this->libraryConfig->set($library->getName(), $library->write());

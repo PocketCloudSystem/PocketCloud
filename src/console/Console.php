@@ -22,7 +22,6 @@ final class Console {
 
     public function __construct() {
         self::setInstance($this);
-        $this->install();
     }
 
     public function register(): void {
@@ -90,11 +89,21 @@ final class Console {
     }
 
     public function println(string $message): void {
-        $this->manualConsole?->println($message);
+        if ($this->manualConsole !== null) {
+            $this->manualConsole->println($message);
+            return;
+        }
+
+        echo $message . PHP_EOL;
     }
 
     public function dump(mixed ...$vars): void {
-        $this->manualConsole?->dump(...$vars);
+        if ($this->manualConsole !== null) {
+            $this->manualConsole->dump(...$vars);
+            return;
+        }
+
+        var_dump($vars);
     }
 
     public function readLine(): void {
@@ -117,7 +126,7 @@ final class Console {
     }
 
     public function remove(): void {
-        $this->manualConsole->close();
+        $this->manualConsole?->close();
         ShutdownHandler::remove();
     }
 

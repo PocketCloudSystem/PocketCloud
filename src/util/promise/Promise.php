@@ -3,7 +3,6 @@
 namespace pocketcloud\cloud\util\promise;
 
 use Closure;
-use Throwable;
 
 /** @template TValue */
 final class Promise {
@@ -52,38 +51,20 @@ final class Promise {
      * @param Closure(TValue $result): void $onSuccess
      * @return Promise
      */
-    public function then(Closure $onSuccess): Promise {
-        $next = new Promise();
-
-        $handler = function ($value) use ($onSuccess, $next) {
-            try {
-                $result = $onSuccess($value);
-
-                if ($result instanceof Promise) {
-                    $result->then($next->resolve(...))
-                        ->failure($next->reject(...));
-                } else {
-                    $next->resolve($result);
-                }
-            } catch (Throwable $e) {
-                $next->reject($e);
-            }
-        };
-
+    public function then(Closure $onSuccess): self {
         if ($this->resolved) {
-            $handler($this->result);
-        } elseif (!$this->rejected) {
-            $this->success[] = $handler;
-            $this->failure[] = fn($r) => $next->reject($r);
+            $onSuccess($this->result);
+        } else if (!$this->rejected) {
+            $this->success[] = $onSuccess;
         }
 
-        return $next;
+        return $this;
     }
 
     public function failure(Closure $onFailure): self {
         if ($this->rejected) {
             $onFailure($this->result);
-        } elseif (!$this->resolved) {
+        } else if (!$this->resolved) {
             $this->failure[] = $onFailure;
         }
 
@@ -114,17 +95,20 @@ final class Promise {
             return $all;
         }
 
+        /**
+         * @var int $i
+         * @var Promise $promise
+         */
         foreach ($promises as $i => $promise) {
             $promise->then(function (mixed $value) use (&$results, &$remaining, $i, $all) {
-                    $results[$i] = $value;
-                    $remaining--;
+                $results[$i] = $value;
+                $remaining--;
 
-                    if ($remaining === 0) {
-                        ksort($results);
-                        $all->resolve($results);
-                    }
-                })
-                ->failure(fn(mixed $reason) => $all->reject($reason));
+                if ($remaining === 0) {
+                    ksort($results);
+                    $all->resolve($results);
+                }
+            })->failure(fn(mixed $reason) => $all->reject($reason));
         }
 
         return $all;

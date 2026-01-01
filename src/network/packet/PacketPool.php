@@ -4,6 +4,8 @@ namespace pocketcloud\cloud\network\packet;
 
 use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\network\packet\impl\CloudNotificationPacket;
+use pocketcloud\cloud\network\packet\impl\CommandAnswerPacket;
+use pocketcloud\cloud\network\packet\impl\CommandExecutePacket;
 use pocketcloud\cloud\network\packet\impl\DisconnectPacket;
 use pocketcloud\cloud\network\packet\impl\KeepAlivePacket;
 use pocketcloud\cloud\network\packet\impl\request\ServerHandshakeRequestPacket;
@@ -28,11 +30,13 @@ final class PacketPool {
         $this->register(DisconnectPacket::class);
         $this->register(KeepAlivePacket::class);
         $this->register(CloudNotificationPacket::class);
+        $this->register(CommandExecutePacket::class);
+        $this->register(CommandAnswerPacket::class);
     }
 
     public function register(string $packetClass): void {
         if (!is_subclass_of($packetClass, CloudPacket::class)) return;
-        CloudLogger::get()->forceDebug("Registering packet " . ($packetName = new ReflectionClass($packetClass)->getShortName()) . " (" . $packetClass . ")");
+        CloudLogger::get()->debug("Registering packet " . ($packetName = new ReflectionClass($packetClass)->getShortName()) . " (" . $packetClass . ")");
         $this->packets[$packetName] = $packetClass;
     }
 

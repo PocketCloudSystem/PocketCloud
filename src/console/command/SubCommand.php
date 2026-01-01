@@ -11,7 +11,6 @@ abstract class SubCommand {
 
     public function __construct(
         private readonly string $name,
-        private readonly ?string $description = null,
         private readonly ?string $usage = null,
         private readonly array $aliases = []
     ) {}
@@ -33,10 +32,6 @@ abstract class SubCommand {
         return $this->name;
     }
 
-    public function getDescription(): ?string {
-        return $this->description;
-    }
-
     public function getUsage(): string {
         return $this->usage ?? $this->buildUsageMessage();
     }
@@ -48,16 +43,15 @@ abstract class SubCommand {
     /**
      * @param string $name
      * @param Closure(ICommandSender $sender, string $label, array $args): bool $executeHandler
-     * @param string|null $description
      * @param string|null $usage
      * @param array|null $aliases
      * @return ClosureSubCommand
      */
-    public static function fromClosure(string $name, Closure $executeHandler, ?string $description = null, ?string $usage = null, ?array $aliases = []): ClosureSubCommand {
-        return new ClosureSubCommand($name, $executeHandler, $description, $usage, $aliases);
+    public static function fromClosure(string $name, Closure $executeHandler, ?string $usage = null, ?array $aliases = []): ClosureSubCommand {
+        return new ClosureSubCommand($name, $executeHandler, $usage, $aliases);
     }
 
-    public static function nonHandler(string $name, ?string $description = null, ?string $usage = null, ?array $aliases = []): ClosureSubCommand {
-        return new ClosureSubCommand($name, null, $description, $usage, $aliases);
+    public static function nonHandler(string $name, ?string $usage = null, ?array $aliases = []): ClosureSubCommand {
+        return new ClosureSubCommand($name, null, $usage, $aliases);
     }
 }

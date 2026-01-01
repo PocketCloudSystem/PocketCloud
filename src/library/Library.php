@@ -29,7 +29,7 @@ final readonly class Library {
         if ($this->check()) return false;
         return ExceptionHandler::tryCatch(
             function (string $name, string $downloadUrl, string $libPath): bool {
-                CloudLogger::get()->info("Downloading source for library: {}" . $name . "...");
+                CloudLogger::get()->info("Downloading source for library: {}...", $name);
                 NetUtils::download($downloadUrl, $archivePath = LIBRARIES_PATH . uniqid());
                 $archive = new ZipArchive();
                 if ($archive->open($archivePath)) {
@@ -53,7 +53,6 @@ final readonly class Library {
     public function load(): bool {
         if (!$this->check()) return false;
         if ($this->bridgeOnly) return false;
-        CloudLogger::get()->forceDebug("Loading library: {} into class loader...", $this->name);
         PocketCloud::getInstance()->getClassLoader()->addPrefix($this->namespacePrefix, LIBRARIES_PATH . $this->name . DIRECTORY_SEPARATOR . $this->namespaceFolder);
         return true;
     }

@@ -11,7 +11,7 @@ final class ServerHandshakeResponsePacket extends ResponsePacket {
     public function __construct(private readonly ?VerifyStatus $verifyStatus = null) {}
 
     public function encodePayload(PacketData $packetData): void {
-        $packetData->writeVerifyStatus($this->verifyStatus);
+        $packetData->writeAll($this->verifyStatus);
     }
 
     public function decodePayload(PacketData $packetData): void {}

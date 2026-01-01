@@ -4,8 +4,12 @@ namespace pocketcloud\cloud\scheduler;
 
 use pocketcloud\cloud\thread\Worker;
 use pocketmine\snooze\SleeperHandlerEntry;
+use pocketmine\snooze\SleeperNotifier;
+use pocketmine\utils\AssumptionFailedError;
 
 final class AsyncWorker extends Worker {
+
+    private static ?SleeperNotifier $notifier = null;
 
     public function __construct(
         private readonly int $id,
@@ -20,6 +24,13 @@ final class AsyncWorker extends Worker {
         } else {
             ini_set("memory_limit", "-1");
         }
+
+        self::$notifier = $this->entry->createNotifier();
+    }
+
+    public static function getNotifier(): SleeperNotifier {
+        if (self::$notifier !== null) return self::$notifier;
+        throw new AssumptionFailedError("SleeperNotifier not found in thread-local storage");
     }
 
     public function getThreadName() : string{

@@ -30,7 +30,7 @@ final class BinaryDownloader {
                             CloudLogger::get()->info("Using 'ZipArchive' to extract...");
                             sleep(1);
                             $zip = new ZipArchive();
-                            if ($zip->open($downloadUrl, ZipArchive::CREATE)) {
+                            if ($zip->open(BINARIES_PATH . $fileName, ZipArchive::CREATE)) {
                                 $zip->extractTo($extractionPath);
                                 $zip->close();
                             }

@@ -71,7 +71,7 @@ final class ServerClientCache implements Tickable {
     }
 
     public function getByAddress(Address $address): ?ServerClient {
-        return array_find($this->clients, fn($client) => $client->getAddress()->equals($address));
+        return array_find($this->clients, fn(ServerClient $client) => $client->getAddress()->equals($address));
     }
 
     public function getAll(): array {

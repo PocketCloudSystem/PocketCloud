@@ -9,6 +9,7 @@ use pocketcloud\cloud\console\log\level\CloudLogLevel;
 use pocketcloud\cloud\PocketCloud;
 use pocketcloud\cloud\provider\CloudProvider;
 use pocketcloud\cloud\server\util\ServerStartMethod;
+use pocketcloud\cloud\server\util\ServerUtils;
 use pocketcloud\cloud\util\trait\SingletonTrait;
 use pocketcloud\cloud\util\Utils;
 use Random\Randomizer;
@@ -25,7 +26,15 @@ final class MainConfig extends Configuration {
     private bool $debugMode = false;
     private bool $updateChecks = true;
     private bool $executeUpdates = true;
+    private bool $startUpDelay = true;
     private string $startMethod = "tmux";
+    private array $bStats = [
+        "enabled" => true,
+        "log_failed_requests" => false,
+        "log_sent_data" => false,
+        "log_response_status_text" => false
+    ];
+
     private array $binaries = [
         "server" => "https://github.com/pmmp/PHP-Binaries/releases/latest/download/PHP-{php_ver}-Linux-x86_64-PM5.tar.gz"
     ];
@@ -83,6 +92,7 @@ final class MainConfig extends Configuration {
         self::setInstance($this);
         $this->httpServer["auth-key"] = ($this->generatedKey = Utils::generateString(10));
 
+        $defaultBStats = $this->bStats;
         $defaultBinaries = $this->binaries;
         $defaultNetwork = $this->network;
         $defaultHttp = $this->httpServer;
@@ -91,13 +101,14 @@ final class MainConfig extends Configuration {
         $defaultServerTimeouts = $this->serverTimeouts;
         $defaultServerPortRanges = $this->serverPortRanges;
 
-        ExceptionHandler::tryCatch(function (array $defaultBinaries, array $defaultNetwork, array $defaultHttp, array $defaultMySql, array $defaultStartCommands, array $defaultServerTimeouts, array $defaultServerPortRanges): void {
+        ExceptionHandler::tryCatch(function (array $defaultBStats, array $defaultBinaries, array $defaultNetwork, array $defaultHttp, array $defaultMySql, array $defaultStartCommands, array $defaultServerTimeouts, array $defaultServerPortRanges): void {
             $this->load();
             foreach (array_keys($defaultBinaries) as $binary) {
                 if (!isset($this->binaries[$binary])) $this->binaries[$binary] = str_replace(["{php_ver}"], [substr(PHP_VERSION, 0, 3)], $defaultBinaries[$binary]);
                 else if ($this->binaries[$binary]) $this->binaries[$binary] = str_replace(["{php_ver}"], [substr(PHP_VERSION, 0, 3)], $this->binaries[$binary]);
             }
 
+            Utils::fillMissingKeys($this->bStats, $defaultBStats);
             Utils::fillMissingKeys($this->network, $defaultNetwork);
             Utils::fillMissingKeys($this->httpServer, $defaultHttp);
             Utils::fillMissingKeys($this->mysqlSettings, $defaultMySql);
@@ -143,7 +154,9 @@ final class MainConfig extends Configuration {
                     unset($this->serverPortRanges[$key]);
                 }
 
-                // Re-setting this due to strict declarations, see ServerUtils
+                /**
+                 * // Re-setting this due to strict declarations, @see ServerUtils
+                 */
                 $this->serverPortRanges[$key] = [
                     "start" => $start, "end" => $end, "random-ports" => $randomPorts
                 ];
@@ -153,7 +166,7 @@ final class MainConfig extends Configuration {
             ServerStartMethod::set(ServerStartMethod::get($this->startMethod));
 
             $this->save();
-        }, "Failed to load main config", fn() => PocketCloud::getInstance()->shutdown(), $defaultBinaries, $defaultNetwork, $defaultHttp, $defaultMySql, $defaultStartCommands, $defaultServerTimeouts, $defaultServerPortRanges);
+        }, "Failed to load main config", fn() => PocketCloud::getInstance()->shutdown(), $defaultBStats, $defaultBinaries, $defaultNetwork, $defaultHttp, $defaultMySql, $defaultStartCommands, $defaultServerTimeouts, $defaultServerPortRanges);
     }
 
     public function setMemoryLimit(int $memoryLimit): void {
@@ -182,8 +195,16 @@ final class MainConfig extends Configuration {
         $this->executeUpdates = $executeUpdates;
     }
 
+    public function setStartUpDelay(bool $startUpDelay): void {
+        $this->startUpDelay = $startUpDelay;
+    }
+
     public function setStartMethod(string $startMethod): void {
         $this->startMethod = $startMethod;
+    }
+
+    public function setBStats(array $bStats): void {
+        $this->bStats = $bStats;
     }
 
     public function setBinaries(string $templateType, string $url): void {
@@ -264,8 +285,32 @@ final class MainConfig extends Configuration {
         return $this->executeUpdates;
     }
 
+    public function isStartUpDelay(): bool {
+        return $this->startUpDelay;
+    }
+
     public function getStartMethod(): string {
         return $this->startMethod;
+    }
+
+    public function isBStatsEnabled(): bool {
+        return $this->bStats["enabled"];
+    }
+
+    public function isBStatsLogFailedRequests(): bool {
+        return $this->bStats["log_failed_requests"];
+    }
+
+    public function isBStatsLogSentData(): bool {
+        return $this->bStats["log_sent_data"];
+    }
+
+    public function isBStatsLogStatusResponseText(): bool {
+        return $this->bStats["log_response_status_text"];
+    }
+
+    public function getBStats(): array {
+        return $this->bStats;
     }
 
     public function getBinaries(string $templateType): ?string {
@@ -345,7 +390,7 @@ final class MainConfig extends Configuration {
     }
 
     public function getServerTimeout(string $templateType): int {
-        return $this->serverTimeouts[strtolower($templateType)]; #?? ServerUtils::DEFAULT_TIMEOUT; //TODO
+        return $this->serverTimeouts[strtolower($templateType)] ?? ServerUtils::DEFAULT_TIMEOUT;
     }
 
     public function getServerTimeouts(): array {

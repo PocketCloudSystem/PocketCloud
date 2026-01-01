@@ -9,6 +9,12 @@ use pocketcloud\cloud\scheduler\AsyncTask;
 
 final class AsyncExecutor {
 
+    /**
+     * @param Closure(AsyncTask $task): mixed $asyncClosure
+     * @param Closure(mixed $result, mixed ...$syncArgs): void|null $syncClosure
+     * @param mixed ...$syncArgs
+     * @return void
+     */
     public static function execute(Closure $asyncClosure, ?Closure $syncClosure = null, mixed ...$syncArgs): void {
         AsyncPool::getInstance()->submitTask(new AsyncClosureTask(fn(AsyncTask $task) => ($asyncClosure)(), function(mixed $result) use($syncClosure, $syncArgs): void {
             if ($syncClosure !== null) $syncClosure($result, ...$syncArgs);
