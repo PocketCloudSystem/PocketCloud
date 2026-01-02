@@ -88,7 +88,7 @@ abstract class TrafficMonitor {
         if (!$this->active) return;
         if (isset($this->handlers[$mode])) {
             foreach ($this->handlers[$mode] as $handler) {
-                $handler->call($this, ...$args);
+                ($handler)(...$args);
             }
         }
     }

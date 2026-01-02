@@ -5,6 +5,9 @@ namespace pocketcloud\cloud\server\util;
 use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\event\impl\server\ServerCrashEvent;
 use pocketcloud\cloud\event\impl\server\ServerDisconnectEvent;
+use pocketcloud\cloud\event\impl\server\ServerStartFailedEvent;
+use pocketcloud\cloud\event\impl\server\ServerStopTimeOutEvent;
+use pocketcloud\cloud\event\impl\server\ServerTimeOutEvent;
 use pocketcloud\cloud\network\client\ServerClientCache;
 use pocketcloud\cloud\network\packet\data\NotificationType;
 use pocketcloud\cloud\network\packet\data\ServerCommandExecutionResult;
@@ -58,6 +61,45 @@ trait CloudServerActionsTrait {
             unset($this->commandExecutionOrders[$id]);
         }
     }
+
+    public function handleFailedStart(): void {
+        if ($this->getServerStatus() !== ServerStatus::STARTING) return;
+        $this->setServerStatus(ServerStatus::OFFLINE);
+        $this->remove();
+        $this->killProcess();
+        new ServerStartFailedEvent($this)->call();
+
+        if (!$this->checkForCrash()) CloudLogger::get()->warn("Failed to start the server §b{}§r, deleting data...", $this->getName());
+        NotificationType::SERVER_START_FAILED->notify(["%server%" => $this->getName()]);
+
+        $this->deleteTmpDir();
+    }
+
+    public function handleTimeout(): void {
+        if (!$this->getServerStatus()->isOnline()) return;
+        $this->setServerStatus(ServerStatus::OFFLINE);
+        $this->remove();
+        $this->killProcess();
+        new ServerTimeoutEvent($this)->call();
+
+        if (!$this->checkForCrash()) CloudLogger::get()->warn("The server §b{} §r§ctimed out§r, deleting data...", $this->getName());
+        NotificationType::SERVER_TIMED_OUT->notify(["%server%" => $this->getName()]);
+
+        $this->deleteTmpDir();
+    }
+
+    public function handleStopTimeout(): void {
+        if ($this->getServerStatus() !== ServerStatus::STOPPING) return;
+        $this->setServerStatus(ServerStatus::OFFLINE);
+        $this->remove();
+        $this->killProcess();
+        new ServerStopTimeOutEvent($this)->call();
+
+        if (!$this->checkForCrash()) CloudLogger::get()->warn("Failed to stop the server §b{}§r, deleting data & killing process...", $this->getName());
+        NotificationType::SERVER_STOP_TIMED_OUT->notify(["%server%" => $this->getName()]);
+
+        $this->deleteTmpDir();
+    }
     
     public function handleDisconnect(): void {
         if ($this->getServerStatus() === ServerStatus::OFFLINE) {
@@ -68,8 +110,8 @@ trait CloudServerActionsTrait {
         $this->setServerStatus(ServerStatus::OFFLINE);
         new ServerDisconnectEvent($this)->call();
         if (!$this->checkForCrash()) CloudLogger::get()->success("The server §b{} §rhas §cdisconnected §rfrom the cloud.", $this->getName());
+        else $this->killProcess();
 
-        $this->killProcess();
         $this->remove();
         $this->deleteTmpDir();
     }
@@ -105,7 +147,17 @@ trait CloudServerActionsTrait {
         return false;
     }
 
+    public function saveAndDeleteLogFiles(): void {
+        $logFileLocation = $this->getPath() . $this->getTemplate()->getTemplateType()->getRelativeLogFileLocation();
+        if (file_exists($logFileLocation)) {
+            if (!@file_exists($this->getTemplate()->getPath() . "cloud_log_archive")) @mkdir($this->getTemplate()->getPath(), 0777, true);
+            FileUtils::copyFile($logFileLocation, $this->getTemplate()->getPath() . "cloud_log_archive" . DIRECTORY_SEPARATOR . date("Y-m-d_H:i:s.v_e", $this->startTime) . "_" . basename($logFileLocation) . ".log");
+            @unlink($logFileLocation);
+        }
+    }
+
     public function deleteTmpDir(): void {
+        $this->saveAndDeleteLogFiles();
         if (!$this->getTemplate()->getSettings()->isStatic()) FileUtils::removeDirectory($this->getPath());
     }
 }

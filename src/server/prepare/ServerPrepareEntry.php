@@ -16,6 +16,7 @@ final class ServerPrepareEntry extends ThreadSafe {
     public function __construct(
         private readonly string $serverPath,
         private readonly string $templatePath,
+        private readonly string $relativeLogFileLocation,
         private readonly ?string $group,
         private readonly bool $static,
         private readonly bool $alwaysCopyToStaticServers,
@@ -24,14 +25,23 @@ final class ServerPrepareEntry extends ThreadSafe {
     ) {}
 
     public function run(): void {
+        $logFileLocation = $this->serverPath . $this->relativeLogFileLocation;
+        if (file_exists($logFileLocation)) {
+            if (!@file_exists($this->templatePath . "cloud_log_archive")) @mkdir($this->templatePath . "cloud_log_archive", 0777, true);
+            $ctime = filectime($logFileLocation) ?: time();
+            FileUtils::copyFile($logFileLocation, $this->templatePath . "cloud_log_archive" . DIRECTORY_SEPARATOR . date("Y-m-d_H:i:s.v_e", $ctime) . "_" . basename($logFileLocation) . ".log");
+            @unlink($logFileLocation);
+        }
+
         if (file_exists($this->serverPath) && !$this->static) FileUtils::removeDirectory($this->serverPath);
+
+        FileUtils::copyDirectory(GLOBAL_TEMPLATES_PATH . strtolower($this->templateType) . DIRECTORY_SEPARATOR, $this->serverPath);
+
         $copyFromSources = $this->alwaysCopyToStaticServers || !$this->static;
         if ($copyFromSources) {
             if ($this->group !== null) FileUtils::copyDirectory(SERVER_GROUPS_PATH . $this->group . DIRECTORY_SEPARATOR, $this->serverPath);
             FileUtils::copyDirectory($this->templatePath, $this->serverPath);
         }
-
-        FileUtils::copyDirectory(GLOBAL_TEMPLATES_PATH . strtolower($this->templateType) . DIRECTORY_SEPARATOR, $this->serverPath);
 
         foreach ($this->propertiesData as $properties) {
             [$fileName, $replacements] = $properties;
@@ -41,30 +51,29 @@ final class ServerPrepareEntry extends ThreadSafe {
             FileUtils::filePutContents($filePath, str_replace(array_keys($replacements), array_values($replacements), FileUtils::fileGetContents($filePath)));
         }
 
-        if (file_exists($this->serverPath . "server.log") || file_exists($this->serverPath . "logs/server.log")) {
-            unlink(match ($this->templateType) {
-                TemplateType::PROXY()->getName() => $this->serverPath . "logs/server.log",
-                default => $this->serverPath . "server.log"
-            });
+        if (@file_exists($logFileLocation)) {
+            @unlink($logFileLocation);
         }
     }
 
     public static function create(
         string $serverPath,
         string $templatePath,
+        string $relativeLogFileLocation,
         ?string $group,
         bool $static,
         bool $alwaysCopyToStaticServers,
         string $templateType,
         array $propertiesData
     ): self {
-        return new self($serverPath, $templatePath, $group, $static, $alwaysCopyToStaticServers, $templateType, ThreadSafeArray::fromArray($propertiesData));
+        return new self($serverPath, $templatePath, $relativeLogFileLocation, $group, $static, $alwaysCopyToStaticServers, $templateType, ThreadSafeArray::fromArray($propertiesData));
     }
 
     public static function fromServer(CloudServer $server): self {
         return self::create(
             $server->getPath(),
             $server->getTemplate()->getPath(),
+            $server->getTemplate()->getTemplateType()->getRelativeLogFileLocation(),
             ServerGroupManager::getInstance()->get($server->getTemplate())?->getName(),
             $server->getTemplate()->getSettings()->isStatic(),
             $server->getTemplate()->getSettings()->isAlwaysCopyToStaticServers(),

@@ -19,25 +19,31 @@ final class ClassLoader extends ThreadSafe implements IClassLoader {
 
     public function addPrefix(string $namespace, string $path): void {
         $this->namespaces->synchronized(function (string $namespace, string $path): void {
-            $namespace = str_replace([DIRECTORY_SEPARATOR, "//", "\\", "\\\\"], DIRECTORY_SEPARATOR, rtrim($namespace, "\\")) . DIRECTORY_SEPARATOR;
-            if (!isset($this->namespaces[$namespace])) $this->namespaces[$namespace] = new ThreadSafeArray();
-            $this->namespaces[$namespace][] = $path;
+            if ($namespace === "") {
+                $prefix = "";
+            } else {
+                $prefix = str_replace([DIRECTORY_SEPARATOR, "\\", "\\\\", DIRECTORY_SEPARATOR . DIRECTORY_SEPARATOR], "\\", rtrim($namespace, "\\")) . "\\";
+            }
+
+            if (!isset($this->namespaces[$prefix])) $this->namespaces[$prefix] = new ThreadSafeArray();
+            $this->namespaces[$prefix][] = $path;
         }, $namespace, $path);
     }
 
     public function findClass(string $class): ?string {
         return $this->synchronized(function (string $class): ?string {
-            $class = str_replace([DIRECTORY_SEPARATOR, "//", "\\", "\\\\"], DIRECTORY_SEPARATOR, rtrim($class, "\\"));
+            $class = ltrim($class, "\\");
+            $prefixes = iterator_to_array($this->namespaces);
+            uksort($prefixes, fn(string $a, string $b) => strlen($b) <=> strlen($a));
+            foreach ($prefixes as $prefix => $paths) {
+                if ($prefix === "" || str_starts_with($class, $prefix)) {
+                    $relative = $prefix === "" ?
+                        str_replace("\\", DIRECTORY_SEPARATOR, $class) . ".php" :
+                        str_replace("\\", DIRECTORY_SEPARATOR, substr($class, strlen($prefix))) . ".php";
 
-            foreach ($this->namespaces as $prefix => $paths) {
-                if (str_starts_with($class, $prefix)) {
-                    $relative = substr($class, strlen($prefix)) . ".php";
-                    $secondRelative = $class . ".php";
                     foreach ($paths as $path) {
-                        $file = rtrim($path, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $relative;
-                        $secondFile = rtrim($path, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $secondRelative;
-                        if (file_exists($file)) return $file;
-                        if (file_exists($secondFile)) return $secondFile;
+                        $file = $path . DIRECTORY_SEPARATOR . $relative;
+                        if (is_file($file)) return $file;
                     }
                 }
             }

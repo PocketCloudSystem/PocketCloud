@@ -12,6 +12,7 @@ use pocketcloud\cloud\crash\CrashDump;
 use pocketcloud\cloud\event\impl\cloud\CloudStartedEvent;
 use pocketcloud\cloud\group\ServerGroupManager;
 use pocketcloud\cloud\language\Language;
+use pocketcloud\cloud\network\client\ServerClientCache;
 use pocketcloud\cloud\network\Network;
 use pocketcloud\cloud\plugin\CloudPluginManager;
 use pocketcloud\cloud\provider\CloudProvider;
@@ -83,6 +84,7 @@ final class PocketCloud {
     private ServerGroupManager $serverGroupManager;
     private ServerPropertiesGenerator $serverPropertiesGenerator;
     private CloudServerManager $serverManager;
+    private ServerClientCache $serverClientCache;
     private TrafficMonitorManager $trafficMonitorManager;
     private CloudPluginManager $pluginManager;
     private UpdateChecker $updateChecker;
@@ -145,6 +147,7 @@ final class PocketCloud {
         $this->serverGroupManager = new ServerGroupManager();
         $this->serverPropertiesGenerator = new ServerPropertiesGenerator();
         $this->serverManager = new CloudServerManager();
+        $this->serverClientCache = new ServerClientCache();
         $this->trafficMonitorManager = new TrafficMonitorManager();
         $this->pluginManager = new CloudPluginManager();
         $this->updateChecker = new UpdateChecker();
@@ -173,7 +176,7 @@ final class PocketCloud {
 
         TickableList::add(
             $this->trafficMonitorManager, $this->serverManager, $this->commandManager, $this->metrics,
-            $this->asyncPool
+            $this->asyncPool, $this->serverClientCache, $this->templateManager
         );
 
         LoadableList::add(
@@ -202,8 +205,6 @@ final class PocketCloud {
 
         CloudLogger::get()->success("§bCloud §rhas been §astarted§r. §8(§rTook §b" . number_format($time = (microtime(true) - $this->startTimestamp), 3) . "s§8)");
         new CloudStartedEvent($time)->call();
-
-        CloudServerManager::getInstance()->start(TemplateManager::getInstance()->get("sigma"));
 
         $this->tick();
     }
@@ -331,6 +332,10 @@ final class PocketCloud {
 
     public function getServerManager(): CloudServerManager {
         return $this->serverManager;
+    }
+
+    public function getServerClientCache(): ServerClientCache {
+        return $this->serverClientCache;
     }
 
     public function getTrafficMonitorManager(): TrafficMonitorManager {

@@ -2,18 +2,23 @@
 
 namespace pocketcloud\cloud\template;
 
+use pocketcloud\cloud\cache\MaintenanceListCache;
 use pocketcloud\cloud\event\impl\template\TemplateCreateEvent;
 use pocketcloud\cloud\event\impl\template\TemplateEditEvent;
 use pocketcloud\cloud\event\impl\template\TemplateRemoveEvent;
 use pocketcloud\cloud\group\ServerGroupManager;
+use pocketcloud\cloud\player\CloudPlayer;
+use pocketcloud\cloud\player\CloudPlayerManager;
 use pocketcloud\cloud\provider\CloudProvider;
 use pocketcloud\cloud\console\log\CloudLogger;
+use pocketcloud\cloud\server\CloudServerManager;
 use pocketcloud\cloud\server\prepare\ServerPreparator;
 use pocketcloud\cloud\util\FileUtils;
 use pocketcloud\cloud\util\misc\Loadable;
+use pocketcloud\cloud\util\misc\Tickable;
 use pocketcloud\cloud\util\trait\SingletonTrait;
 
-final class TemplateManager implements Loadable {
+final class TemplateManager implements Loadable, Tickable {
     use SingletonTrait;
 
     /** @var array<Template> */
@@ -46,7 +51,6 @@ final class TemplateManager implements Loadable {
 
         CloudLogger::get()->debug("Creating directory: " . $template->getPath());
         if (!file_exists($template->getPath())) mkdir($template->getPath());
-        //TODO: ServerUtils::makeProperties($template);
         $this->templates[$template->getName()] = $template;
         CloudLogger::get()->success("Successfully §acreated §rthe template §b" . $template->getName() . "§r. §8(§rTook §b" . number_format(microtime(true) - $startTime, 3) . "s§8)");
         //TODO: TemplateSyncPacket::create($template, false)->broadcastPacket();
@@ -58,7 +62,7 @@ final class TemplateManager implements Loadable {
 
         new TemplateRemoveEvent($template)->call();
 
-        //TODO: CloudServerManager::getInstance()->stop($template, true);
+        CloudServerManager::getInstance()->stop($template, true);
 
         if (file_exists($template->getPath())) FileUtils::removeDirectory($template->getPath());
         if (isset($this->templates[$template->getName()])) unset($this->templates[$template->getName()]);
@@ -84,13 +88,11 @@ final class TemplateManager implements Loadable {
         CloudLogger::get()->success("Successfully §eedited §rthe template §b" . $template->getName() . "§r. §8(§rTook §b" . number_format(microtime(true) - $startTime, 3) . "s§8)");
         //TODO: TemplateSyncPacket::create($template, false)->broadcastPacket();
 
-        /*if ($template->toArray()["maintenance"]) {
-            foreach (array_filter(CloudPlayerManager::getInstance()->getAll(), function(CloudPlayer $player) use($template): bool {
-                return ($player->getCurrentServer() !== null && $player->getCurrentServer()->getTemplate() === $template) && !MaintenanceList::is($player->getName());
-            }) as $player) {
+        if ($template->isMaintenance()) {
+            foreach (array_filter(CloudPlayerManager::getInstance()->getAll($template), fn (CloudPlayer $player): bool => !MaintenanceListCache::is($player->getName())) as $player) {
                 $player->kick("MAINTENANCE");
             }
-        } */
+        }
     }
 
     public function check(string $name): bool {
@@ -98,7 +100,7 @@ final class TemplateManager implements Loadable {
     }
 
     public function tick(int $currentTick): void {
-        /** TODO: if (!ServerGroupManager::getInstance()->isLoaded()) return;
+        if (!ServerGroupManager::getInstance()->isLoaded()) return;
         foreach (TemplateManager::getInstance()->getAll() as $template) {
             if ($template->getSettings()->isAutoStart()) {
                 if (($running = count(CloudServerManager::getInstance()->getAll($template))) < $template->getSettings()->getMaxServerCount()) {
@@ -107,15 +109,15 @@ final class TemplateManager implements Loadable {
             }
 
             if (($latest = CloudServerManager::getInstance()->getLatest($template)) !== null) {
-                $players = $latest->getCloudPlayerCount();
-                $requiredPercentage = $template->getSettings()->getStartNewPercentage(); // xyz Prozent müssen von den max players on sein
+                $players = $latest->getPlayerCount();
+                $requiredPercentage = $template->getSettings()->getStartNewPercentage();
                 if ($requiredPercentage <= 0) continue;
                 $percentage = $players * 100 / $requiredPercentage;
-                if ($percentage >= $requiredPercentage && CloudServerManager::getInstance()->canStartMore($template)) {
+                if ($percentage >= $requiredPercentage && CloudServerManager::getInstance()->checkCapacity($template)) {
                     CloudServerManager::getInstance()->start($template);
                 }
             }
-        } */
+        }
     }
 
     public function get(string $name): ?Template {

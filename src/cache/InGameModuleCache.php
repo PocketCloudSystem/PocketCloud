@@ -25,4 +25,8 @@ final class InGameModuleCache {
     public static function getAll(): array {
         return [self::SIGN_MODULE, self::NPC_MODULE, self::HUB_COMMAND_MODULE];
     }
+
+    public static function getModuleStates(): array {
+        return self::$moduleStates;
+    }
 }

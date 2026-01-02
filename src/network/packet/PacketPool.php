@@ -9,8 +9,14 @@ use pocketcloud\cloud\network\packet\impl\CommandExecutePacket;
 use pocketcloud\cloud\network\packet\impl\DisconnectPacket;
 use pocketcloud\cloud\network\packet\impl\KeepAlivePacket;
 use pocketcloud\cloud\network\packet\impl\LanguageSyncPacket;
+use pocketcloud\cloud\network\packet\impl\LibrarySyncPacket;
+use pocketcloud\cloud\network\packet\impl\ModuleSyncPacket;
+use pocketcloud\cloud\network\packet\impl\PlayerSyncPacket;
 use pocketcloud\cloud\network\packet\impl\request\ServerHandshakeRequestPacket;
 use pocketcloud\cloud\network\packet\impl\response\ServerHandshakeResponsePacket;
+use pocketcloud\cloud\network\packet\impl\ServerGroupSyncPacket;
+use pocketcloud\cloud\network\packet\impl\ServerSyncPacket;
+use pocketcloud\cloud\network\packet\impl\TemplateSyncPacket;
 use pocketcloud\cloud\util\trait\SingletonTrait;
 use ReflectionClass;
 use ReflectionException;
@@ -35,6 +41,12 @@ final class PacketPool {
         $this->register(CommandExecutePacket::class);
         $this->register(CommandAnswerPacket::class);
         $this->register(LanguageSyncPacket::class);
+        $this->register(LibrarySyncPacket::class);
+        $this->register(ModuleSyncPacket::class);
+        $this->register(TemplateSyncPacket::class);
+        $this->register(ServerSyncPacket::class);
+        $this->register(ServerGroupSyncPacket::class);
+        $this->register(PlayerSyncPacket::class);
     }
 
     public function register(string $packetClass): void {

@@ -24,6 +24,9 @@ final class ServerStartMethod {
 
     private static ?self $current = null;
 
+    /**
+     * @throws ReflectionException
+     */
     protected static function init(): void {
         self::add(new ServerStartMethod("screen", function (CloudServer $server, string $startCommand): Promise {
             $screenName = $server->getName() . "-" . $server->getServerUuid();

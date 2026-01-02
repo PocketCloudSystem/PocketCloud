@@ -4,8 +4,10 @@ namespace pocketcloud\cloud\server;
 
 use Closure;
 use pocketcloud\cloud\console\log\CloudLogger;
+use pocketcloud\cloud\event\impl\server\ServerDisconnectEvent;
 use pocketcloud\cloud\event\impl\server\ServerStartEvent;
 use pocketcloud\cloud\event\impl\server\ServerStopEvent;
+use pocketcloud\cloud\event\impl\server\ServerTimeOutEvent;
 use pocketcloud\cloud\network\client\ServerClient;
 use pocketcloud\cloud\network\client\ServerClientCache;
 use pocketcloud\cloud\network\packet\ClientboundPacket;
@@ -15,6 +17,11 @@ use pocketcloud\cloud\network\packet\data\ServerDisconnectReason;
 use pocketcloud\cloud\network\packet\data\VerifyStatus;
 use pocketcloud\cloud\network\packet\impl\DisconnectPacket;
 use pocketcloud\cloud\network\packet\impl\LanguageSyncPacket;
+use pocketcloud\cloud\network\packet\impl\LibrarySyncPacket;
+use pocketcloud\cloud\network\packet\impl\ModuleSyncPacket;
+use pocketcloud\cloud\network\packet\impl\PlayerSyncPacket;
+use pocketcloud\cloud\network\packet\impl\ServerSyncPacket;
+use pocketcloud\cloud\network\packet\impl\TemplateSyncPacket;
 use pocketcloud\cloud\player\CloudPlayer;
 use pocketcloud\cloud\player\CloudPlayerManager;
 use pocketcloud\cloud\server\data\CloudServerData;
@@ -32,7 +39,6 @@ use pocketcloud\cloud\util\Utils;
 use const pocketcloud\CLOUD_PATH;
 use const pocketcloud\TEMP_PATH;
 
-// TODO
 final class CloudServer implements Tickable {
     use CloudServerActionsTrait;
 
@@ -57,6 +63,24 @@ final class CloudServer implements Tickable {
 
     public function tick(int $currentTick): void {
         $this->tickCommandOrders();
+
+        if ($this->serverStatus === ServerStatus::STARTING) {
+            if (($this->startTime + $this->getTemplate()->getTemplateType()->getServerTimeout()) < time()) {
+                $this->handleFailedStart();
+            }
+        } else if ($this->serverStatus->isOnline()) {
+            if (!$this->checkAlive()) {
+                $this->handleTimeout();
+            }
+        } else if ($this->serverStatus === ServerStatus::STOPPING) {
+            if (($this->getStopTime() + 10) <= time()) {
+                $this->handleStopTimeout();
+            }
+        } else if ($this->serverStatus === ServerStatus::OFFLINE) {
+            $this->remove();
+            if ($this->checkForCrash()) $this->killProcess();
+            $this->deleteTmpDir();
+        }
     }
 
     public function prepare(): Promise {
@@ -103,25 +127,17 @@ final class CloudServer implements Tickable {
     public function sync(): void {
         $packets = [];
 
-        /**
         foreach (TemplateManager::getInstance()->getAll() as $template) $packets[] = TemplateSyncPacket::create($template, false);
         foreach (CloudServerManager::getInstance()->getAll() as $server) {
-        $packets[] = ServerSyncPacket::create($server, false);
-        if ($this->getTemplate()->getTemplateType()->isProxy() && $server->getTemplate()->getTemplateType()->isServer()) $packets[] = ProxyRegisterServerPacket::create($server->getName(), $server->getCloudServerData()->getPort());
+            $packets[] = ServerSyncPacket::create($server, false);
+            //TODO: if ($this->getTemplate()->getTemplateType()->isRegisterServers() && $server->getTemplate()->getTemplateType()->isRegularServers()) $packets[] = ProxyRegisterServerPacket::create($server->getName(), $server->getCloudServerData()->getPort());
         }
 
         foreach (CloudPlayerManager::getInstance()->getAll() as $player) $packets[] = PlayerSyncPacket::create($player, false);
 
-        if ($this->getTemplate()->getTemplateType()->isServer()) {
-        $packets[] = ModuleSyncPacket::create();
-        $packets[] = LibrarySyncPacket::create();
-        }
 
-        /** @var Language $lang
-        foreach (Language::getAll() as $lang) {
-        $packets[] = LanguageSyncPacket::create($lang->getName(), $lang->getMessages());
-        }*/
-
+        $packets[] = ModuleSyncPacket::fromModuleCache();
+        $packets[] = LibrarySyncPacket::fromLibraries();
         $packets[] = LanguageSyncPacket::fromLanguage();
 
         foreach ($packets as $packet) $this->sendPacket($packet);
@@ -143,9 +159,9 @@ final class CloudServer implements Tickable {
 
     public function retrieveLogs(): ?array {
         $basePath = $this->getPath();
-        $logFile = $this->getTemplate()->getTemplateType()->isServer() ? "server.log" : "logs/server.log";
+        $logFile = $this->getTemplate()->getTemplateType()->getRelativeLogFileLocation();
 
-        if (file_exists($basePath . $logFile)) {
+        if (@file_exists($basePath . $logFile)) {
             return explode("\n", file_get_contents($basePath . $logFile));
         }
 
@@ -190,7 +206,7 @@ final class CloudServer implements Tickable {
 
     /** @return array<CloudPlayer> */
     public function getPlayers(): array {
-        return array_filter(CloudPlayerManager::getInstance()->getAll(), fn(CloudPlayer $player) => ($this->getTemplate()->getTemplateType()->isServer() ? $player->getCurrentServer() === $this : $player->getCurrentProxy() === $this));
+        return CloudPlayerManager::getInstance()->getAll($this);
     }
 
     public function getPlayerCount(): int {

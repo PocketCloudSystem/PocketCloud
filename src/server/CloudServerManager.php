@@ -126,6 +126,13 @@ final class CloudServerManager implements Tickable {
         return $this->servers[$name] ?? array_find($this->servers, fn(CloudServer $server) => $server->getServerUuid() == $name);
     }
 
+    public function getLatest(Template $template): ?CloudServer {
+        $servers = $this->getAll($template);
+        if (empty($servers)) return null;
+        usort($servers, fn(CloudServer $a, CloudServer $b) => $a->getStartTime() <=> $b->getStartTime());
+        return $servers[array_key_last($servers)];
+    }
+
     public function getAll(Template|ServerGroup|string|null $templateOrGroup = null): array {
         $templateOrGroup = is_string($templateOrGroup) ? $templateOrGroup : ($templateOrGroup instanceof Template || $templateOrGroup instanceof ServerGroup ? $templateOrGroup->getName() : null);
         if ($templateOrGroup !== null) return array_filter($this->servers, fn(CloudServer $server) => $server->getTemplate()->getName() == $templateOrGroup || $server->getTemplate()->getParentServerGroup()?->getName() == $templateOrGroup);

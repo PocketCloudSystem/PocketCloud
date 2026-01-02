@@ -28,35 +28,35 @@ final class LibraryManager implements Loadable {
             new Library(
                 "config",
                 "https://github.com/r3pt1s/configlib/archive/refs/heads/main.zip",
-                "configlib",
+                "",
                 "src/",
                 false
             ),
             new Library(
                 "snooze",
                 "https://github.com/pmmp/Snooze/archive/refs/tags/0.5.0.zip",
-                "pocketmine/snooze",
+                "pocketmine\\snooze",
                 "src/",
                 false
             ),
             new Library(
                 "mysql",
                 "https://github.com/PocketCloudSystem/mysqllib/archive/refs/heads/main.zip",
-                "r3pt1s/mysql",
+                "",
                 "src/",
                 false
             ),
             new Library(
                 "pmforms",
                 "https://github.com/dktapps-pm-pl/pmforms/archive/refs/tags/2.3.0.zip",
-                "dktapps/pmforms",
+                "",
                 "src/",
                 true
             ),
             new Library(
                 "bStats-PMMP",
                 "https://github.com/PocketCloudSystem/bStats-PMMP/archive/refs/heads/master.zip",
-                "xxFLORII/bStats",
+                "",
                 "src/",
                 false
             )

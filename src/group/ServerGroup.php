@@ -30,13 +30,6 @@ final class ServerGroup {
         return in_array($template, $this->templates);
     }
 
-    public function write(bool $mySql = false): array {
-        return [
-            "name" => $this->name,
-            "templates" => ($mySql ? json_encode($this->templates) : $this->templates)
-        ];
-    }
-
     public function getName(): string {
         return $this->name;
     }
@@ -47,6 +40,13 @@ final class ServerGroup {
 
     public function getTemplates(): array {
         return $this->templates;
+    }
+
+    public function write(bool $mySql = false): array {
+        return [
+            "name" => $this->name,
+            "templates" => ($mySql ? json_encode($this->templates) : $this->templates)
+        ];
     }
 
     public static function read(array $data): ?self {

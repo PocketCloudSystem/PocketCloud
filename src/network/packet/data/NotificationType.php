@@ -14,6 +14,7 @@ enum NotificationType {
     case SERVER_STARTING;
     case SERVER_STOPPING;
     case SERVER_TIMED_OUT;
+    case SERVER_STOP_TIMED_OUT;
     case SERVER_CRASHED;
     case SERVER_START_FAILED;
     case PLAYER_JOINED;

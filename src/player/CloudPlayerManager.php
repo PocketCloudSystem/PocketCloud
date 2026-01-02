@@ -5,6 +5,9 @@ namespace pocketcloud\cloud\player;
 use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\event\impl\player\PlayerConnectEvent;
 use pocketcloud\cloud\event\impl\player\PlayerDisconnectEvent;
+use pocketcloud\cloud\group\ServerGroup;
+use pocketcloud\cloud\server\CloudServer;
+use pocketcloud\cloud\template\Template;
 use pocketcloud\cloud\util\trait\SingletonTrait;
 
 final class CloudPlayerManager {
@@ -44,7 +47,18 @@ final class CloudPlayerManager {
 
     }
 
-    public function getAll(): array {
+    public function getAll(Template|CloudServer|ServerGroup|null $object = null): array {
+        if ($object !== null) {
+            $objectName = $object->getName();
+            return array_filter($this->players, function (CloudPlayer $player) use ($objectName): bool {
+                return $player->getCurrentServerName() == $objectName ||
+                    $player->getCurrentProxyName() == $objectName ||
+                    $player->getCurrentServer()?->getTemplateName() == $objectName ||
+                    $player->getCurrentProxy()?->getTemplateName() == $objectName ||
+                    $player->getCurrentServer()?->getTemplate()?->getParentServerGroup()?->getName() == $objectName ||
+                    $player->getCurrentProxy()?->getTemplate()?->getParentServerGroup()?->getName() == $objectName;
+            });
+        }
         return $this->players;
     }
 }

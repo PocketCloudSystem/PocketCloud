@@ -2,4 +2,4 @@
 
 namespace pocketcloud\cloud\event\impl\server;
 
-class ServerStartFailEvent extends ServerEvent {}
+class ServerStopTimeOutEvent extends ServerEvent {}

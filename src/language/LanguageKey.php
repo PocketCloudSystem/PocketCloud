@@ -22,6 +22,7 @@ use pocketcloud\cloud\util\trait\RegistryTrait;
  * @method static LanguageKey INGAME_NOTIFY_MESSAGE_SERVER_STARTING()
  * @method static LanguageKey INGAME_NOTIFY_MESSAGE_SERVER_STOPPING()
  * @method static LanguageKey INGAME_NOTIFY_MESSAGE_SERVER_TIMED_OUT()
+ * @method static LanguageKey INGAME_NOTIFY_MESSAGE_SERVER_STOP_TIMED_OUT()
  * @method static LanguageKey INGAME_NOTIFY_MESSAGE_SERVER_CRASHED()
  * @method static LanguageKey INGAME_NOTIFY_MESSAGE_SERVER_START_FAILED()
  * @method static LanguageKey INGAME_NOTIFY_MESSAGE_PLAYER_JOINED()

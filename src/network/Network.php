@@ -52,6 +52,7 @@ final class Network extends Thread {
         $this->handlerEntry = PocketCloud::getInstance()->getSleeperHandler()->addNotifier(function (): void {
             /** @var UnhandledPacket $unhandledPacket */
             while (($unhandledPacket = $this->buffer->shift()) !== null) {
+                if (!$this->established) return;
                 $continue = true;
 
                 TrafficMonitorManager::getInstance()->pushBytes(TrafficMonitorManager::TRAFFIC_NETWORK, $bytes = $unhandledPacket->getBytes(), TrafficMonitor::REGULAR_MODE_IN);
@@ -82,6 +83,7 @@ final class Network extends Thread {
                     } catch (PacketException|JsonException $e) {
                         CloudLogger::get()->warn("§cFailed to decode packet from §b{}§8: §e{}", $client->getAddress(), $e->getMessage())
                             ->debug($unhandledPacket->getBuffer());
+                        CloudLogger::get()->exception($e);
                     }
                 } else CloudLogger::get()->debug("Received an external packet from §b{}§r, ignoring...", $unhandledPacket->getAddress())->debug("Packet buffer: " . $unhandledPacket->getBuffer());
             }
