@@ -5,10 +5,11 @@ namespace pocketcloud\cloud\template;
 use pocketcloud\cloud\group\ServerGroup;
 use pocketcloud\cloud\group\ServerGroupManager;
 use pocketcloud\cloud\server\CloudServerManager;
+use pocketcloud\cloud\util\misc\Writeable;
 use pocketcloud\cloud\util\Utils;
 use const pocketcloud\TEMPLATES_PATH;
 
-final readonly class Template {
+final readonly class Template implements Writeable {
 
     public function __construct(
         private string $name,

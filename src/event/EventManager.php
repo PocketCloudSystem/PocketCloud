@@ -3,7 +3,6 @@
 namespace pocketcloud\cloud\event;
 
 use Closure;
-use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\plugin\CloudPlugin;
 use pocketcloud\cloud\util\trait\SingletonTrait;
 use ReflectionClass;

@@ -2,6 +2,7 @@
 
 namespace pocketcloud\cloud\config;
 
+use Closure;
 use InvalidArgumentException;
 use pocketcloud\cloud\config\type\ConfigType;
 use pocketcloud\cloud\config\type\ConfigTypeList;
@@ -51,13 +52,23 @@ final class Config {
         $this->load();
     }
 
-    public function save(): bool {
+    /**
+     * @param Closure(string $filePath, array $content, ConfigType $type): bool|null $customSaveHandler
+     * @return bool
+     */
+    public function save(?Closure $customSaveHandler = null): bool {
         if (!$this->changed) return true;
+        $this->changed = false;
+        if ($customSaveHandler !== null) {
+            return ExceptionHandler::tryCatch(function (Closure $customSaveHandler): bool {
+                return ($customSaveHandler)($this->path, $this->content, $this->type);
+            }, "Failed to save configuration using custom handler", fn() => $this->changed = true, $customSaveHandler);
+        }
+
         return ExceptionHandler::tryCatch(function (): bool {
             $rawContent = $this->type->encodeContent($this->content);
-            $this->changed = false;
             return is_int(file_put_contents($this->path, $rawContent));
-        });
+        }, "Failed to save configuration", fn() => $this->changed = true);
     }
 
     public function set(string $key, mixed $value): void {

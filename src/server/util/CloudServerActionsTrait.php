@@ -12,8 +12,10 @@ use pocketcloud\cloud\network\client\ServerClientCache;
 use pocketcloud\cloud\network\packet\data\NotificationType;
 use pocketcloud\cloud\network\packet\data\ServerCommandExecutionResult;
 use pocketcloud\cloud\network\packet\impl\CommandExecutePacket;
+use pocketcloud\cloud\network\packet\impl\ProxyRegisterServerPacket;
 use pocketcloud\cloud\server\CloudServerManager;
 use pocketcloud\cloud\server\crash\CrashChecker;
+use pocketcloud\cloud\template\TemplateType;
 use pocketcloud\cloud\util\FileUtils;
 use pocketcloud\cloud\util\promise\Promise;
 use pocketcloud\cloud\util\TerminalUtils;
@@ -122,6 +124,14 @@ trait CloudServerActionsTrait {
             $destinationPath = $this->getTemplate()->getPath() . $file;
             if (is_file($filePath)) FileUtils::copyfile($filePath, $destinationPath);
             else FileUtils::copyDirectory($filePath, $destinationPath);
+        }
+    }
+
+    public function addToProxies(): void {
+        if ($this->getTemplate()->getTemplateType()->isServer()) {
+            foreach (ServerClientCache::getInstance()->getAll(...TemplateType::onlyProxy()) as $client) {
+                ProxyRegisterServerPacket::create($this->getName(), $this->getServerData()->getPort())->sendPacket($client);
+            }
         }
     }
 

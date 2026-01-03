@@ -6,9 +6,11 @@ use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\server\config\def\PocketMineConfig;
 use pocketcloud\cloud\server\config\def\PocketMineServerProperties;
 use pocketcloud\cloud\server\config\def\WaterdogConfig;
+use pocketcloud\cloud\template\TemplateManager;
 use pocketcloud\cloud\template\TemplateType;
 use pocketcloud\cloud\util\misc\Loadable;
 use pocketcloud\cloud\util\trait\SingletonTrait;
+use const pocketcloud\TEMPLATES_PATH;
 
 final class ServerPropertiesGenerator implements Loadable {
     use SingletonTrait;
@@ -35,6 +37,22 @@ final class ServerPropertiesGenerator implements Loadable {
         if ($properties->needsRenewal($propertiesPath = $properties->getTemplateType()->getGlobalTemplatePath() . $properties->getFileName()) || !@file_exists($propertiesPath)) {
             CloudLogger::get()->info("§aUpdating §rserver properties/config§8: §b{}§8...", $properties->getFileName());
             $properties->renew($propertiesPath);
+
+            $i = 0;
+            foreach (array_diff(scandir(TEMPLATES_PATH), [".", "..", "global"]) as $file) {
+                $dirPath = TEMPLATES_PATH . $file . DIRECTORY_SEPARATOR;
+                $filePath = $dirPath . $properties->getFileName();
+                if (@file_exists($filePath)) {
+                    if ($properties->needsRenewal($filePath)) {
+                        $properties->renew($filePath);
+                        $i++;
+                    }
+                }
+            }
+
+            if ($i > 0) {
+                CloudLogger::get()->info("Also §aupdating §rserver properties/config §rfor §b{} templates§r: §b{}§8...", $i, $properties->getFileName());
+            }
         }
     }
 

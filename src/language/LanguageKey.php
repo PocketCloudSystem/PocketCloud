@@ -29,11 +29,6 @@ use pocketcloud\cloud\util\trait\RegistryTrait;
  * @method static LanguageKey INGAME_NOTIFY_MESSAGE_PLAYER_LEFT()
  * @method static LanguageKey INGAME_NOTIFY_MESSAGE_PLAYER_JOIN_FAILED()
  * @method static LanguageKey INGAME_NOTIFY_MESSAGE_PLAYER_KICKED()
- * @method static LanguageKey INGAME_NOTIFY_MESSAGE_STARTING()
- * @method static LanguageKey INGAME_NOTIFY_MESSAGE_STOPPING()
- * @method static LanguageKey INGAME_NOTIFY_MESSAGE_TIMED()
- * @method static LanguageKey INGAME_NOTIFY_MESSAGE_CRASHED()
- * @method static LanguageKey INGAME_NOTIFY_MESSAGE_START_FAILED()
  * @method static LanguageKey INGAME_SERVER_VERIFIED()
  * @method static LanguageKey INGAME_SERVER_VERIFY_DENIED()
  * @method static LanguageKey INGAME_SERVER_VERIFY_FAILED()
@@ -220,7 +215,7 @@ final class LanguageKey {
 
     public function __construct(private readonly string $langKey) {}
 
-    public function translate(array $args): string {
+    public function translate(array $args = []): string {
         return Language::current()->translate($this->langKey, $args);
     }
 

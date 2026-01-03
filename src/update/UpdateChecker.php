@@ -9,7 +9,6 @@ use pocketcloud\cloud\update\def\CloudPluginsUpdateChecker;
 use pocketcloud\cloud\update\def\CloudUpdateChecker;
 use pocketcloud\cloud\update\def\SoftwareUpdateChecker;
 use pocketcloud\cloud\util\trait\SingletonTrait;
-use ReflectionClass;
 
 final class UpdateChecker {
     use SingletonTrait;

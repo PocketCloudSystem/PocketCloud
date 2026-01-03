@@ -81,7 +81,7 @@ final class Language {
         }
     }
 
-    public function translate(string $key, array $args): string {
+    public function translate(string $key, array $args = []): string {
         $message = str_replace("{PREFIX}", $this->messages["inGame.prefix"] ?? "", $this->messages[$key] ?? $key);
         foreach ($args as $k => $arg) $message = str_replace("%" . $k . "%", $arg, $message);
         return $message;

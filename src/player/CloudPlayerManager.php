@@ -6,6 +6,8 @@ use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\event\impl\player\PlayerConnectEvent;
 use pocketcloud\cloud\event\impl\player\PlayerDisconnectEvent;
 use pocketcloud\cloud\group\ServerGroup;
+use pocketcloud\cloud\network\packet\data\NotificationType;
+use pocketcloud\cloud\network\packet\impl\PlayerSyncPacket;
 use pocketcloud\cloud\server\CloudServer;
 use pocketcloud\cloud\template\Template;
 use pocketcloud\cloud\util\trait\SingletonTrait;
@@ -21,23 +23,24 @@ final class CloudPlayerManager {
     }
 
     public function add(CloudPlayer $player): void {
-        CloudLogger::get()->info("Player {} has connected via {}.", $player->getName(), ($player->getCurrentProxyName() ?? $player->getCurrentServerName()) ?? "NULL");
+        CloudLogger::get()->info("Player §b{} §rhas §aconnected §rvia §b{}§r.", $player->getName(), $player->getCurrentProxyName() ?? $player->getCurrentServerName());
         $this->players[$player->getName()] = $player;
-        #PlayerSyncPacket::create($player, false)->broadcastPacket();
+        PlayerSyncPacket::create($player, false)->broadcastPacket();
+        NotificationType::PLAYER_JOINED->notify(["player" => $player->getName(), "server" => $player->getCurrentServerName() ?? $player->getCurrentProxyName()]);
 
         new PlayerConnectEvent($player, ($player->getCurrentServer() ?? $player->getCurrentProxy()))->call();
     }
 
     public function remove(CloudPlayer $player): void {
-        CloudLogger::get()->info("Player {} disconnected from {}.", $player->getName(), ($player->getCurrentServerName() ?? $player->getCurrentProxyName()) ?? "NULL");
-
+        CloudLogger::get()->info("Player §b{} §cdisconnected §rfrom §b{}§r.", $player->getName(), $player->getCurrentServerName() ?? $player->getCurrentProxyName());
         if (isset($this->players[$player->getName()])) unset($this->players[$player->getName()]);
+        NotificationType::PLAYER_LEFT->notify(["player" => $player->getName(), "server" => $player->getCurrentServerName() ?? $player->getCurrentProxyName()]);
+
         new PlayerDisconnectEvent($player, ($player->getCurrentServer() ?? $player->getCurrentProxy()), $player->getCurrentServerName() ?? $player->getCurrentProxyName())->call();
 
         $player->setCurrentServer(null);
         $player->setCurrentProxy(null);
-
-        #PlayerSyncPacket::create($player, true)->broadcastPacket();
+        PlayerSyncPacket::create($player, true)->broadcastPacket();
     }
 
     public function get(string $name): ?CloudPlayer {

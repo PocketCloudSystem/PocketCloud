@@ -87,7 +87,7 @@ final class CloudServerManager implements Tickable {
         return $affectedServers;
     }
 
-    public function stopAll(bool $force): array {
+    public function stopAll(bool $force = false): array {
         foreach (($servers = $this->getAll()) as $server) $server->stop($force);
         return $servers;
     }

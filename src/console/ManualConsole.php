@@ -3,7 +3,6 @@
 namespace pocketcloud\cloud\console;
 
 use Closure;
-use Exception;
 use pocketcloud\cloud\util\TerminalUtils;
 use RuntimeException;
 

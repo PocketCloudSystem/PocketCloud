@@ -7,6 +7,7 @@ use pocketcloud\cloud\event\impl\template\TemplateCreateEvent;
 use pocketcloud\cloud\event\impl\template\TemplateEditEvent;
 use pocketcloud\cloud\event\impl\template\TemplateRemoveEvent;
 use pocketcloud\cloud\group\ServerGroupManager;
+use pocketcloud\cloud\network\packet\impl\TemplateSyncPacket;
 use pocketcloud\cloud\player\CloudPlayer;
 use pocketcloud\cloud\player\CloudPlayerManager;
 use pocketcloud\cloud\provider\CloudProvider;
@@ -53,7 +54,7 @@ final class TemplateManager implements Loadable, Tickable {
         if (!file_exists($template->getPath())) mkdir($template->getPath());
         $this->templates[$template->getName()] = $template;
         CloudLogger::get()->success("Successfully §acreated §rthe template §b" . $template->getName() . "§r. §8(§rTook §b" . number_format(microtime(true) - $startTime, 3) . "s§8)");
-        //TODO: TemplateSyncPacket::create($template, false)->broadcastPacket();
+        TemplateSyncPacket::create($template, false)->broadcastPacket();
     }
 
     public function remove(Template $template): void {
@@ -67,7 +68,7 @@ final class TemplateManager implements Loadable, Tickable {
         if (file_exists($template->getPath())) FileUtils::removeDirectory($template->getPath());
         if (isset($this->templates[$template->getName()])) unset($this->templates[$template->getName()]);
         CloudLogger::get()->success("Successfully §cremoved §rthe template §b" . $template->getName() . "§r. §8(§rTook §b" . number_format(microtime(true) - $startTime, 3) . "s§8)");
-        //TODO: TemplateSyncPacket::create($template, true)->broadcastPacket();
+        TemplateSyncPacket::create($template, true)->broadcastPacket();
     }
 
     public function edit(Template $template, ?bool $lobby, ?bool $maintenance, ?bool $static, ?int $maxPlayerCount, ?int $minServerCount, ?int $maxServerCount, ?float $startNewPercentage, ?bool $autoStart): void {
@@ -86,7 +87,7 @@ final class TemplateManager implements Loadable, Tickable {
         CloudProvider::current()->editTemplate($template, $template->write());
 
         CloudLogger::get()->success("Successfully §eedited §rthe template §b" . $template->getName() . "§r. §8(§rTook §b" . number_format(microtime(true) - $startTime, 3) . "s§8)");
-        //TODO: TemplateSyncPacket::create($template, false)->broadcastPacket();
+        TemplateSyncPacket::create($template, false)->broadcastPacket();
 
         if ($template->isMaintenance()) {
             foreach (array_filter(CloudPlayerManager::getInstance()->getAll($template), fn (CloudPlayer $player): bool => !MaintenanceListCache::is($player->getName())) as $player) {

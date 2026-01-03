@@ -7,6 +7,7 @@ use JsonSerializable;
 use OutOfBoundsException;
 use pocketcloud\cloud\group\ServerGroup;
 use pocketcloud\cloud\network\packet\data\LogType;
+use pocketcloud\cloud\network\packet\data\NotificationType;
 use pocketcloud\cloud\network\packet\data\ServerCommandExecutionResult;
 use pocketcloud\cloud\network\packet\data\ServerDisconnectReason;
 use pocketcloud\cloud\network\packet\data\ServerErrorReason;
@@ -16,75 +17,19 @@ use pocketcloud\cloud\player\CloudPlayer;
 use pocketcloud\cloud\server\CloudServer;
 use pocketcloud\cloud\server\util\ServerStatus;
 use pocketcloud\cloud\template\Template;
+use pocketcloud\cloud\util\misc\Writeable;
 
 final class PacketData implements JsonSerializable {
 
     public function __construct(private array $data = []) {}
 
     public function write(mixed $v): self {
-        $this->data[] = $v;
+        $this->data[] = ($v instanceof Writeable ? $v->write() : $v);
         return $this;
     }
 
     public function writeAll(mixed ...$v): void {
-        foreach ($v as $item) {
-            if ($item instanceof Template) $this->writeTemplate($item);
-            else if ($item instanceof CloudServer) $this->writeServer($item);
-            else if ($item instanceof ServerGroup) $this->writeServerGroup($item);
-            else if ($item instanceof CloudPlayer) $this->writePlayer($item);
-            else if ($item instanceof ServerCommandExecutionResult) $this->writeServerCommandExecutionResult($item);
-            else if ($item instanceof LogType) $this->writeLogType($item);
-            else if ($item instanceof ServerStatus) $this->writeServerStatus($item);
-            else if ($item instanceof ServerDisconnectReason) $this->writeServerDisconnectReason($item);
-            else if ($item instanceof ServerErrorReason) $this->writeServerErrorReason($item);
-            else if ($item instanceof VerifyStatus) $this->writeVerifyStatus($item);
-            else if ($item instanceof TextType) $this->writeTextType($item);
-            else $this->write($item);
-        }
-    }
-
-    public function writeTemplate(Template $template): self {
-        return $this->write($template->write());
-    }
-
-    public function writeServer(CloudServer $server): self {
-        return $this->write($server->write());
-    }
-
-    public function writeServerGroup(ServerGroup $serverGroup): self {
-        return $this->write($serverGroup->write());
-    }
-
-    public function writePlayer(CloudPlayer $player): self {
-        return $this->write($player->write());
-    }
-
-    public function writeServerCommandExecutionResult(ServerCommandExecutionResult $result): self {
-        return $this->write($result->write());
-    }
-
-    public function writeLogType(LogType $logType): self {
-        return $this->write($logType->getName());
-    }
-
-    public function writeServerStatus(ServerStatus $status): self {
-        return $this->write($status->getName());
-    }
-
-    public function writeServerDisconnectReason(ServerDisconnectReason $serverDisconnectReason): self {
-        return $this->write($serverDisconnectReason->getName());
-    }
-
-    public function writeServerErrorReason(ServerErrorReason $serverErrorReason): self {
-        return $this->write($serverErrorReason->getName());
-    }
-
-    public function writeVerifyStatus(VerifyStatus $verifyStatus): self {
-        return $this->write($verifyStatus->getName());
-    }
-
-    public function writeTextType(TextType $textType): self {
-        return $this->write($textType->getName());
+        foreach ($v as $item) $this->write($item);
     }
 
     public function read(): mixed {
@@ -163,6 +108,10 @@ final class PacketData implements JsonSerializable {
 
     public function readLogType(): ?LogType {
         return LogType::fromName($this->readString());
+    }
+
+    public function readNotificationType(): ?NotificationType {
+        return NotificationType::fromName($this->readString());
     }
 
     public function readServerStatus(): ?ServerStatus {

@@ -6,6 +6,7 @@ use Closure;
 use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\server\CloudServer;
 use pocketcloud\cloud\server\CloudServerManager;
+use pocketcloud\cloud\template\TemplateType;
 use pocketcloud\cloud\util\misc\Tickable;
 use pocketcloud\cloud\util\net\Address;
 use pocketcloud\cloud\util\trait\SingletonTrait;
@@ -74,7 +75,11 @@ final class ServerClientCache implements Tickable {
         return array_find($this->clients, fn(ServerClient $client) => $client->getAddress()->equals($address));
     }
 
-    public function getAll(): array {
+    public function getAll(?TemplateType ...$object): array {
+        if ($object !== null) return array_filter($this->clients, function (ServerClient $client) use($object): bool {
+            if ($client->getServer() === null) return false;
+            return array_any($object, fn($type) => $type->getName() === $client->getServer()->getTemplate()->getTemplateType()->getName());
+        });
         return $this->clients;
     }
 }

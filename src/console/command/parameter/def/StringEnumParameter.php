@@ -1,11 +1,11 @@
 <?php
 
-namespace pocketcloud\cloud\console\command\argument\def;
+namespace pocketcloud\cloud\console\command\parameter\def;
 
-use pocketcloud\cloud\console\command\argument\CommandArgument;
-use pocketcloud\cloud\console\command\argument\exception\ArgumentParseException;
+use pocketcloud\cloud\console\command\parameter\CommandParameter;
+use pocketcloud\cloud\console\command\parameter\exception\ArgumentParseException;
 
-readonly class StringEnumArgument extends CommandArgument {
+readonly class StringEnumParameter extends CommandParameter {
 
     private array $allowedStrings;
 

@@ -1,13 +1,13 @@
 <?php
 
-namespace pocketcloud\cloud\console\command\argument\def;
+namespace pocketcloud\cloud\console\command\parameter\def;
 
-use pocketcloud\cloud\console\command\argument\CommandArgument;
-use pocketcloud\cloud\console\command\argument\exception\ArgumentParseException;
+use pocketcloud\cloud\console\command\parameter\CommandParameter;
+use pocketcloud\cloud\console\command\parameter\exception\ArgumentParseException;
 use pocketcloud\cloud\group\ServerGroup;
 use pocketcloud\cloud\group\ServerGroupManager;
 
-readonly class ServerGroupArgument extends CommandArgument {
+readonly class ServerGroupParameter extends CommandParameter {
 
     public function parseValue(string $input): ServerGroup {
         if (($group = ServerGroupManager::getInstance()->get($input)) !== null) return $group;

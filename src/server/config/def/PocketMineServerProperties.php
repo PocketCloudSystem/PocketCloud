@@ -5,10 +5,12 @@ namespace pocketcloud\cloud\server\config\def;
 use pocketcloud\cloud\config\Config;
 use pocketcloud\cloud\config\impl\MainConfig;
 use pocketcloud\cloud\config\type\ConfigTypeList;
+use pocketcloud\cloud\network\client\ServerClientCache;
 use pocketcloud\cloud\network\Network;
 use pocketcloud\cloud\server\CloudServer;
 use pocketcloud\cloud\server\config\ServerProperties;
 use pocketcloud\cloud\template\TemplateType;
+use pocketcloud\cloud\util\Utils;
 use const pocketcloud\CLOUD_PATH;
 
 final class PocketMineServerProperties implements ServerProperties {
@@ -24,10 +26,9 @@ final class PocketMineServerProperties implements ServerProperties {
 
     public function renew(string $filePath): bool {
         $config = new Config($filePath, ConfigTypeList::PROPERTIES());
-        foreach ($this->getDefaultContent() as $name => $value) {
-            if (!$config->has($name)) $config->set($name, $value);
-        }
-
+        $content = $config->getAll();
+        Utils::fillMissingKeys($content, $this->getDefaultContent());
+        $config->setAll($content);
         return $config->save();
     }
 
@@ -52,11 +53,12 @@ final class PocketMineServerProperties implements ServerProperties {
             "%template%" => $server->getTemplate()->getName(),
             "%address%" => Network::getInstance()->getAddress()->getAddress(),
             "%port%" => Network::getInstance()->getAddress()->getPort(),
-            "%encryption%" =>  MainConfig::getInstance()->isNetworkEncryptionEnabled(),
+            "%encryption%" => MainConfig::getInstance()->isNetworkEncryptionEnabled(),
             "%language%" => "eng",
             "%cloud_path%" => CLOUD_PATH,
             "%timeout%" => $server->getTemplate()->getTemplateType()->getServerTimeout(),
-            "%auth_key%" => Network::getInstance()->getAuthenticationKey()
+            "%auth_key%" => Network::getInstance()->getAuthenticationKey(),
+            "%server_ip%" => count(ServerClientCache::getInstance()->getAll(...TemplateType::onlyProxy())) > 0 ? "127.0.0.1" : "0.0.0.0"
         ];
     }
 
@@ -66,7 +68,7 @@ final class PocketMineServerProperties implements ServerProperties {
             "motd" => "§b%name%",
             "server-port" => "%server_port%",
             "server-portv6" => "%server_portv6%",
-            "server-ip" => "127.0.0.1",
+            "server-ip" => "%server_ip%",
             "server-ipv6" => "::1",
             "enable-ipv6" => "on",
             "white-list" => "off",

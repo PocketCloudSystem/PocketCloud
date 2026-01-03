@@ -1,6 +1,6 @@
 <?php
 
-namespace pocketcloud\cloud\console\command\argument\exception;
+namespace pocketcloud\cloud\console\command\parameter\exception;
 
 use Exception;
 

@@ -2,7 +2,6 @@
 
 namespace pocketcloud\cloud\util\net;
 
-use ErrorException;
 use pocketcloud\cloud\console\handler\ExceptionHandler;
 use RuntimeException;
 

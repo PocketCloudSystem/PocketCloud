@@ -35,7 +35,7 @@ final class TemplateType {
             "crashdumps", "log_archive", "players", "plugin_data", "plugins", "resource_packs",
             "virions", "worlds", "pocketmine.yml", "banned-ips.txt", "banned-players.txt", "ops.txt",
             "plugin_list.yml", "server.log", "white-list.txt"
-        ], "save-all", "server.log", "plugins/CloudBridge.phar", true, false, function (TemplateType $type): bool {
+        ], "save-all", "server.log", "plugins/CloudBridge.phar", false, function (TemplateType $type): bool {
             return NetUtils::download("https://github.com/PocketCloudSystem/CloudBridge/releases/latest/download/CloudBridge.phar", $type->getBridgeFileLocation());
         }, function (TemplateType $type): Promise {
             $ch = curl_init("https://api.github.com/repos/PocketCloudSystem/CloudBridge/releases/latest");
@@ -70,7 +70,7 @@ final class TemplateType {
 
         self::add(new TemplateType("proxy", ServerSoftwareManager::getInstance()->get("WaterdogPE"), [
             "logs", "packs", "plugins", "lang.ini"
-        ], null, "logs/server.log", "plugins/CloudBridge.jar", false, true, function (TemplateType $type): bool {
+        ], null, "logs/server.log", "plugins/CloudBridge.jar", true, function (TemplateType $type): bool {
             return NetUtils::download("https://github.com/PocketCloudSystem/CloudBridge-Proxy/releases/latest/download/CloudBridge.jar", $type->getBridgeFileLocation());
         }, function (TemplateType $type): Promise {
             $ch = curl_init("https://api.github.com/repos/PocketCloudSystem/CloudBridge-Proxy/releases/latest");
@@ -122,6 +122,16 @@ final class TemplateType {
         return self::$members;
     }
 
+    public static function onlyProxy(): array {
+        self::check();
+        return array_filter(self::$members, fn(TemplateType $type) => $type->isProxy());
+    }
+
+    public static function onlyNonProxy(): array {
+        self::check();
+        return array_filter(self::$members, fn(TemplateType $type) => !$type->isProxy());
+    }
+
     /**
      * @throws ReflectionException
      */
@@ -132,8 +142,7 @@ final class TemplateType {
         private readonly ?string $saveCommandLine,
         private readonly string $relativeLogFileLocation,
         private readonly string $bridgeFileLocation,
-        private readonly bool $regularServers,
-        private readonly bool $registerServers,
+        private readonly bool $proxy,
         private readonly Closure $bridgePluginDownloadClosure,
         private readonly Closure $bridgePluginUpdateCheckClosure,
         private readonly Closure $bridgePluginUpdateClosure
@@ -212,20 +221,12 @@ final class TemplateType {
         return $this->bridgePluginUpdateClosure;
     }
 
-    public function isRegularServers(): bool {
-        return $this->regularServers;
-    }
-
-    public function isRegisterServers(): bool {
-        return $this->registerServers;
-    }
-
     public function isServer(): bool {
-        return $this->equals(self::SERVER());
+        return !$this->proxy;
     }
 
     public function isProxy(): bool {
-        return $this->equals(self::PROXY());
+        return $this->proxy;
     }
 
     /** @return array<ServerProperties> */

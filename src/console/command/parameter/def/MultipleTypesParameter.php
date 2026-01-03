@@ -1,15 +1,15 @@
 <?php
 
-namespace pocketcloud\cloud\console\command\argument\def;
+namespace pocketcloud\cloud\console\command\parameter\def;
 
-use pocketcloud\cloud\console\command\argument\CommandArgument;
-use pocketcloud\cloud\console\command\argument\exception\ArgumentParseException;
+use pocketcloud\cloud\console\command\parameter\CommandParameter;
+use pocketcloud\cloud\console\command\parameter\exception\ArgumentParseException;
 
-readonly class MultipleTypesArgument extends CommandArgument {
+readonly class MultipleTypesParameter extends CommandParameter {
 
     /**
      * @param string $name
-     * @param array<CommandArgument> $allowedTypes
+     * @param array<CommandParameter> $allowedTypes
      * @param bool $optional
      * @param string|null $customErrorMessage
      */
@@ -46,7 +46,7 @@ readonly class MultipleTypesArgument extends CommandArgument {
     }
 
     public function getType(): string {
-        return implode("|", array_map(fn(CommandArgument $argument) => $argument->getName(), $this->allowedTypes));
+        return implode("|", array_map(fn(CommandParameter $argument) => $argument->getName(), $this->allowedTypes));
     }
 
     public function getAllowedTypes(): array {

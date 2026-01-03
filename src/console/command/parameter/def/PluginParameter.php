@@ -1,13 +1,13 @@
 <?php
 
-namespace pocketcloud\cloud\console\command\argument\def;
+namespace pocketcloud\cloud\console\command\parameter\def;
 
-use pocketcloud\cloud\console\command\argument\CommandArgument;
-use pocketcloud\cloud\console\command\argument\exception\ArgumentParseException;
+use pocketcloud\cloud\console\command\parameter\CommandParameter;
+use pocketcloud\cloud\console\command\parameter\exception\ArgumentParseException;
 use pocketcloud\cloud\plugin\CloudPlugin;
 use pocketcloud\cloud\plugin\CloudPluginManager;
 
-readonly class PluginArgument extends CommandArgument {
+readonly class PluginParameter extends CommandParameter {
 
     public function parseValue(string $input): CloudPlugin {
         if (($plugin = CloudPluginManager::getInstance()->get($input)) !== null) return $plugin;

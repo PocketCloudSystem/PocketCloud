@@ -1,10 +1,10 @@
 <?php
 
-namespace pocketcloud\cloud\console\command\argument;
+namespace pocketcloud\cloud\console\command\parameter;
 
-use pocketcloud\cloud\console\command\argument\exception\ArgumentParseException;
+use pocketcloud\cloud\console\command\parameter\exception\ArgumentParseException;
 
-abstract readonly class CommandArgument {
+abstract readonly class CommandParameter {
 
     public function __construct(
         private string $name,

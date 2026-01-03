@@ -2,7 +2,6 @@
 
 namespace pocketcloud\cloud\network;
 
-use ErrorException;
 use JsonException;
 use LogicException;
 use pmmp\thread\ThreadSafeArray;
@@ -112,6 +111,7 @@ final class Network extends Thread {
 
             if (socket_select($read, $write, $except, 0, 50 * 1000) > 0) {
                 if ($this->read($bytes, $buffer, $address, $port)) {
+                    if (!$this->isAlive() || !$this->established) break;
                     $this->buffer[] = new UnhandledPacket($buffer, Address::create($address, $port), $bytes);
                     $this->handlerEntry->createNotifier()->wakeupSleeper();
                 }

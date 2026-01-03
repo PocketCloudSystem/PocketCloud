@@ -2,7 +2,7 @@
 
 namespace pocketcloud\cloud\console\command\impl;
 
-use pocketcloud\cloud\console\command\argument\def\CommandNameArgument;
+use pocketcloud\cloud\console\command\parameter\def\CommandNameParameter;
 use pocketcloud\cloud\console\command\Command;
 use pocketcloud\cloud\console\command\CommandManager;
 use pocketcloud\cloud\console\command\sender\ICommandSender;
@@ -12,7 +12,7 @@ final class HelpCommand extends Command {
 
     public function __construct() {
         parent::__construct("help", "List all commands", aliases: ["?"]);
-        $this->addParameter(new CommandNameArgument(
+        $this->addParameter(new CommandNameParameter(
             "command",
             true
         ));

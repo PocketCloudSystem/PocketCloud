@@ -4,9 +4,11 @@ namespace pocketcloud\cloud\server\prepare;
 
 use pmmp\thread\ThreadSafe;
 use pmmp\thread\ThreadSafeArray;
+use pocketcloud\cloud\config\Config;
+use pocketcloud\cloud\config\type\ConfigType;
+use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\group\ServerGroupManager;
 use pocketcloud\cloud\server\CloudServer;
-use pocketcloud\cloud\template\TemplateType;
 use pocketcloud\cloud\util\FileUtils;
 use const pocketcloud\GLOBAL_TEMPLATES_PATH;
 use const pocketcloud\SERVER_GROUPS_PATH;
@@ -45,14 +47,43 @@ final class ServerPrepareEntry extends ThreadSafe {
 
         foreach ($this->propertiesData as $properties) {
             [$fileName, $replacements] = $properties;
-            if (!$copyFromSources) FileUtils::copyFile(GLOBAL_TEMPLATES_PATH . strtolower($this->templateType) . DIRECTORY_SEPARATOR . $fileName, $this->serverPath . $fileName);
-            $replacements = iterator_to_array($replacements);
             $filePath = $this->serverPath . $fileName;
-            FileUtils::filePutContents($filePath, str_replace(array_keys($replacements), array_values($replacements), FileUtils::fileGetContents($filePath)));
+            if (!$copyFromSources) FileUtils::copyFile(GLOBAL_TEMPLATES_PATH . strtolower($this->templateType) . DIRECTORY_SEPARATOR . $fileName, $filePath);
+            $this->processAndReplacePlaceholders($filePath, iterator_to_array($replacements));
         }
 
         if (@file_exists($logFileLocation)) {
             @unlink($logFileLocation);
+        }
+    }
+
+    private function processAndReplacePlaceholders(string $filePath, array $replacements): void {
+        $config = new Config($filePath);
+        $this->replacePlaceholders($config, $config->getAll(), $replacements);
+        $config->save(function (string $filePath, array $content, ConfigType $type): bool {
+            $rawContent = $type->encodeContent($content);
+            return is_int(file_put_contents($filePath, str_replace("'", "", $rawContent)));
+        });
+    }
+
+    private function replacePlaceholders(Config $config, array $data, array $replacements, ?string $initialKey = null): void {
+        foreach ($data as $key => $item) {
+            $fullKey = $initialKey !== null ? $initialKey . "." . $key : $key;
+            if (is_array($item)) {
+                $this->replacePlaceholders($config, $item, $replacements, $fullKey);
+                continue;
+            }
+
+            if (is_string($item)) {
+                foreach ($replacements as $replacementKey => $replacementValue) {
+                    if (str_contains($item, $replacementKey)) {
+                        $newValue = $replacementValue;
+                        if ($item !== $replacementKey) $newValue = str_replace($replacementKey, $replacementValue, $item);
+                        CloudLogger::get()->info("found " . $replacementKey . " in " . $fullKey . " replacing to " . $newValue);
+                        $config->set($fullKey, $newValue);
+                    }
+                }
+            }
         }
     }
 

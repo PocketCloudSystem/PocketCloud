@@ -7,6 +7,7 @@ use pocketcloud\cloud\network\client\ServerClient;
 use pocketcloud\cloud\network\client\ServerClientCache;
 use pocketcloud\cloud\network\packet\data\VerifyStatus;
 use pocketcloud\cloud\network\packet\impl\response\ServerHandshakeResponsePacket;
+use pocketcloud\cloud\network\packet\impl\ServerSyncPacket;
 use pocketcloud\cloud\network\packet\RequestPacket;
 use pocketcloud\cloud\network\packet\util\PacketData;
 use pocketcloud\cloud\server\CloudServerManager;
@@ -27,9 +28,10 @@ final class ServerHandshakeRequestPacket extends RequestPacket {
             $server->getServerData()->setMaxPlayers($this->maxPlayers);
             $server->getServerData()->setProcessId($this->processId);
             $server->setVerifyStatus(VerifyStatus::VERIFIED);
+            $server->addToProxies();
             $server->sync();
             $this->sendResponse(new ServerHandshakeResponsePacket(VerifyStatus::VERIFIED), $client);
-            //TODO: Network::getInstance()->broadcastPacket(new ServerSyncPacket($server), $client);
+            ServerSyncPacket::create($server, false)->broadcastPacket();
             $server->setServerStatus(ServerStatus::ONLINE);
         } else {
             CloudLogger::get()->warn("Denied server handshake request from §b{} §8(§b{}§8)§r, duplicate server...", $this->serverName, $client->getAddress());

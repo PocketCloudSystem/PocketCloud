@@ -5,10 +5,11 @@ namespace pocketcloud\cloud\group;
 use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\template\Template;
 use pocketcloud\cloud\template\TemplateManager;
+use pocketcloud\cloud\util\misc\Writeable;
 use pocketcloud\cloud\util\Utils;
 use const pocketcloud\SERVER_GROUPS_PATH;
 
-final class ServerGroup {
+final class ServerGroup implements Writeable {
 
     public function __construct(
         private readonly string $name,

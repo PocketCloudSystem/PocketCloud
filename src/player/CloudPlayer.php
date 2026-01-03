@@ -5,11 +5,14 @@ namespace pocketcloud\cloud\player;
 use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\event\impl\player\PlayerKickEvent;
 use pocketcloud\cloud\network\packet\data\TextType;
+use pocketcloud\cloud\network\packet\impl\PlayerKickPacket;
+use pocketcloud\cloud\network\packet\impl\PlayerSyncPacket;
 use pocketcloud\cloud\server\CloudServer;
 use pocketcloud\cloud\server\CloudServerManager;
+use pocketcloud\cloud\util\misc\Writeable;
 use pocketcloud\cloud\util\Utils;
 
-final class CloudPlayer {
+final class CloudPlayer implements Writeable {
 
     public function __construct(
         private readonly string $name,
@@ -23,7 +26,7 @@ final class CloudPlayer {
     public function setCurrentServer(?CloudServer $currentServer): void {
         CloudLogger::get()->debug("Changing current server of " . $this->name . " to " . ($currentServer?->getName() ?? "NULL"));
         $this->currentServer = $currentServer?->getName();
-        //TODO: PlayerSyncPacket::create($this, false)->broadcastPacket();
+        PlayerSyncPacket::create($this, false)->broadcastPacket();
     }
 
     public function setCurrentProxy(?CloudServer $currentProxy): void {
@@ -35,7 +38,7 @@ final class CloudPlayer {
         CloudLogger::get()->info("Kicking {}, reason: {}", $this->name, ($reason == "" ? "NULL" : $reason));
         ($ev = new PlayerKickEvent($this, $reason))->call();
         if ($ev->isCancelled()) return;
-        #TODO: PlayerKickPacket::create($this->getName(), $reason)->sendPacket($this->getCurrentProxy() ?? $this->getCurrentServer());
+        PlayerKickPacket::create($this->getName(), $reason)->sendPacket($this->getCurrentProxy() ?? $this->getCurrentServer());
     }
 
     public function send(string $message, TextType $textType): void {

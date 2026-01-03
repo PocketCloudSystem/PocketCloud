@@ -1,13 +1,13 @@
 <?php
 
-namespace pocketcloud\cloud\console\command\argument\def;
+namespace pocketcloud\cloud\console\command\parameter\def;
 
-use pocketcloud\cloud\console\command\argument\CommandArgument;
-use pocketcloud\cloud\console\command\argument\exception\ArgumentParseException;
+use pocketcloud\cloud\console\command\parameter\CommandParameter;
+use pocketcloud\cloud\console\command\parameter\exception\ArgumentParseException;
 use pocketcloud\cloud\console\command\Command;
 use pocketcloud\cloud\console\command\CommandManager;
 
-readonly class CommandNameArgument extends CommandArgument {
+readonly class CommandNameParameter extends CommandParameter {
 
     public function parseValue(string $input): Command {
         if (($command = CommandManager::getInstance()->get($input))) return $command;

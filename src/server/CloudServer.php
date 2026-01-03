@@ -4,10 +4,8 @@ namespace pocketcloud\cloud\server;
 
 use Closure;
 use pocketcloud\cloud\console\log\CloudLogger;
-use pocketcloud\cloud\event\impl\server\ServerDisconnectEvent;
 use pocketcloud\cloud\event\impl\server\ServerStartEvent;
 use pocketcloud\cloud\event\impl\server\ServerStopEvent;
-use pocketcloud\cloud\event\impl\server\ServerTimeOutEvent;
 use pocketcloud\cloud\network\client\ServerClient;
 use pocketcloud\cloud\network\client\ServerClientCache;
 use pocketcloud\cloud\network\packet\ClientboundPacket;
@@ -20,6 +18,7 @@ use pocketcloud\cloud\network\packet\impl\LanguageSyncPacket;
 use pocketcloud\cloud\network\packet\impl\LibrarySyncPacket;
 use pocketcloud\cloud\network\packet\impl\ModuleSyncPacket;
 use pocketcloud\cloud\network\packet\impl\PlayerSyncPacket;
+use pocketcloud\cloud\network\packet\impl\ProxyRegisterServerPacket;
 use pocketcloud\cloud\network\packet\impl\ServerSyncPacket;
 use pocketcloud\cloud\network\packet\impl\TemplateSyncPacket;
 use pocketcloud\cloud\player\CloudPlayer;
@@ -34,12 +33,13 @@ use pocketcloud\cloud\server\util\ServerStatus;
 use pocketcloud\cloud\template\Template;
 use pocketcloud\cloud\template\TemplateManager;
 use pocketcloud\cloud\util\misc\Tickable;
+use pocketcloud\cloud\util\misc\Writeable;
 use pocketcloud\cloud\util\promise\Promise;
 use pocketcloud\cloud\util\Utils;
 use const pocketcloud\CLOUD_PATH;
 use const pocketcloud\TEMP_PATH;
 
-final class CloudServer implements Tickable {
+final class CloudServer implements Tickable, Writeable {
     use CloudServerActionsTrait;
 
     private int $lastCheckTime;
@@ -93,7 +93,6 @@ final class CloudServer implements Tickable {
     }
 
     public function start(): void {
-        #CloudServerManager::getInstance()->addToProxies($this);
         new ServerStartEvent($this)->call();
         CloudLogger::get()->info("§aStarting §b{}§r...", $this);
         NotificationType::SERVER_STARTING->notify(["%server%" => $this->getName()]);
@@ -125,20 +124,15 @@ final class CloudServer implements Tickable {
     }
 
     public function sync(): void {
-        $packets = [];
+        $packets = [LanguageSyncPacket::fromLanguage(), LibrarySyncPacket::fromLibraries(), ModuleSyncPacket::fromModuleCache()];
 
         foreach (TemplateManager::getInstance()->getAll() as $template) $packets[] = TemplateSyncPacket::create($template, false);
         foreach (CloudServerManager::getInstance()->getAll() as $server) {
             $packets[] = ServerSyncPacket::create($server, false);
-            //TODO: if ($this->getTemplate()->getTemplateType()->isRegisterServers() && $server->getTemplate()->getTemplateType()->isRegularServers()) $packets[] = ProxyRegisterServerPacket::create($server->getName(), $server->getCloudServerData()->getPort());
+            if ($this->getTemplate()->getTemplateType()->isProxy()) $packets[] = ProxyRegisterServerPacket::create($server->getName(), $server->getServerData()->getPort());
         }
 
         foreach (CloudPlayerManager::getInstance()->getAll() as $player) $packets[] = PlayerSyncPacket::create($player, false);
-
-
-        $packets[] = ModuleSyncPacket::fromModuleCache();
-        $packets[] = LibrarySyncPacket::fromLibraries();
-        $packets[] = LanguageSyncPacket::fromLanguage();
 
         foreach ($packets as $packet) $this->sendPacket($packet);
     }
@@ -170,7 +164,7 @@ final class CloudServer implements Tickable {
 
     public function setServerStatus(ServerStatus $serverStatus): void {
         $this->serverStatus = $serverStatus;
-        #ServerSyncPacket::create($this, false)->broadcastPacket();
+        ServerSyncPacket::create($this, false)->broadcastPacket();
     }
 
     public function setLastCheckTime(float $lastCheckTime): void {

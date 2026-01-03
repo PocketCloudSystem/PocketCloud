@@ -2,14 +2,14 @@
 
 namespace pocketcloud\cloud\console\command\impl\server;
 
-use pocketcloud\cloud\console\command\argument\def\BoolArgument;
-use pocketcloud\cloud\console\command\argument\def\IntegerArgument;
-use pocketcloud\cloud\console\command\argument\def\MultipleTypesArgument;
-use pocketcloud\cloud\console\command\argument\def\ServerArgument;
-use pocketcloud\cloud\console\command\argument\def\ServerGroupArgument;
-use pocketcloud\cloud\console\command\argument\def\StringArgument;
-use pocketcloud\cloud\console\command\argument\def\StringEnumArgument;
-use pocketcloud\cloud\console\command\argument\def\TemplateArgument;
+use pocketcloud\cloud\console\command\parameter\def\BoolParameter;
+use pocketcloud\cloud\console\command\parameter\def\IntegerParameter;
+use pocketcloud\cloud\console\command\parameter\def\MultipleTypesParameter;
+use pocketcloud\cloud\console\command\parameter\def\ServerParameter;
+use pocketcloud\cloud\console\command\parameter\def\ServerGroupParameter;
+use pocketcloud\cloud\console\command\parameter\def\StringParameter;
+use pocketcloud\cloud\console\command\parameter\def\StringEnumParameter;
+use pocketcloud\cloud\console\command\parameter\def\TemplateParameter;
 use pocketcloud\cloud\console\command\Command;
 use pocketcloud\cloud\console\command\sender\ICommandSender;
 use pocketcloud\cloud\console\command\SubCommand;
@@ -29,7 +29,7 @@ final class ServerCommand extends Command {
             $amount = $args["amount"] ?? 1;
             CloudServerManager::getInstance()->start($template, $amount);
             return true;
-        })->addParameter(new TemplateArgument("template", false))->addParameter(new IntegerArgument("amount", true, function (int $number): int {
+        })->addParameter(new TemplateParameter("template", false))->addParameter(new IntegerParameter("amount", true, function (int $number): int {
             if ($number < 0 || $number > 20) return 1;
             return $number;
         })));
@@ -44,12 +44,12 @@ final class ServerCommand extends Command {
                 CloudServerManager::getInstance()->stop($server, $forcefully);
             }
             return true;
-        })->addParameter(new MultipleTypesArgument("server", [
-            new ServerArgument("server", false),
-            new TemplateArgument("template", false),
-            new ServerGroupArgument("group", false),
-            new StringEnumArgument("all", ["all"], false, false)
-        ], false))->addParameter(new BoolArgument("forcefully", true)));
+        })->addParameter(new MultipleTypesParameter("server", [
+            new ServerParameter("server", false),
+            new TemplateParameter("template", false),
+            new ServerGroupParameter("group", false),
+            new StringEnumParameter("all", ["all"], false, false)
+        ], false))->addParameter(new BoolParameter("forcefully", true)));
 
         $this->registerSubCommand(SubCommand::fromClosure("send", function (ICommandSender $sender, string $label, array $args): bool {
             /** @var CloudServer $server */
@@ -63,7 +63,7 @@ final class ServerCommand extends Command {
                 }
             })->failure(fn() => $sender->warn("The command execution request ran out. §8(§b{}§8)", $commandLine));
             return true;
-        })->addParameter(new ServerArgument("server", false))->addParameter(new StringArgument("commandLine", false, true)));
+        })->addParameter(new ServerParameter("server", false))->addParameter(new StringParameter("commandLine", false, true)));
 
         $this->registerSubCommand(SubCommand::fromClosure("list", function (ICommandSender $sender, string $label, array $args): bool {
             $template = $args["template"] ?? null;
@@ -82,9 +82,9 @@ final class ServerCommand extends Command {
             }
 
             return true;
-        })->addParameter(new MultipleTypesArgument("template", [
-            new TemplateArgument("template", true),
-            new ServerGroupArgument("group", true)
+        })->addParameter(new MultipleTypesParameter("template", [
+            new TemplateParameter("template", true),
+            new ServerGroupParameter("group", true)
         ], true)));
 
         $this->registerSubCommand(SubCommand::fromClosure("info", function (ICommandSender $sender, string $label, array $args): bool {
@@ -103,7 +103,7 @@ final class ServerCommand extends Command {
             }
 
             return true;
-        })->addParameter(new ServerArgument("server", false)));
+        })->addParameter(new ServerParameter("server", false)));
 
         $this->registerSubCommand(SubCommand::fromClosure("save", function (ICommandSender $sender, string $label, array $args): bool {
             /** @var CloudServer $server */
@@ -113,7 +113,7 @@ final class ServerCommand extends Command {
             CloudServerManager::getInstance()->save($server)->then(fn() => $sender->success("Successfully §asaved §b{}§r. §8(§rTook §b{}ms§8)", $server->getName(), round((microtime(true) * 1000) - $start, 3)))
                 ->failure(fn(?string $reason) => $sender->warn("Failed to save §b{}§r: §c{}", $server->getName(), $reason ?? "No reason applied"));
             return true;
-        })->addParameter(new ServerArgument("server", false)));
+        })->addParameter(new ServerParameter("server", false)));
     }
 
     public function run(ICommandSender $sender, string $label, array $args, ?SubCommand $subCommand = null): bool {

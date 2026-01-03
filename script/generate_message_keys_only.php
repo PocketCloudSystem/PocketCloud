@@ -200,16 +200,10 @@ $messages = [
     "inGame.proxy.stopped" => "§f§lProxy shutdown..."
 ];
 
-echo "/**" . PHP_EOL;
-foreach (array_keys($messages) as $key) {
-    $methodName = strtoupper(str_replace([".", "-"], "_", $key));
-    echo " * @method static LanguageKey {$methodName}()" . PHP_EOL;
+$start = "[";
+foreach (array_keys($messages) as $i => $key) {
+    $start .= "\n\t\"" . $key . "\"" . ($i == (count($messages) - 1) ? "" : ",");
 }
+$start .= "\n];";
 
-echo " */" . PHP_EOL;
-
-echo PHP_EOL;
-foreach (array_keys($messages) as $key) {
-    $methodName = strtoupper(str_replace([".", "-"], "_", $key));
-    echo "\t" . $methodName . "(\"" . $key . "\"),\n";
-}
+echo $start . PHP_EOL;

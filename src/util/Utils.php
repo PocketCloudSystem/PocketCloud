@@ -2,7 +2,6 @@
 
 namespace pocketcloud\cloud\util;
 
-use Exception;
 use InvalidArgumentException;
 use pocketcloud\cloud\console\log\CloudLogger;
 use pocketmine\utils\AssumptionFailedError;

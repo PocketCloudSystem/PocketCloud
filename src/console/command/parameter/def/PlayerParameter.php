@@ -1,13 +1,13 @@
 <?php
 
-namespace pocketcloud\cloud\console\command\argument\def;
+namespace pocketcloud\cloud\console\command\parameter\def;
 
-use pocketcloud\cloud\console\command\argument\CommandArgument;
-use pocketcloud\cloud\console\command\argument\exception\ArgumentParseException;
+use pocketcloud\cloud\console\command\parameter\CommandParameter;
+use pocketcloud\cloud\console\command\parameter\exception\ArgumentParseException;
 use pocketcloud\cloud\player\CloudPlayer;
 use pocketcloud\cloud\player\CloudPlayerManager;
 
-readonly class PlayerArgument extends CommandArgument {
+readonly class PlayerParameter extends CommandParameter {
 
     public function parseValue(string $input): CloudPlayer {
         if (($player = CloudPlayerManager::getInstance()->get($input)) !== null) return $player;

@@ -2,8 +2,8 @@
 
 namespace pocketcloud\cloud\console\command;
 
-use pocketcloud\cloud\console\command\argument\exception\ArgumentParseException;
-use pocketcloud\cloud\console\command\argument\exception\NoArgumentFoundException;
+use pocketcloud\cloud\console\command\parameter\exception\ArgumentParseException;
+use pocketcloud\cloud\console\command\parameter\exception\NoArgumentFoundException;
 use pocketcloud\cloud\console\command\sender\ICommandSender;
 use pocketcloud\cloud\console\command\util\CommandParameterTrait;
 use pocketcloud\cloud\console\log\level\CloudLogLevel;

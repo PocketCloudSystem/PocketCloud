@@ -22,6 +22,7 @@ use pocketcloud\cloud\server\CloudServerManager;
 use pocketcloud\cloud\server\config\ServerPropertiesGenerator;
 use pocketcloud\cloud\server\prepare\ServerPreparator;
 use pocketcloud\cloud\software\ServerSoftwareManager;
+use pocketcloud\cloud\template\Template;
 use pocketcloud\cloud\template\TemplateManager;
 use pocketcloud\cloud\template\TemplateType;
 use pocketcloud\cloud\thread\ThreadManager;
@@ -232,7 +233,7 @@ final class PocketCloud {
         CloudLogger::get()->info("§cShutting down §bPocket§3Cloud§r...");
         $this->running = false;
 
-        if (isset($this->serverManager)) $this->serverManager->stopAll(true);
+        if (isset($this->serverManager)) $this->serverManager->stopAll();
         if (isset($this->network)) $this->network->close();
         $this->console->remove();
     }

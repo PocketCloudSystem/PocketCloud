@@ -1,12 +1,12 @@
 <?php
 
-namespace pocketcloud\cloud\console\command\argument\def;
+namespace pocketcloud\cloud\console\command\parameter\def;
 
 use Closure;
-use pocketcloud\cloud\console\command\argument\exception\ArgumentParseException;
-use pocketcloud\cloud\console\command\argument\CommandArgument;
+use pocketcloud\cloud\console\command\parameter\exception\ArgumentParseException;
+use pocketcloud\cloud\console\command\parameter\CommandParameter;
 
-readonly class IntegerArgument extends CommandArgument {
+readonly class IntegerParameter extends CommandParameter {
 
     /**
      * @param string $name

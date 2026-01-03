@@ -1,10 +1,10 @@
 <?php
 
-namespace pocketcloud\cloud\console\command\argument\def;
+namespace pocketcloud\cloud\console\command\parameter\def;
 
-use pocketcloud\cloud\console\command\argument\CommandArgument;
+use pocketcloud\cloud\console\command\parameter\CommandParameter;
 
-readonly class BoolArgument extends CommandArgument {
+readonly class BoolParameter extends CommandParameter {
 
     public function __construct(string $name, bool $optional, ?string $customErrorMessage = null) {
         parent::__construct($name, $optional, $customErrorMessage);
