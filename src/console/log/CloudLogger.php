@@ -5,7 +5,7 @@ namespace pocketcloud\cloud\console\log;
 use InvalidArgumentException;
 use pmmp\thread\Thread;
 use pocketcloud\cloud\console\log\logger\ILogger;
-use pocketcloud\cloud\console\log\logger\Logger;
+use pocketcloud\cloud\console\log\logger\MainLogger;
 use pocketcloud\cloud\console\log\logger\ThreadLogger;
 use RuntimeException;
 use const pocketcloud\LOG_PATH;
@@ -38,11 +38,11 @@ final class CloudLogger {
             throw new RuntimeException("Set logger for this thread is an instance of ThreadLogger, but you can't use the ThreadLogger outside a thread");
         }
 
-        return self::$instance ??= new Logger(defined("pocketcloud\LOG_PATH") ? LOG_PATH : null, false, false);
+        return self::$instance ??= new MainLogger(defined("pocketcloud\LOG_PATH") ? LOG_PATH : null, false, false);
     }
 
     public static function tmp(?string $cloudLogPath = null, bool $debugMode = false, bool $saveLogs = false): ILogger {
         if (Thread::getCurrentThread() !== null) throw new RuntimeException("You cannot create a temporary logger inside a thread");
-        return new Logger($cloudLogPath, $debugMode, $saveLogs);
+        return new MainLogger($cloudLogPath, $debugMode, $saveLogs);
     }
 }

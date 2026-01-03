@@ -117,6 +117,7 @@ final class CloudServerManager implements Tickable {
             ($server = $this->serverPrepareQueue->next())->prepare()
                 ->then(fn() => $this->serverStartQueue->add($server))
                 ->failure(fn() => CloudLogger::get()->warn("§cFailed to prepare server §e{}§c.", $server));
+            return;
         }
 
         if (!$this->serverStartQueue->isEmpty()) $this->serverStartQueue->next()->start();

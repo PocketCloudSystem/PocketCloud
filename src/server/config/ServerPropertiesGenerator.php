@@ -6,7 +6,6 @@ use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\server\config\def\PocketMineConfig;
 use pocketcloud\cloud\server\config\def\PocketMineServerProperties;
 use pocketcloud\cloud\server\config\def\WaterdogConfig;
-use pocketcloud\cloud\template\TemplateManager;
 use pocketcloud\cloud\template\TemplateType;
 use pocketcloud\cloud\util\misc\Loadable;
 use pocketcloud\cloud\util\trait\SingletonTrait;

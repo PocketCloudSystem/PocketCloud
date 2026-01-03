@@ -28,4 +28,20 @@ interface ILogger {
     public function echo(string $message): void;
 
     public function dump(mixed ...$vars): void;
+
+    public function close(): void;
+
+    public function setFormat(?string $format): self;
+
+    public function resetFormat(): self;
+
+    public function getFormat(): ?string;
+
+    public function setDebugMode(bool $enabled): void;
+
+    public function isDebugMode(): bool;
+
+    public function setSaveLogs(bool $enabled): void;
+
+    public function isSaveLogs(): bool;
 }

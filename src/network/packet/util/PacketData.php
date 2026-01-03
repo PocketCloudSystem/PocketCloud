@@ -5,7 +5,6 @@ namespace pocketcloud\cloud\network\packet\util;
 use Closure;
 use JsonSerializable;
 use OutOfBoundsException;
-use pocketcloud\cloud\group\ServerGroup;
 use pocketcloud\cloud\network\packet\data\LogType;
 use pocketcloud\cloud\network\packet\data\NotificationType;
 use pocketcloud\cloud\network\packet\data\ServerCommandExecutionResult;

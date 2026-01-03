@@ -2,9 +2,12 @@
 
 namespace pocketcloud\cloud\util;
 
+use FilesystemIterator;
+use InvalidArgumentException;
 use pocketcloud\cloud\console\handler\ExceptionHandler;
-use pocketcloud\cloud\console\log\CloudLogger;
-use Throwable;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use RuntimeException;
 use const pocketcloud\CLOUD_PATH;
 
 final class FileUtils {
@@ -50,7 +53,7 @@ final class FileUtils {
     public static function fileGetContents(string $filePath, string $default = ""): ?string {
         return ExceptionHandler::tryCatch(
             function (string $filePath, mixed $default): string {
-                if (!file_exists($filePath)) return $default;
+                if (!@file_exists($filePath)) return $default;
                 return file_get_contents($filePath);
             },
             "Failed to read file: " . $filePath,
@@ -62,23 +65,26 @@ final class FileUtils {
     public static function copyDirectory(string $src, string $dst): bool {
         return ExceptionHandler::tryCatch(
             function (string $src, string $dst): bool {
-                $src = rtrim($src, DIRECTORY_SEPARATOR);
-                $dst = rtrim($dst, DIRECTORY_SEPARATOR);
-                self::createDir($src);
-                self::createDir($dst);
+                if (!is_dir($src)) throw new InvalidArgumentException("Source directory does not exist: $src");
 
-                foreach (array_diff(scandir($src), [".", ".."]) as $file) {
-                    try {
-                        if (filetype($src . DIRECTORY_SEPARATOR . $file) == "dir") {
-                            self::copyDirectory($src . DIRECTORY_SEPARATOR . $file, $dst . DIRECTORY_SEPARATOR . $file);
-                        } else {
-                            if (!copy($src . DIRECTORY_SEPARATOR . $file, $dst . DIRECTORY_SEPARATOR . $file)) {
-                                CloudLogger::get()->warn("Can't copy file from: {} to {}" . $src . DIRECTORY_SEPARATOR . $file, $dst . DIRECTORY_SEPARATOR . $file);
-                            }
-                        }
-                    } catch (Throwable) {}
+                if (!is_dir($dst) && !mkdir($dst, 0777, true)) throw new RuntimeException("Cannot create destination directory: $dst");
+                $iterator = new RecursiveIteratorIterator(
+                    new RecursiveDirectoryIterator($src, FilesystemIterator::SKIP_DOTS),
+                    RecursiveIteratorIterator::SELF_FIRST
+                );
+
+                foreach ($iterator as $item) {
+                    $relativePath = substr($item->getPathname(), strlen($src));
+                    $dstPath = $dst . $relativePath;
+
+                    if ($item->isDir()) {
+                        if (!is_dir($dstPath)) mkdir($dstPath, 0755, true);
+                    } else {
+                        copy($item->getPathname(), $dstPath);
+                    }
                 }
-                return false;
+
+                return true;
             },
             null,
             null,
@@ -108,14 +114,21 @@ final class FileUtils {
         return ExceptionHandler::tryCatch(
             function (string $directoryPath): bool {
                 if (@is_dir($directoryPath)) {
-                    foreach (array_diff(scandir($directoryPath), [".", ".."]) as $file) {
-                        $filePath = rtrim($directoryPath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $file;
-                        if (is_file($filePath)) self::unlinkFile($filePath);
-                        else if (is_dir($filePath)) self::removeDirectory($filePath);
+                    $iterator = new RecursiveIteratorIterator(
+                        new RecursiveDirectoryIterator($directoryPath, FilesystemIterator::SKIP_DOTS),
+                        RecursiveIteratorIterator::CHILD_FIRST
+                    );
+
+                    foreach ($iterator as $file) {
+                        if ($file->isDir()) {
+                            rmdir($file->getRealPath());
+                        } else {
+                            unlink($file->getPathname());
+                        }
                     }
+
                     return rmdir($directoryPath);
                 }
-
                 return false;
             },
             "Failed to remove directory: " . $directoryPath,

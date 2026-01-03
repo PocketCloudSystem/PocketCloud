@@ -11,6 +11,7 @@ use pmmp\thread\ThreadSafe;
 use pmmp\thread\ThreadSafeArray;
 use pocketcloud\cloud\console\log\color\CloudConsoleColor;
 use pocketcloud\cloud\console\log\level\CloudLogLevel;
+use pocketcloud\cloud\exception\UnsupportedOperationException;
 use pocketcloud\cloud\util\FileUtils;
 use pocketmine\snooze\SleeperHandlerEntry;
 use ReflectionClass;
@@ -105,7 +106,7 @@ class ThreadLogger extends ThreadSafe implements ILogger {
         $format = str_replace(
             ["{thread}", "{time}", "{time_with_ms}", "{log_level}", "{message}"],
             [$threadName, $time->format("H:i:s"), $time->format("H:i:s.v"), $logLevel->getPrefix(), $parsedMessage],
-            $this->customFormat ?? Logger::LOG_FORMAT
+            $this->customFormat ?? MainLogger::LOG_FORMAT
         );
 
         $this->addLogToBuffer(CloudConsoleColor::toColoredString($format));
@@ -127,6 +128,45 @@ class ThreadLogger extends ThreadSafe implements ILogger {
     }
 
     public function dump(mixed ...$vars): void {
+        ob_start();
+        var_dump(...$vars);
+        $out = ob_get_clean();
+        $out = str_replace("\t", "    ", $out);
 
+        foreach (explode(PHP_EOL, $out) as $line) {
+            $this->echo($line);
+        }
+    }
+
+    public function close(): void {
+        // Nothing to close
+    }
+
+    public function setFormat(?string $format): self {
+        throw new UnsupportedOperationException("You cannot do setFormat() inside a thread");
+    }
+
+    public function resetFormat(): ILogger {
+        throw new UnsupportedOperationException("You cannot do resetFormat() inside a thread");
+    }
+
+    public function getFormat(): string {
+        throw new UnsupportedOperationException("You cannot do getFormat() inside a thread");
+    }
+
+    public function setDebugMode(bool $enabled): void {
+        throw new UnsupportedOperationException("You cannot do setDebugMode() inside a thread");
+    }
+
+    public function isDebugMode(): bool {
+        throw new UnsupportedOperationException("You cannot do isDebugMode() inside a thread");
+    }
+
+    public function setSaveLogs(bool $enabled): void {
+        throw new UnsupportedOperationException("You cannot do setSaveLogs() inside a thread");
+    }
+
+    public function isSaveLogs(): bool {
+        throw new UnsupportedOperationException("You cannot do isSaveLogs() inside a thread");
     }
 }

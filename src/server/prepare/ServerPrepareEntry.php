@@ -6,7 +6,6 @@ use pmmp\thread\ThreadSafe;
 use pmmp\thread\ThreadSafeArray;
 use pocketcloud\cloud\config\Config;
 use pocketcloud\cloud\config\type\ConfigType;
-use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\group\ServerGroupManager;
 use pocketcloud\cloud\server\CloudServer;
 use pocketcloud\cloud\util\FileUtils;

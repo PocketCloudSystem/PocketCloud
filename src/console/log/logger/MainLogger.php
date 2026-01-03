@@ -11,18 +11,19 @@ use pocketcloud\cloud\console\Console;
 use pocketcloud\cloud\console\log\color\CloudConsoleColor;
 use pocketcloud\cloud\console\log\logger\cache\LogMessagesCache;
 use pocketcloud\cloud\console\log\level\CloudLogLevel;
+use pocketcloud\cloud\console\log\output\OutputManager;
 use pocketcloud\cloud\util\FileUtils;
 use pocketcloud\cloud\util\FormatUtils;
 use ReflectionClass;
 use ReflectionException;
 use Throwable;
 
-class Logger implements ILogger {
+class MainLogger implements ILogger {
 
     public const string LOG_FORMAT = "§8[§b{time_with_ms}§8] §8[§r{thread}§8/§r{log_level}§r§8] §r{message}§r";
 
     protected bool $closed = false;
-    protected ?string $customFormat = null;
+    protected ?string $format = null;
     protected mixed $logFile = null;
 
     public function __construct(
@@ -107,13 +108,13 @@ class Logger implements ILogger {
         $format = str_replace(
             ["{thread}", "{time}", "{time_with_ms}", "{log_level}", "{message}"],
             [$threadName, $time->format("H:i:s"), $time->format("H:i:s.v"), $logLevel->getPrefix(), $parsedMessage],
-            $this->customFormat ?? self::LOG_FORMAT
+            $this->format ?? self::LOG_FORMAT
         );
         $line = CloudConsoleColor::toColoredString($format);
 
-        //if (($setup = Setup::getCurrentSetup()) !== null && $setup->getLogger() === $this) echo $line;
-        //else if ($setup === null) echo $line;
-        $this->echo($line);
+        if (OutputManager::getHandler()->shouldOutput($this)) {
+            $this->echo($line);
+        }
 
         if ($this->saveLogs) {
             LogMessagesCache::save($line);
@@ -125,7 +126,7 @@ class Logger implements ILogger {
 
     /** @internal */
     public function echo(string $message): void {
-        Console::getInstance()->println($message);
+        OutputManager::getHandler()->handleOutput($message);
     }
 
     public function dump(mixed ...$vars): void {
@@ -136,10 +137,13 @@ class Logger implements ILogger {
         if ($prefix) {
             $this->log($logLevel ?? CloudLogLevel::INFO(), "");
         } else {
-            $this->echo($line = "\r");
+            if (OutputManager::getHandler()->shouldOutput($this)) {
+                $this->echo("\r");
+            }
+
             if ($this->saveLogs) {
-                LogMessagesCache::save($line);
-                $this->write($line . PHP_EOL);
+                LogMessagesCache::save("\r");
+                $this->write("\r" . PHP_EOL);
             }
         }
 
@@ -157,32 +161,40 @@ class Logger implements ILogger {
         $this->logFile = null;
     }
 
-    public function setCustomFormat(?string $customFormat): self {
-        $this->customFormat = $customFormat;
+    public function isClosed(): bool {
+        return $this->closed;
+    }
+
+    public function resetFormat(): self {
+        return $this->setFormat(null);
+    }
+
+    public function setFormat(?string $format): self {
+        $this->format = $format;
         return $this;
     }
 
-    public function resetCustomFormat(): self {
-        return $this->setCustomFormat(null);
+    public function getFormat(): ?string {
+        return $this->format;
     }
 
-    public function setDebugMode(bool $debugMode): void {
-        $this->debugMode = $debugMode;
+    public function getLogFile(): mixed {
+        return $this->logFile;
+    }
+
+    public function setDebugMode(bool $enabled): void {
+        $this->debugMode = $enabled;
     }
 
     public function isDebugMode(): bool {
         return $this->debugMode;
     }
 
-    public function getCustomFormat(): ?string {
-        return $this->customFormat;
+    public function setSaveLogs(bool $enabled): void {
+        $this->saveLogs = $enabled;
     }
 
-    public function isClosed(): bool {
-        return $this->closed;
-    }
-
-    public function getLogFile(): mixed {
-        return $this->logFile;
+    public function isSaveLogs(): bool {
+        return $this->saveLogs;
     }
 }

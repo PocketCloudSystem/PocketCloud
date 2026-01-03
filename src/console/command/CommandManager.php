@@ -2,6 +2,8 @@
 
 namespace pocketcloud\cloud\console\command;
 
+use InvalidArgumentException;
+use pocketcloud\cloud\console\command\impl\ClearCommand;
 use pocketcloud\cloud\console\command\impl\ExitCommand;
 use pocketcloud\cloud\console\command\impl\HelpCommand;
 use pocketcloud\cloud\console\command\impl\server\ServerCommand;
@@ -28,10 +30,9 @@ final class CommandManager implements Loadable, Tickable {
     }
 
     public function load(): void {
-        $this->register(new ExitCommand());
-        $this->register(new HelpCommand());
+        $this->registerAll(new ExitCommand(), new HelpCommand(), new ClearCommand());
 
-        $this->register(new ServerCommand());
+        $this->registerAll(new ServerCommand());
     }
 
     public function waitForConfirmation(Command $command, ICommandSender $sender, string $prompt, array $keywordsAccept, int $timeout = 10): Promise {
@@ -40,7 +41,12 @@ final class CommandManager implements Loadable, Tickable {
     }
 
     public function register(Command $command): void {
+        if (isset($this->commands[$command->getName()])) throw new InvalidArgumentException("The command " . $command->getName() . " is already registered");
         $this->commands[strtolower($command->getName())] = $command;
+    }
+
+    public function registerAll(Command ...$commands): void {
+        foreach ($commands as $command) $this->register($command);
     }
 
     public function remove(Command|string $command): void {

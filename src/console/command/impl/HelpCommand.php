@@ -11,7 +11,7 @@ use pocketcloud\cloud\console\command\SubCommand;
 final class HelpCommand extends Command {
 
     public function __construct() {
-        parent::__construct("help", "List all commands", aliases: ["?"]);
+        parent::__construct("help", "List all commands", ["?"]);
         $this->addParameter(new CommandNameParameter(
             "command",
             true

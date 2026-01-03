@@ -7,7 +7,7 @@ use pocketcloud\cloud\config\impl\MainConfig;
 use pocketcloud\cloud\console\command\CommandManager;
 use pocketcloud\cloud\console\Console;
 use pocketcloud\cloud\console\log\level\CloudLogLevel;
-use pocketcloud\cloud\console\log\logger\Logger;
+use pocketcloud\cloud\console\log\logger\MainLogger;
 use pocketcloud\cloud\crash\CrashDump;
 use pocketcloud\cloud\event\impl\cloud\CloudStartedEvent;
 use pocketcloud\cloud\group\ServerGroupManager;
@@ -68,7 +68,7 @@ final class PocketCloud {
     private int $tick = 0;
     private float $startTimestamp = 0;
 
-    private Logger $logger;
+    private MainLogger $logger;
     private Console $console;
     private CommandManager $commandManager;
     private LibraryManager $libraryManager;
@@ -103,7 +103,7 @@ final class PocketCloud {
         $this->startTimestamp = microtime(true);
         $this->running = true;
 
-        CloudLogger::set($this->logger = new Logger(LOG_PATH, false, true));
+        CloudLogger::set($this->logger = new MainLogger(LOG_PATH, false, true));
         $this->console = new Console();
         $this->commandManager = new CommandManager();
         ($this->libraryManager = new LibraryManager())->load();
@@ -187,10 +187,10 @@ final class PocketCloud {
         );
 
         TerminalUtils::clear();
-        CloudLogger::get()->emptyLine()->setCustomFormat("§r{message}")
+        CloudLogger::get()->emptyLine()->setFormat("§r{message}")
             ->info("  §bPocket§3Cloud §8- §rA cloud system for pocketmine servers with proxy support §8- §b{} §8- §rdeveloped by §b{}", VersionInfo::VERSION . (VersionInfo::BETA ? "§c@BETA" : ""), implode("§8, §b", VersionInfo::DEVELOPERS))
             ->info("  Join our discord for information: §bhttps://discord.gg/3HbPEpaE3T")
-            ->emptyLine()->resetCustomFormat();
+            ->emptyLine()->resetFormat();
 
         CloudLogger::get()->info("The §bCloud §ris §astarting§r...");
 
@@ -270,7 +270,7 @@ final class PocketCloud {
         return microtime(true) - $this->startTimestamp;
     }
 
-    public function getLogger(): Logger {
+    public function getLogger(): MainLogger {
         return $this->logger;
     }
 
@@ -417,15 +417,13 @@ $classLoader->init();
 
 $lockFile = createLockFile();
 
-do {
-    $cloud = new PocketCloud($classLoader);
-    $cloud->start();
+$cloud = new PocketCloud($classLoader);
+$cloud->start();
 
-    if (ThreadManager::getInstance()->stopAll() > 0) {
-        CloudLogger::get()->warn("Some threads crashed while trying to stop them, force-kill of the process...");
-        @TerminalUtils::kill(getmypid());
-    }
-} while (false);
+if (ThreadManager::getInstance()->stopAll() > 0) {
+    CloudLogger::get()->warn("Some threads crashed while trying to stop them, force-kill of the process...");
+    @TerminalUtils::kill(getmypid());
+}
 
 releaseLockFile($lockFile);
 

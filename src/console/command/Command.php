@@ -20,8 +20,8 @@ abstract class Command {
     public function __construct(
         private readonly string $name,
         private readonly string $description,
-        private readonly ?string $usage = null,
-        private readonly array $aliases = []
+        private readonly array $aliases = [],
+        private readonly ?string $usage = null
     ) {}
 
     final public function waitForConfirmation(ICommandSender $sender, string $prompt, array $keywordsAccept, int $timeout = 10): Promise {

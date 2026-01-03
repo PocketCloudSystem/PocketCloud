@@ -10,7 +10,7 @@ use pocketcloud\cloud\network\packet\util\PacketData;
 
 final class MaintenanceListSyncPacket extends CloudPacket implements ClientboundPacket {
 
-    public function __construct(private array $list = []) {}
+    public function __construct(private readonly array $list = []) {}
 
     public function handle(ServerClient $client): void {}
 

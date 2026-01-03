@@ -22,7 +22,7 @@ use pocketcloud\cloud\util\FormatUtils;
 final class ServerCommand extends Command {
 
     public function __construct() {
-        parent::__construct("server", "Manage the cloud's servers");
+        parent::__construct("server", "Manage the cloud's servers", ["srv"]);
 
         $this->registerSubCommand(SubCommand::fromClosure("start", function (ICommandSender $sender, string $label, array $args): bool {
             $template = $args["template"];
