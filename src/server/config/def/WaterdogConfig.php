@@ -9,6 +9,7 @@ use pocketcloud\cloud\network\Network;
 use pocketcloud\cloud\server\CloudServer;
 use pocketcloud\cloud\server\config\ServerProperties;
 use pocketcloud\cloud\template\TemplateType;
+use pocketcloud\cloud\util\Utils;
 use const pocketcloud\CLOUD_PATH;
 
 final class WaterdogConfig implements ServerProperties {
@@ -24,10 +25,9 @@ final class WaterdogConfig implements ServerProperties {
 
     public function renew(string $filePath): bool {
         $config = new Config($filePath, ConfigTypeList::YML());
-        foreach ($this->getDefaultContent() as $name => $value) {
-            if (!$config->has($name)) $config->set($name, $value);
-        }
-
+        $content = $config->getAll();
+        Utils::fillMissingKeys($content, $this->getDefaultContent(), $keys);
+        $config->setAll($content);
         return $config->save();
     }
 
@@ -52,7 +52,7 @@ final class WaterdogConfig implements ServerProperties {
             "%template%" => $server->getTemplate()->getName(),
             "%address%" => Network::getInstance()->getAddress()->getAddress(),
             "%port%" => Network::getInstance()->getAddress()->getPort(),
-            "%encryption%" =>  MainConfig::getInstance()->isNetworkEncryptionEnabled(),
+            "%encryption%" => MainConfig::getInstance()->isNetworkEncryptionEnabled(),
             "%language%" => "eng",
             "%cloud_path%" => CLOUD_PATH,
             "%timeout%" => $server->getTemplate()->getTemplateType()->getServerTimeout(),
@@ -68,12 +68,12 @@ final class WaterdogConfig implements ServerProperties {
                 "priorities" => [],
                 "host" => "0.0.0.0:%server_port%",
                 "max_players" => "%max_players%",
-                "forced_hosts" => [],
+                "forced_hosts" => "{}",
                 "additional_ports" => [],
                 "join_handler" => "DefaultJoinHandler",
                 "reconnect_handler" => "DefaultReconnectHandler"
             ],
-            "servers" => [],
+            "servers" => "{}",
             "network_settings" => [
                 "connection_throttle" => 10,
                 "connection_throttle_time" => 1000,
@@ -84,7 +84,7 @@ final class WaterdogConfig implements ServerProperties {
                 "max_downstream_mtu" => 1400,
                 "connection_timeout" => 15
             ],
-            "permissions" => [],
+            "permissions" => "{}",
             "permissions_default" => [],
             "enable_debug" => false,
             "upstream_encryption" => true,
