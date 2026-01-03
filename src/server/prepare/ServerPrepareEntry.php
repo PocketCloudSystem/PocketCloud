@@ -29,7 +29,7 @@ final class ServerPrepareEntry extends ThreadSafe {
     public function run(): void {
         $logFileLocation = $this->serverPath . $this->relativeLogFileLocation;
         if (file_exists($logFileLocation)) {
-            if (!@file_exists($this->templatePath . "cloud_log_archive")) @mkdir($this->templatePath . "cloud_log_archive", 0777, true);
+            if (!@file_exists($this->templatePath . "cloud_log_archive" . DIRECTORY_SEPARATOR)) @mkdir($this->templatePath . "cloud_log_archive", 0777, true);
             $ctime = filectime($logFileLocation) ?: time();
             FileUtils::copyFile($logFileLocation, $this->templatePath . "cloud_log_archive" . DIRECTORY_SEPARATOR . date("Y-m-d_H:i:s.v_e", $ctime) . "_" . basename($logFileLocation) . ".log");
             @unlink($logFileLocation);
@@ -79,7 +79,6 @@ final class ServerPrepareEntry extends ThreadSafe {
                     if (str_contains($item, $replacementKey)) {
                         $newValue = $replacementValue;
                         if ($item !== $replacementKey) $newValue = str_replace($replacementKey, $replacementValue, $item);
-                        CloudLogger::get()->info("found " . $replacementKey . " in " . $fullKey . " replacing to " . $newValue);
                         $config->set($fullKey, $newValue);
                     }
                 }

@@ -192,8 +192,15 @@ final class Network extends Thread {
         return true;
     }
 
+    public function quit(): void {
+        parent::quit();
+        $this->buffer = new ThreadSafeArray();
+    }
+
     public function close(): void {
         if (!$this->established) return;
+        PocketCloud::getInstance()->getSleeperHandler()->removeNotifier($this->handlerEntry->getNotifierId());
+        $this->buffer = new ThreadSafeArray();
         @socket_close($this->socket);
         $this->established = false;
     }

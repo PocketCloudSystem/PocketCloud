@@ -111,9 +111,9 @@ final class TemplateManager implements Loadable, Tickable {
 
             if (($latest = CloudServerManager::getInstance()->getLatest($template)) !== null) {
                 $players = $latest->getPlayerCount();
-                $requiredPercentage = $template->getSettings()->getStartNewPercentage();
-                if ($requiredPercentage <= 0) continue;
-                $percentage = $players * 100 / $requiredPercentage;
+                $requiredPercentage = $template->getStartNewPercentage();
+                if ($requiredPercentage < 1) $requiredPercentage = $requiredPercentage * 100;
+                $percentage = 100 * $players / $requiredPercentage;
                 if ($percentage >= $requiredPercentage && CloudServerManager::getInstance()->checkCapacity($template)) {
                     CloudServerManager::getInstance()->start($template);
                 }

@@ -34,11 +34,11 @@ final class CloudPlayer implements Writeable {
         $this->currentProxy = $currentProxy?->getName();
     }
 
-    public function kick(string $reason = ""): void {
+    public function kick(string $reason, string $disconnectScreenMessage = ""): void {
         CloudLogger::get()->info("Kicking {}, reason: {}", $this->name, ($reason == "" ? "NULL" : $reason));
-        ($ev = new PlayerKickEvent($this, $reason))->call();
+        ($ev = new PlayerKickEvent($this, $reason, $disconnectScreenMessage))->call();
         if ($ev->isCancelled()) return;
-        PlayerKickPacket::create($this->getName(), $reason)->sendPacket($this->getCurrentProxy() ?? $this->getCurrentServer());
+        PlayerKickPacket::create($this->getName(), $reason, $disconnectScreenMessage)->sendPacket($this->getCurrentProxy() ?? $this->getCurrentServer());
     }
 
     public function send(string $message, TextType $textType): void {

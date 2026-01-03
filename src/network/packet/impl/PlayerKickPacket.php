@@ -13,22 +13,23 @@ final class PlayerKickPacket extends CloudPacket implements ClientboundPacket, C
 
     public function __construct(
         private string $player = "",
-        private string $reason = ""
+        private string $reason = "",
+        private string $disconnectScreenMessage = ""
     ) {}
 
     public function handle(ServerClient $client): void {
-        if (($player = CloudPlayerManager::getInstance()->get($this->player)) !== null) $player->kick($this->reason);
+        if (($player = CloudPlayerManager::getInstance()->get($this->player)) !== null) $player->kick($this->reason, $this->disconnectScreenMessage);
     }
 
     public function encodePayload(PacketData $packetData): void {
-        $packetData->writeAll($this->player, $this->reason);
+        $packetData->writeAll($this->player, $this->reason, $this->disconnectScreenMessage);
     }
 
     public function decodePayload(PacketData $packetData): void {
-        $packetData->readAll($this->player, $this->reason);
+        $packetData->readAll($this->player, $this->reason, $this->disconnectScreenMessage);
     }
 
-    public static function create(string $player, string $reason): self {
-        return new self($player, $reason);
+    public static function create(string $player, string $reason, string $disconnectScreenMessage): self {
+        return new self($player, $reason, $disconnectScreenMessage);
     }
 }

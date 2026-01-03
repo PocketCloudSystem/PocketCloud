@@ -22,12 +22,12 @@ final class CloudNotificationPacket extends CloudPacket implements ClientboundPa
         switch ($this->notificationType) {
             case NotificationType::PLAYER_JOIN_FAILED: {
                 [$player, $server, $reason] = [$this->args["player"], $this->args["server"], $this->args["reason"]];
-                CloudLogger::get()->info("The player §b{} §rtried to join via §b{}§r, but got §ckicked§r: §b{}", $player, $server, $reason);
+                CloudLogger::get()->info("The player §b{} §rtried to join via §b{}§r, but got §ckicked§r: §b{}", $player, $server, $this->formatReason($reason));
                 break;
             }
             case NotificationType::PLAYER_KICKED: {
                 [$player, $server, $reason] = [$this->args["player"], $this->args["server"], $this->args["reason"]];
-                CloudLogger::get()->info("The player §b{} §rhas been §ckicked §rfrom §b{}§r: §b{}", $player, $server, $reason);
+                CloudLogger::get()->info("The player §b{} §rhas been §ckicked §rfrom §b{}§r: §b{}", $player, $server, $this->formatReason($reason));
                 break;
             }
             default: break;
@@ -50,6 +50,12 @@ final class CloudNotificationPacket extends CloudPacket implements ClientboundPa
 
     public function getArgs(): array {
         return $this->args;
+    }
+
+    private function formatReason(string $reason): string {
+        $newReason = substr(current(explode("\n", $reason)), 0, 100);
+        if (strlen($newReason) !== strlen($reason)) $newReason .= "...";
+        return $newReason;
     }
 
     public static function create(NotificationType $notificationType, array $args): self {

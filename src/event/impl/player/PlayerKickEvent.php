@@ -11,12 +11,17 @@ class PlayerKickEvent extends PlayerEvent implements Cancelable {
 
     public function __construct(
         CloudPlayer $player,
-        private readonly string $reason
+        private readonly string $reason,
+        private readonly string $disconnectScreenMessage
     ) {
         parent::__construct($player);
     }
 
     public function getReason(): string {
         return $this->reason;
+    }
+
+    public function getDisconnectScreenMessage(): string {
+        return $this->disconnectScreenMessage;
     }
 }

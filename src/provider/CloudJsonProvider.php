@@ -4,6 +4,7 @@ namespace pocketcloud\cloud\provider;
 
 use pocketcloud\cloud\cache\InGameModuleCache;
 use pocketcloud\cloud\cache\MaintenanceListCache;
+use pocketcloud\cloud\cache\NotificationListCache;
 use pocketcloud\cloud\config\Config;
 use pocketcloud\cloud\group\ServerGroup;
 use pocketcloud\cloud\template\Template;
@@ -28,6 +29,7 @@ final class CloudJsonProvider extends CloudProvider {
         $this->maintenanceList = new Config(IN_GAME_PATH . "maintenanceList.json");
 
         foreach ($this->maintenanceList->getAll() as $player => $enabled) if ($enabled) MaintenanceListCache::add($player);
+        foreach ($this->notificationsList->getAll() as $player => $enabled) if ($enabled) NotificationListCache::add($player);
         foreach ($this->modulesConfig->getAll() as $module => $enabled) InGameModuleCache::setModuleState($module, $enabled);
     }
 
@@ -58,9 +60,7 @@ final class CloudJsonProvider extends CloudProvider {
     }
 
     public function checkTemplate(string $template): Promise {
-        $promise = new Promise();
-        $promise->resolve($this->templatesConfig->has($template));
-        return $promise;
+        return Promise::resolved($this->templatesConfig->has($template));
     }
 
     public function getTemplates(): Promise {
@@ -103,9 +103,7 @@ final class CloudJsonProvider extends CloudProvider {
     }
 
     public function checkServerGroup(string $serverGroup): Promise {
-        $promise = new Promise();
-        $promise->resolve($this->serverGroupsConfig->has($serverGroup));
-        return $promise;
+        return Promise::resolved($this->serverGroupsConfig->has($serverGroup));
     }
 
     public function getServerGroups(): Promise {
@@ -128,25 +126,27 @@ final class CloudJsonProvider extends CloudProvider {
     }
 
     public function getModuleState(string $module): Promise {
-        $promise = new Promise();
-        $promise->resolve($this->modulesConfig->get($module, false));
-        return $promise;
+        return Promise::resolved($this->modulesConfig->get($module, false));
     }
 
     public function enablePlayerNotifications(string $player): void {
         $this->notificationsList->set($player, true);
         $this->notificationsList->save();
+        NotificationListCache::add($player);
     }
 
     public function disablePlayerNotifications(string $player): void {
         $this->notificationsList->remove($player);
         $this->notificationsList->save();
+        NotificationListCache::remove($player);
     }
 
     public function hasNotificationsEnabled(string $player): Promise {
-        $promise = new Promise();
-        $promise->resolve($this->notificationsList->get($player, false));
-        return $promise;
+        return Promise::resolved($this->notificationsList->get($player, false));
+    }
+
+    public function getNotificationList(): Promise {
+        return Promise::resolved($this->notificationsList->getAll());
     }
 
     public function addToWhitelist(string $player): void {
@@ -162,15 +162,11 @@ final class CloudJsonProvider extends CloudProvider {
     }
 
     public function isOnWhitelist(string $player): Promise {
-        $promise = new Promise();
-        $promise->resolve($this->maintenanceList->get($player, false));
-        return $promise;
+        return Promise::resolved($this->notificationsList->get($player, false));
     }
 
     public function getWhitelist(): Promise {
-        $promise = new Promise();
-        $promise->resolve(array_filter($this->maintenanceList->getAll(true), fn(string $user) => $this->maintenanceList->get($user, false)));
-        return $promise;
+        return Promise::resolved(array_filter($this->maintenanceList->getAll(true), fn(string $user) => $this->maintenanceList->get($user, false)));
     }
 
     public function getTemplatesConfig(): ?Config {

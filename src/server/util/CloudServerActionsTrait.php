@@ -160,7 +160,7 @@ trait CloudServerActionsTrait {
     public function saveAndDeleteLogFiles(): void {
         $logFileLocation = $this->getPath() . $this->getTemplate()->getTemplateType()->getRelativeLogFileLocation();
         if (file_exists($logFileLocation)) {
-            if (!@file_exists($this->getTemplate()->getPath() . "cloud_log_archive")) @mkdir($this->getTemplate()->getPath(), 0777, true);
+            if (!@file_exists($this->getTemplate()->getPath() . "cloud_log_archive" . DIRECTORY_SEPARATOR)) @mkdir($this->getTemplate()->getPath() . "cloud_log_archive" . DIRECTORY_SEPARATOR, 0777, true);
             FileUtils::copyFile($logFileLocation, $this->getTemplate()->getPath() . "cloud_log_archive" . DIRECTORY_SEPARATOR . date("Y-m-d_H:i:s.v_e", $this->startTime) . "_" . basename($logFileLocation) . ".log");
             @unlink($logFileLocation);
         }

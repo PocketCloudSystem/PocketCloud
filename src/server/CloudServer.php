@@ -16,7 +16,9 @@ use pocketcloud\cloud\network\packet\data\VerifyStatus;
 use pocketcloud\cloud\network\packet\impl\DisconnectPacket;
 use pocketcloud\cloud\network\packet\impl\LanguageSyncPacket;
 use pocketcloud\cloud\network\packet\impl\LibrarySyncPacket;
+use pocketcloud\cloud\network\packet\impl\MaintenanceListSyncPacket;
 use pocketcloud\cloud\network\packet\impl\ModuleSyncPacket;
+use pocketcloud\cloud\network\packet\impl\NotificationListSyncPacket;
 use pocketcloud\cloud\network\packet\impl\PlayerSyncPacket;
 use pocketcloud\cloud\network\packet\impl\ProxyRegisterServerPacket;
 use pocketcloud\cloud\network\packet\impl\ServerSyncPacket;
@@ -124,12 +126,15 @@ final class CloudServer implements Tickable, Writeable {
     }
 
     public function sync(): void {
-        $packets = [LanguageSyncPacket::fromLanguage(), LibrarySyncPacket::fromLibraries(), ModuleSyncPacket::fromModuleCache()];
+        $packets = [
+            LanguageSyncPacket::fromLanguage(), LibrarySyncPacket::fromLibraries(),
+            ModuleSyncPacket::fromModuleCache(), MaintenanceListSyncPacket::fromMaintenanceListCache(), NotificationListSyncPacket::fromNotificationListCache()
+        ];
 
         foreach (TemplateManager::getInstance()->getAll() as $template) $packets[] = TemplateSyncPacket::create($template, false);
         foreach (CloudServerManager::getInstance()->getAll() as $server) {
             $packets[] = ServerSyncPacket::create($server, false);
-            if ($this->getTemplate()->getTemplateType()->isProxy()) $packets[] = ProxyRegisterServerPacket::create($server->getName(), $server->getServerData()->getPort());
+            if ($this->getTemplate()->getTemplateType()->isProxy() && $server->getTemplate()->getTemplateType()->isServer()) $packets[] = ProxyRegisterServerPacket::create($server->getName(), $server->getServerData()->getPort());
         }
 
         foreach (CloudPlayerManager::getInstance()->getAll() as $player) $packets[] = PlayerSyncPacket::create($player, false);

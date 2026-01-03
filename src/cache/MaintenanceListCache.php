@@ -2,6 +2,8 @@
 
 namespace pocketcloud\cloud\cache;
 
+use pocketcloud\cloud\network\packet\impl\MaintenanceListSyncPacket;
+
 final class MaintenanceListCache {
 
     private static array $maintenanceList = [];
@@ -11,12 +13,20 @@ final class MaintenanceListCache {
         foreach ($maintenanceList as $player) self::$maintenanceList[$player] = true;
     }
 
+    private static function syncOut(): void {
+        MaintenanceListSyncPacket::create(self::getAll())->broadcastPacket();
+    }
+
     public static function add(string $player): void {
         self::$maintenanceList[$player] = true;
+        self::syncOut();
     }
 
     public static function remove(string $player): void {
-        if (self::is($player)) unset(self::$maintenanceList[$player]);
+        if (self::is($player)) {
+            unset(self::$maintenanceList[$player]);
+            self::syncOut();
+        }
     }
 
     public static function is(string $player): bool {

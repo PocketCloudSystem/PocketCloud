@@ -10,7 +10,9 @@ use pocketcloud\cloud\network\packet\impl\DisconnectPacket;
 use pocketcloud\cloud\network\packet\impl\KeepAlivePacket;
 use pocketcloud\cloud\network\packet\impl\LanguageSyncPacket;
 use pocketcloud\cloud\network\packet\impl\LibrarySyncPacket;
+use pocketcloud\cloud\network\packet\impl\MaintenanceListSyncPacket;
 use pocketcloud\cloud\network\packet\impl\ModuleSyncPacket;
+use pocketcloud\cloud\network\packet\impl\NotificationListSyncPacket;
 use pocketcloud\cloud\network\packet\impl\PlayerConnectPacket;
 use pocketcloud\cloud\network\packet\impl\PlayerDisconnectPacket;
 use pocketcloud\cloud\network\packet\impl\PlayerKickPacket;
@@ -18,7 +20,11 @@ use pocketcloud\cloud\network\packet\impl\PlayerSwitchServerPacket;
 use pocketcloud\cloud\network\packet\impl\PlayerSyncPacket;
 use pocketcloud\cloud\network\packet\impl\ProxyRegisterServerPacket;
 use pocketcloud\cloud\network\packet\impl\ProxyUnregisterServerPacket;
+use pocketcloud\cloud\network\packet\impl\request\PlayerNotificationCheckRequestPacket;
+use pocketcloud\cloud\network\packet\impl\request\PlayerWhitelistCheckRequestPacket;
 use pocketcloud\cloud\network\packet\impl\request\ServerHandshakeRequestPacket;
+use pocketcloud\cloud\network\packet\impl\response\PlayerNotificationCheckResponsePacket;
+use pocketcloud\cloud\network\packet\impl\response\PlayerWhitelistCheckResponsePacket;
 use pocketcloud\cloud\network\packet\impl\response\ServerHandshakeResponsePacket;
 use pocketcloud\cloud\network\packet\impl\ServerGroupSyncPacket;
 use pocketcloud\cloud\network\packet\impl\ServerSyncPacket;
@@ -59,6 +65,12 @@ final class PacketPool {
         $this->register(ProxyUnregisterServerPacket::class);
         $this->register(PlayerKickPacket::class);
         $this->register(PlayerSwitchServerPacket::class);
+        $this->register(PlayerWhitelistCheckRequestPacket::class);
+        $this->register(PlayerWhitelistCheckResponsePacket::class);
+        $this->register(PlayerNotificationCheckRequestPacket::class);
+        $this->register(PlayerNotificationCheckResponsePacket::class);
+        $this->register(MaintenanceListSyncPacket::class);
+        $this->register(NotificationListSyncPacket::class);
     }
 
     public function register(string $packetClass): void {

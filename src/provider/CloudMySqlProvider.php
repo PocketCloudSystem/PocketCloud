@@ -200,6 +200,15 @@ final class CloudMySqlProvider extends CloudProvider {
         return $promise;
     }
 
+    public function getNotificationList(): Promise {
+        $promise = new Promise();
+
+        DatabaseQueries::getNotificationList()
+            ->execute(fn(?array $list) => $promise->resolve($list === null ? [] : array_map(fn(array $r) => $r["player"], $list)));
+
+        return $promise;
+    }
+
     public function addToWhitelist(string $player): void {
         DatabaseQueries::addToWhitelist($player)->execute();
          MaintenanceListCache::add($player);

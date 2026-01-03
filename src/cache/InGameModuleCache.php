@@ -2,6 +2,8 @@
 
 namespace pocketcloud\cloud\cache;
 
+use pocketcloud\cloud\network\packet\impl\ModuleSyncPacket;
+
 final class InGameModuleCache {
 
     public const string SIGN_MODULE = "sign_module";
@@ -14,8 +16,15 @@ final class InGameModuleCache {
         self::HUB_COMMAND_MODULE => false
     ];
 
+    private static function syncOut(): void {
+        ModuleSyncPacket::fromModuleCache()->broadcastPacket();
+    }
+
     public static function setModuleState(string $module, bool $enabled): void {
-        if (isset(self::$moduleStates[$module])) self::$moduleStates[$module] = $enabled;
+        if (isset(self::$moduleStates[$module])) {
+            self::$moduleStates[$module] = $enabled;
+            self::syncOut();
+        }
     }
 
     public static function getModuleState(string $module): bool {

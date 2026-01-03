@@ -75,11 +75,12 @@ final class ServerClientCache implements Tickable {
         return array_find($this->clients, fn(ServerClient $client) => $client->getAddress()->equals($address));
     }
 
-    public function getAll(?TemplateType ...$object): array {
-        if ($object !== null) return array_filter($this->clients, function (ServerClient $client) use($object): bool {
+    public function getAll(TemplateType ...$objects): array {
+        if (!empty($objects)) return array_filter($this->clients, function (ServerClient $client) use($objects): bool {
             if ($client->getServer() === null) return false;
-            return array_any($object, fn($type) => $type->getName() === $client->getServer()->getTemplate()->getTemplateType()->getName());
+            return array_any($objects, fn(TemplateType $object) => $object->getName() === $client->getServer()->getTemplate()->getTemplateType()->getName());
         });
+
         return $this->clients;
     }
 }

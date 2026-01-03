@@ -21,7 +21,9 @@ final class PlayerSwitchServerPacket extends CloudPacket implements CloudboundPa
     public function handle(ServerClient $client): void {
         if (($player = CloudPlayerManager::getInstance()->get($this->player)) !== null) {
             if (($server = CloudServerManager::getInstance()->get($this->newServer)) !== null) {
-                CloudLogger::get()->info("Player §b{} performed a server switch from §b{} §rto §b{}§r.", $player->getName(), ($player->getCurrentServer()?->getName() ?? "NULL"), ($server?->getName() ?? "NULL"));
+                if ($player->getCurrentServerName() === null) CloudLogger::get()->info("Player §b{} §rperformed an initial connect on §b{}§r.", $player->getName(), $server->getName());
+                else CloudLogger::get()->info("Player §b{} §rperformed a server switch from §b{} §rto §b{}§r.", $player->getName(), $player->getCurrentServerName(), $server->getName());
+
                 new PlayerSwitchServerEvent($player, $player->getCurrentServer(), $server)->call();
                 $player->setCurrentServer($server);
             }

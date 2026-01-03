@@ -91,7 +91,7 @@ final class ServerCommand extends Command {
             /** @var CloudServer $server */
             $server = $args["server"];
             $formatted = FormatUtils::implodeWithKeys(
-                array_merge($server->write(), ["path" => $server->getPath()]),
+                array_merge($server->write(), ["path" => $server->getPath(), "channel" => $server->getServerClient()?->getAddress()]),
                 "\n",
                 "§r: §b",
                 fn(string $key) => ucfirst($key),

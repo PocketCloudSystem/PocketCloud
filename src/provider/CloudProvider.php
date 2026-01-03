@@ -45,6 +45,8 @@ abstract class CloudProvider {
 
     abstract public function hasNotificationsEnabled(string $player): Promise;
 
+    abstract public function getNotificationList(): Promise;
+
     abstract public function addToWhitelist(string $player): void;
 
     abstract public function removeFromWhitelist(string $player): void;

@@ -22,7 +22,6 @@ use pocketcloud\cloud\server\CloudServerManager;
 use pocketcloud\cloud\server\config\ServerPropertiesGenerator;
 use pocketcloud\cloud\server\prepare\ServerPreparator;
 use pocketcloud\cloud\software\ServerSoftwareManager;
-use pocketcloud\cloud\template\Template;
 use pocketcloud\cloud\template\TemplateManager;
 use pocketcloud\cloud\template\TemplateType;
 use pocketcloud\cloud\thread\ThreadManager;

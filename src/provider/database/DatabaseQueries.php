@@ -25,6 +25,7 @@ use r3pt1s\mysql\query\QueryBuilder;
  * @method static QueryBuilder enablePlayerNotifications(string $player)
  * @method static QueryBuilder disablePlayerNotifications(string $player)
  * @method static QueryBuilder hasNotificationsEnabled(string $player)
+ * @method static QueryBuilder getNotificationList()
  * @method static QueryBuilder addToWhitelist(string $player)
  * @method static QueryBuilder removeFromWhitelist(string $player)
  * @method static QueryBuilder isOnWhitelist(string $player)
@@ -152,6 +153,11 @@ final class DatabaseQueries {
         self::register("hasNotificationsEnabled", function (string $player): QueryBuilder {
             return QueryBuilder::table(DatabaseTables::NOTIFICATIONS)
                 ->has(["player" => $player]);
+        });
+
+        self::register("getNotificationList", function (): QueryBuilder {
+            return QueryBuilder::table(DatabaseTables::NOTIFICATIONS)
+                ->select(["player"], "*");
         });
 
         self::register("addToWhitelist", function (string $player): QueryBuilder {
