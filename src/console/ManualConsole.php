@@ -10,20 +10,23 @@ use RuntimeException;
 final class ManualConsole {
 
     private bool $closed = false;
-    
+
+    private bool $historyEnabled = true;
     private array $history = [];
     private int $historyIndex = 0;
     private int $cursor = 0;
     private string $input = "";
+    private bool $pressedEnter = false;
 
     private array $tabMatches = [];
     private int $tabIndex = 0;
     private bool $tabActive = false;
+    private bool $tabMatchesDisplayed = false;
 
     public function __construct(
         private string $prompt = "",
         private ?Closure $completionCallback = null,
-        private readonly ?Closure $controlCHandler = null
+        private ?Closure $controlCHandler = null
     ) {
         stream_set_blocking(STDIN, false);
         mb_internal_encoding("UTF-8");
@@ -31,7 +34,12 @@ final class ManualConsole {
         shell_exec("stty raw");
     }
 
+    public function setAddToHistory(bool $addToHistory): void {
+        $this->historyEnabled = $addToHistory;
+    }
+
     public function readlineNonBlocking(int $timeoutMs = 0): ?string {
+        if ($this->pressedEnter) $this->pressedEnter = false;
         $this->ensureOpen();
         $this->redraw($this->prompt);
 
@@ -39,7 +47,12 @@ final class ManualConsole {
 
         if ($char === null) return null;
 
-        if ($char !== "\t") $this->tabActive = false;
+        if ($char !== "\t") {
+            if ($this->tabActive) {
+                $this->clearTabDisplay();
+            }
+            $this->tabActive = false;
+        }
 
         if ($char === "\x03") {
             if ($this->controlCHandler !== null) ($this->controlCHandler)();
@@ -47,12 +60,13 @@ final class ManualConsole {
         }
 
         if ($char === "\n" || $char === "\r") {
-            echo "\n";
-            if ($this->input !== "") $this->history[] = $this->input;
+            if (trim($this->input) !== "") echo "\n";
+            if ($this->input !== "" && $this->historyEnabled) $this->history[] = $this->input;
             $this->historyIndex = count($this->history);
             $line = $this->input;
             $this->input = "";
             $this->cursor = 0;
+            $this->pressedEnter = true;
             return $line;
         }
 
@@ -113,17 +127,62 @@ final class ManualConsole {
                 return;
             }
 
-            echo "\n\r" . implode(" ", $this->tabMatches) . "\n";
+            // Beim ersten Tab: Ersten Match einfügen und anzeigen
+            $match = $this->tabMatches[$this->tabIndex];
+            $tokens[] = $match;
+            $this->input = implode(" ", $tokens) . $afterCursor;
+            $this->cursor = strlen(implode(" ", $tokens));
             $this->redraw($prompt);
+            $this->displayTabMatches();
             return;
         }
 
-        $match = $this->tabMatches[$this->tabIndex];
+        // Bei weiteren Tabs: Zum nächsten Match wechseln
         $this->tabIndex = ($this->tabIndex + 1) % count($this->tabMatches);
+        $match = $this->tabMatches[$this->tabIndex];
         $tokens[] = $match;
         $this->input = implode(" ", $tokens) . $afterCursor;
         $this->cursor = strlen(implode(" ", $tokens));
         $this->redraw($prompt);
+        $this->displayTabMatches();
+    }
+
+    private function displayTabMatches(): void {
+        if (empty($this->tabMatches)) return;
+
+        // Clear previous display if exists
+        if ($this->tabMatchesDisplayed) {
+            echo "\033[1B"; // Move down
+            echo "\033[2K\r"; // Clear line
+            echo "\033[1A"; // Move back up
+        }
+
+        // Display matches with current one highlighted
+        $display = [];
+        foreach ($this->tabMatches as $i => $match) {
+            if ($i === $this->tabIndex) {
+                $display[] = "\033[7m" . $match . "\033[27m"; // Inverted colors for selected
+            } else {
+                $display[] = $match;
+            }
+        }
+
+        echo "\n\r" . implode(" ", $display);
+        echo "\033[1A"; // Move cursor up one line
+        $cursorPosition = strlen($this->prompt) + $this->cursor;
+        echo "\r\033[" . $cursorPosition . "C"; // Move cursor to correct position
+
+        $this->tabMatchesDisplayed = true;
+    }
+
+    private function clearTabDisplay(): void {
+        if (!$this->tabMatchesDisplayed) return;
+
+        echo "\033[1B"; // Move down to matches line
+        echo "\033[2K\r"; // Clear the line
+        echo "\033[1A"; // Move back up
+
+        $this->tabMatchesDisplayed = false;
     }
 
     private function tokenize(string $line): array {
@@ -211,21 +270,25 @@ final class ManualConsole {
         $this->ensureOpen();
         switch ($seq) {
             case "[A": // Up
-                if ($this->historyIndex > 0) {
+                if ($this->historyIndex > 0 && $this->historyEnabled) {
                     $this->historyIndex--;
                     $this->input = $this->history[$this->historyIndex];
-                    $this->cursor = strlen($this->input);
-                    $this->redraw($prompt);
                 }
+
+                $this->cursor = strlen($this->input);
+                $this->redraw($prompt);
                 break;
             case "[B": // Down
-                if ($this->historyIndex < count($this->history) - 1) {
-                    $this->historyIndex++;
-                    $this->input = $this->history[$this->historyIndex];
-                } else {
-                    $this->input = "";
-                    $this->historyIndex = count($this->history);
+                if ($this->historyEnabled) {
+                    if ($this->historyIndex < (count($this->history) - 1)) {
+                        $this->historyIndex++;
+                        $this->input = $this->history[$this->historyIndex];
+                    } else {
+                        $this->input = "";
+                        $this->historyIndex = count($this->history);
+                    }
                 }
+
                 $this->cursor = strlen($this->input);
                 $this->redraw($prompt);
                 break;
@@ -246,9 +309,25 @@ final class ManualConsole {
     }
 
     public function println(string $message): void {
-        echo "\033[2K\r";
-        echo $message . PHP_EOL;
+        if ($this->tabMatchesDisplayed) {
+            // Clear current prompt line
+            echo "\033[2K\r";
+            // Move down to matches line and clear it
+            echo "\033[1B";
+            echo "\033[2K\r";
+            // Move back up and print message
+            echo "\033[1A";
+            echo $message . PHP_EOL;
+        } else {
+            echo "\033[2K\r";
+            echo $message . PHP_EOL;
+        }
+
         $this->redraw($this->prompt);
+
+        if ($this->tabMatchesDisplayed) {
+            $this->displayTabMatches();
+        }
     }
 
     public function dump(mixed ...$vars): void {
@@ -257,12 +336,30 @@ final class ManualConsole {
         $out = ob_get_clean();
         $out = str_replace("\t", "    ", $out);
 
-        foreach (explode(PHP_EOL, $out) as $line) {
+        if ($this->tabMatchesDisplayed) {
+            // Clear current prompt line
             echo "\033[2K\r";
-            echo $line . PHP_EOL;
+            // Move down to matches line and clear it
+            echo "\033[1B";
+            echo "\033[2K\r";
+            // Move back up
+            echo "\033[1A";
+
+            foreach (explode(PHP_EOL, $out) as $line) {
+                echo $line . PHP_EOL;
+            }
+        } else {
+            foreach (explode(PHP_EOL, $out) as $line) {
+                echo "\033[2K\r";
+                echo $line . PHP_EOL;
+            }
         }
 
         $this->redraw($this->prompt);
+
+        if ($this->tabMatchesDisplayed) {
+            $this->displayTabMatches();
+        }
     }
 
     public function ensureOpen(): void {
@@ -293,5 +390,55 @@ final class ManualConsole {
 
     public function setCompletionCallback(Closure $callback): void {
         $this->completionCallback = $callback;
+    }
+
+    public function setControlCHandler(?Closure $controlCHandler): void {
+        $this->controlCHandler = $controlCHandler;
+    }
+
+    public function setInput(string $input): void {
+        $this->input = $input;
+        $this->cursor = strlen($this->input);
+        $this->redraw($this->prompt);
+    }
+
+    public function isClosed(): bool {
+        return $this->closed;
+    }
+
+    public function isHistoryEnabled(): bool {
+        return $this->historyEnabled;
+    }
+
+    public function getHistory(): array {
+        return $this->history;
+    }
+
+    public function getHistoryIndex(): int {
+        return $this->historyIndex;
+    }
+
+    public function getCursor(): int {
+        return $this->cursor;
+    }
+
+    public function getInput(): string {
+        return $this->input;
+    }
+
+    public function isPressedEnter(): bool {
+        return $this->pressedEnter;
+    }
+
+    public function getTabMatches(): array {
+        return $this->tabMatches;
+    }
+
+    public function getTabIndex(): int {
+        return $this->tabIndex;
+    }
+
+    public function isTabActive(): bool {
+        return $this->tabActive;
     }
 }
