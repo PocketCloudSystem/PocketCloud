@@ -19,6 +19,6 @@ readonly class ServerGroupParameter extends CommandParameter {
     }
 
     public function getType(): string {
-        return "server";
+        return "server_group";
     }
 }

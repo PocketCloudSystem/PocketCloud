@@ -19,6 +19,6 @@ readonly class TemplateParameter extends CommandParameter {
     }
 
     public function getType(): string {
-        return "server";
+        return "template";
     }
 }

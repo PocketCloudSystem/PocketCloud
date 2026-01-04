@@ -11,7 +11,8 @@ readonly class Question {
         private string $question,
         private bool $canSkipped,
         private array $possibleAnswers,
-        private ?string $default,
+        private ?string $defaultValueMessage,
+        private mixed $defaultValue,
         private ?string $recommendation,
         private Closure $parser,
         private ?Closure $resultHandler
@@ -33,8 +34,12 @@ readonly class Question {
         return $this->possibleAnswers;
     }
 
-    public function getDefault(): ?string {
-        return $this->default;
+    public function getDefaultValueMessage(): ?string {
+        return $this->defaultValueMessage;
+    }
+
+    public function getDefaultValue(): mixed {
+        return $this->defaultValue;
     }
 
     public function getRecommendation(): ?string {

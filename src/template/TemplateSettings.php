@@ -108,6 +108,10 @@ final class TemplateSettings {
         return new TemplateSettings($lobby, $maintenance, $static, $alwaysCopyToStaticServers, $maxPlayerCount, $minServerCount, $maxServerCount, $startNewPercentage, $autoStart);
     }
 
+    public static function default(): self {
+        return new TemplateSettings(false, true, false, true, 20, 1, 2, 0, false);
+    }
+
     public static function read(array $data): ?self {
         if (!Utils::containKeys($data, "lobby", "maintenance", "static", "alwaysCopyToStaticServers", "maxPlayerCount", "minServerCount", "maxServerCount", "startNewPercentage", "autoStart")) return null;
         return self::create(...$data);

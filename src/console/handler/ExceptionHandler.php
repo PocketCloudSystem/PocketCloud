@@ -5,6 +5,7 @@ namespace pocketcloud\cloud\console\handler;
 use Closure;
 use ErrorException;
 use pocketcloud\cloud\console\log\CloudLogger;
+use pocketcloud\cloud\console\log\output\OutputManager;
 use pocketcloud\cloud\PocketCloud;
 use pocketcloud\cloud\util\ErrorUtils;
 use Throwable;
@@ -16,6 +17,7 @@ final class ExceptionHandler {
 
     public static function handleException(Throwable $throwable): void {
         self::$latestException = $throwable;
+        OutputManager::reset();
         CloudLogger::get()->exception($throwable);
         PocketCloud::getInstance()->crash();
     }

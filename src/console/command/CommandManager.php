@@ -7,6 +7,7 @@ use pocketcloud\cloud\console\command\impl\ClearCommand;
 use pocketcloud\cloud\console\command\impl\ExitCommand;
 use pocketcloud\cloud\console\command\impl\HelpCommand;
 use pocketcloud\cloud\console\command\impl\server\ServerCommand;
+use pocketcloud\cloud\console\command\impl\template\TemplateCommand;
 use pocketcloud\cloud\console\command\sender\ICommandSender;
 use pocketcloud\cloud\console\Console;
 use pocketcloud\cloud\console\log\color\CloudConsoleColor;
@@ -33,6 +34,7 @@ final class CommandManager implements Loadable, Tickable {
         $this->registerAll(new ExitCommand(), new HelpCommand(), new ClearCommand());
 
         $this->registerAll(new ServerCommand());
+        $this->registerAll(new TemplateCommand());
     }
 
     public function waitForConfirmation(Command $command, ICommandSender $sender, string $prompt, array $keywordsAccept, int $timeout = 10): Promise {

@@ -149,11 +149,11 @@ final readonly class Template implements Writeable {
         return self::create($name, TemplateSettings::create($lobby, $maintenance, $static, $alwaysCopyToStaticServers, $maxPlayerCount, $minServerCount, $maxServerCount, $startNewPercentage, $autoStart), TemplateType::SERVER());
     }
 
-    public static function proxy(string $name, bool $maintenance = true, bool $static = false, bool $alwaysCopyToStaticServers = false, int $maxPlayerCount = 20, int $minServerCount = 1, int $maxServerCount = 1, float $startNewPercentage = 100, bool $autoStart = true): self {
+    public static function proxy(string $name, bool $maintenance = true, bool $static = false, bool $alwaysCopyToStaticServers = false, int $maxPlayerCount = 20, int $minServerCount = 1, int $maxServerCount = 1, float $startNewPercentage = 0, bool $autoStart = true): self {
         return self::create($name, TemplateSettings::create(false, $maintenance, $static, $alwaysCopyToStaticServers, $maxPlayerCount, $minServerCount, $maxServerCount, $startNewPercentage, $autoStart), TemplateType::PROXY());
     }
 
-    public static function lobby(string $name, bool $maintenance = true, bool $static = false, bool $alwaysCopyToStaticServers = false, int $maxPlayerCount = 20, int $minServerCount = 1, int $maxServerCount = 2, float $startNewPercentage = 0, bool $autoStart = true): self {
+    public static function lobby(string $name, bool $maintenance = true, bool $static = false, bool $alwaysCopyToStaticServers = false, int $maxPlayerCount = 20, int $minServerCount = 1, int $maxServerCount = 2, float $startNewPercentage = 100, bool $autoStart = true): self {
         return self::create($name, TemplateSettings::create(true, $maintenance, $static, $alwaysCopyToStaticServers, $maxPlayerCount, $minServerCount, $maxServerCount, $startNewPercentage, $autoStart), TemplateType::SERVER());
     }
 }

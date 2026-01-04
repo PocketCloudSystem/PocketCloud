@@ -8,6 +8,7 @@ use pocketcloud\cloud\console\command\CommandManager;
 use pocketcloud\cloud\console\Console;
 use pocketcloud\cloud\console\log\level\CloudLogLevel;
 use pocketcloud\cloud\console\log\logger\MainLogger;
+use pocketcloud\cloud\console\log\output\OutputManager;
 use pocketcloud\cloud\crash\CrashDump;
 use pocketcloud\cloud\event\impl\cloud\CloudStartedEvent;
 use pocketcloud\cloud\group\ServerGroupManager;
@@ -103,7 +104,7 @@ final class PocketCloud {
         $this->startTimestamp = microtime(true);
         $this->running = true;
 
-        CloudLogger::set($this->logger = new MainLogger(LOG_PATH, false, true));
+        CloudLogger::set($this->logger = new MainLogger(LOG_PATH, false, false));
         $this->console = new Console();
         $this->commandManager = new CommandManager();
         ($this->libraryManager = new LibraryManager())->load();
@@ -187,6 +188,7 @@ final class PocketCloud {
         );
 
         TerminalUtils::clear();
+        CloudLogger::get()->setSaveLogs(true);
         CloudLogger::get()->emptyLine()->setFormat("§r{message}")
             ->info("  §bPocket§3Cloud §8- §rA cloud system for pocketmine servers with proxy support §8- §b{} §8- §rdeveloped by §b{}", VersionInfo::VERSION . (VersionInfo::BETA ? "§c@BETA" : ""), implode("§8, §b", VersionInfo::DEVELOPERS))
             ->info("  Join our discord for information: §bhttps://discord.gg/3HbPEpaE3T")
@@ -212,6 +214,7 @@ final class PocketCloud {
     public function crash(): void {
         if (!$this->running) return;
         try {
+            OutputManager::reset();
             $filePath = CrashDump::fromLastestError()->create();
             CloudLogger::get()->error("§cAn error has occurred and caused the Cloud to crash entirely.");
             CloudLogger::get()->error("§cA crashdump has been created.");

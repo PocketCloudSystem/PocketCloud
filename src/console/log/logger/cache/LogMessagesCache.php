@@ -2,6 +2,8 @@
 
 namespace pocketcloud\cloud\console\log\logger\cache;
 
+use pocketcloud\cloud\console\log\CloudLogger;
+
 final class LogMessagesCache {
 
     private static array $savedLines = [];
@@ -16,7 +18,7 @@ final class LogMessagesCache {
 
     public static function print(): void {
         foreach (self::$savedLines as $line) {
-            echo $line . PHP_EOL;
+            CloudLogger::get()->echo($line);
         }
     }
 }

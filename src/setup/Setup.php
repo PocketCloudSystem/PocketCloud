@@ -14,8 +14,8 @@ use RuntimeException;
 
 abstract class Setup {
 
-    private const string COMMAND_CANCEL = 'cancel';
-    private const string COMMAND_BACK = 'back';
+    private const string COMMAND_CANCEL = "cancel";
+    private const string COMMAND_BACK = "back";
 
     private static ?Setup $currentSetup = null;
 
@@ -26,14 +26,32 @@ abstract class Setup {
     private int $currentQuestionIndex = -1;
     protected bool $cancelled = false;
     private array $results = [];
+    private array $inputs = [];
     private array $questions = [];
     private ?Closure $completionHandler = null;
+
+    private function __construct() {}
 
     final public function startSetup(): void {
         if (self::$currentSetup !== null) throw new RuntimeException("Another setup is already running");
 
         self::$currentSetup = $this;
         TerminalUtils::clear();
+
+        Console::getInstance()->disableHistory();
+        Console::getInstance()->setControlCHandler(fn() => $this->cancel());
+        Console::getInstance()->setCompletionHandler(function (array $tokens, string $current): array {
+            $recommendations = $this->currentQuestion?->getPossibleAnswers() ?? [];
+            if (empty($recommendations) || !empty($tokens)) return [];
+            $matches = [];
+            foreach ($recommendations as $recommendation) {
+                if (str_starts_with(strtolower($recommendation), strtolower($current))) {
+                    $matches[] = $recommendation;
+                }
+            }
+
+            return $matches;
+        });
 
         $this->setupOutputHandler();
         $this->initializeLogger();
@@ -62,7 +80,7 @@ abstract class Setup {
         $this->outputHandler->addAuthorizedLogger($this->logger);
     }
 
-    final public function completion(Closure $closure): self {
+    final public function onCompletion(Closure $closure): self {
         $this->completionHandler = $closure;
         return $this;
     }
@@ -78,6 +96,9 @@ abstract class Setup {
         $this->cleanupOutputHandler();
 
         TerminalUtils::clear();
+        Console::getInstance()->enableHistory();
+        Console::getInstance()->restoreControlCHandler();
+        Console::getInstance()->restoreCompletionHandler();
         LogMessagesCache::print();
 
         $this->currentQuestion = null;
@@ -147,14 +168,14 @@ abstract class Setup {
     }
 
     private function displayDefaultValue(): void {
-        if (($default = $this->currentQuestion->getDefault()) !== null) {
+        if (($default = $this->currentQuestion->getDefaultValueMessage()) !== null) {
             $this->logger->info("Default: §b{}", $default);
         }
     }
 
     private function displayPreviousAnswer(): void {
         $key = $this->currentQuestion->getId();
-        if (!isset($this->results[$key])) return;
+        if (!isset($this->results[$key]) || !isset($this->inputs[$key])) return;
 
         $value = $this->results[$key];
         $displayValue = match (gettype($value)) {
@@ -163,6 +184,7 @@ abstract class Setup {
         };
 
         $this->logger->info("Previous answer: §b{}", $displayValue);
+        Console::getInstance()->setInput($this->inputs[$key]);
     }
 
     private function displayHelp(): void {
@@ -182,11 +204,17 @@ abstract class Setup {
     }
 
     private function processAnswer(string $input): void {
-        if ($this->validateAndProcessInput($input)) $this->nextQuestion();
+        if ($this->validateAndProcessInput($input)) {
+            $this->inputs[$this->currentQuestion->getId()] = $input;
+            $this->nextQuestion();
+        }
     }
 
     private function validateAndProcessInput(string $input): bool {
-        if ($this->canSkipCurrentQuestion() && $input === "") return true;
+        if ($this->canSkipCurrentQuestion() && $input === "") {
+            if ($this->currentQuestion->isCanSkipped() && !isset($this->results[$this->currentQuestion->getId()])) $this->storeResult($this->currentQuestion->getDefaultValue());
+            return true;
+        }
 
         if ($input === "") return false;
 
@@ -195,9 +223,9 @@ abstract class Setup {
             return false;
         }
 
-        $result = $this->parseInput($input);
+        $result = $this->parseInput($input, $error);
         if ($result === null) {
-            $this->logger->error("Please provide a valid answer!");
+            $this->logger->error($error ?? "Please provide a valid answer!");
             return false;
         }
 
@@ -214,8 +242,8 @@ abstract class Setup {
         return empty($possibleAnswers) || in_array($input, $possibleAnswers, true);
     }
 
-    private function parseInput(string $input): mixed {
-        return $this->currentQuestion->getParser()($input);
+    private function parseInput(string $input, ?string &$error = null): mixed {
+        return $this->currentQuestion->getParser()($input, $error);
     }
 
     private function storeResult(mixed $result): void {
@@ -243,6 +271,9 @@ abstract class Setup {
         $this->cleanupOutputHandler();
 
         TerminalUtils::clear();
+        Console::getInstance()->enableHistory();
+        Console::getInstance()->restoreControlCHandler();
+        Console::getInstance()->restoreCompletionHandler();
         LogMessagesCache::print();
         Console::getInstance()->restorePrompt();
 

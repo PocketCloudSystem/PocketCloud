@@ -3,28 +3,26 @@
 namespace pocketcloud\cloud\setup;
 
 use Closure;
-use LogicException;
 
 final class QuestionBuilder {
 
-    private ?string $question = null;
+    private Closure $parser;
     private bool $canSkipped = false;
     private array $possibleAnswers = [];
-    private mixed $default = null;
+    private ?string $defaultValueMessage = null;
+    private mixed $actualDefaultValue = null;
     private ?string $recommendation = null;
-    private ?Closure $parser = null;
     private ?Closure $resultHandler = null;
 
-    public static function builder(string $id): QuestionBuilder {
-        return new self($id);
+    public static function builder(string $id, string $question): QuestionBuilder {
+        return new self($id, $question);
     }
 
-    public function __construct(private readonly string $id) {}
-
-    /** @required */
-    public function question(string $question): self {
-        $this->question = $question;
-        return $this;
+    public function __construct(
+        private readonly string $id,
+        private readonly string $question
+    ) {
+        $this->parser = self::defaultParser();
     }
 
     public function canSkipped(bool $value): self {
@@ -37,8 +35,9 @@ final class QuestionBuilder {
         return $this;
     }
 
-    public function default(string $default): self {
-        $this->default = $default;
+    public function default(string $displayDefault, mixed $value): self {
+        $this->defaultValueMessage = $displayDefault;
+        $this->actualDefaultValue = $value;
         return $this;
     }
 
@@ -48,7 +47,7 @@ final class QuestionBuilder {
     }
 
     /**
-     * @param Closure(string $input): mixed $parser
+     * @param Closure(string $input, ?string &$error): mixed $parser
      * @return $this
      * @required
      */
@@ -63,17 +62,20 @@ final class QuestionBuilder {
     }
 
     public function build(): Question {
-        if ($this->question === null) throw new LogicException("Parameter 'question' cannot be null");
-        if ($this->parser === null) throw new LogicException("Parameter 'parser' cannot be null");
         return new Question(
             $this->id,
             $this->question,
             $this->canSkipped,
             $this->possibleAnswers,
-            $this->default,
+            $this->defaultValueMessage,
+            $this->actualDefaultValue,
             $this->recommendation,
             $this->parser,
             $this->resultHandler
         );
+    }
+
+    public static function defaultParser(): Closure {
+        return fn(string $input): string => $input;
     }
 }

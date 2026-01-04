@@ -19,6 +19,6 @@ readonly class PluginParameter extends CommandParameter {
     }
 
     public function getType(): string {
-        return "server";
+        return "plugin";
     }
 }

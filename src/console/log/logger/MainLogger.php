@@ -138,11 +138,11 @@ class MainLogger implements ILogger {
             $this->log($logLevel ?? CloudLogLevel::INFO(), "");
         } else {
             if (OutputManager::getHandler()->shouldOutput($this)) {
-                $this->echo("\r");
+                $this->echo("");
             }
 
             if ($this->saveLogs) {
-                LogMessagesCache::save("\r");
+                LogMessagesCache::save("");
                 $this->write("\r" . PHP_EOL);
             }
         }

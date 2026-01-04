@@ -114,7 +114,7 @@ final class Network extends Thread {
                 if ($this->read($bytes, $buffer, $address, $port)) {
                     if (!$this->isAlive() || !$this->established) break;
                     $address = Address::create($address, $port);
-                    $this->buffer[] = [$buffer, $address, $port, new UnhandledPacket($buffer, $address, $bytes)];
+                    $this->buffer[] = ThreadSafeArray::fromArray([$buffer, $address, $port, new UnhandledPacket($buffer, $address, $bytes)]);
                     $this->handlerEntry->createNotifier()->wakeupSleeper();
                 }
             }

@@ -19,6 +19,6 @@ readonly class PlayerParameter extends CommandParameter {
     }
 
     public function getType(): string {
-        return "server";
+        return "player";
     }
 }
