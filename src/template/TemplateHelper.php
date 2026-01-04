@@ -35,7 +35,7 @@ final class TemplateHelper {
     }
 
     public static function checkValue(string $value, string $key, ?string &$expected = null, mixed &$realValue = null): bool {
-        if ($key == "lobby" || $key == "maintenance" || $key == "autoStart" || $key == "static") {
+        if ($key == "lobby" || $key == "maintenance" || $key == "autoStart" || $key == "static" || $key == "alwaysCopyToStaticServers") {
             $expected = "true | false";
             if ($value == "true" || $value == "false") {
                 $realValue = $value == "true";

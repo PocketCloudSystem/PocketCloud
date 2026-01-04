@@ -3,6 +3,7 @@
 namespace pocketcloud\cloud\console;
 
 use Closure;
+use pocketcloud\cloud\console\command\ClosureSubCommand;
 use pocketcloud\cloud\console\command\Command;
 use pocketcloud\cloud\console\command\CommandManager;
 use pocketcloud\cloud\console\command\ITabComplete;
@@ -59,10 +60,10 @@ final class Console {
 
         $command = CommandManager::getInstance()->get(array_shift($tokens));
 
-        if ($command instanceof ITabComplete) {
-            $matches = $command->onTabComplete(array_merge($tokens, [$current]));
-        } else if ($command instanceof Command) {
+        if ($command instanceof Command) {
+            $originalCommand = $command;
             $subCommands = $command->getSubCommands();
+            $actualTokens = $tokens;
             if (count($subCommands) > 0) {
                 if (isset($tokens[0])) {
                     if (($subCommand = $command->getSubCommand($tokens[0])) !== null) {
@@ -87,6 +88,11 @@ final class Console {
             $param = $command->getParameter(count($tokens));
             if ($param !== null) {
                 $matches = array_unique(array_merge($matches, $param->onTabCompleteMatch($current)));
+            }
+
+            $usedForCustomTabCompletion = $command instanceof ClosureSubCommand ? $originalCommand : $command;
+            if ($usedForCustomTabCompletion instanceof ITabComplete) {
+                $matches = array_unique(array_merge($matches, $usedForCustomTabCompletion->onTabComplete(array_merge($actualTokens, [$current]))));
             }
         }
 

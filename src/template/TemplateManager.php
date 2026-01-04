@@ -105,7 +105,8 @@ final class TemplateManager implements Loadable, Tickable {
         foreach (TemplateManager::getInstance()->getAll() as $template) {
             if ($template->getSettings()->isAutoStart()) {
                 if (($running = count(CloudServerManager::getInstance()->getAll($template))) < $template->getSettings()->getMaxServerCount()) {
-                    CloudServerManager::getInstance()->start($template, ($template->getSettings()->getMinServerCount() - $running));
+                    if ((microtime(true) - CloudServerManager::getInstance()->getLastServerStopTime()) >= 0.5)
+                        CloudServerManager::getInstance()->start($template, ($template->getSettings()->getMinServerCount() - $running));
                 }
             }
 

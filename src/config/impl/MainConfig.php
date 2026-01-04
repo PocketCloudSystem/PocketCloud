@@ -185,6 +185,7 @@ final class MainConfig extends Configuration {
 
     public function setDebugMode(bool $debugMode): void {
         $this->debugMode = $debugMode;
+        CloudLogger::get()?->setDebugMode($debugMode);
     }
 
     public function setUpdateChecks(bool $updateChecks): void {

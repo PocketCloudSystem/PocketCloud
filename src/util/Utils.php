@@ -4,6 +4,10 @@ namespace pocketcloud\cloud\util;
 
 use InvalidArgumentException;
 use pocketcloud\cloud\console\log\CloudLogger;
+use pocketcloud\cloud\player\CloudPlayerManager;
+use pocketcloud\cloud\PocketCloud;
+use pocketcloud\cloud\server\CloudServerManager;
+use pocketcloud\cloud\thread\ThreadManager;
 use pocketmine\utils\AssumptionFailedError;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
@@ -164,5 +168,63 @@ final class Utils {
         if ($extra === "") self::$machineUniqueId = $uuid;
 
         return $uuid;
+    }
+
+    public static function getProcessStats(): array {
+        $status = @file("/proc/self/status", FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+
+        $stats = [
+            "rss" => 0,
+            "size" => 0,
+            "peak" => 0,
+            "threads" => 0
+        ];
+
+        foreach ($status as $line) {
+            if (preg_match("/^(VmRSS|VmSize|VmPeak|Threads):\s+(\d+)/", $line, $m)) {
+                switch ($m[1]) {
+                    case "VmRSS":
+                        $stats["rss"] = ((int) $m[2]) * 1024;
+                        break;
+                    case "VmSize":
+                        $stats["size"] = ((int) $m[2]) * 1024;
+                        break;
+                    case "VmPeak":
+                        $stats["peak"] = ((int) $m[2]) * 1024;
+                        break;
+                    case "Threads":
+                        $stats["threads"] = (int) $m[2];
+                        break;
+                }
+            }
+        }
+
+        return $stats;
+    }
+
+    public static function readCloudPerformanceStatus(): array {
+        $knownThreadCount = count($threads = ThreadManager::getInstance()->getAll()) + 1; // +1 -> main thread;
+        [$vmRssSize, $vmSize, $vmPeak, $threadCount] = array_values(self::getProcessStats());
+        [$currentTPS, $avgTPS, $tickUsage] = array_values(PocketCloud::getInstance()->getPerformanceMetrics());
+        $memoryLimit = ini_get("memory_limit");
+        [$mainMemory, $mainMemoryPeak] = [memory_get_usage(true), memory_get_peak_usage(true)];
+        [$serverCount, $playerCount] = [count(CloudServerManager::getInstance()->getAll()), count(CloudPlayerManager::getInstance()->getAll())];
+
+        return [
+            "known_thread_count" => $knownThreadCount,
+            "os_thread_count" => $threadCount,
+            "threads" => $threads,
+            "vm_rss"  => $vmRssSize,
+            "vm_size" => $vmSize,
+            "vm_peak" => $vmPeak,
+            "memory_limit" => $memoryLimit,
+            "php_memory_usage" => $mainMemory,
+            "php_memory_peak" => $mainMemoryPeak,
+            "current_tps" => $currentTPS,
+            "average_tps" => $avgTPS,
+            "tick_usage" => $tickUsage,
+            "server_count" => $serverCount,
+            "player_count" => $playerCount
+        ];
     }
 }

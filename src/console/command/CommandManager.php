@@ -4,10 +4,18 @@ namespace pocketcloud\cloud\console\command;
 
 use InvalidArgumentException;
 use pocketcloud\cloud\console\command\impl\ClearCommand;
+use pocketcloud\cloud\console\command\impl\ConfigureCommand;
+use pocketcloud\cloud\console\command\impl\DebugCommand;
 use pocketcloud\cloud\console\command\impl\ExitCommand;
+use pocketcloud\cloud\console\command\impl\group\GroupCommand;
 use pocketcloud\cloud\console\command\impl\HelpCommand;
+use pocketcloud\cloud\console\command\impl\MaintenanceCommand;
+use pocketcloud\cloud\console\command\impl\player\PlayerCommand;
+use pocketcloud\cloud\console\command\impl\plugin\PluginCommand;
 use pocketcloud\cloud\console\command\impl\server\ServerCommand;
+use pocketcloud\cloud\console\command\impl\StatusCommand;
 use pocketcloud\cloud\console\command\impl\template\TemplateCommand;
+use pocketcloud\cloud\console\command\impl\VersionCommand;
 use pocketcloud\cloud\console\command\sender\ICommandSender;
 use pocketcloud\cloud\console\Console;
 use pocketcloud\cloud\console\log\color\CloudConsoleColor;
@@ -23,6 +31,7 @@ final class CommandManager implements Loadable, Tickable {
 
     /** @var array<Command> */
     private array $commands = [];
+    private array $knownAliases = [];
     private array $confirmationPromises = [];
     private ?array $currentConfirmationData = null;
 
@@ -31,10 +40,12 @@ final class CommandManager implements Loadable, Tickable {
     }
 
     public function load(): void {
-        $this->registerAll(new ExitCommand(), new HelpCommand(), new ClearCommand());
+        $this->registerAll(
+            new ExitCommand(), new HelpCommand(), new ClearCommand(), new MaintenanceCommand(),
+            new ConfigureCommand(), new VersionCommand(), new DebugCommand(), new StatusCommand()
+        );
 
-        $this->registerAll(new ServerCommand());
-        $this->registerAll(new TemplateCommand());
+        $this->registerAll(new ServerCommand(), new TemplateCommand(), new GroupCommand(), new PlayerCommand(), new PluginCommand());
     }
 
     public function waitForConfirmation(Command $command, ICommandSender $sender, string $prompt, array $keywordsAccept, int $timeout = 10): Promise {
@@ -44,6 +55,7 @@ final class CommandManager implements Loadable, Tickable {
 
     public function register(Command $command): void {
         if (isset($this->commands[$command->getName()])) throw new InvalidArgumentException("The command " . $command->getName() . " is already registered");
+        if (array_any($command->getAliases(), fn(string $alias) => in_array(strtolower($alias), $this->knownAliases))) throw new InvalidArgumentException("A command is already using one of the command's aliases");
         $this->commands[strtolower($command->getName())] = $command;
     }
 

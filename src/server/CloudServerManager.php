@@ -20,6 +20,7 @@ final class CloudServerManager implements Tickable {
     /** @var array<CloudServer> */
     private array $servers = [];
     private float $lastServerStartTime = 0;
+    private float $lastServerStopTime = 0;
 
     /** @var Queue<CloudServer> */
     private Queue $serverPrepareQueue;
@@ -38,10 +39,6 @@ final class CloudServerManager implements Tickable {
         } else {
             for ($i = 0; $i < $count; $i++) {
                 if (!$this->checkCapacity($template)) break;
-                if ($this->lastServerStartTime > 0) {
-                    CloudLogger::get()->debug("Time between this and last server start: " . round(microtime(true) - $this->lastServerStartTime, 3) . "s");
-                }
-
                 $this->lastServerStartTime = microtime(true);
                 $id = ServerUtils::getFreeId($template);
                 if ($id !== -1) {
@@ -102,6 +99,7 @@ final class CloudServerManager implements Tickable {
         if (isset($this->servers[$server->getName()])) unset($this->servers[$server->getName()]);
         ServerUtils::removeId($server->getTemplate(), $server->getId());
         ServerUtils::removePort($server->getServerData()->getPort());
+        $this->lastServerStopTime = microtime(true);
     }
 
     public function checkCapacity(Template $template): bool {
@@ -138,5 +136,13 @@ final class CloudServerManager implements Tickable {
         $templateOrGroup = is_string($templateOrGroup) ? $templateOrGroup : ($templateOrGroup instanceof Template || $templateOrGroup instanceof ServerGroup ? $templateOrGroup->getName() : null);
         if ($templateOrGroup !== null) return array_filter($this->servers, fn(CloudServer $server) => $server->getTemplate()->getName() == $templateOrGroup || $server->getTemplate()->getParentServerGroup()?->getName() == $templateOrGroup);
         return $this->servers;
+    }
+
+    public function getLastServerStartTime(): float {
+        return $this->lastServerStartTime;
+    }
+
+    public function getLastServerStopTime(): float {
+        return $this->lastServerStopTime;
     }
 }

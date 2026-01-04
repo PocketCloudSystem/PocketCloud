@@ -5,18 +5,14 @@ namespace pocketcloud\cloud\console\command\impl;
 use pocketcloud\cloud\console\command\Command;
 use pocketcloud\cloud\console\command\sender\ICommandSender;
 use pocketcloud\cloud\console\command\SubCommand;
-use pocketcloud\cloud\console\log\logger\cache\LogMessagesCache;
-use pocketcloud\cloud\util\TerminalUtils;
 
-final class ClearCommand extends Command {
+final class ConfigureCommand extends Command {
 
     public function __construct() {
-        parent::__construct("clear", "Clears the console", ["cls", "purge"]);
+        parent::__construct("configure", "Reconfigure the config", ["conf", "reconf", "reconfigure"]);
     }
 
     public function run(ICommandSender $sender, string $label, array $args, ?SubCommand $subCommand = null): bool {
-        LogMessagesCache::clear();
-        TerminalUtils::clear();
         return true;
     }
 }

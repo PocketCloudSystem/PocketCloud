@@ -65,8 +65,9 @@ final class FormatUtils {
         $parts = [];
 
         foreach ($array as $key => $value) {
+            $actualKey = $key;
             if ($keyProcessHandler !== null) $key = $keyProcessHandler($key);
-            if ($valueProcessHandler !== null) $value = $valueProcessHandler($key, $value);
+            if ($valueProcessHandler !== null) $value = $valueProcessHandler($actualKey, $value);
             $parts[] = $key . $keyValueSeparator . $value;
         }
 

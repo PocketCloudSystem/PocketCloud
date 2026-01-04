@@ -127,7 +127,6 @@ final class ManualConsole {
                 return;
             }
 
-            // Beim ersten Tab: Ersten Match einfügen und anzeigen
             $match = $this->tabMatches[$this->tabIndex];
             $tokens[] = $match;
             $this->input = implode(" ", $tokens) . $afterCursor;
@@ -137,7 +136,6 @@ final class ManualConsole {
             return;
         }
 
-        // Bei weiteren Tabs: Zum nächsten Match wechseln
         $this->tabIndex = ($this->tabIndex + 1) % count($this->tabMatches);
         $match = $this->tabMatches[$this->tabIndex];
         $tokens[] = $match;
@@ -150,27 +148,25 @@ final class ManualConsole {
     private function displayTabMatches(): void {
         if (empty($this->tabMatches)) return;
 
-        // Clear previous display if exists
         if ($this->tabMatchesDisplayed) {
             echo "\033[1B"; // Move down
             echo "\033[2K\r"; // Clear line
             echo "\033[1A"; // Move back up
         }
 
-        // Display matches with current one highlighted
         $display = [];
         foreach ($this->tabMatches as $i => $match) {
             if ($i === $this->tabIndex) {
-                $display[] = "\033[7m" . $match . "\033[27m"; // Inverted colors for selected
+                $display[] = "\033[7m" . $match . "\033[27m";
             } else {
                 $display[] = $match;
             }
         }
 
         echo "\n\r" . implode(" ", $display);
-        echo "\033[1A"; // Move cursor up one line
+        echo "\033[1A";
         $cursorPosition = strlen($this->prompt) + $this->cursor;
-        echo "\r\033[" . $cursorPosition . "C"; // Move cursor to correct position
+        echo "\r\033[" . $cursorPosition . "C";
 
         $this->tabMatchesDisplayed = true;
     }

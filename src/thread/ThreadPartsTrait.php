@@ -32,7 +32,6 @@ trait ThreadPartsTrait {
 
         foreach ($customAutoLoaders as $customAutoLoader) {
             if (is_subclass_of($customAutoLoader, IClassLoader::class)) $this->autoLoaders[] = $customAutoLoader;
-            else CloudLogger::get()->warn("{} cannot be set as a class loader inside a thread ({}), not inheriting from 'IClassLoader'", $customAutoLoader::class, $this::class);
         }
     }
 
@@ -96,7 +95,7 @@ trait ThreadPartsTrait {
 
     public function handleException(Throwable $exception): void {
         $this->synchronized(function () use ($exception): void {
-            CloudLogger::get()->exception($exception);
+            $this->logger->exception($exception);
             $this->exitStatus = ThreadExitStatus::EXCEPTION;
             $this->exitMessage = $exception->getMessage();
         });
@@ -109,7 +108,7 @@ trait ThreadPartsTrait {
                 $this->exitStatus = ThreadExitStatus::FATAL_ERROR;
                 $this->exitMessage = $error["message"] . " in {$error["file"]}:{$error["line"]}";
 
-                CloudLogger::get()->error("Fatal error in thread: {}", $this->exitMessage);
+                $this->logger->error("Fatal error in thread: {}", $this->exitMessage);
             }
         });
     }

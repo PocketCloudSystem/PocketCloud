@@ -9,6 +9,7 @@ use pocketcloud\cloud\network\packet\CloudboundPacket;
 use pocketcloud\cloud\network\packet\CloudPacket;
 use pocketcloud\cloud\network\packet\data\NotificationType;
 use pocketcloud\cloud\network\packet\util\PacketData;
+use pocketcloud\cloud\player\CloudPlayerManager;
 use pocketcloud\cloud\template\TemplateType;
 
 final class CloudNotificationPacket extends CloudPacket implements ClientboundPacket, CloudboundPacket {
@@ -22,7 +23,8 @@ final class CloudNotificationPacket extends CloudPacket implements ClientboundPa
         switch ($this->notificationType) {
             case NotificationType::PLAYER_JOIN_FAILED: {
                 [$player, $server, $reason] = [$this->args["player"], $this->args["server"], $this->args["reason"]];
-                CloudLogger::get()->info("The player §b{} §rtried to join via §b{}§r, but got §ckicked§r: §b{}", $player, $server, $this->formatReason($reason));
+                $alreadyOnAServer = CloudPlayerManager::getInstance()->get($player)?->getCurrentServerName() !== null;
+                CloudLogger::get()->info("The player §b{} §rtried to join" . ($alreadyOnAServer ? "" : " via") . " §b{}§r, but got §ckicked§r: §b{}", $player, $server, $this->formatReason($reason));
                 break;
             }
             case NotificationType::PLAYER_KICKED: {

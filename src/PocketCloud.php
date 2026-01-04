@@ -69,6 +69,12 @@ final class PocketCloud {
     private int $tick = 0;
     private float $startTimestamp = 0;
 
+    private array $tickTimes = [];
+    private float $lastTickTime = 0;
+    private float $currentTPS = 20.0;
+    private float $averageTPS = 20.0;
+    private float $tickUsage = 0.0;
+
     private MainLogger $logger;
     private Console $console;
     private CommandManager $commandManager;
@@ -103,6 +109,7 @@ final class PocketCloud {
         if ($this->running) return;
         $this->startTimestamp = microtime(true);
         $this->running = true;
+        $this->lastTickTime = microtime(true);
 
         CloudLogger::set($this->logger = new MainLogger(LOG_PATH, false, false));
         $this->console = new Console();
@@ -162,7 +169,7 @@ final class PocketCloud {
         if ($this->config->isStartUpDelay()) {
             CloudLogger::get()->info("§bPocket§3Cloud §rwill §astart §rin 3 seconds...");
             sleep(3);
-        }
+        } else usleep(50 * 1000);
 
         $this->console->install();
         $this->console->register();
@@ -243,17 +250,66 @@ final class PocketCloud {
     public function tick(): void {
         $start = microtime(true);
         while ($this->running) {
+            $tickStart = microtime(true);
+
             $this->tick++;
             TickableList::tickAll($this->tick);
             $this->console->readLine();
+
+            $tickEnd = microtime(true);
+            $this->updatePerformanceMetrics($tickStart, $tickEnd);
+
             $this->sleeperHandler->sleepUntil($start);
         }
+    }
+
+    private function updatePerformanceMetrics(float $tickStart, float $tickEnd): void {
+        $tickDuration = $tickEnd - $tickStart;
+        $timeSinceLastTick = $tickStart - $this->lastTickTime;
+
+        if ($timeSinceLastTick > 0) {
+            $this->currentTPS = min(20.0, 1 / $timeSinceLastTick);
+        }
+
+        $this->tickTimes[] = $timeSinceLastTick;
+        if (count($this->tickTimes) > 20) {
+            array_shift($this->tickTimes);
+        }
+
+        if (!empty($this->tickTimes)) {
+            $avgTickTime = array_sum($this->tickTimes) / count($this->tickTimes);
+            $this->averageTPS = $avgTickTime > 0 ? min(20.0, 1.0 / $avgTickTime) : 20.0;
+        }
+
+        $this->tickUsage = min(100.0, ($tickDuration / 0.05) * 100);
+
+        $this->lastTickTime = $tickStart;
     }
 
     public function addStartNotification(string $logMessage, ?CloudLogLevel $logLevel = null, mixed... $params): self {
         if ($this->tick > 0) CloudLogger::get()->log($logLevel, $logMessage, $params);
         else $this->startNotificationQueue->add([$logLevel ?? CloudLogLevel::INFO(), $logMessage, $params]);
         return $this;
+    }
+
+    public function getCurrentTPS(): float {
+        return $this->currentTPS;
+    }
+
+    public function getAverageTPS(): float {
+        return $this->averageTPS;
+    }
+
+    public function getTickUsage(): float {
+        return $this->tickUsage;
+    }
+
+    public function getPerformanceMetrics(): array {
+        return [
+            "current_tps" => $this->currentTPS,
+            "average_tps" => $this->averageTPS,
+            "tick_usage" => $this->tickUsage
+        ];
     }
 
     public function isRunning(): bool {

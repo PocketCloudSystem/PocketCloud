@@ -54,10 +54,10 @@ abstract class Command {
             else $parsedArgs = $subCommand->parseArgs($args, $currentParameter);
         } catch (ArgumentParseException) {
             if ($currentParameter->getCustomErrorMessage() !== null) $sender->warn($currentParameter->getCustomErrorMessage());
-            else $this->sendUsageMessage($sender);
+            else $this->sendUsageMessage($sender, $subCommand);
             return;
         } catch (NoArgumentFoundException) {
-            $this->sendUsageMessage($sender);
+            $this->sendUsageMessage($sender, $subCommand);
             return;
         }
 
