@@ -10,7 +10,7 @@ final class NotificationListCache {
 
     /** @internal  */
     public static function sync(array $notificationList): void {
-        foreach ($notificationList as $player) self::$notificationList[$player] = true;
+        foreach ($notificationList as $player) self::$notificationList[$player] = $player;
     }
 
     private static function syncOut(): void {
@@ -18,22 +18,22 @@ final class NotificationListCache {
     }
 
     public static function add(string $player): void {
-        self::$notificationList[$player] = true;
+        if (self::is($player)) return;
+        self::$notificationList[$player] = $player;
         self::syncOut();
     }
 
     public static function remove(string $player): void {
-        if (self::is($player)) {
-            unset(self::$notificationList[$player]);
-            self::syncOut();
-        }
+        if (!self::is($player)) return;
+        unset(self::$notificationList[$player]);
+        self::syncOut();
     }
 
     public static function is(string $player): bool {
-        return self::$notificationList[$player] ?? false;
+        return isset(self::$notificationList[$player]);
     }
 
     public static function getAll(): array {
-        return array_keys(self::$notificationList);
+        return array_values(self::$notificationList);
     }
 }
