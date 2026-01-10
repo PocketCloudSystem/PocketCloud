@@ -47,8 +47,8 @@ final class LibraryManager implements Loadable {
                 false
             ),
             new Library(
-                "pmforms",
-                "https://github.com/dktapps-pm-pl/pmforms/archive/refs/tags/2.3.0.zip",
+                "BetterForms",
+                "https://github.com/r3pt1s/BetterForms/archive/refs/heads/main.zip",
                 "",
                 "src/",
                 true

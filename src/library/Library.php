@@ -26,6 +26,13 @@ final readonly class Library {
         $this->libPath = PathUtils::join(LIBRARIES_PATH, $this->name) . "/";
     }
 
+    /**
+     *
+     * When downloaded a library, the cloud expects the zip Archive to have the following structure:
+     * -> library.zip -> Library-main (or any name) -> the actual library contents (src, readme.md, ...)
+     *
+     * @return bool
+     */
     public function download(): bool {
         if ($this->check()) return false;
         return ExceptionHandler::tryCatch(
@@ -34,11 +41,12 @@ final readonly class Library {
                 NetUtils::download($downloadUrl, $archivePath = PathUtils::join(LIBRARIES_PATH, uniqid()));
                 $archive = new ZipArchive();
                 if ($archive->open($archivePath)) {
+                    $mainPath = rtrim($archive->getNameIndex(0), "/");
                     $archive->extractTo(LIBRARIES_PATH);
                     $archive->close();
 
                     if (!file_exists($libPath)) mkdir($libPath);
-                    FileUtils::rename(PathUtils::join(LIBRARIES_PATH, rtrim($archive->getNameIndex(0), "/")) . "/", $libPath);
+                    FileUtils::rename(PathUtils::join(LIBRARIES_PATH, $mainPath) . "/", $libPath);
                 }
 
                 unlink($archivePath);

@@ -85,7 +85,7 @@ final class MainConfig extends Configuration {
         ]
     ];
 
-    private int $serverPrepareThreads = 0; // By default, we are creating zero threads for that purpose to save some resources. Recommended to use if you've got more than 5 templates or 9 servers running at the same time
+    private int $serverPrepareThreads = 0; // By default, we are creating zero threads to save some resources. Recommended to use if you've got more than 5 templates or 9 servers running / booting at the same time to make it faster (completely depends on your template size)
 
     public function __construct() {
         parent::__construct(STORAGE_PATH . "config.json", self::TYPE_JSON);
@@ -155,7 +155,8 @@ final class MainConfig extends Configuration {
                 }
 
                 /**
-                 * // Re-setting this due to strict declarations, @see ServerUtils
+                 * Re-setting this due to strict declarations
+                 * @see ServerUtils
                  */
                 $this->serverPortRanges[$key] = [
                     "start" => $start, "end" => $end, "random-ports" => $randomPorts
