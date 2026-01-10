@@ -48,7 +48,7 @@ final class LibraryManager implements Loadable {
             ),
             new Library(
                 "BetterForms",
-                "https://github.com/r3pt1s/BetterForms/archive/refs/heads/main.zip",
+                "https://github.com/PocketCloudSystem/BetterForms/archive/refs/heads/main.zip",
                 "",
                 "src/",
                 true
