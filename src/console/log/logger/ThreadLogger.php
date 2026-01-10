@@ -13,6 +13,7 @@ use pocketcloud\cloud\console\log\color\CloudConsoleColor;
 use pocketcloud\cloud\console\log\level\CloudLogLevel;
 use pocketcloud\cloud\exception\UnsupportedOperationException;
 use pocketcloud\cloud\util\FileUtils;
+use pocketcloud\cloud\util\PathUtils;
 use pocketmine\snooze\SleeperHandlerEntry;
 use ReflectionClass;
 use ReflectionException;
@@ -58,7 +59,7 @@ class ThreadLogger extends ThreadSafe implements ILogger {
     }
 
     public function exception(Throwable $throwable): self {
-        $this->error("§cUnhandled §e{}§c: §e{} §cwas thrown in §e{} §cat line §e{}", $throwable::class, $throwable->getMessage(), FileUtils::cleanPath($throwable->getFile()), $throwable->getLine());
+        $this->error("§cUnhandled §e{}§c: §e{} §cwas thrown in §e{} §cat line §e{}", $throwable::class, $throwable->getMessage(), PathUtils::clean($throwable->getFile()), $throwable->getLine());
         $i = 1;
         foreach ($throwable->getTrace() as $trace) {
             $args = implode(", ", array_map(function(mixed $argument): string {
@@ -75,9 +76,9 @@ class ThreadLogger extends ThreadSafe implements ILogger {
             }, ($trace["args"] ?? [])));
 
             if (isset($trace["line"])) {
-                $this->error("§cTrace §e#{} §ccalled at '§e{}({})§c' in §e{} §cat line §e{}", $i, $trace["function"], $args, FileUtils::cleanPath($trace["file"] ?? $trace["class"]), $trace["line"]);
+                $this->error("§cTrace §e#{} §ccalled at '§e{}({})§c' in §e{} §cat line §e{}", $i, $trace["function"], $args, PathUtils::clean($trace["file"] ?? $trace["class"]), $trace["line"]);
             } else {
-                $this->error("§cTrace §e#{} §ccalled at '§e{}({})§c' in §e{}", $i, $trace["function"], $args, FileUtils::cleanPath($trace["file"] ?? $trace["class"]));
+                $this->error("§cTrace §e#{} §ccalled at '§e{}({})§c' in §e{}", $i, $trace["function"], $args, PathUtils::clean($trace["file"] ?? $trace["class"]));
             }
             $i++;
         }

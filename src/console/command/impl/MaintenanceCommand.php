@@ -36,7 +36,7 @@ final class MaintenanceCommand extends Command {
         return true;
     }
 
-    public function handleRemoveSub(ICommandSender $sender, string $label, array $args,): bool {
+    public function handleRemoveSub(ICommandSender $sender, string $label, array $args): bool {
         $player = $args["player"];
         if (MaintenanceListCache::is($player)) {
             $sender->success("Successfully §cremoved §rthe player from the maintenance list!");

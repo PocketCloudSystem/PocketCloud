@@ -305,19 +305,17 @@ final class ManualConsole {
     }
 
     public function println(string $message): void {
+        echo "\033[2K\r";
         if ($this->tabMatchesDisplayed) {
             // Clear current prompt line
-            echo "\033[2K\r";
             // Move down to matches line and clear it
             echo "\033[1B";
             echo "\033[2K\r";
             // Move back up and print message
             echo "\033[1A";
-            echo $message . PHP_EOL;
-        } else {
-            echo "\033[2K\r";
-            echo $message . PHP_EOL;
         }
+
+        echo $message . PHP_EOL;
 
         $this->redraw($this->prompt);
 

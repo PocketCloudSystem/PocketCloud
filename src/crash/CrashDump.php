@@ -6,6 +6,7 @@ use JsonException;
 use pocketcloud\cloud\util\ErrorUtils;
 use pocketcloud\cloud\util\FileUtils;
 use pocketcloud\cloud\util\FormatUtils;
+use pocketcloud\cloud\util\PathUtils;
 use ReflectionClass;
 use ReflectionException;
 use RuntimeException;
@@ -68,7 +69,7 @@ final class CrashDump {
                 return gettype($argument);
             }, ($trace["args"] ?? [])));
 
-            $this->addLine(FormatUtils::interpolate("#{} {}({}): {}({})", [$i, FileUtils::cleanPath($trace["file"] ?? $trace["class"]), $trace["line"] ?? "???", $trace["function"], $args]));
+            $this->addLine(FormatUtils::interpolate("#{} {}({}): {}({})", [$i, PathUtils::clean($trace["file"] ?? $trace["class"]), $trace["line"] ?? "???", $trace["function"], $args]));
         }
 
         $this->addLine();

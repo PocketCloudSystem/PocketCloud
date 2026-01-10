@@ -77,7 +77,7 @@ final class FileUtils {
 
                 /** @var SplFileInfo $item */
                 foreach ($iterator as $item) {
-                    $relativePath = substr($item->getPathname(), strlen($src) + 1);;
+                    $relativePath = substr($item->getPathname(), strlen($src) + 1);
                     $dstPath = PathUtils::join($dst, $relativePath);
 
                     if ($item->isDir()) {
