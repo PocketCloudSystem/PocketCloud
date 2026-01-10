@@ -6,6 +6,7 @@ use Closure;
 use InvalidArgumentException;
 use LogicException;
 use pocketcloud\cloud\server\CloudServer;
+use pocketcloud\cloud\util\PathUtils;
 use pocketcloud\cloud\util\promise\Promise;
 use pocketcloud\cloud\util\TerminalUtils;
 use pocketcloud\cloud\util\trait\RegistryTrait;
@@ -36,7 +37,9 @@ final class ServerStartMethod {
             exec($cmd, $output, $returnVar);
 
             if ($returnVar === 0 && isset($output[0])) {
-                $screenPid = (int) $output[0];
+                $screenPid = (int) trim($output[0]);
+                $grepOutput = shell_exec("pgrep -P $screenPid");
+                if ($grepOutput === null) return Promise::rejected();
                 $pid = (int) trim(shell_exec("pgrep -P $screenPid"));
                 if ($pid > 0) {
                     return Promise::resolved($pid);
@@ -106,7 +109,7 @@ final class ServerStartMethod {
         return ($this->startHandler)($server, str_replace(
             ["%BINARY_PATH%", "%SOFTWARE_PATH%"],
             [
-                BINARIES_PATH . strtolower($server->getTemplate()->getTemplateType()->getName()) . DIRECTORY_SEPARATOR,
+                PathUtils::join(BINARIES_PATH, strtolower($server->getTemplate()->getTemplateType()->getName())) . "/",
                 SOFTWARE_PATH
             ], $server->getTemplate()->getTemplateType()->getSoftware()->getStartCommand()
         ));

@@ -8,6 +8,7 @@ use pocketcloud\cloud\server\config\def\PocketMineServerProperties;
 use pocketcloud\cloud\server\config\def\WaterdogConfig;
 use pocketcloud\cloud\template\TemplateType;
 use pocketcloud\cloud\util\misc\Loadable;
+use pocketcloud\cloud\util\PathUtils;
 use pocketcloud\cloud\util\trait\SingletonTrait;
 use const pocketcloud\TEMPLATES_PATH;
 
@@ -39,8 +40,8 @@ final class ServerPropertiesGenerator implements Loadable {
 
             $i = 0;
             foreach (array_diff(scandir(TEMPLATES_PATH), [".", "..", "global"]) as $file) {
-                $dirPath = TEMPLATES_PATH . $file . DIRECTORY_SEPARATOR;
-                $filePath = $dirPath . $properties->getFileName();
+                $dirPath = PathUtils::join(TEMPLATES_PATH, $file) . "/";
+                $filePath = PathUtils::join($dirPath, $properties->getFileName());
                 if (@file_exists($filePath)) {
                     if ($properties->needsRenewal($filePath)) {
                         $properties->renew($filePath);

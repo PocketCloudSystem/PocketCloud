@@ -6,6 +6,7 @@ use pocketcloud\cloud\group\ServerGroup;
 use pocketcloud\cloud\group\ServerGroupManager;
 use pocketcloud\cloud\server\CloudServerManager;
 use pocketcloud\cloud\util\misc\Writeable;
+use pocketcloud\cloud\util\PathUtils;
 use pocketcloud\cloud\util\Utils;
 use const pocketcloud\TEMPLATES_PATH;
 
@@ -106,7 +107,7 @@ final readonly class Template implements Writeable {
     }
 
     public function getPath(): string {
-        return TEMPLATES_PATH . $this->name . DIRECTORY_SEPARATOR;
+        return PathUtils::join(TEMPLATES_PATH, $this->name) . "/";
     }
 
     public function write(): array {

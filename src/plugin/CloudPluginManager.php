@@ -51,7 +51,7 @@ final class CloudPluginManager implements Tickable, Loadable {
     }
 
     public function loadPlugin(string $path): void {
-        CloudLogger::get()->debug("Loading plugim §b" . basename($path) . "§r...");
+        CloudLogger::get()->debug("Loading plugin §b" . basename($path) . "§r...");
         foreach ($this->loaders as $loader) {
             try {
                 if ($loader->canLoad($path)) {
@@ -60,6 +60,8 @@ final class CloudPluginManager implements Tickable, Loadable {
                         CloudLogger::get()->error("§cFailed to load the plugin §e" . basename($path) . "§c: §eMain Class does not inherit from §eCloudPlugin");
                         return;
                     }
+
+                    if (!is_dir($plugin->getDataFolder())) mkdir($plugin->getDataFolder(), 0777, true);
 
                     if (isset($this->plugins[$plugin->getDescription()->getName()])) {
                         CloudLogger::get()->warn("§cThe plugin §e" . $plugin->getDescription()->getName() . " §cis already loaded.");

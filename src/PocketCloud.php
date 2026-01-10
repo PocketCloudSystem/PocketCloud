@@ -37,6 +37,7 @@ use pocketcloud\cloud\util\loader\ClassLoader;
 use pocketcloud\cloud\util\misc\LoadableList;
 use pocketcloud\cloud\util\misc\TickableList;
 use pocketcloud\cloud\util\net\Address;
+use pocketcloud\cloud\util\PathUtils;
 use pocketcloud\cloud\util\TerminalUtils;
 use pocketcloud\cloud\util\Utils;
 use pocketcloud\cloud\util\VersionInfo;
@@ -435,27 +436,27 @@ checkPlatform();
 
 define("pocketcloud\VENDOR_AUTOLOAD_PATH", $autoloadPath);
 define("pocketcloud\IS_PHAR", Phar::running() !== "");
-define("pocketcloud\SOURCE_PATH", __DIR__ . DIRECTORY_SEPARATOR);
+define("pocketcloud\SOURCE_PATH", __DIR__ . "/");
 
 define("pocketcloud\CLOUD_PATH", (IS_PHAR ?
-    str_replace("phar://", "", dirname(__DIR__, 2) . DIRECTORY_SEPARATOR) :
-    dirname(__DIR__) . DIRECTORY_SEPARATOR
+    str_replace("phar://", "", dirname(__DIR__, 2) . "/") :
+    dirname(__DIR__) . "/"
 ));
 
-define("pocketcloud\STORAGE_PATH", CLOUD_PATH . "storage" . DIRECTORY_SEPARATOR);
-define("pocketcloud\CRASHES_PATH", CLOUD_PATH . "storage" . DIRECTORY_SEPARATOR . "crashes" . DIRECTORY_SEPARATOR);
-define("pocketcloud\SERVER_CRASHES_PATH", CRASHES_PATH . "servers" . DIRECTORY_SEPARATOR);
-define("pocketcloud\BINARIES_PATH", STORAGE_PATH . "binaries" . DIRECTORY_SEPARATOR);
-define("pocketcloud\LIBRARIES_PATH", STORAGE_PATH . "libraries" . DIRECTORY_SEPARATOR);
-define("pocketcloud\PLUGINS_PATH", STORAGE_PATH . "plugins" . DIRECTORY_SEPARATOR);
-define("pocketcloud\SOFTWARE_PATH", STORAGE_PATH . "software" . DIRECTORY_SEPARATOR);
-define("pocketcloud\IN_GAME_PATH", STORAGE_PATH . "inGame" . DIRECTORY_SEPARATOR);
-define("pocketcloud\STATIC_SERVERS_PATH", STORAGE_PATH . "staticServers" . DIRECTORY_SEPARATOR);
-define("pocketcloud\LOG_PATH", STORAGE_PATH . "cloud.log");
-define("pocketcloud\TEMP_PATH", CLOUD_PATH . "tmp" . DIRECTORY_SEPARATOR);
-define("pocketcloud\TEMPLATES_PATH", CLOUD_PATH . "templates" . DIRECTORY_SEPARATOR);
-define("pocketcloud\GLOBAL_TEMPLATES_PATH", TEMPLATES_PATH . "global" . DIRECTORY_SEPARATOR);
-define("pocketcloud\SERVER_GROUPS_PATH", CLOUD_PATH . "groups" . DIRECTORY_SEPARATOR);
+define("pocketcloud\STORAGE_PATH", PathUtils::join(CLOUD_PATH, "storage") . "/");
+define("pocketcloud\CRASHES_PATH", PathUtils::join(STORAGE_PATH, "crashes") . "/");
+define("pocketcloud\SERVER_CRASHES_PATH", PathUtils::join(CRASHES_PATH, "servers") . "/");
+define("pocketcloud\BINARIES_PATH", PathUtils::join(STORAGE_PATH, "binaries") . "/");
+define("pocketcloud\LIBRARIES_PATH", PathUtils::join(STORAGE_PATH, "libraries") . "/");
+define("pocketcloud\PLUGINS_PATH", PathUtils::join(STORAGE_PATH, "plugins") . "/");
+define("pocketcloud\SOFTWARE_PATH", PathUtils::join(STORAGE_PATH, "software") . "/");
+define("pocketcloud\IN_GAME_PATH", PathUtils::join(STORAGE_PATH, "inGame") . "/");
+define("pocketcloud\STATIC_SERVERS_PATH", PathUtils::join(STORAGE_PATH, "staticServers") . "/");
+define("pocketcloud\LOG_PATH", PathUtils::join(STORAGE_PATH, "cloud.log"));
+define("pocketcloud\TEMP_PATH", PathUtils::join(CLOUD_PATH, "tmp") . "/");
+define("pocketcloud\TEMPLATES_PATH", PathUtils::join(CLOUD_PATH, "templates") . "/");
+define("pocketcloud\GLOBAL_TEMPLATES_PATH", PathUtils::join(TEMPLATES_PATH, "global") . "/");
+define("pocketcloud\SERVER_GROUPS_PATH", PathUtils::join(CLOUD_PATH, "groups") . "/");
 define("pocketcloud\FIRST_RUN", !file_exists(STORAGE_PATH . "config.json"));
 
 foreach ([

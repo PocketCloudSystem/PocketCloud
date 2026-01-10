@@ -6,6 +6,7 @@ use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\template\Template;
 use pocketcloud\cloud\template\TemplateManager;
 use pocketcloud\cloud\util\misc\Writeable;
+use pocketcloud\cloud\util\PathUtils;
 use pocketcloud\cloud\util\Utils;
 use const pocketcloud\SERVER_GROUPS_PATH;
 
@@ -36,7 +37,7 @@ final class ServerGroup implements Writeable {
     }
 
     public function getPath(): string {
-        return SERVER_GROUPS_PATH . $this->name . DIRECTORY_SEPARATOR;
+        return PathUtils::join(SERVER_GROUPS_PATH, $this->name) . "/";
     }
 
     public function getTemplates(): array {

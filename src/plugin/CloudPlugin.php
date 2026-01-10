@@ -5,6 +5,8 @@ namespace pocketcloud\cloud\plugin;
 use pocketcloud\cloud\console\log\logger\PrefixedLogger;
 use pocketcloud\cloud\PocketCloud;
 use pocketcloud\cloud\scheduler\TaskScheduler;
+use pocketcloud\cloud\util\FileUtils;
+use pocketcloud\cloud\util\PathUtils;
 
 abstract class CloudPlugin {
 
@@ -12,9 +14,26 @@ abstract class CloudPlugin {
     private TaskScheduler $scheduler;
     private PrefixedLogger $prefixedLogger;
 
-    public function __construct(private readonly CloudPluginDescription $description) {
+    public function __construct(
+        private readonly CloudPluginDescription $description,
+        private readonly string $dataFolder,
+        private readonly string $pluginDirPath
+    ) {
         $this->scheduler = new TaskScheduler($this);
         $this->prefixedLogger = new PrefixedLogger(PocketCloud::getInstance()->getLogger(), "[" . $this->description->getName() . "]");
+    }
+
+    public function saveResource(string $relativePath, bool $replace = false): bool {
+        $absoluteSourcePath = PathUtils::join($this->pluginDirPath, "resources", $relativePath);
+        $absoluteDestinationPath = PathUtils::join($this->dataFolder, $relativePath);
+        if (!file_exists($absoluteSourcePath)) return false;
+        if (file_exists($absoluteDestinationPath) && !$replace) return false;
+        if (!file_exists(dirname($absoluteDestinationPath))) FileUtils::createDir(dirname($absoluteDestinationPath));
+        return copy($absoluteSourcePath, $absoluteDestinationPath);
+    }
+
+    public function saveDefaultConfig(): bool {
+        return $this->saveResource("config.yml");
     }
 
     public function onLoad(): void {}
@@ -45,5 +64,9 @@ abstract class CloudPlugin {
 
     public function getDescription(): CloudPluginDescription {
         return $this->description;
+    }
+
+    public function getDataFolder(): string {
+        return $this->dataFolder;
     }
 }

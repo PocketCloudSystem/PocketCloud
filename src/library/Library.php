@@ -7,6 +7,7 @@ use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\PocketCloud;
 use pocketcloud\cloud\util\FileUtils;
 use pocketcloud\cloud\util\net\NetUtils;
+use pocketcloud\cloud\util\PathUtils;
 use pocketcloud\cloud\util\Utils;
 use ZipArchive;
 use const pocketcloud\LIBRARIES_PATH;
@@ -22,7 +23,7 @@ final readonly class Library {
         private string $namespaceFolder,
         private bool $bridgeOnly
     ) {
-        $this->libPath = LIBRARIES_PATH . $this->name . DIRECTORY_SEPARATOR;
+        $this->libPath = PathUtils::join(LIBRARIES_PATH, $this->name) . "/";
     }
 
     public function download(): bool {
@@ -30,15 +31,14 @@ final readonly class Library {
         return ExceptionHandler::tryCatch(
             function (string $name, string $downloadUrl, string $libPath): bool {
                 CloudLogger::get()->info("Downloading source for library: {}...", $name);
-                NetUtils::download($downloadUrl, $archivePath = LIBRARIES_PATH . uniqid());
+                NetUtils::download($downloadUrl, $archivePath = PathUtils::join(LIBRARIES_PATH, uniqid()));
                 $archive = new ZipArchive();
                 if ($archive->open($archivePath)) {
                     $archive->extractTo(LIBRARIES_PATH);
-                    $mainDir = rtrim($archive->getNameIndex(0), DIRECTORY_SEPARATOR);
                     $archive->close();
 
                     if (!file_exists($libPath)) mkdir($libPath);
-                    FileUtils::rename(LIBRARIES_PATH . $mainDir . DIRECTORY_SEPARATOR, $libPath);
+                    FileUtils::rename(PathUtils::join(LIBRARIES_PATH, rtrim($archive->getNameIndex(0), "/")) . "/", $libPath);
                 }
 
                 unlink($archivePath);
@@ -53,7 +53,7 @@ final readonly class Library {
     public function load(): bool {
         if (!$this->check()) return false;
         if ($this->bridgeOnly) return false;
-        PocketCloud::getInstance()->getClassLoader()->addPrefix($this->namespacePrefix, LIBRARIES_PATH . $this->name . DIRECTORY_SEPARATOR . $this->namespaceFolder);
+        PocketCloud::getInstance()->getClassLoader()->addPrefix($this->namespacePrefix, LIBRARIES_PATH . $this->name . "/" . $this->namespaceFolder);
         return true;
     }
 

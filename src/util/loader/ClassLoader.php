@@ -4,6 +4,7 @@ namespace pocketcloud\cloud\util\loader;
 
 use pmmp\thread\ThreadSafe;
 use pmmp\thread\ThreadSafeArray;
+use pocketcloud\cloud\util\PathUtils;
 
 final class ClassLoader extends ThreadSafe implements IClassLoader {
 
@@ -22,7 +23,7 @@ final class ClassLoader extends ThreadSafe implements IClassLoader {
             if ($namespace === "") {
                 $prefix = "";
             } else {
-                $prefix = str_replace([DIRECTORY_SEPARATOR, "\\", "\\\\", DIRECTORY_SEPARATOR . DIRECTORY_SEPARATOR], "\\", rtrim($namespace, "\\")) . "\\";
+                $prefix = str_replace(["/", "\\", "\\\\", "//"], "\\", rtrim($namespace, "\\")) . "\\";
             }
 
             if (!isset($this->namespaces[$prefix])) $this->namespaces[$prefix] = new ThreadSafeArray();
@@ -38,11 +39,11 @@ final class ClassLoader extends ThreadSafe implements IClassLoader {
             foreach ($prefixes as $prefix => $paths) {
                 if ($prefix === "" || str_starts_with($class, $prefix)) {
                     $relative = $prefix === "" ?
-                        str_replace("\\", DIRECTORY_SEPARATOR, $class) . ".php" :
-                        str_replace("\\", DIRECTORY_SEPARATOR, substr($class, strlen($prefix))) . ".php";
+                        str_replace("\\", "/", $class) . ".php" :
+                        str_replace("\\", "/", substr($class, strlen($prefix))) . ".php";
 
                     foreach ($paths as $path) {
-                        $file = $path . DIRECTORY_SEPARATOR . $relative;
+                        $file = PathUtils::join($path, $relative);
                         if (is_file($file)) return $file;
                     }
                 }

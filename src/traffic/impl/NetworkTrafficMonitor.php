@@ -7,6 +7,7 @@ use pocketcloud\cloud\network\packet\CloudPacket;
 use pocketcloud\cloud\traffic\TrafficMonitor;
 use pocketcloud\cloud\traffic\TrafficMonitorManager;
 use pocketcloud\cloud\util\net\Address;
+use pocketcloud\cloud\util\PathUtils;
 
 final class NetworkTrafficMonitor extends TrafficMonitor {
 
@@ -38,6 +39,6 @@ final class NetworkTrafficMonitor extends TrafficMonitor {
     }
 
     public static function parsePacketMode(string $normalMode, string $packetClass): string {
-        return $normalMode . "-" . basename(str_replace("\\", DIRECTORY_SEPARATOR, $packetClass));
+        return $normalMode . "-" . basename(PathUtils::normalize($packetClass));
     }
 }

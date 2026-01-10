@@ -8,7 +8,7 @@ use pocketcloud\cloud\console\handler\ExceptionHandler;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use RuntimeException;
-use const pocketcloud\CLOUD_PATH;
+use SplFileInfo;
 
 final class FileUtils {
 
@@ -63,6 +63,8 @@ final class FileUtils {
     }
 
     public static function copyDirectory(string $src, string $dst): bool {
+        $src = PathUtils::normalize($src);
+        $dst = PathUtils::normalize($dst);
         return ExceptionHandler::tryCatch(
             function (string $src, string $dst): bool {
                 if (!is_dir($src)) throw new InvalidArgumentException("Source directory does not exist: $src");
@@ -73,12 +75,13 @@ final class FileUtils {
                     RecursiveIteratorIterator::SELF_FIRST
                 );
 
+                /** @var SplFileInfo $item */
                 foreach ($iterator as $item) {
-                    $relativePath = substr($item->getPathname(), strlen($src));
-                    $dstPath = $dst . $relativePath;
+                    $relativePath = substr($item->getPathname(), strlen($src) + 1);;
+                    $dstPath = PathUtils::join($dst, $relativePath);
 
                     if ($item->isDir()) {
-                        if (!is_dir($dstPath)) mkdir($dstPath, 0755, true);
+                       if (!is_dir($dstPath)) mkdir($dstPath, 0755, true);
                     } else {
                         copy($item->getPathname(), $dstPath);
                     }
@@ -231,13 +234,5 @@ final class FileUtils {
             null,
             $filePath
         );
-    }
-
-    public static function cleanPath(string $path, bool $removePath = false): string {
-        if ($removePath) return ($explode = explode(DIRECTORY_SEPARATOR, str_replace(["\\", "//", DIRECTORY_SEPARATOR], DIRECTORY_SEPARATOR, $path)))[count($explode) - 1];
-        $result = str_replace([".php", "phar://"], ["", ""], $path);
-        $cleanPath = rtrim(str_replace("phar://", "", CLOUD_PATH), DIRECTORY_SEPARATOR);
-        if (str_starts_with($result, $cleanPath)) $result = ltrim(str_replace($cleanPath, "pcsrc", $result), DIRECTORY_SEPARATOR);
-        return $result;
     }
 }

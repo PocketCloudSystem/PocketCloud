@@ -36,6 +36,7 @@ use pocketcloud\cloud\template\Template;
 use pocketcloud\cloud\template\TemplateManager;
 use pocketcloud\cloud\util\misc\Tickable;
 use pocketcloud\cloud\util\misc\Writeable;
+use pocketcloud\cloud\util\PathUtils;
 use pocketcloud\cloud\util\promise\Promise;
 use pocketcloud\cloud\util\Utils;
 use const pocketcloud\CLOUD_PATH;
@@ -213,7 +214,7 @@ final class CloudServer implements Tickable, Writeable {
     }
 
     public function getPath(): string {
-        return TEMP_PATH . $this->serverUuid . DIRECTORY_SEPARATOR;
+        return PathUtils::join(TEMP_PATH, $this->serverUuid) . "/";
     }
 
     public function getServerUuid(): string {
@@ -279,7 +280,7 @@ final class CloudServer implements Tickable, Writeable {
     }
 
     public function __toString(): string {
-        return "§b" . $this->getName() . " §8[§ruuid=" . $this->serverUuid . " path=" . trim(str_replace(CLOUD_PATH, "", $this->getPath()), DIRECTORY_SEPARATOR) . "§8]§r";
+        return "§b" . $this->getName() . " §8[§ruuid=" . $this->serverUuid . " path=" . trim(str_replace(CLOUD_PATH, "", $this->getPath()), "/") . "§8]§r";
     }
 
     public static function read(array $data): ?self {

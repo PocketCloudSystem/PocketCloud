@@ -11,6 +11,7 @@ use pocketcloud\cloud\server\config\ServerPropertiesGenerator;
 use pocketcloud\cloud\software\ServerSoftware;
 use pocketcloud\cloud\software\ServerSoftwareManager;
 use pocketcloud\cloud\util\net\NetUtils;
+use pocketcloud\cloud\util\PathUtils;
 use pocketcloud\cloud\util\promise\Promise;
 use pocketcloud\cloud\util\trait\RegistryTrait;
 use pocketcloud\cloud\util\Utils;
@@ -174,7 +175,7 @@ final class TemplateType {
     }
 
     public function getGlobalTemplatePath(): string {
-        return GLOBAL_TEMPLATES_PATH . strtolower($this->name) . DIRECTORY_SEPARATOR;
+        return PathUtils::join(GLOBAL_TEMPLATES_PATH, strtolower($this->name)) . "/";
     }
 
     public function getServerTimeout(): int {
