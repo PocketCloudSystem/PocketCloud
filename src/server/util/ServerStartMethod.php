@@ -38,9 +38,9 @@ final class ServerStartMethod {
 
             if ($returnVar === 0 && isset($output[0])) {
                 $screenPid = (int) trim($output[0]);
-                $grepOutput = shell_exec("pgrep -P $screenPid");
-                if ($grepOutput === null) return Promise::rejected();
-                $pid = (int) trim(shell_exec("pgrep -P $screenPid"));
+                $shellOutput = shell_exec("pgrep -P $screenPid");
+                if ($shellOutput === null) return Promise::rejected();
+                $pid = (int) trim($shellOutput);
                 if ($pid > 0) {
                     return Promise::resolved($pid);
                 }
