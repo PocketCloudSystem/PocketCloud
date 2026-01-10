@@ -2,6 +2,7 @@
 
 namespace pocketcloud\cloud\console\command\impl;
 
+use pocketcloud\cloud\config\impl\LogSettingsConfig;
 use pocketcloud\cloud\config\impl\MainConfig;
 use pocketcloud\cloud\console\command\Command;
 use pocketcloud\cloud\console\command\sender\ICommandSender;
@@ -15,12 +16,12 @@ final class DebugCommand extends Command {
     }
 
     public function run(ICommandSender $sender, string $label, array $args, ?SubCommand $subCommand = null): bool {
-        if (MainConfig::getInstance()->isDebugMode()) {
+        if (LogSettingsConfig::getInstance()->isDebugMode()) {
             $sender->success("The §edebug mode §rhas been §cdisabled§r!");
-            MainConfig::getInstance()->setDebugMode(false);
+            LogSettingsConfig::getInstance()->setDebugMode(false);
         } else {
             $sender->success("The §edebug mode §rhas been §aenabled§r!");
-            MainConfig::getInstance()->setDebugMode(true);
+            LogSettingsConfig::getInstance()->setDebugMode(true);
         }
 
         ExceptionHandler::tryCatch(fn() => MainConfig::getInstance()->save(), "Failed to save main config");

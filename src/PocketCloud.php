@@ -3,6 +3,7 @@
 namespace pocketcloud\cloud;
 
 use Phar;
+use pocketcloud\cloud\config\impl\LogSettingsConfig;
 use pocketcloud\cloud\config\impl\MainConfig;
 use pocketcloud\cloud\console\command\CommandManager;
 use pocketcloud\cloud\console\Console;
@@ -81,6 +82,7 @@ final class PocketCloud {
     private CommandManager $commandManager;
     private LibraryManager $libraryManager;
     private MainConfig $config;
+    private LogSettingsConfig $logSettingsConfig;
     private SleeperHandler $sleeperHandler;
     private Queue $startNotificationQueue;
     private ServerSoftwareManager $softwareManager;
@@ -117,6 +119,7 @@ final class PocketCloud {
         $this->commandManager = new CommandManager();
         ($this->libraryManager = new LibraryManager())->load();
         $this->config = new MainConfig();
+        $this->logSettingsConfig = new LogSettingsConfig();
         $this->sleeperHandler = new SleeperHandler();
         $this->startNotificationQueue = Queue::fromType([]);
         try {

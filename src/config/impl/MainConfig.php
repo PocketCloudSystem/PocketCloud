@@ -23,7 +23,6 @@ final class MainConfig extends Configuration {
     private int $memoryLimit = 512;
     private string $language = "en_US";
     private string $provider = "json";
-    private bool $debugMode = false;
     private bool $updateChecks = true;
     private bool $executeUpdates = true;
     private bool $startUpDelay = true;
@@ -163,7 +162,6 @@ final class MainConfig extends Configuration {
                 ];
             }
 
-            CloudLogger::get()->setDebugMode($this->debugMode);
             ServerStartMethod::set(ServerStartMethod::get($this->startMethod));
 
             $this->save();
@@ -182,11 +180,6 @@ final class MainConfig extends Configuration {
     public function setProvider(string $provider): void {
         $this->provider = $provider;
         CloudProvider::select();
-    }
-
-    public function setDebugMode(bool $debugMode): void {
-        $this->debugMode = $debugMode;
-        CloudLogger::get()?->setDebugMode($debugMode);
     }
 
     public function setUpdateChecks(bool $updateChecks): void {
@@ -273,10 +266,6 @@ final class MainConfig extends Configuration {
 
     public function getProvider(): string {
         return strtolower($this->provider);
-    }
-
-    public function isDebugMode(): bool {
-        return $this->debugMode;
     }
 
     public function isUpdateChecks(): bool {

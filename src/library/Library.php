@@ -27,7 +27,7 @@ final readonly class Library {
     }
 
     /**
-     *
+     * //Todo: check for updates by comparing file sizes
      * When downloaded a library, the cloud expects the zip Archive to have the following structure:
      * -> library.zip -> Library-main (or any name) -> the actual library contents (src, readme.md, ...)
      *
