@@ -29,6 +29,7 @@ use pocketcloud\cloud\util\trait\RegistryTrait;
  * @method static LanguageKey INGAME_NOTIFY_MESSAGE_PLAYER_LEFT()
  * @method static LanguageKey INGAME_NOTIFY_MESSAGE_PLAYER_JOIN_FAILED()
  * @method static LanguageKey INGAME_NOTIFY_MESSAGE_PLAYER_KICKED()
+ * @method static LanguageKey INGAME_NOTIFY_MESSAGE_PLAYER_SWITCHED_SERVER()
  * @method static LanguageKey INGAME_SERVER_VERIFIED()
  * @method static LanguageKey INGAME_SERVER_VERIFY_DENIED()
  * @method static LanguageKey INGAME_SERVER_VERIFY_FAILED()

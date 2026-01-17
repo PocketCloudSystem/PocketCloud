@@ -170,56 +170,23 @@ final class Utils {
         return $uuid;
     }
 
-    public static function getProcessStats(): array {
-        $status = @file("/proc/self/status", FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-
-        $stats = [
-            "rss" => 0,
-            "size" => 0,
-            "peak" => 0,
-            "threads" => 0
-        ];
-
-        foreach ($status as $line) {
-            if (preg_match("/^(VmRSS|VmSize|VmPeak|Threads):\s+(\d+)/", $line, $m)) {
-                switch ($m[1]) {
-                    case "VmRSS":
-                        $stats["rss"] = ((int) $m[2]) * 1024;
-                        break;
-                    case "VmSize":
-                        $stats["size"] = ((int) $m[2]) * 1024;
-                        break;
-                    case "VmPeak":
-                        $stats["peak"] = ((int) $m[2]) * 1024;
-                        break;
-                    case "Threads":
-                        $stats["threads"] = (int) $m[2];
-                        break;
-                }
-            }
-        }
-
-        return $stats;
-    }
-
     public static function readCloudPerformanceStatus(): array {
         $knownThreadCount = count($threads = ThreadManager::getInstance()->getAll()) + 1; // +1 -> main thread;
-        [$vmRssSize, $vmSize, $vmPeak, $threadCount] = array_values(self::getProcessStats());
-        [$currentTPS, $avgTPS, $tickUsage] = array_values(PocketCloud::getInstance()->getPerformanceMetrics());
-        $memoryLimit = ini_get("memory_limit");
-        [$mainMemory, $mainMemoryPeak] = [memory_get_usage(true), memory_get_peak_usage(true)];
+        [$vmRssSize, $vmRssPeak, $vmSize, $threadCount] = array_values(ProcessUtils::getProcessStatus());
+        [$currentTPS, $avgTPS, $tickUsage] = array_values(PocketCloud::getInstance()->getTickPerformanceMetrics());
+        $memoryLimit = ProcessUtils::getMemoryLimit();
         [$serverCount, $playerCount] = [count(CloudServerManager::getInstance()->getAll()), count(CloudPlayerManager::getInstance()->getAll())];
 
         return [
+            "uptime" => PocketCloud::getInstance()->getUptime(),
             "known_thread_count" => $knownThreadCount,
             "os_thread_count" => $threadCount,
             "threads" => $threads,
             "vm_rss"  => $vmRssSize,
+            "vm_rss_peak" => $vmRssPeak,
             "vm_size" => $vmSize,
-            "vm_peak" => $vmPeak,
             "memory_limit" => $memoryLimit,
-            "php_memory_usage" => $mainMemory,
-            "php_memory_peak" => $mainMemoryPeak,
+            "cpu_usage" => ProcessUtils::getCpuUsage(),
             "current_tps" => $currentTPS,
             "average_tps" => $avgTPS,
             "tick_usage" => $tickUsage,

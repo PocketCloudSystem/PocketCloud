@@ -20,22 +20,24 @@ final class CloudNotificationPacket extends CloudPacket implements ClientboundPa
     ) {}
 
     public function handle(ServerClient $client): void {
-        switch ($this->notificationType) {
-            case NotificationType::PLAYER_JOIN_FAILED: {
-                [$player, $server, $reason] = [$this->args["player"], $this->args["server"], $this->args["reason"]];
-                $alreadyOnAServer = CloudPlayerManager::getInstance()->get($player)?->getCurrentServerName() !== null;
-                CloudLogger::get()->info("The player §b{} §rtried to join" . ($alreadyOnAServer ? "" : " via") . " §b{}§r, but got §ckicked§r: §b{}", $player, $server, $this->formatReason($reason));
-                break;
+        if ($this->notificationType->canLog()) {
+            switch ($this->notificationType) {
+                case NotificationType::PLAYER_JOIN_FAILED: {
+                    [$player, $server, $reason] = [$this->args["player"], $this->args["server"], $this->args["reason"]];
+                    $alreadyOnAServer = CloudPlayerManager::getInstance()->get($player)?->getCurrentServerName() !== null;
+                    CloudLogger::get()->info("The player §b{} §rtried to join" . ($alreadyOnAServer ? "" : " via") . " §b{}§r, but got §ckicked§r: §b{}", $player, $server, $this->formatReason($reason));
+                    break;
+                }
+                case NotificationType::PLAYER_KICKED: {
+                    [$player, $server, $reason] = [$this->args["player"], $this->args["server"], $this->args["reason"]];
+                    CloudLogger::get()->info("The player §b{} §rhas been §ckicked §rfrom §b{}§r: §b{}", $player, $server, $this->formatReason($reason));
+                    break;
+                }
+                default: break;
             }
-            case NotificationType::PLAYER_KICKED: {
-                [$player, $server, $reason] = [$this->args["player"], $this->args["server"], $this->args["reason"]];
-                CloudLogger::get()->info("The player §b{} §rhas been §ckicked §rfrom §b{}§r: §b{}", $player, $server, $this->formatReason($reason));
-                break;
-            }
-            default: break;
         }
 
-        $this->broadcastPacket(...TemplateType::onlyProxy());
+        if ($this->notificationType->canNotify()) $this->broadcastPacket(...TemplateType::onlyProxy());
     }
 
     public function encodePayload(PacketData $packetData): void {

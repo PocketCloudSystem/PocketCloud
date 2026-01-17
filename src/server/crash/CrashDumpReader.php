@@ -31,7 +31,7 @@ final class CrashDumpReader {
                 } else {
                     $data .= $line;
                 }
-            } elseif ($line === "===BEGIN CRASH DUMP===") {
+            } else if ($line === "===BEGIN CRASH DUMP===") {
                 $start = true;
             }
         }

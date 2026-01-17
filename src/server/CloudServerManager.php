@@ -8,6 +8,7 @@ use pocketcloud\cloud\server\data\CloudServerData;
 use pocketcloud\cloud\server\util\ServerStatus;
 use pocketcloud\cloud\server\util\ServerUtils;
 use pocketcloud\cloud\template\Template;
+use pocketcloud\cloud\template\TemplateType;
 use pocketcloud\cloud\util\misc\Queue;
 use pocketcloud\cloud\util\misc\Tickable;
 use pocketcloud\cloud\util\promise\Promise;
@@ -132,9 +133,19 @@ final class CloudServerManager implements Tickable {
         return $servers[array_key_last($servers)];
     }
 
-    public function getAll(Template|ServerGroup|string|null $templateOrGroup = null): array {
-        $templateOrGroup = is_string($templateOrGroup) ? $templateOrGroup : ($templateOrGroup instanceof Template || $templateOrGroup instanceof ServerGroup ? $templateOrGroup->getName() : null);
-        if ($templateOrGroup !== null) return array_filter($this->servers, fn(CloudServer $server) => $server->getTemplate()->getName() == $templateOrGroup || $server->getTemplate()->getParentServerGroup()?->getName() == $templateOrGroup);
+    public function getAll(Template|TemplateType|ServerGroup|string|null ...$templateOrGroups): array {
+        if (count($templateOrGroups) > 0) return array_filter($this->servers, function (CloudServer $server) use ($templateOrGroups): bool {
+            foreach ($templateOrGroups as $templateOrGroup) {
+                if ($templateOrGroup === null) continue;
+                $templateOrGroup = is_string($templateOrGroup) ? $templateOrGroup : $templateOrGroup->getName();
+                return $server->getTemplateName() == $templateOrGroup ||
+                    $server->getTemplate()->getParentServerGroup()?->getName() == $templateOrGroup ||
+                    $server->getTemplate()->getTemplateType()->getName() == $templateOrGroup;
+            }
+
+            return true;
+        });
+
         return $this->servers;
     }
 

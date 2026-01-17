@@ -18,6 +18,7 @@ use pocketcloud\cloud\server\CloudServer;
 use pocketcloud\cloud\server\CloudServerManager;
 use pocketcloud\cloud\util\FileUtils;
 use pocketcloud\cloud\util\FormatUtils;
+use pocketcloud\cloud\util\ProcessUtils;
 
 final class ServerCommand extends Command {
 
@@ -117,8 +118,34 @@ final class ServerCommand extends Command {
             array_merge($server->write(), ["path" => $server->getPath(), "channel" => $server->getServerClient()?->getAddress()]),
             "\n",
             "§r: §b",
-            fn(string $key) => ucfirst($key),
-            fn(string $key, mixed $value) => is_array($value) ? FileUtils::encodeJson($value, JSON_INVALID_UTF8_IGNORE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) : $value
+            function (string $key): string {
+                $potentialNewKey = preg_replace("/(?<!^)([A-Z])/", " $1", ucfirst($key));
+                return match ($key) {
+                    "serverStatus" => "Status",
+                    "avgTps" => "Average TPS",
+                    default => $potentialNewKey
+                };
+            },
+            function (string $key, mixed $value) use($server): mixed {
+                if (is_array($value)) return FileUtils::encodeJson($value, JSON_INVALID_UTF8_IGNORE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+                if ($key == "name") {
+                    return "§b" . $value . " §8(§b" . $server->getId() . "§8/§b" . $server->getTemplateName() . "§8)";
+                }
+
+                if ($key == "tps" || $key == "avgTps") {
+                    return FormatUtils::tps($value);
+                } else if (str_contains($key, "memory")) {
+                    return FormatUtils::bytes($value);
+                } else if (str_contains($key, "Usage")) {
+                    return FormatUtils::usagePercentage($value);
+                } else if ($key == "serverStatus") {
+                    return $server->getServerStatus()->getDisplay();
+                }
+
+                return $value;
+            },
+            "template", "id"
         );
 
         foreach (explode("\n", $formatted) as $line) {

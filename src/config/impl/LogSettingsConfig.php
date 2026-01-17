@@ -76,8 +76,34 @@ final class LogSettingsConfig extends Configuration {
         return $this->debugMode;
     }
 
-    public function isEnabledFor(NotificationType $type): bool {
-        return true; //TODO
+    public function canNotify(NotificationType $type): bool {
+        $connectionLifecycle = $this->playerLogs["connection_lifecycle"]["in_game"];
+        $failedJoins = $this->playerLogs["failed_joins"]["in_game"];
+        $kicks = $this->playerLogs["kicks"]["in_game"];
+        $serverSwitched = $this->playerLogs["server_switched"]["in_game"];
+
+        return match ($type) {
+            NotificationType::PLAYER_JOINED, NotificationType::PLAYER_LEFT => $connectionLifecycle,
+            NotificationType::PLAYER_JOIN_FAILED => $failedJoins,
+            NotificationType::PLAYER_KICKED => $kicks,
+            NotificationType::PLAYER_SWITCHED_SERVER => $serverSwitched,
+            default => true
+        };
+    }
+
+    public function canLog(NotificationType $type): bool {
+        $connectionLifecycle = $this->playerLogs["connection_lifecycle"]["console"];
+        $failedJoins = $this->playerLogs["failed_joins"]["console"];
+        $kicks = $this->playerLogs["kicks"]["console"];
+        $serverSwitched = $this->playerLogs["server_switched"]["console"];
+
+        return match ($type) {
+            NotificationType::PLAYER_JOINED, NotificationType::PLAYER_LEFT => $connectionLifecycle,
+            NotificationType::PLAYER_JOIN_FAILED => $failedJoins,
+            NotificationType::PLAYER_KICKED => $kicks,
+            NotificationType::PLAYER_SWITCHED_SERVER => $serverSwitched,
+            default => true
+        };
     }
 
     public function getPlayerLogs(): array {

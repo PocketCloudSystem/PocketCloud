@@ -23,7 +23,7 @@ final class CloudPlayerManager {
     }
 
     public function add(CloudPlayer $player): void {
-        CloudLogger::get()->info("Player §b{} §rhas §aconnected §rvia §b{}§r.", $player->getName(), $player->getCurrentProxyName() ?? $player->getCurrentServerName());
+        if (NotificationType::PLAYER_JOINED->canLog()) CloudLogger::get()->info("Player §b{} §rhas §aconnected §rvia §b{}§r.", $player->getName(), $player->getCurrentProxyName() ?? $player->getCurrentServerName());
         $this->players[$player->getName()] = $player;
         PlayerSyncPacket::create($player, false)->broadcastPacket();
         NotificationType::PLAYER_JOINED->notify(["player" => $player->getName(), "server" => $player->getCurrentServerName() ?? $player->getCurrentProxyName()]);
@@ -32,7 +32,7 @@ final class CloudPlayerManager {
     }
 
     public function remove(CloudPlayer $player): void {
-        CloudLogger::get()->info("Player §b{} §cdisconnected §rfrom §b{}§r.", $player->getName(), $player->getCurrentServerName() ?? $player->getCurrentProxyName());
+        if (NotificationType::PLAYER_JOINED->canLog()) CloudLogger::get()->info("Player §b{} §cdisconnected §rfrom §b{}§r.", $player->getName(), $player->getCurrentServerName() ?? $player->getCurrentProxyName());
         if (isset($this->players[$player->getName()])) unset($this->players[$player->getName()]);
         NotificationType::PLAYER_LEFT->notify(["player" => $player->getName(), "server" => $player->getCurrentServerName() ?? $player->getCurrentProxyName()]);
 
@@ -45,9 +45,7 @@ final class CloudPlayerManager {
 
     public function get(string $name): ?CloudPlayer {
         if (isset($this->players[$name])) return $this->players[$name];
-        return array_find($this->players, fn($player) => $player->getXboxUserId() == $name ||
-            $player->getUniqueId() == $name);
-
+        return array_find($this->players, fn($player) => $player->getXboxUserId() == $name || $player->getUniqueId() == $name);
     }
 
     public function getAll(Template|CloudServer|ServerGroup|null $object = null): array {

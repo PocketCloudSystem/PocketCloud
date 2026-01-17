@@ -98,7 +98,7 @@ final class CloudServer implements Tickable, Writeable {
     public function start(): void {
         new ServerStartEvent($this)->call();
         CloudLogger::get()->info("§aStarting §b{}§r...", $this);
-        NotificationType::SERVER_STARTING->notify(["%server%" => $this->getName()]);
+        NotificationType::SERVER_STARTING->notify(["server" => $this->getName()]);
 
         ServerStartMethod::current()?->startServer($this)->then(fn(?int $tmpPid) => $this->serverData->setTempProcessId($tmpPid))->failure(function (): void {
             CloudLogger::get()->warn("Failed to start server §b{}§8, §rcould not create the process...", $this);
@@ -111,7 +111,7 @@ final class CloudServer implements Tickable, Writeable {
     public function stop(bool $force = false): void {
         new ServerStopEvent($this, $force)->call();
         CloudLogger::get()->info("§cStopping §b{}§r...", $this->getName());
-        NotificationType::SERVER_STOPPING->notify(["%server%" => $this->getName()]);
+        NotificationType::SERVER_STOPPING->notify(["server" => $this->getName()]);
         $this->setServerStatus(ServerStatus::STOPPING);
         $this->setStopTime(time());
 
@@ -271,10 +271,16 @@ final class CloudServer implements Tickable, Writeable {
             "uuid" => $this->serverUuid,
             "id" => $this->id,
             "template" => $this->template,
+            "serverStatus" => $this->serverStatus->getName(),
             "port" => $this->serverData->getPort(),
             "maxPlayers" => $this->serverData->getMaxPlayers(),
             "processId" => $this->serverData->getProcessId(),
-            "serverStatus" => $this->serverStatus->getName(),
+            "tps" => $this->serverData->getTps(),
+            "avgTps" => $this->serverData->getAvgTps(),
+            "memoryUsage" => $this->serverData->getMemoryUsage(),
+            "memoryPeak" => $this->serverData->getMemoryPeak(),
+            "memoryLimit" => $this->serverData->getMemoryLimit(),
+            "cpuUsage" => $this->serverData->getCpuUsage(),
             "internalStorage" => $this->serverStorage->getAll()
         ];
     }

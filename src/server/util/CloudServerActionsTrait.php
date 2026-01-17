@@ -73,7 +73,7 @@ trait CloudServerActionsTrait {
         new ServerStartFailedEvent($this)->call();
 
         if (!$this->checkForCrash()) CloudLogger::get()->warn("Failed to start the server §b{}§r, deleting data...", $this->getName());
-        NotificationType::SERVER_START_FAILED->notify(["%server%" => $this->getName()]);
+        NotificationType::SERVER_START_FAILED->notify(["server" => $this->getName()]);
 
         $this->deleteTmpDir();
     }
@@ -86,7 +86,7 @@ trait CloudServerActionsTrait {
         new ServerTimeoutEvent($this)->call();
 
         if (!$this->checkForCrash()) CloudLogger::get()->warn("The server §b{} §r§ctimed out§r, deleting data...", $this->getName());
-        NotificationType::SERVER_TIMED_OUT->notify(["%server%" => $this->getName()]);
+        NotificationType::SERVER_TIMED_OUT->notify(["server" => $this->getName()]);
 
         $this->deleteTmpDir();
     }
@@ -99,7 +99,7 @@ trait CloudServerActionsTrait {
         new ServerStopTimeOutEvent($this)->call();
 
         if (!$this->checkForCrash()) CloudLogger::get()->warn("Failed to stop the server §b{}§r, deleting data & killing process...", $this->getName());
-        NotificationType::SERVER_STOP_TIMED_OUT->notify(["%server%" => $this->getName()]);
+        NotificationType::SERVER_STOP_TIMED_OUT->notify(["server" => $this->getName()]);
 
         $this->deleteTmpDir();
     }
@@ -151,7 +151,7 @@ trait CloudServerActionsTrait {
             $this->printCrashStackTrace($crashData);
             new ServerCrashEvent($this, $crashData)->call();
             CrashChecker::writeCrashFile($this, $crashData);
-            NotificationType::SERVER_CRASHED->notify(["%server%" => $this->getName()]);
+            NotificationType::SERVER_CRASHED->notify(["server" => $this->getName()]);
             return true;
         }
 

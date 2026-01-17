@@ -44,9 +44,9 @@ abstract class CloudPacket implements Packet {
         return Network::getInstance()->sendPacket($this, $client);
     }
 
-    public function broadcastPacket(ServerClient|TemplateType ...$excluded): Promise {
+    public function broadcastPacket(ServerClient|TemplateType ...$exclusions): Promise {
         if (!$this instanceof ClientboundPacket) return Promise::rejected("No ClientboundPacket");
-        return Network::getInstance()->broadcastPacket($this, ...$excluded);
+        return Network::getInstance()->broadcastPacket($this, ...$exclusions);
     }
 
     final public function getName(): string {

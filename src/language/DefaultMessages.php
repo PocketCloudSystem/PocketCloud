@@ -29,6 +29,7 @@ final class DefaultMessages {
         "inGame.notify.message.player_left" => "{PREFIX}§fPlayer §b%player% §cdisconnected §ffrom §b{}§f.",
         "inGame.notify.message.player_join_failed" => "{PREFIX}§fPlayer §b%player% §ftried to connect via §b%server%§f, but §cfailed§f: §b%reason%",
         "inGame.notify.message.player_kicked" => "{PREFIX}§fPlayer §b%player% §fhas been §ckicked §ffrom §b%server%§f: §b%reason%",
+        "inGame.notify.message.player_switched_server" => "{PREFIX}§fPlayer §b%player% §fswitched servers §8(§b%old_server% §8-> §b%new_server§8)",
         "inGame.server.verified" => "§rThe server was §averified §rby the cloud!",
         "inGame.server.verify.denied" => "§cVerify request was denied by the cloud! Shutdown...",
         "inGame.server.verify.failed" => "§cVerify request wasn't processed by the cloud! Shutdown...",

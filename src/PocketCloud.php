@@ -39,6 +39,7 @@ use pocketcloud\cloud\util\misc\LoadableList;
 use pocketcloud\cloud\util\misc\TickableList;
 use pocketcloud\cloud\util\net\Address;
 use pocketcloud\cloud\util\PathUtils;
+use pocketcloud\cloud\util\ProcessUtils;
 use pocketcloud\cloud\util\TerminalUtils;
 use pocketcloud\cloud\util\Utils;
 use pocketcloud\cloud\util\VersionInfo;
@@ -253,12 +254,14 @@ final class PocketCloud {
 
     public function tick(): void {
         $start = microtime(true);
+        ProcessUtils::getCpuUsage();
         while ($this->running) {
             $tickStart = microtime(true);
 
             $this->tick++;
             TickableList::tickAll($this->tick);
             $this->console->readLine();
+            if (($this->tick % 40) == 0) ProcessUtils::getCpuUsage();
 
             $tickEnd = microtime(true);
             $this->updatePerformanceMetrics($tickStart, $tickEnd);
@@ -308,7 +311,7 @@ final class PocketCloud {
         return $this->tickUsage;
     }
 
-    public function getPerformanceMetrics(): array {
+    public function getTickPerformanceMetrics(): array {
         return [
             "current_tps" => $this->currentTPS,
             "average_tps" => $this->averageTPS,
