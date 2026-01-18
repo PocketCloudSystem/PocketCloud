@@ -34,6 +34,12 @@ final class TemplateManager implements Loadable, Tickable {
 
         CloudProvider::current()->getTemplates()
             ->then(function(array $templates): void {
+                /** @var Template $template */
+                foreach ((array_find($templates, fn(Template $template) => $template->getStartNewPercentage() > 1) ?? []) as $template) {
+                    $template->setStartNewPercentage($template->getStartNewPercentage() / 100);
+                    CloudProvider::current()->editTemplate($template, $template->write());
+                }
+
                 $this->templates = $templates;
 
                 if (array_sum(array_map(fn(Template $template) => $template->getSettings()->getMinServerCount(), array_filter($this->templates, fn(Template $template) => $template->getSettings()->isAutoStart()))) >= 9 && count(ServerPreparator::getInstance()->getThreads()) == 0) {
@@ -127,7 +133,8 @@ final class TemplateManager implements Loadable, Tickable {
         return $this->templates[$name] ?? null;
     }
 
-    public function getAll(): array {
+    public function getAll(TemplateType ...$type): array {
+        if (count($type) > 0) return array_filter($this->templates, fn(Template $template) => array_any($type, fn(TemplateType $type) => $template->getTemplateType()->getName() == $type->getName()));
         return $this->templates;
     }
 }

@@ -10,16 +10,16 @@ final class ClosureSubCommand extends SubCommand {
     /**
      * @param string $name
      * @param Closure(ICommandSender $sender, string $label, array $args): bool|null $executeHandler
+     * @param array $standaloneAliases
      * @param string|null $usage
-     * @param array $aliases
      */
     public function __construct(
         string $name,
         private readonly ?Closure $executeHandler,
-        ?string $usage = null,
-        array $aliases = []
+        array $standaloneAliases = [],
+        ?string $usage = null
     ) {
-        parent::__construct($name, $usage, $aliases);
+        parent::__construct($name, $standaloneAliases, $usage);
     }
 
     public function run(ICommandSender $sender, string $label, array $args): bool {
