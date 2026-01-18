@@ -7,6 +7,7 @@ use pocketcloud\cloud\console\command\ITabComplete;
 use pocketcloud\cloud\console\command\parameter\def\StringEnumParameter;
 use pocketcloud\cloud\console\command\parameter\def\StringParameter;
 use pocketcloud\cloud\console\command\parameter\def\TemplateParameter;
+use pocketcloud\cloud\console\command\parameter\def\TemplateTypeParameter;
 use pocketcloud\cloud\console\command\sender\ICommandSender;
 use pocketcloud\cloud\console\command\SubCommand;
 use pocketcloud\cloud\setup\def\TemplateCreationSetup;
@@ -14,6 +15,8 @@ use pocketcloud\cloud\template\Template;
 use pocketcloud\cloud\template\TemplateHelper;
 use pocketcloud\cloud\template\TemplateManager;
 use pocketcloud\cloud\template\TemplateSettings;
+use pocketcloud\cloud\template\TemplateType;
+use pocketcloud\cloud\util\FormatUtils;
 
 final class TemplateCommand extends Command implements ITabComplete {
 
@@ -31,6 +34,9 @@ final class TemplateCommand extends Command implements ITabComplete {
 
         $this->registerSubCommand(SubCommand::fromClosure("remove", $this->handleRemoveSub(...))
             ->addParameter(new TemplateParameter("template", false)));
+
+        $this->registerSubCommand(SubCommand::fromClosure("list", $this->handleListSub(...))
+            ->addParameter(new TemplateTypeParameter("type", true)));
     }
 
     public function run(ICommandSender $sender, string $label, array $args, ?SubCommand $subCommand = null): bool {
@@ -84,6 +90,33 @@ final class TemplateCommand extends Command implements ITabComplete {
             ->then(function (bool $confirmed) use ($sender, $template) {
                 if ($confirmed) TemplateManager::getInstance()->remove($template);
             });
+        return true;
+    }
+
+    public function handleListSub(ICommandSender $sender, string $label, array $args): bool {
+        $type = $args["type"] ?? TemplateType::getAll();
+        foreach (TemplateManager::getInstance()->getAll(...$type) as $template) {
+            $sender->info(FormatUtils::implodeWithKeys(
+                $template->write(),
+                " §8| §r",
+                "§8: §b",
+                fn(string $key) => ucfirst($key),
+                function (string $key, mixed $value) use($template): mixed {
+                    if (in_array($key, ["lobby", "maintenance", "static", "alwaysCopyToStaticServers", "autoStart"])) {
+                        return $value === true ? "§aYes" : "§cNo";
+                    } else if ($key == "name") {
+                        return $value . ($template->getParentServerGroup() !== null ? " §8(§b" . $template->getParentServerGroup()->getName() . "§8)" : "");
+                    } else if ($key == "startNewPercentage") {
+                        return ($value * 100) . "%";
+                    } else if ($key == "templateType") {
+                        return strtoupper($value);
+                    }
+
+                    return $value;
+                }
+            ));
+        }
+
         return true;
     }
 
