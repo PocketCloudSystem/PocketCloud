@@ -23,16 +23,16 @@ final class TemplateCommand extends Command implements ITabComplete {
     public function __construct() {
         parent::__construct("template", "Manage your templates", ["temp"]);
 
-        $this->registerSubCommand(SubCommand::fromClosure("create", $this->handleCreateSub(...))
+        $this->registerSubCommand(SubCommand::fromClosure("create", $this->handleCreateSub(...), ["create"])
             ->addParameter(new StringParameter("name", true))
             ->addParameter(new StringParameter("templateType", true)));
 
-        $this->registerSubCommand(SubCommand::fromClosure("edit", $this->handleEditSub(...))
+        $this->registerSubCommand(SubCommand::fromClosure("edit", $this->handleEditSub(...), ["edit"])
             ->addParameter(new TemplateParameter("template", false))
             ->addParameter(new StringEnumParameter("key",  TemplateHelper::EDITABLE_KEYS, false, false))
             ->addParameter(new StringParameter("value", false)));
 
-        $this->registerSubCommand(SubCommand::fromClosure("remove", $this->handleRemoveSub(...))
+        $this->registerSubCommand(SubCommand::fromClosure("remove", $this->handleRemoveSub(...), ["remove"])
             ->addParameter(new TemplateParameter("template", false)));
 
         $this->registerSubCommand(SubCommand::fromClosure("list", $this->handleListSub(...))
