@@ -169,6 +169,9 @@ trait CloudServerActionsTrait {
 
     public function deleteTmpDir(): void {
         $this->saveAndDeleteLogFiles();
-        if (!$this->getTemplate()->getSettings()->isStatic()) FileUtils::removeDirectory($this->getPath());
+        if (!$this->getTemplate()->getSettings()->isStatic()) {
+            CloudLogger::get()->debug("Removed server directory: {}", $this->getPath());
+            FileUtils::removeDirectory($this->getPath());
+        }
     }
 }

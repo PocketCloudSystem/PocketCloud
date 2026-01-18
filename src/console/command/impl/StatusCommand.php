@@ -20,7 +20,7 @@ final class StatusCommand extends Command {
             FormatUtils::implodeWithKeys(
                 Utils::readCloudPerformanceStatus(),
                 "\n",
-                "§r: §b",
+                "§8: §b",
                 fn(string $key) => trim(implode(" ", array_map(fn(string $key) => ucfirst($key), explode(" ", str_replace(["vm_size", "_", "vm", "rss"], ["virtual_memory_reserved_size", " ", "", "memory usage"], $key))))),
                 function (string $key, mixed $value): mixed {
                     if (in_array($key, [

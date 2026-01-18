@@ -10,7 +10,6 @@ use pocketcloud\cloud\network\packet\CloudPacket;
 use pocketcloud\cloud\network\packet\data\NotificationType;
 use pocketcloud\cloud\network\packet\util\PacketData;
 use pocketcloud\cloud\player\CloudPlayerManager;
-use pocketcloud\cloud\template\TemplateType;
 
 final class CloudNotificationPacket extends CloudPacket implements ClientboundPacket, CloudboundPacket {
 
@@ -37,7 +36,7 @@ final class CloudNotificationPacket extends CloudPacket implements ClientboundPa
             }
         }
 
-        if ($this->notificationType->canNotify()) $this->broadcastPacket(...TemplateType::onlyProxy());
+        $this->notificationType->notify($this->args);
     }
 
     public function encodePayload(PacketData $packetData): void {

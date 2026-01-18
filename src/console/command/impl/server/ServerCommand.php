@@ -16,23 +16,23 @@ use pocketcloud\cloud\console\command\SubCommand;
 use pocketcloud\cloud\network\packet\data\ServerCommandExecutionResult;
 use pocketcloud\cloud\server\CloudServer;
 use pocketcloud\cloud\server\CloudServerManager;
+use pocketcloud\cloud\server\util\ServerStatus;
 use pocketcloud\cloud\util\FileUtils;
 use pocketcloud\cloud\util\FormatUtils;
-use pocketcloud\cloud\util\ProcessUtils;
 
 final class ServerCommand extends Command {
 
     public function __construct() {
         parent::__construct("server", "Manage the cloud's servers", ["srv"]);
 
-        $this->registerSubCommand(SubCommand::fromClosure("start", $this->handleStartSub(...))
+        $this->registerSubCommand(SubCommand::fromClosure("start", $this->handleStartSub(...), ["start"])
             ->addParameter(new TemplateParameter("template", false))
             ->addParameter(new IntegerParameter("amount", true, function (int $number): int {
                 if ($number < 0 || $number > 20) return 1;
                 return $number;
             })));
 
-        $this->registerSubCommand(SubCommand::fromClosure("stop", $this->handleStopSub(...))
+        $this->registerSubCommand(SubCommand::fromClosure("stop", $this->handleStopSub(...), ["stop"])
             ->addParameter(new MultipleTypesParameter("server", [
                 new ServerParameter("server", false),
                 new TemplateParameter("template", false),
@@ -41,7 +41,7 @@ final class ServerCommand extends Command {
             ], false))
             ->addParameter(new BoolParameter("forcefully", true)));
 
-        $this->registerSubCommand(SubCommand::fromClosure("send", $this->handleSendSub(...))
+        $this->registerSubCommand(SubCommand::fromClosure("send", $this->handleSendSub(...), ["send", "execute"])
             ->addParameter(new ServerParameter("server", false))
             ->addParameter(new StringParameter("commandLine", false, true)));
 
@@ -54,7 +54,7 @@ final class ServerCommand extends Command {
         $this->registerSubCommand(SubCommand::fromClosure("info", $this->handleInfoSub(...))
             ->addParameter(new ServerParameter("server", false)));
 
-        $this->registerSubCommand(SubCommand::fromClosure("save", $this->handleSaveSub(...))
+        $this->registerSubCommand(SubCommand::fromClosure("save", $this->handleSaveSub(...), ["save"])
             ->addParameter(new ServerParameter("server", false)));
     }
 
@@ -100,10 +100,20 @@ final class ServerCommand extends Command {
             $sender->info("Servers §8(§b{}§8/§b{}§8)§r:", count($servers = CloudServerManager::getInstance()->getAll($template)), $template?->getName() ?? "All");
             foreach ($servers as $server) {
                 $sender->info(FormatUtils::implodeWithKeys(
-                    array_diff_key($server->write(), ["uuid" => null, "id" => null, "internalStorage" => null, "path" => null]),
+                    $server->write(),
                     " §8| §r",
-                    "§r: §b",
-                    fn(string $key) => ucfirst($key)
+                    "§8: §b",
+                    fn(string $key) => ucfirst($key),
+                    function (string $key, mixed $value) use ($server): mixed {
+                        if ($key == "serverStatus") {
+                            return ServerStatus::fromName($value)?->getDisplay() ?? $value;
+                        } else if ($key == "template") {
+                            return $server->getTemplateName() . ($server->getTemplate()?->getParentServerGroup() !== null ? " §8(§e" . $server->getTemplate()->getParentServerGroup()->getName() . "§8)" : "");
+                        }
+
+                        return $value;
+                    },
+                    "uuid", "id", "internalStorage", "tps", "avgTps", "memoryUsage", "memoryPeak", "memoryLimit", "cpuUsage"
                 ));
             }
         }
@@ -117,7 +127,7 @@ final class ServerCommand extends Command {
         $formatted = FormatUtils::implodeWithKeys(
             array_merge($server->write(), ["path" => $server->getPath(), "channel" => $server->getServerClient()?->getAddress()]),
             "\n",
-            "§r: §b",
+            "§8: §b",
             function (string $key): string {
                 $potentialNewKey = preg_replace("/(?<!^)([A-Z])/", " $1", ucfirst($key));
                 return match ($key) {
@@ -131,9 +141,7 @@ final class ServerCommand extends Command {
 
                 if ($key == "name") {
                     return "§b" . $value . " §8(§b" . $server->getId() . "§8/§b" . $server->getTemplateName() . "§8)";
-                }
-
-                if ($key == "tps" || $key == "avgTps") {
+                } else if ($key == "tps" || $key == "avgTps") {
                     return FormatUtils::tps($value);
                 } else if (str_contains($key, "memory")) {
                     return FormatUtils::bytes($value);
