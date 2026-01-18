@@ -9,16 +9,18 @@ use pocketcloud\cloud\console\command\util\CommandParameterTrait;
 abstract class SubCommand {
     use CommandParameterTrait;
 
+    private ?Command $parent = null;
+
     public function __construct(
         private readonly string $name,
-        private readonly ?string $usage = null,
-        private readonly array $aliases = []
+        private readonly array $standaloneAliases = [],
+        private readonly ?string $usage = null
     ) {}
 
     abstract public function run(ICommandSender $sender, string $label, array $args): bool;
 
     private function buildUsageMessage(): string {
-        $usage = $this->getName();
+        $usage = ($this->parent?->getName() ?? "<parent command>") . " " . $this->getName();
         foreach ($this->parameters as $parameter) {
             $usage .= $parameter->isOptional() ?
                 " [" . $parameter->getName() . ": " . $parameter->getType() . "]" :
@@ -28,30 +30,42 @@ abstract class SubCommand {
         return $usage;
     }
 
+    /** @internal */
+    public function setParent(?Command $parent): void {
+        $this->parent = $parent;
+    }
+
     public function getName(): string {
         return $this->name;
+    }
+
+    /**
+     * These are aliases that are treated the same way as regular commands are, making it possible to shorten the actual command.
+     * Example: The command 'server' has a subcommand called 'stop'. When we now set the standaloneAliases from the 'stop' subcommand to 'stop',
+     * you can directly execute the 'stop' sub-command without typing the main-command ('server') first,
+     * resulting in a much nicer pocketcloud usage.
+     * @return array
+     */
+    public function getStandaloneAliases(): array {
+        return $this->standaloneAliases;
     }
 
     public function getUsage(): string {
         return $this->usage ?? $this->buildUsageMessage();
     }
 
-    public function getAliases(): array {
-        return $this->aliases;
-    }
-
     /**
      * @param string $name
      * @param Closure(ICommandSender $sender, string $label, array $args): bool $executeHandler
+     * @param array|null $standaloneAliases
      * @param string|null $usage
-     * @param array|null $aliases
      * @return ClosureSubCommand
      */
-    public static function fromClosure(string $name, Closure $executeHandler, ?string $usage = null, ?array $aliases = []): ClosureSubCommand {
-        return new ClosureSubCommand($name, $executeHandler, $usage, $aliases);
+    public static function fromClosure(string $name, Closure $executeHandler, ?array $standaloneAliases = [], ?string $usage = null): ClosureSubCommand {
+        return new ClosureSubCommand($name, $executeHandler, $standaloneAliases, $usage);
     }
 
-    public static function nonHandler(string $name, ?string $usage = null, ?array $aliases = []): ClosureSubCommand {
-        return new ClosureSubCommand($name, null, $usage, $aliases);
+    public static function nonHandler(string $name, ?array $standaloneAliases = [], ?string $usage = null): ClosureSubCommand {
+        return new ClosureSubCommand($name, null, $standaloneAliases, $usage);
     }
 }

@@ -55,6 +55,12 @@ final class Console {
                     }
                 }
             }
+
+            foreach (array_keys(CommandManager::getInstance()->getKnownStandaloneAliases()) as $standaloneAlias) {
+                if (str_starts_with($standaloneAlias, strtolower($current))) {
+                    $matches[] = $standaloneAlias;
+                }
+            }
             return $matches;
         }
 
@@ -74,12 +80,6 @@ final class Console {
                     foreach ($subCommands as $subCommand) {
                         if (str_starts_with($subCommand->getName(), strtolower($current))) {
                             $matches[] = $subCommand->getName();
-                        } else {
-                            foreach ($subCommand->getAliases() as $alias) {
-                                if (str_starts_with($alias, strtolower($current))) {
-                                    $matches[] = $alias;
-                                }
-                            }
                         }
                     }
                 }

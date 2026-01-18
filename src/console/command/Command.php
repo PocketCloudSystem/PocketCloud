@@ -111,7 +111,7 @@ abstract class Command {
     public function getSubCommand(string $name): ?SubCommand {
         $name = strtolower($name);
         if (isset($this->subCommands[$name])) return $this->subCommands[$name];
-        return array_find($this->subCommands, fn(SubCommand $subCommand) => in_array($name, $subCommand->getAliases()));
+        return array_find($this->subCommands, fn(SubCommand $subCommand) => in_array($name, $subCommand->getStandaloneAliases()));
     }
 
     public function mustUseSubCommands(): int {

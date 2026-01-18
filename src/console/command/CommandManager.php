@@ -32,6 +32,7 @@ final class CommandManager implements Loadable, Tickable {
     /** @var array<Command> */
     private array $commands = [];
     private array $knownAliases = [];
+    private array $knownStandaloneAliases = [];
     private array $confirmationPromises = [];
     private ?array $currentConfirmationData = null;
 
@@ -57,6 +58,16 @@ final class CommandManager implements Loadable, Tickable {
         if (isset($this->commands[$command->getName()])) throw new InvalidArgumentException("The command " . $command->getName() . " is already registered");
         if (array_any($command->getAliases(), fn(string $alias) => in_array(strtolower($alias), $this->knownAliases))) throw new InvalidArgumentException("A command is already using one of the command's aliases");
         $this->commands[strtolower($command->getName())] = $command;
+        foreach ($command->getSubCommands() as $subCommand) {
+            $subCommand->setParent($command);
+            if (count($subCommand->getStandaloneAliases()) > 0) {
+                foreach ($subCommand->getStandaloneAliases() as $alias) {
+                    if (isset($this->knownStandaloneAliases[strtolower($alias)])) throw new InvalidArgumentException("A standalone alias with the name " . $alias . " is already registered by another command");
+                    if (isset($this->commands[strtolower($alias)])) throw new InvalidArgumentException("A command with the same standalone alias name " . $alias . " is already registered");
+                    $this->knownStandaloneAliases[strtolower($alias)] = $command->getName() . " " . $subCommand->getName();
+                }
+            }
+        }
     }
 
     public function registerAll(Command ...$commands): void {
@@ -83,6 +94,12 @@ final class CommandManager implements Loadable, Tickable {
             }
 
             return true;
+        }
+
+        if (isset($this->knownStandaloneAliases[$name])) {
+            $replacementParts = explode(" ", $this->knownStandaloneAliases[$name]);
+            $name = array_shift($replacementParts);
+            array_unshift($args, ...$replacementParts);
         }
 
         if (($command = $this->get($name)) === null) return false;
@@ -121,5 +138,13 @@ final class CommandManager implements Loadable, Tickable {
 
     public function getAll(): array {
         return $this->commands;
+    }
+
+    public function getKnownAliases(): array {
+        return $this->knownAliases;
+    }
+
+    public function getKnownStandaloneAliases(): array {
+        return $this->knownStandaloneAliases;
     }
 }
