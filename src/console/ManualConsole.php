@@ -6,7 +6,7 @@ use Closure;
 use pocketcloud\cloud\util\TerminalUtils;
 use RuntimeException;
 
-/** @author ChatGPT + Gemini (thanks bro) */
+/** @author ChatGPT + Gemini + Claude (thanks Gs) */
 final class ManualConsole {
 
     private bool $closed = false;

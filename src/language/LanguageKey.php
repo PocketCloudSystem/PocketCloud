@@ -223,4 +223,8 @@ final class LanguageKey {
     public function getLangKey(): string {
         return $this->langKey;
     }
+
+    public function __toString(): string {
+        return $this->translate();
+    }
 }

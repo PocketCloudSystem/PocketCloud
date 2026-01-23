@@ -7,16 +7,14 @@ use pocketcloud\cloud\console\command\ClosureSubCommand;
 use pocketcloud\cloud\console\command\Command;
 use pocketcloud\cloud\console\command\CommandManager;
 use pocketcloud\cloud\console\command\ITabComplete;
-use pocketcloud\cloud\console\command\sender\ConsoleCommandSender;
 use pocketcloud\cloud\console\handler\ExceptionHandler;
 use pocketcloud\cloud\console\handler\ShutdownHandler;
-use pocketcloud\cloud\console\log\CloudLogger;
+use pocketcloud\cloud\console\screen\ScreenManager;
 use pocketcloud\cloud\PocketCloud;
 use pocketcloud\cloud\setup\Setup;
 use pocketcloud\cloud\util\TerminalUtils;
 use pocketcloud\cloud\util\trait\SingletonTrait;
 use pocketcloud\cloud\console\log\color\CloudConsoleColor;
-use pocketcloud\cloud\util\Utils;
 
 /** @internal */
 final class Console {
@@ -125,15 +123,7 @@ final class Console {
             return;
         }
 
-        if (Setup::getCurrentSetup() !== null) {
-            Setup::getCurrentSetup()->handleInput($line);
-            return;
-        }
-
-        $parts = Utils::parseQuoteAware($line);
-        if (!CommandManager::getInstance()->handleInput(new ConsoleCommandSender(), $name = array_shift($parts), $parts)) {
-            CloudLogger::get()->warn("§cUnknown command §8'§b" . $name . "§r§8'§c. §rView all the commands by doing §8'§bhelp§8'§r.");
-        }
+        ScreenManager::getInstance()->getCurrentScreen()->handleInput($line);
     }
 
     public function setPrompt(string $prompt): void {

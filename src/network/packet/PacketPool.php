@@ -18,6 +18,7 @@ use pocketcloud\cloud\network\packet\impl\PlayerDisconnectPacket;
 use pocketcloud\cloud\network\packet\impl\PlayerKickPacket;
 use pocketcloud\cloud\network\packet\impl\PlayerSwitchServerPacket;
 use pocketcloud\cloud\network\packet\impl\PlayerSyncPacket;
+use pocketcloud\cloud\network\packet\impl\PlayerUpdateNotificationStatePacket;
 use pocketcloud\cloud\network\packet\impl\ProxyRegisterServerPacket;
 use pocketcloud\cloud\network\packet\impl\ProxyUnregisterServerPacket;
 use pocketcloud\cloud\network\packet\impl\request\PlayerNotificationCheckRequestPacket;
@@ -69,6 +70,7 @@ final class PacketPool {
         $this->register(PlayerWhitelistCheckResponsePacket::class);
         $this->register(PlayerNotificationCheckRequestPacket::class);
         $this->register(PlayerNotificationCheckResponsePacket::class);
+        $this->register(PlayerUpdateNotificationStatePacket::class);
         $this->register(MaintenanceListSyncPacket::class);
         $this->register(NotificationListSyncPacket::class);
     }

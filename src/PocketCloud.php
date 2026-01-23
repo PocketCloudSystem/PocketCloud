@@ -10,9 +10,13 @@ use pocketcloud\cloud\console\Console;
 use pocketcloud\cloud\console\log\level\CloudLogLevel;
 use pocketcloud\cloud\console\log\logger\MainLogger;
 use pocketcloud\cloud\console\log\output\OutputManager;
+use pocketcloud\cloud\console\screen\impl\DefaultScreen;
+use pocketcloud\cloud\console\screen\ScreenManager;
 use pocketcloud\cloud\crash\CrashDump;
 use pocketcloud\cloud\event\impl\cloud\CloudStartedEvent;
 use pocketcloud\cloud\group\ServerGroupManager;
+use pocketcloud\cloud\http\HttpServer;
+use pocketcloud\cloud\http\HttpServerBuilder;
 use pocketcloud\cloud\language\Language;
 use pocketcloud\cloud\network\client\ServerClientCache;
 use pocketcloud\cloud\network\Network;
@@ -80,6 +84,7 @@ final class PocketCloud {
 
     private MainLogger $logger;
     private Console $console;
+    private ScreenManager $screenManager;
     private CommandManager $commandManager;
     private LibraryManager $libraryManager;
     private MainConfig $config;
@@ -89,6 +94,7 @@ final class PocketCloud {
     private ServerSoftwareManager $softwareManager;
     private ThreadManager $threadManager;
     private Network $network;
+    private HttpServer $httpServer;
     private AsyncPool $asyncPool;
     private ServerPreparator $serverPreparator;
     private TemplateManager $templateManager;
@@ -117,6 +123,7 @@ final class PocketCloud {
 
         CloudLogger::set($this->logger = new MainLogger(LOG_PATH, false, false));
         $this->console = new Console();
+        ($this->screenManager = new ScreenManager())->resetScreen();
         $this->commandManager = new CommandManager();
         ($this->libraryManager = new LibraryManager())->load();
         $this->config = new MainConfig();
@@ -154,6 +161,7 @@ final class PocketCloud {
 
         $this->threadManager = new ThreadManager();
         $this->network = new Network(Address::read($this->config->getNetwork()));
+        $this->httpServer = HttpServerBuilder::buildFromConfig();
         $this->asyncPool = new AsyncPool();
         $this->serverPreparator = new ServerPreparator();
         $this->templateManager = new TemplateManager();
@@ -189,7 +197,7 @@ final class PocketCloud {
 
         TickableList::add(
             $this->trafficMonitorManager, $this->serverManager, $this->commandManager, $this->metrics,
-            $this->asyncPool, $this->serverClientCache, $this->templateManager
+            $this->asyncPool, $this->serverClientCache, $this->templateManager, $this->screenManager
         );
 
         LoadableList::add(
@@ -210,6 +218,8 @@ final class PocketCloud {
 
         Language::init();
         $this->network->init();
+        $this->httpServer->init();
+
         LoadableList::loadAll();
         $this->pluginManager->enableAll();
 
@@ -249,6 +259,7 @@ final class PocketCloud {
 
         if (isset($this->serverManager)) $this->serverManager->stopAll();
         if (isset($this->network)) $this->network->close();
+        if (isset($this->httpServer)) $this->httpServer->stop();
         $this->console->remove();
     }
 
@@ -342,6 +353,10 @@ final class PocketCloud {
 
     public function getConsole(): Console {
         return $this->console;
+    }
+
+    public function getScreenManager(): ScreenManager {
+        return $this->screenManager;
     }
 
     public function getCommandManager(): CommandManager {

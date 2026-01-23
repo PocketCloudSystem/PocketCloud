@@ -9,8 +9,6 @@ use pocketcloud\cloud\util\net\NetUtils;
 final class ServerUtils {
 
     public const int DEFAULT_TIMEOUT = 20;
-    public const int TIMEOUT_SERVER = 20;
-    public const int TIMEOUT_PROXY = 25;
 
     private static array $ids = [];
     private static array $usedPorts = [];

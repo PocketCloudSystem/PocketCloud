@@ -8,11 +8,6 @@ final class NotificationListCache {
 
     private static array $notificationList = [];
 
-    /** @internal  */
-    public static function sync(array $notificationList): void {
-        foreach ($notificationList as $player) self::$notificationList[$player] = $player;
-    }
-
     private static function syncOut(): void {
         NotificationListSyncPacket::create(self::getAll())->broadcastPacket();
     }

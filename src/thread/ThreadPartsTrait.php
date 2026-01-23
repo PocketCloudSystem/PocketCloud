@@ -2,6 +2,7 @@
 
 namespace pocketcloud\cloud\thread;
 
+use Phar;
 use pmmp\thread\Thread as NativeThread;
 use pmmp\thread\ThreadSafeArray;
 use pocketcloud\cloud\console\handler\ExceptionHandler;
@@ -9,8 +10,14 @@ use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\console\log\logger\ThreadLogger;
 use pocketcloud\cloud\PocketCloud;
 use pocketcloud\cloud\util\loader\IClassLoader;
+use pocketcloud\cloud\util\PathUtils;
 use ReflectionClass;
 use Throwable;
+use const pocketcloud\CLOUD_PATH;
+use const pocketcloud\CRASHES_PATH;
+use const pocketcloud\IS_PHAR;
+use const pocketcloud\STORAGE_PATH;
+use const pocketcloud\TEMPLATES_PATH;
 use const pocketcloud\VENDOR_AUTOLOAD_PATH;
 
 trait ThreadPartsTrait {
@@ -40,6 +47,31 @@ trait ThreadPartsTrait {
         if ($this->autoLoaders !== null) foreach ($this->autoLoaders as $autoLoader) {
             if ($autoLoader instanceof IClassLoader) $autoLoader->init();
         }
+
+        define("pocketcloud\VENDOR_AUTOLOAD_PATH", $this->composerAutoloadPath);
+        define("pocketcloud\IS_PHAR", Phar::running() !== "");
+        define("pocketcloud\SOURCE_PATH", __DIR__ . "/");
+
+        define("pocketcloud\CLOUD_PATH", (IS_PHAR ?
+            str_replace("phar://", "", dirname(__DIR__, 3) . "/") :
+            dirname(__DIR__, 2) . "/"
+        ));
+
+        define("pocketcloud\STORAGE_PATH", PathUtils::join(CLOUD_PATH, "storage") . "/");
+        define("pocketcloud\CRASHES_PATH", PathUtils::join(STORAGE_PATH, "crashes") . "/");
+        define("pocketcloud\SERVER_CRASHES_PATH", PathUtils::join(CRASHES_PATH, "servers") . "/");
+        define("pocketcloud\BINARIES_PATH", PathUtils::join(STORAGE_PATH, "binaries") . "/");
+        define("pocketcloud\LIBRARIES_PATH", PathUtils::join(STORAGE_PATH, "libraries") . "/");
+        define("pocketcloud\PLUGINS_PATH", PathUtils::join(STORAGE_PATH, "plugins") . "/");
+        define("pocketcloud\SOFTWARE_PATH", PathUtils::join(STORAGE_PATH, "software") . "/");
+        define("pocketcloud\IN_GAME_PATH", PathUtils::join(STORAGE_PATH, "inGame") . "/");
+        define("pocketcloud\STATIC_SERVERS_PATH", PathUtils::join(STORAGE_PATH, "staticServers") . "/");
+        define("pocketcloud\LOG_PATH", PathUtils::join(STORAGE_PATH, "cloud.log"));
+        define("pocketcloud\TEMP_PATH", PathUtils::join(CLOUD_PATH, "tmp") . "/");
+        define("pocketcloud\TEMPLATES_PATH", PathUtils::join(CLOUD_PATH, "templates") . "/");
+        define("pocketcloud\GLOBAL_TEMPLATES_PATH", PathUtils::join(TEMPLATES_PATH, "global") . "/");
+        define("pocketcloud\SERVER_GROUPS_PATH", PathUtils::join(CLOUD_PATH, "groups") . "/");
+        define("pocketcloud\FIRST_RUN", !file_exists(STORAGE_PATH . "config.json"));
     }
 
     public function start(int $options = NativeThread::INHERIT_NONE): bool {

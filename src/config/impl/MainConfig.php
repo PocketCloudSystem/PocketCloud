@@ -50,7 +50,17 @@ final class MainConfig extends Configuration {
         "address" => "127.0.0.1",
         "port" => 8000,
         "auth-key" => "123",
-        "only-local" => true
+        "only-local" => true,
+        "rate-limit" => [
+            "enabled" => false,
+            "timeout_in_seconds" => 120,
+            "max_requests" => 20,
+            "time_frame_in_seconds" => 60
+        ],
+        "response-caching" => [
+            "enabled" => false,
+            "caching_time_in_seconds" => 60,
+        ]
     ];
 
     private array $mysqlSettings = [
@@ -332,11 +342,15 @@ final class MainConfig extends Configuration {
         return $this->network["only-local"] ?? true;
     }
 
+    public function getHttpServer(): array {
+        return $this->httpServer;
+    }
+
     public function isHttpServerEnabled(): bool {
         return $this->httpServer["enabled"];
     }
 
-    public function getHttpServerAddress(): int {
+    public function getHttpServerAddress(): string {
         return $this->httpServer["address"];
     }
 
@@ -346,6 +360,14 @@ final class MainConfig extends Configuration {
 
     public function getHttpServerAuthKey(): string {
         return $this->httpServer["auth-key"];
+    }
+
+    public function getHttpServerRateLimit(): array {
+        return $this->httpServer["rate-limit"];
+    }
+
+    public function getHttpServerCaching(): array {
+        return $this->httpServer["response-caching"];
     }
 
     public function isHttpServerOnlyLocal(): bool {

@@ -9,6 +9,8 @@ use pocketcloud\cloud\console\log\logger\cache\LogMessagesCache;
 use pocketcloud\cloud\console\log\logger\ILogger;
 use pocketcloud\cloud\console\log\output\OutputManager;
 use pocketcloud\cloud\console\log\output\SetupOutputHandler;
+use pocketcloud\cloud\console\screen\impl\SetupScreen;
+use pocketcloud\cloud\console\screen\ScreenManager;
 use pocketcloud\cloud\util\TerminalUtils;
 use RuntimeException;
 
@@ -36,6 +38,7 @@ abstract class Setup {
         if (self::$currentSetup !== null) throw new RuntimeException("Another setup is already running");
 
         self::$currentSetup = $this;
+        ScreenManager::getInstance()->setCurrentScreen(new SetupScreen($this));
         TerminalUtils::clear();
 
         Console::getInstance()->disableHistory();
@@ -95,11 +98,7 @@ abstract class Setup {
     private function endSetup(): void {
         $this->cleanupOutputHandler();
 
-        TerminalUtils::clear();
-        Console::getInstance()->enableHistory();
-        Console::getInstance()->restoreControlCHandler();
-        Console::getInstance()->restoreCompletionHandler();
-        LogMessagesCache::print();
+        ScreenManager::getInstance()->resetScreen();
 
         $this->currentQuestion = null;
         $this->currentQuestionIndex = -1;
@@ -267,21 +266,16 @@ abstract class Setup {
         $this->cancelled = true;
 
         $this->onCancel();
-
-        $this->cleanupOutputHandler();
-
-        TerminalUtils::clear();
-        Console::getInstance()->enableHistory();
-        Console::getInstance()->restoreControlCHandler();
-        Console::getInstance()->restoreCompletionHandler();
-        LogMessagesCache::print();
-        Console::getInstance()->restorePrompt();
-
+        ScreenManager::getInstance()->resetScreen();
         if ($this->completionHandler !== null) ($this->completionHandler)($this->results);
     }
 
     public function getLogger(): ?ILogger {
         return $this->logger;
+    }
+
+    public function getCurrentQuestion(): ?Question {
+        return $this->currentQuestion;
     }
 
     public function isCancelled(): bool {

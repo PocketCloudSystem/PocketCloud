@@ -106,6 +106,7 @@ final class Network extends Thread {
     }
 
     protected function onRun(): void {
+        $notifier = $this->handlerEntry->createNotifier();
         while ($this->established && $this->isAlive()) {
             $read = [$this->socket];
             $write = $except = [];
@@ -115,7 +116,7 @@ final class Network extends Thread {
                     if (!$this->isAlive() || !$this->established) break;
                     $address = Address::create($address, $port);
                     $this->buffer[] = ThreadSafeArray::fromArray([$buffer, $address, $port, new UnhandledPacket($buffer, $address, $bytes)]);
-                    $this->handlerEntry->createNotifier()->wakeupSleeper();
+                    $notifier->wakeupSleeper();
                 }
             }
         }

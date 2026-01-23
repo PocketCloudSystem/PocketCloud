@@ -13,6 +13,7 @@ use pocketcloud\cloud\console\log\color\CloudConsoleColor;
 use pocketcloud\cloud\console\log\level\CloudLogLevel;
 use pocketcloud\cloud\exception\UnsupportedOperationException;
 use pocketcloud\cloud\util\FileUtils;
+use pocketcloud\cloud\util\FormatUtils;
 use pocketcloud\cloud\util\PathUtils;
 use pocketmine\snooze\SleeperHandlerEntry;
 use ReflectionClass;
@@ -103,7 +104,7 @@ class ThreadLogger extends ThreadSafe implements ILogger {
             }
         } catch (ReflectionException) {}
 
-        $parsedMessage = count($params) > 0 ? sprintf($message, ...$params) : $message;
+        $parsedMessage = count($params) > 0 ? FormatUtils::interpolate($message, $params) : $message;
         $format = str_replace(
             ["{thread}", "{time}", "{time_with_ms}", "{log_level}", "{message}"],
             [$threadName, $time->format("H:i:s"), $time->format("H:i:s.v"), $logLevel->getPrefix(), $parsedMessage],
