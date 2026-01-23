@@ -12,7 +12,7 @@ use pocketcloud\cloud\http\io\ResponseBuilder;
 use pocketcloud\cloud\http\route\impl\TestRoute;
 use pocketcloud\cloud\http\route\Path;
 use pocketcloud\cloud\http\route\RegularPath;
-use pocketcloud\cloud\http\socket\auth\NoAuthRequiredAuthentication;
+use pocketcloud\cloud\http\socket\auth\DefaultAuthentication;
 use pocketcloud\cloud\http\socket\SocketClient;
 use pocketcloud\cloud\http\socket\SocketServer;
 use pocketcloud\cloud\http\util\HttpConstants;
@@ -57,7 +57,7 @@ final class HttpServer {
             CloudLogger::get()->exception($e);
         }
 
-        $this->registerPath(new TestRoute("/test", HttpConstants::GET, new NoAuthRequiredAuthentication()));
+        $this->registerPath(new TestRoute("/test", HttpConstants::GET, new DefaultAuthentication()));
     }
 
     public function start(): bool {
