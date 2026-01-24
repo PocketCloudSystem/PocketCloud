@@ -104,7 +104,6 @@ final class Utils {
         $ref = is_array($callback) ? new ReflectionMethod($callback[0], $callback[1]) : new ReflectionFunction($callback);
 
         $params = $ref->getParameters();
-
         if (count($params) !== count($expectedParameters)) throw new InvalidArgumentException("Invalid parameter count");
 
         foreach ($params as $i => $param) {
@@ -117,7 +116,6 @@ final class Utils {
 
         if ($expectedReturnType !== null) {
             $returnType = $ref->getReturnType();
-
             if (!$returnType instanceof ReflectionNamedType || $returnType->getName() !== $expectedReturnType) {
                 throw new InvalidArgumentException("Invalid return type");
             }

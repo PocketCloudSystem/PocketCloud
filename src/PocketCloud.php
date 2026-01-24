@@ -232,6 +232,8 @@ final class PocketCloud {
         CloudLogger::get()->success("§bCloud §rhas been §astarted§r. §8(§rTook §b" . number_format($time = (microtime(true) - $this->startTimestamp), 3) . "s§8)");
         new CloudStartedEvent($time)->call();
 
+        $this->metrics->getMetrics()->startSubmitting();
+
         $this->tick();
     }
 
