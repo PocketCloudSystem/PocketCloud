@@ -72,7 +72,7 @@ final class ManualConsole {
         }
 
         if ($char === "\n" || $char === "\r") {
-            if (trim($this->input) !== "") echo "\n";
+            if (trim($this->input) !== "") TerminalUtils::write("\n");
             if ($this->input !== "" && $this->historyEnabled) $this->history[] = $this->input;
             $this->historyIndex = count($this->history);
             $line = $this->input;
@@ -117,8 +117,8 @@ final class ManualConsole {
         if ($this->completionCallback === null) return;
         if (!$this->typingEnabled) return;
 
-        $beforeCursor = substr($this->input, 0, $this->cursor);
-        $afterCursor = substr($this->input, $this->cursor);
+        $beforeCursor = mb_substr($this->input, 0, $this->cursor);
+        $afterCursor = mb_substr($this->input, $this->cursor);
 
         $tokens = $this->tokenize($beforeCursor);
         $current = array_pop($tokens) ?? "";
@@ -134,10 +134,10 @@ final class ManualConsole {
             }
 
             $common = $this->longestCommonPrefix($this->tabMatches);
-            if (strlen($common) > strlen($current)) {
+            if (mb_strlen($common) > mb_strlen($current)) {
                 $tokens[] = $common;
                 $this->input = implode(" ", $tokens) . $afterCursor;
-                $this->cursor = strlen(implode(" ", $tokens));
+                $this->cursor = mb_strlen(implode(" ", $tokens));
                 $this->redraw($prompt);
                 return;
             }
@@ -145,7 +145,7 @@ final class ManualConsole {
             $match = $this->tabMatches[$this->tabIndex];
             $tokens[] = $match;
             $this->input = implode(" ", $tokens) . $afterCursor;
-            $this->cursor = strlen(implode(" ", $tokens));
+            $this->cursor = mb_strlen(implode(" ", $tokens));
             $this->redraw($prompt);
             $this->displayTabMatches();
             return;
@@ -155,7 +155,7 @@ final class ManualConsole {
         $match = $this->tabMatches[$this->tabIndex];
         $tokens[] = $match;
         $this->input = implode(" ", $tokens) . $afterCursor;
-        $this->cursor = strlen(implode(" ", $tokens));
+        $this->cursor = mb_strlen(implode(" ", $tokens));
         $this->redraw($prompt);
         $this->displayTabMatches();
     }
@@ -164,24 +164,19 @@ final class ManualConsole {
         if (empty($this->tabMatches)) return;
 
         if ($this->tabMatchesDisplayed) {
-            echo "\033[1B"; // Move down
-            echo "\033[2K\r"; // Clear line
-            echo "\033[1A"; // Move back up
+            TerminalUtils::moveCursorDown();
+            TerminalUtils::clearPrompt();
+            TerminalUtils::moveCursorUp();
         }
 
         $display = [];
         foreach ($this->tabMatches as $i => $match) {
-            if ($i === $this->tabIndex) {
-                $display[] = "\033[7m" . $match . "\033[27m";
-            } else {
-                $display[] = $match;
-            }
+            $display[] = $i === $this->tabIndex ? TerminalUtils::invertColors($match) : $match;
         }
 
-        echo "\n\r" . implode(" ", $display);
-        echo "\033[1A";
-        $cursorPosition = strlen($this->prompt) + $this->cursor;
-        echo "\r\033[" . $cursorPosition . "C";
+        TerminalUtils::write("\n\r" . implode(" ", $display));
+        TerminalUtils::moveCursorUp();
+        TerminalUtils::setCursorPosition(mb_strlen($this->prompt) + $this->cursor);
 
         $this->tabMatchesDisplayed = true;
     }
@@ -189,9 +184,9 @@ final class ManualConsole {
     private function clearTabDisplay(): void {
         if (!$this->tabMatchesDisplayed) return;
 
-        echo "\033[1B"; // Move down to matches line
-        echo "\033[2K\r"; // Clear the line
-        echo "\033[1A"; // Move back up
+        TerminalUtils::moveCursorDown();
+        TerminalUtils::clearPrompt();
+        TerminalUtils::moveCursorUp();
 
         $this->tabMatchesDisplayed = false;
     }
@@ -228,9 +223,9 @@ final class ManualConsole {
 
         foreach ($strings as $str) {
             $i = 0;
-            $max = min(strlen($prefix), strlen($str));
+            $max = min(mb_strlen($prefix), mb_strlen($str));
             while ($i < $max && $prefix[$i] === $str[$i]) $i++;
-            $prefix = substr($prefix, 0, $i);
+            $prefix = mb_substr($prefix, 0, $i);
             if ($prefix === "") break;
         }
 
@@ -251,11 +246,7 @@ final class ManualConsole {
         if ($char === false || $char === "") return null;
 
         $ord = ord($char);
-
-        if ($ord < 0x80) {
-            return $char;
-        }
-
+        if ($ord < 0x80) return $char;
         $bytes = [$char];
 
         if (($ord & 0xE0) === 0xC0) {
@@ -286,7 +277,7 @@ final class ManualConsole {
                     $this->input = $this->history[$this->historyIndex];
                 }
 
-                $this->cursor = strlen($this->input);
+                $this->cursor = mb_strlen($this->input);
                 $this->redraw($prompt);
                 break;
             case "[B": // Down
@@ -300,11 +291,11 @@ final class ManualConsole {
                     }
                 }
 
-                $this->cursor = strlen($this->input);
+                $this->cursor = mb_strlen($this->input);
                 $this->redraw($prompt);
                 break;
             case "[C": // Right
-                if ($this->cursor < strlen($this->input)) $this->cursor++;
+                if ($this->cursor < mb_strlen($this->input)) $this->cursor++;
                 break;
             case "[D": // Left
                 if ($this->cursor > 0) $this->cursor--;
@@ -313,25 +304,21 @@ final class ManualConsole {
     }
 
     private function redraw(string $prompt): void {
-        echo "\033[2K\r";
-        echo $prompt . ($this->visibleTyping ? $this->input : "");
+        TerminalUtils::clearPrompt();
+        TerminalUtils::write($prompt . ($this->visibleTyping ? $this->input : ""));
         $back = mb_strlen($this->visibleTyping ? $this->input : "") - $this->cursor;
-        if ($back > 0) echo str_repeat("\033[D", $back);
+        if ($back > 0) TerminalUtils::moveCursorLeft($back);
     }
 
     public function println(string $message): void {
-        echo "\033[2K\r";
+        TerminalUtils::clearPrompt();
         if ($this->tabMatchesDisplayed) {
-            // Clear current prompt line
-            // Move down to matches line and clear it
-            echo "\033[1B";
-            echo "\033[2K\r";
-            // Move back up and print message
-            echo "\033[1A";
+            TerminalUtils::moveCursorDown();
+            TerminalUtils::clearPrompt();
+            TerminalUtils::moveCursorUp();
         }
 
-        echo $message . PHP_EOL;
-
+        TerminalUtils::write($message . PHP_EOL);
         $this->redraw($this->prompt);
 
         if ($this->tabMatchesDisplayed) {
@@ -346,21 +333,18 @@ final class ManualConsole {
         $out = str_replace("\t", "    ", $out);
 
         if ($this->tabMatchesDisplayed) {
-            // Clear current prompt line
-            echo "\033[2K\r";
-            // Move down to matches line and clear it
-            echo "\033[1B";
-            echo "\033[2K\r";
-            // Move back up
-            echo "\033[1A";
+            TerminalUtils::clearPrompt();
+            TerminalUtils::moveCursorDown();
+            TerminalUtils::clearPrompt();
+            TerminalUtils::moveCursorUp();
 
             foreach (explode(PHP_EOL, $out) as $line) {
-                echo $line . PHP_EOL;
+                TerminalUtils::write($line . PHP_EOL);
             }
         } else {
             foreach (explode(PHP_EOL, $out) as $line) {
-                echo "\033[2K\r";
-                echo $line . PHP_EOL;
+                TerminalUtils::clearPrompt();
+                TerminalUtils::write($line . PHP_EOL);
             }
         }
 
@@ -405,12 +389,24 @@ final class ManualConsole {
 
     public function setInput(string $input): void {
         $this->input = $input;
-        $this->cursor = strlen($this->input);
+        $this->cursor = mb_strlen($this->input);
         $this->redraw($this->prompt);
     }
 
     public function isClosed(): bool {
         return $this->closed;
+    }
+
+    public function getOldSttySettings(): string {
+        return $this->oldSttySettings;
+    }
+
+    public function isTypingEnabled(): bool {
+        return $this->typingEnabled;
+    }
+
+    public function isVisibleTyping(): bool {
+        return $this->visibleTyping;
     }
 
     public function isHistoryEnabled(): bool {
@@ -447,5 +443,21 @@ final class ManualConsole {
 
     public function isTabActive(): bool {
         return $this->tabActive;
+    }
+
+    public function isTabMatchesDisplayed(): bool {
+        return $this->tabMatchesDisplayed;
+    }
+
+    public function getPrompt(): string {
+        return $this->prompt;
+    }
+
+    public function getCompletionCallback(): ?Closure {
+        return $this->completionCallback;
+    }
+
+    public function getControlCHandler(): ?Closure {
+        return $this->controlCHandler;
     }
 }

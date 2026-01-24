@@ -5,9 +5,7 @@ namespace pocketcloud\cloud\console\screen\impl;
 use pocketcloud\cloud\console\Console;
 use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\console\log\color\CloudConsoleColor;
-use pocketcloud\cloud\console\log\logger\cache\LogMessagesCache;
 use pocketcloud\cloud\console\log\output\MonitorOutputHandler;
-use pocketcloud\cloud\console\log\output\OutputManager;
 use pocketcloud\cloud\console\screen\IScreen;
 use pocketcloud\cloud\console\screen\ScreenManager;
 use pocketcloud\cloud\server\CloudServer;
@@ -23,27 +21,27 @@ final class MonitorScreen extends IScreen {
     private string $latestInput = "";
 
     public function initialize(Console $console): void {
-        $this->clear();
+        $this->clearConsole();
         $this->disableHistory();
         $this->hideTyping();
-        echo "\033[?25l";
-        $console->setControlCHandler(fn() => ScreenManager::getInstance()->resetScreen());
-        OutputManager::setHandler(new MonitorOutputHandler());
-        $console->setPrompt("");
+        $this->hideCursor();
+        $this->setControlCHandler(fn() => ScreenManager::getInstance()->resetScreen());
+        $this->setPrompt("");
+        $this->setOutputHandler(new MonitorOutputHandler());
     }
 
     public function handleInput(string $input): void {
-        Console::getInstance()->setInput($input);
+        $this->setInput($input);
     }
 
     public function tick(int $currentTick): void {
-        $currentInput = Console::getInstance()->getInput();
+        $currentInput = $this->getinput();
         $doNow = $this->latestInput !== $currentInput;
         $this->latestInput = $currentInput;
         $servers = array_filter(CloudServerManager::getInstance()->getAll(), fn(CloudServer $server) => trim($currentInput) == "" || str_starts_with($server->getName(), trim($currentInput)) !== false);
 
         if ($currentTick % 20 === 0 || $this->firstCycle || $doNow) {
-            $this->clear();
+            $this->clearConsole();
             $this->firstCycle = false;
 
             $this->echo("§8" . ($headlineBars = str_repeat("=", 30)) . " §bCloud §8" . $headlineBars);
@@ -177,15 +175,14 @@ final class MonitorScreen extends IScreen {
     }
 
     public function onRemove(int $currentTick): void {
-        $this->clear();
+        $this->clearConsole();
         $this->enableHistory();
         $this->showTyping();
-        echo "\033[?25h";
-        OutputManager::reset();
-        Console::getInstance()->setInput("");
-        Console::getInstance()->restoreControlCHandler();
-        Console::getInstance()->restorePrompt();
-        LogMessagesCache::print();
+        $this->showCursor();
+        $this->setInput("");
+        $this->restoreAll();
+        $this->resetOutputManager();
+        $this->printLogCache();
     }
 
     private function echo(string $message): void {

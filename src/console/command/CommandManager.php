@@ -132,8 +132,18 @@ final class CommandManager implements Loadable, Tickable {
         }
     }
 
+    private function getStandaloneAliasCommandName(string $standaloneAlias): ?string {
+        if (isset($this->knownStandaloneAliases[$standaloneAlias])) {
+            $replacementParts = explode(" ", $this->knownStandaloneAliases[$standaloneAlias]);
+            return array_shift($replacementParts);
+        }
+
+        return null;
+    }
+
     public function get(string $name): ?Command {
         $name = strtolower($name);
+        if (($command = $this->getStandaloneAliasCommandName($name)) !== null) return $this->commands[strtolower($command)];
         if (isset($this->commands[$name])) return $this->commands[$name];
         return array_find($this->commands, fn(Command $command) => in_array($name, $command->getAliases()));
     }

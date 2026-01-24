@@ -18,8 +18,8 @@ use pocketcloud\cloud\server\crash\CrashChecker;
 use pocketcloud\cloud\template\TemplateType;
 use pocketcloud\cloud\util\FileUtils;
 use pocketcloud\cloud\util\PathUtils;
+use pocketcloud\cloud\util\ProcessUtils;
 use pocketcloud\cloud\util\promise\Promise;
-use pocketcloud\cloud\util\TerminalUtils;
 
 trait CloudServerActionsTrait {
 
@@ -142,7 +142,7 @@ trait CloudServerActionsTrait {
     }
 
     public function killProcess(): void {
-        if ($this->getServerData()->getProcessId() !== 0) TerminalUtils::kill($this->getServerData()->getProcessId());
+        if ($this->getServerData()->getProcessId() !== 0) ProcessUtils::kill($this->getServerData()->getProcessId());
     }
 
     public function checkForCrash(): bool {

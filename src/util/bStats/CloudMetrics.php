@@ -22,7 +22,7 @@ final class CloudMetrics implements Tickable {
         private readonly MainConfig $mainConfig
     ) {
         $this->metrics = new Metrics(new MetricsSettings(
-            false, VersionInfo::METRICS_ID,
+            $this->mainConfig->isBStatsEnabled(), VersionInfo::METRICS_ID,
             $this->mainConfig->isBStatsLogFailedRequests(), $this->mainConfig->isBStatsLogSentData(),
             $this->mainConfig->isBStatsLogStatusResponseText(), $this->uuid->toString()
         ));

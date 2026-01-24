@@ -5,7 +5,6 @@ namespace pocketcloud\cloud\setup;
 use Closure;
 use pocketcloud\cloud\console\Console;
 use pocketcloud\cloud\console\log\CloudLogger;
-use pocketcloud\cloud\console\log\logger\cache\LogMessagesCache;
 use pocketcloud\cloud\console\log\logger\ILogger;
 use pocketcloud\cloud\console\log\output\OutputManager;
 use pocketcloud\cloud\console\log\output\SetupOutputHandler;
@@ -39,7 +38,7 @@ abstract class Setup {
 
         self::$currentSetup = $this;
         ScreenManager::getInstance()->setCurrentScreen(new SetupScreen($this));
-        TerminalUtils::clear();
+        TerminalUtils::clearConsole();
 
         Console::getInstance()->disableHistory();
         Console::getInstance()->setControlCHandler(fn() => $this->cancel());
@@ -137,7 +136,7 @@ abstract class Setup {
     }
 
     private function displayCurrentQuestion(): void {
-        TerminalUtils::clear();
+        TerminalUtils::clearConsole();
 
         $this->displayQuestionHeader();
         $this->displayPossibleAnswers();

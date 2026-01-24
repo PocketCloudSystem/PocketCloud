@@ -12,7 +12,6 @@ use pmmp\thread\ThreadSafeArray;
 use pocketcloud\cloud\console\log\color\CloudConsoleColor;
 use pocketcloud\cloud\console\log\level\CloudLogLevel;
 use pocketcloud\cloud\exception\UnsupportedOperationException;
-use pocketcloud\cloud\util\FileUtils;
 use pocketcloud\cloud\util\FormatUtils;
 use pocketcloud\cloud\util\PathUtils;
 use pocketmine\snooze\SleeperHandlerEntry;

@@ -209,7 +209,7 @@ final class PocketCloud {
             $this->pluginManager
         );
 
-        TerminalUtils::clear();
+        TerminalUtils::clearConsole();
         CloudLogger::get()->setSaveLogs(true);
         CloudLogger::get()->emptyLine()->setFormat("§r{message}")
             ->info("  §bPocket§3Cloud §8- §rA cloud system for §lPocketMine-MP servers§r with §lProxy support§r §8- §b{} §8- §rdeveloped by §b{}", VersionInfo::VERSION . (VersionInfo::BETA ? "§c@BETA" : ""), implode("§8, §b", VersionInfo::DEVELOPERS))
@@ -251,7 +251,7 @@ final class PocketCloud {
         $this->shutdown();
         echo "--- Uptime: " . round($this->getUptime(), 3) . "s - PocketCloud has crashed, waiting 60s before completely killing the process. ---" . PHP_EOL;
         sleep(60);
-        @TerminalUtils::kill(getmypid());
+        @ProcessUtils::kill(getmypid());
         exit(1);
     }
 
@@ -284,7 +284,7 @@ final class PocketCloud {
 
     public function tick(): void {
         $this->nextTick = microtime(true);
-        ProcessUtils::getCpuUsage();
+        ProcessUtils::startCpuRetrieveCycle();
         while ($this->running) {
             $tickStart = microtime(true);
             if (($tickStart - $this->nextTick) < -0.025) continue;
@@ -293,7 +293,7 @@ final class PocketCloud {
             TickableList::tickAll($this->tick);
 
             $this->console->readLine();
-            if (($this->tick % 40) == 0) ProcessUtils::getCpuUsage();
+            if (($this->tick % 40) == 0) ProcessUtils::restartCpuRetrieveCycle();
 
             if (($this->nextTick - $tickStart) < -1) {
                 $this->nextTick = $tickStart;
@@ -543,7 +543,7 @@ $cloud->start();
 
 if (ThreadManager::getInstance()->stopAll() > 0) {
     CloudLogger::get()->warn("Some threads crashed while trying to stop them, force-kill of the process...");
-    @TerminalUtils::kill(getmypid());
+    @ProcessUtils::kill(getmypid());
 }
 
 releaseLockFile($lockFile);

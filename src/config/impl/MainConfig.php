@@ -4,7 +4,6 @@ namespace pocketcloud\cloud\config\impl;
 
 use configlib\Configuration;
 use pocketcloud\cloud\console\handler\ExceptionHandler;
-use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\console\log\level\CloudLogLevel;
 use pocketcloud\cloud\PocketCloud;
 use pocketcloud\cloud\provider\CloudProvider;

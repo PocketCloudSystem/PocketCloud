@@ -4,129 +4,108 @@ namespace pocketcloud\cloud\util;
 
 final class ProcessUtils {
 
-    private static array $lastCheckTime = [];
-    private static array $lastCpuTime = [];
+    private static array $cycleSnapshots = [];
+    private static array $latestResults = [];
+
     private static ?int $clockTicks = null;
     private static ?int $cpuCores = null;
 
-    public static function getCpuCores(): int {
-        if (self::$cpuCores !== null) return self::$cpuCores;
-        return self::$cpuCores = preg_match_all("/^processor/m", file_get_contents("/proc/cpuinfo"));
-    }
-
-    public static function getProcessStatus(?int $pid = null): ?array {
-        $pid = $pid ?? "self";
-        $status = @file("/proc/$pid/status", FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-        if($status === false) return null;
-
-        $stats = [
-            "rss" => 0, // current resident set size
-            "rss_peak" => 0, // High Water Mark (VmHWM)/ highest VmRSS
-            "size" => 0, // virtual size
-            "threads" => 0 // thread count
-        ];
-
-        foreach ($status as $line) {
-            if (preg_match("/^(VmRSS|VmSize|VmHWM|Threads):\s+(\d+)/", $line, $m)) {
-                switch ($m[1]) {
-                    case "VmRSS":
-                        $stats["rss"] = ((int) $m[2]) * 1024;
-                        break;
-                    case "VmHWM":
-                        $stats["rss_peak"] = ((int) $m[2]) * 1024;
-                        break;
-                    case "VmSize":
-                        $stats["size"] = ((int) $m[2]) * 1024;
-                        break;
-                    case "Threads":
-                        $stats["threads"] = (int) $m[2];
-                        break;
-                }
-            }
-        }
-
-        return $stats;
-    }
-
-    public static function getCpuUsage(?int $pid = null): ?float {
-        $pid = $pid ?? "self";
+    public static function startCpuRetrieveCycle(?int $pid = null): void {
         $actualPid = $pid ?? getmypid();
-        $statFile = "/proc/$pid/stat";
-        if (!file_exists($statFile)) return null;
-        $stat = file_get_contents($statFile);
-        if ($stat === false) return null;
-        $stat = preg_replace("/^.+?\)\s+/", "", $stat);
-        $parts = explode(" ", $stat);
-
-        $utime = (int) $parts[11];
-        $stime = (int) $parts[12];
-        $totalCpuTime = $utime + $stime;
-
-        $currentTime = microtime(true);
-        $clockTicks = self::getClockTicks();
-
-        if (!isset(self::$lastCheckTime[$actualPid]) || !isset(self::$lastCpuTime[$actualPid])) {
-            self::$lastCheckTime[$actualPid] = $currentTime;
-            self::$lastCpuTime[$actualPid] = $totalCpuTime;
-            return 0.0;
+        $snapshot = self::getCpuSnapshot($actualPid);
+        if ($snapshot !== null) {
+            self::$cycleSnapshots[$actualPid] = $snapshot;
         }
-
-        $timeDiff = $currentTime - self::$lastCheckTime[$actualPid];
-        $cpuDiff = $totalCpuTime - self::$lastCpuTime[$actualPid];
-
-        self::$lastCheckTime[$actualPid] = $currentTime;
-        self::$lastCpuTime[$actualPid] = $totalCpuTime;
-
-        if ($timeDiff == 0) return 0.0;
-        $cpuUsage = ($cpuDiff / $clockTicks) / $timeDiff * 100;
-        return round($cpuUsage, 2);
     }
 
-    public static function getClockTicks(): int {
-        if (self::$clockTicks === null) {
-            $output = shell_exec("getconf CLK_TCK 2>/dev/null");
-            if ($output !== null && is_numeric(trim($output))) {
-                self::$clockTicks = (int) trim($output);
-            } else {
-                self::$clockTicks = 100;
-            }
-        }
+    public static function stopCpuRetrieveCycle(?int $pid = null): void {
+        $actualPid = $pid ?? getmypid();
+        if (!isset(self::$cycleSnapshots[$actualPid])) return;
+        $firstSnapshot = self::$cycleSnapshots[$actualPid];
+        $secondSnapshot = self::getCpuSnapshot($actualPid);
+        if ($secondSnapshot === null) return;
+        $usage = self::calculateCpuUsageFromSnapshots($firstSnapshot, $secondSnapshot);
+        self::$latestResults[$actualPid] = $usage;
+    }
 
-        return self::$clockTicks;
+    public static function restartCpuRetrieveCycle(?int $pid = null): void {
+        $actualPid = $pid ?? getmypid();
+        self::stopCpuRetrieveCycle($actualPid);
+        self::startCpuRetrieveCycle($actualPid);
+    }
+
+    public static function getCpuUsage(?int $pid = null): float {
+        $actualPid = $pid ?? getmypid();
+        return self::$latestResults[$actualPid] ?? 0.0;
     }
 
     public static function getCpuSnapshot(?int $pid = null): ?array {
         $pid = $pid ?? "self";
         $statFile = "/proc/$pid/stat";
         if (!file_exists($statFile)) return null;
-
         $stat = file_get_contents($statFile);
         if ($stat === false) return null;
-
-        $stat = preg_replace("/^.+?\)\s+/", "", $stat);
-        $parts = explode(" ", $stat);
-
+        $parts = explode(" ", substr($stat, strrpos($stat, ")") + 2));
         $utime = (int) $parts[11];
         $stime = (int) $parts[12];
-
         return [
-            "utime" => $utime,
-            "stime" => $stime,
             "total" => $utime + $stime,
             "timestamp" => microtime(true)
         ];
     }
 
-    public static function calculateCpuUsageFromSnapshots(array $firstSnapshot, array $secondSnapshot): ?float {
+    public static function getProcessStatus(?int $pid = null): ?array {
+        $pid = $pid ?? "self";
+        $handle = @fopen("/proc/$pid/status", "r");
+        if (!$handle) return null;
+
+        $stats = [
+            "rss" => 0,      // current resident set size
+            "rss_peak" => 0, // High Water Mark
+            "size" => 0,     // virtual size
+            "threads" => 0   // thread count
+        ];
+
+        $found = 0;
+        while (($line = fgets($handle)) !== false && $found < 4) {
+            if (!str_starts_with($line, "Vm") && !str_starts_with($line, "Th")) continue;
+            if (preg_match("/^(VmRSS|VmSize|VmHWM|Threads):\s+(\d+)/", $line, $m)) {
+                $value = (int) $m[2];
+                match ($m[1]) {
+                    "VmRSS" => $stats["rss"] = $value * 1024,
+                    "VmHWM" => $stats["rss_peak"] = $value * 1024,
+                    "VmSize" => $stats["size"] = $value * 1024,
+                    "Threads" => $stats["threads"] = $value,
+                    default => null
+                };
+                $found++;
+            }
+        }
+
+        fclose($handle);
+        return $stats;
+    }
+
+    public static function calculateCpuUsageFromSnapshots(array $firstSnapshot, array $secondSnapshot): float {
         $timeDiff = $secondSnapshot["timestamp"] - $firstSnapshot["timestamp"];
         $cpuDiff = $secondSnapshot["total"] - $firstSnapshot["total"];
 
-        if ($timeDiff == 0) return 0.0;
+        if ($timeDiff <= 0 || $cpuDiff < 0) return 0.0;
 
-        $clockTicks = self::getClockTicks();
-        $cpuUsage = ($cpuDiff / $clockTicks) / $timeDiff * 100;
+        $usage = ($cpuDiff / self::getClockTicks()) / $timeDiff * 100;
+        return round($usage, 2);
+    }
 
-        return round($cpuUsage, 2);
+    public static function getClockTicks(): int {
+        if (self::$clockTicks !== null) return self::$clockTicks;
+        $output = shell_exec("getconf CLK_TCK 2>/dev/null");
+        self::$clockTicks = (int) ($output !== null && is_numeric(trim($output)) ? trim($output) : 100);
+        return self::$clockTicks;
+    }
+
+    public static function getCpuCores(): int {
+        if (self::$cpuCores !== null) return self::$cpuCores;
+        return self::$cpuCores = preg_match_all("/^processor/m", file_get_contents("/proc/cpuinfo"));
     }
 
     public static function getMemoryLimit(): int {

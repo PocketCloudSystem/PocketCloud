@@ -12,9 +12,9 @@ use pocketcloud\cloud\util\Utils;
 final class DefaultScreen extends IScreen {
 
     public function initialize(Console $console): void {
-        $console->restorePrompt();
-        $console->restoreCompletionHandler();
-        $console->restoreControlCHandler();
+        $this->restorePrompt();
+        $this->restoreCompletionHandler();
+        $this->restoreControlCHandler();
     }
 
     public function tick(int $currentTick): void {}

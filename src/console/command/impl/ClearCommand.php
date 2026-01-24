@@ -16,7 +16,7 @@ final class ClearCommand extends Command {
 
     public function run(ICommandSender $sender, string $label, array $args, ?SubCommand $subCommand = null): bool {
         LogMessagesCache::clear();
-        TerminalUtils::clear();
+        TerminalUtils::clearConsole();
         return true;
     }
 }

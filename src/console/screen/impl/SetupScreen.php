@@ -4,9 +4,7 @@ namespace pocketcloud\cloud\console\screen\impl;
 
 use pocketcloud\cloud\console\Console;
 use pocketcloud\cloud\console\log\CloudLogger;
-use pocketcloud\cloud\console\log\logger\cache\LogMessagesCache;
 use pocketcloud\cloud\console\log\logger\ILogger;
-use pocketcloud\cloud\console\log\output\OutputManager;
 use pocketcloud\cloud\console\log\output\SetupOutputHandler;
 use pocketcloud\cloud\console\screen\IScreen;
 use pocketcloud\cloud\setup\Setup;
@@ -19,10 +17,10 @@ final class SetupScreen extends IScreen {
     public function __construct(private readonly Setup $setup) {}
 
     public function initialize(Console $console): void {
-        $this->clear();
+        $this->clearConsole();
         $this->disableHistory();
-        $console->setControlCHandler(fn() => $this->setup->cancel());
-        $console->setCompletionHandler(function (array $tokens, string $current): array {
+        $this->setControlCHandler(fn() => $this->setup->cancel());
+        $this->setCompletionHandler(function (array $tokens, string $current): array {
             $recommendations = $this->setup->getCurrentQuestion()?->getPossibleAnswers() ?? [];
             if (empty($recommendations) || !empty($tokens)) return [];
             $matches = [];
@@ -38,7 +36,7 @@ final class SetupScreen extends IScreen {
         $this->logger = CloudLogger::tmp();
         $this->logger->setFormat("§r{message}");
 
-        OutputManager::setHandler($this->outputHandler = new SetupOutputHandler());
+        $this->setOutputHandler($this->outputHandler = new SetupOutputHandler());
         $this->outputHandler->addAuthorizedLogger($this->logger);
     }
 
@@ -49,14 +47,12 @@ final class SetupScreen extends IScreen {
     }
 
     public function onRemove(int $currentTick): void {
-        $this->clear();
+        $this->clearConsole();
         $this->enableHistory();
-        OutputManager::reset();
-        Console::getInstance()->setInput("");
-        Console::getInstance()->restoreControlCHandler();
-        Console::getInstance()->restoreCompletionHandler();
-        Console::getInstance()->restorePrompt();
-        LogMessagesCache::print();
+        $this->resetOutputManager();
+        $this->setInput("");
+        $this->restoreAll();
+        $this->printLogCache();
     }
 
     public function getOutputHandler(): ?SetupOutputHandler {

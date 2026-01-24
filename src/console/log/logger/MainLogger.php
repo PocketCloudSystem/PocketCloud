@@ -12,7 +12,6 @@ use pocketcloud\cloud\console\log\color\CloudConsoleColor;
 use pocketcloud\cloud\console\log\logger\cache\LogMessagesCache;
 use pocketcloud\cloud\console\log\level\CloudLogLevel;
 use pocketcloud\cloud\console\log\output\OutputManager;
-use pocketcloud\cloud\util\FileUtils;
 use pocketcloud\cloud\util\FormatUtils;
 use pocketcloud\cloud\util\PathUtils;
 use ReflectionClass;

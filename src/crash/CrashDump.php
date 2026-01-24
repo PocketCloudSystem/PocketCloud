@@ -4,7 +4,6 @@ namespace pocketcloud\cloud\crash;
 
 use JsonException;
 use pocketcloud\cloud\util\ErrorUtils;
-use pocketcloud\cloud\util\FileUtils;
 use pocketcloud\cloud\util\FormatUtils;
 use pocketcloud\cloud\util\PathUtils;
 use ReflectionClass;
