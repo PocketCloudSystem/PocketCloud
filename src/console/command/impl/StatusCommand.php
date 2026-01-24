@@ -5,7 +5,10 @@ namespace pocketcloud\cloud\console\command\impl;
 use pocketcloud\cloud\console\command\Command;
 use pocketcloud\cloud\console\command\sender\ICommandSender;
 use pocketcloud\cloud\console\command\SubCommand;
+use pocketcloud\cloud\traffic\TrafficMonitor;
+use pocketcloud\cloud\traffic\TrafficMonitorManager;
 use pocketcloud\cloud\util\FormatUtils;
+use pocketcloud\cloud\util\ProcessUtils;
 use pocketcloud\cloud\util\Utils;
 
 final class StatusCommand extends Command {
@@ -34,9 +37,9 @@ final class StatusCommand extends Command {
                     } else if (is_array($value) && $key == "threads") {
                         return "§c" . implode("§8, §c", array_map(fn(object $obj) => $obj::class, $value));
                     } else if (in_array($key, ["tick_usage", "cpu_usage"])) {
-                        return FormatUtils::usagePercentage($value, $key == "tick_usage");
+                        return FormatUtils::usagePercentage($key == "cpu_usage" ? ($value / ProcessUtils::getCpuCores()) : $value, $key == "tick_usage");
                     } else if ($key == "uptime") {
-                        return $this->formatUptime($value);
+                        return FormatUtils::uptime($value);
                     }
 
                     return $value;
@@ -46,32 +49,17 @@ final class StatusCommand extends Command {
             $sender->success($line);
         }
 
+        $allTimeTrafficMessages = [];
+        foreach (TrafficMonitorManager::getInstance()->getAllTimeTraffic() as $trafficType => $traffic) {
+            $bytesIn = FormatUtils::bytes($traffic[TrafficMonitor::REGULAR_MODE_IN]);
+            $bytesOut = FormatUtils::bytes($traffic[TrafficMonitor::REGULAR_MODE_OUT]);
+            $allTimeTrafficMessages[] = ucfirst($trafficType) . " All-Time-Traffic: §a" . $bytesIn . " §8(§aIN§8) §8/ §c" . $bytesOut . " §8(§cOUT§8)";
+        }
+
+        foreach ($allTimeTrafficMessages as $message) {
+            $sender->success($message);
+        }
+
         return true;
-    }
-
-    private function formatUptime(float $seconds): string {
-        $days = 0;
-        $hours = 0;
-        $minutes = 0;
-
-        while ($seconds >= 86400) {
-            $days++;
-            $seconds -= 86400;
-        }
-
-        while ($seconds >= 3600) {
-            $hours++;
-            $seconds -= 3600;
-        }
-
-        while ($seconds >= 60) {
-            $minutes++;
-            $seconds -= 60;
-        }
-
-        return ($days > 0 ? $days . "d, " : "") .
-            ($hours > 0 ? $hours . "h, " : "") .
-            ($minutes > 0 ? $minutes . "m, " : "") .
-            ($seconds > 0 ? floor($seconds) . "s" : "");
     }
 }

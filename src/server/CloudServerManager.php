@@ -9,6 +9,7 @@ use pocketcloud\cloud\server\util\ServerStatus;
 use pocketcloud\cloud\server\util\ServerUtils;
 use pocketcloud\cloud\template\Template;
 use pocketcloud\cloud\template\TemplateType;
+use pocketcloud\cloud\util\benchmark\Benchmark;
 use pocketcloud\cloud\util\misc\Queue;
 use pocketcloud\cloud\util\misc\Tickable;
 use pocketcloud\cloud\util\promise\Promise;
@@ -48,6 +49,9 @@ final class CloudServerManager implements Tickable {
                         $server = new CloudServer($id, Uuid::uuid4()->toString(), $template->getName(), new CloudServerData($template->getName() . "-" . $id, $port, $template->getSettings()->getMaxPlayerCount(), null), ServerStatus::STARTING);
                         $this->add($server);
                         $this->serverPrepareQueue->add($server);
+                    } else {
+                        CloudLogger::get()->warn("Failed to start any more servers of §b{}§8: §cNo available ports found.", $template->getName());
+                        return;
                     }
                 }
             }
@@ -113,13 +117,17 @@ final class CloudServerManager implements Tickable {
         foreach ($this->servers as $server) $server->tick($currentTick);
 
         if (!$this->serverPrepareQueue->isEmpty()) {
+            Benchmark::startTiming("check_server_prepare_queue");
             ($server = $this->serverPrepareQueue->next())->prepare()
                 ->then(fn() => $this->serverStartQueue->add($server))
                 ->failure(fn() => CloudLogger::get()->warn("§cFailed to prepare server §e{}§c.", $server));
+            Benchmark::stopTiming("check_server_prepare_queue");
             return;
         }
 
+        Benchmark::startTiming("check_server_start_queue");
         if (!$this->serverStartQueue->isEmpty()) $this->serverStartQueue->next()->start();
+        Benchmark::stopTiming("check_server_start_queue");
     }
 
     public function get(string $name): ?CloudServer {

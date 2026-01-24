@@ -52,6 +52,7 @@ final class SetupScreen extends IScreen {
         $this->clear();
         $this->enableHistory();
         OutputManager::reset();
+        Console::getInstance()->setInput("");
         Console::getInstance()->restoreControlCHandler();
         Console::getInstance()->restoreCompletionHandler();
         Console::getInstance()->restorePrompt();

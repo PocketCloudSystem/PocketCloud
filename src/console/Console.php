@@ -117,7 +117,7 @@ final class Console {
 
     public function readLine(): void {
         if (!PocketCloud::getInstance()->isRunning()) return;
-        $line = trim($this->manualConsole->readlineNonBlocking(timeoutMs: 50) ?? "");
+        $line = trim($this->manualConsole->readlineNonBlocking(timeoutMs: 20) ?? "");
         if ($line === "") {
             if ($this->manualConsole->isPressedEnter()) Setup::getCurrentSetup()?->handleInput($line);
             return;
@@ -135,11 +135,27 @@ final class Console {
     }
 
     public function enableHistory(): void {
-        $this->manualConsole?->setAddToHistory(true);
+        $this->manualConsole?->setHistoryEnabled(true);
     }
 
     public function disableHistory(): void {
-        $this->manualConsole?->setAddToHistory(false);
+        $this->manualConsole?->setHistoryEnabled(false);
+    }
+
+    public function enableTyping(): void {
+        $this->manualConsole?->setTypingEnabled(true);
+    }
+
+    public function disableTyping(): void {
+        $this->manualConsole?->setTypingEnabled(false);
+    }
+
+    public function showTyping(): void {
+        $this->manualConsole?->setVisibleTypingEnabled(true);
+    }
+
+    public function hideTyping(): void {
+        $this->manualConsole?->setVisibleTypingEnabled(false);
     }
 
     public function restoreControlCHandler(): void {
@@ -165,6 +181,10 @@ final class Console {
     public function remove(): void {
         $this->manualConsole?->close();
         ShutdownHandler::remove();
+    }
+
+    public function getInput(): string {
+        return $this->manualConsole?->getInput() ?? "";
     }
 
     public static function getInstance(): ?self {

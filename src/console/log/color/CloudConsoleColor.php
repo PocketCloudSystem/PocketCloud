@@ -21,6 +21,9 @@ use pocketcloud\cloud\util\trait\RegistryTrait;
  * @method static CloudConsoleColor PINK()
  * @method static CloudConsoleColor YELLOW()
  * @method static CloudConsoleColor ORANGE()
+ * @method static CloudConsoleColor HIGHLIGHT()
+ * @method static CloudConsoleColor UNDERLINED()
+ * @method static CloudConsoleColor STRIKETHROUGH()
  * @method static CloudConsoleColor RESET()
  */
 final class CloudConsoleColor {
@@ -30,7 +33,7 @@ final class CloudConsoleColor {
 
     private static function register(CloudConsoleColor $color): void {
         self::_register($color->getName(), $color);
-   }
+    }
 
     protected static function init(): void {
         self::register(new CloudConsoleColor("black", "§0", "\x1b[38;5;16m"));
@@ -49,6 +52,10 @@ final class CloudConsoleColor {
         self::register(new CloudConsoleColor("pink", "§d", "\x1b[38;5;207m"));
         self::register(new CloudConsoleColor("yellow", "§e", "\x1b[38;5;227m"));
         self::register(new CloudConsoleColor("orange", "§6", "\x1b[38;5;214m"));
+
+        self::register(new CloudConsoleColor("highlight", "§l", "\033[7m"));
+        self::register(new CloudConsoleColor("underlined", "§n", "\x1b[4m"));
+        self::register(new CloudConsoleColor("strikethrough", "§m", "\x1b[9m"));
         self::register(new CloudConsoleColor("reset", "§r", "\x1b[m"));
     }
 
@@ -58,7 +65,7 @@ final class CloudConsoleColor {
     }
 
     public static function stripColors(string $text): string {
-        return preg_replace("/§[0-9a-fk-or]/", "", $text);
+        return preg_replace("/§[0-9a-fk-or]|§[lnm]/", "", $text);
     }
 
     public function __construct(

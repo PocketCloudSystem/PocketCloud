@@ -2,11 +2,11 @@
 
 namespace pocketcloud\cloud\network\packet\impl;
 
-use pocketcloud\cloud\cache\NotificationListCache;
 use pocketcloud\cloud\network\client\ServerClient;
 use pocketcloud\cloud\network\packet\CloudboundPacket;
 use pocketcloud\cloud\network\packet\CloudPacket;
 use pocketcloud\cloud\network\packet\util\PacketData;
+use pocketcloud\cloud\provider\CloudProvider;
 
 final class PlayerUpdateNotificationStatePacket extends CloudPacket implements CloudboundPacket {
 
@@ -16,8 +16,8 @@ final class PlayerUpdateNotificationStatePacket extends CloudPacket implements C
     ) {}
 
     public function handle(ServerClient $client): void {
-        if ($this->value) NotificationListCache::add($this->player);
-        else NotificationListCache::remove($this->player);
+        if ($this->value) CloudProvider::current()->enablePlayerNotifications($this->player);
+        else CloudProvider::current()->disablePlayerNotifications($this->player);
     }
 
     public function encodePayload(PacketData $packetData): void {}

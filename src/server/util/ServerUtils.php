@@ -50,7 +50,10 @@ final class ServerUtils {
     public static function getFreePort(TemplateType $type): int {
         [$start, $end, $randomPorts] = array_values($type->getServerPortRange());
         $currentPort = $start;
-        while (true) {
+        $port = 0;
+        $tries = 0;
+        while ($tries < 30) {
+            $tries++;
             $port = !$randomPorts ? $currentPort++ : mt_rand($start, $end);
             $portV6 = $port + 1;
             if (
@@ -59,6 +62,6 @@ final class ServerUtils {
             ) break;
         }
 
-        return $port;
+        return $tries >= 30 ? 0 : $port;
     }
 }

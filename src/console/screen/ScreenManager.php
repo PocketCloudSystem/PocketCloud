@@ -22,7 +22,7 @@ final class ScreenManager implements Tickable {
         $this->currentScreen?->tick($currentTick);
     }
 
-    public function setCurrentScreen(?IScreen $currentScreen): void {
+    public function setCurrentScreen(IScreen $currentScreen): void {
         $this->currentScreen?->onRemove(PocketCloud::getInstance()->getTick());
         $this->currentScreen = $currentScreen;
         $this->currentScreen->initialize(Console::getInstance());

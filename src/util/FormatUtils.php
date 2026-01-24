@@ -6,15 +6,42 @@ use Closure;
 
 final class FormatUtils {
 
-    public static function tps(float $tps): string {
-        $tps = round($tps, 2);
-        if ($tps < 0) return "§c???";
-        else if ($tps >= 17) return "§a" . $tps . " ticks/s";
-        else if ($tps >= 12) return "§6" . $tps . " ticks/s";
-        return "§c" . $tps . " ticks/s";
+    public static function uptime(float $seconds): string {
+        $days = 0;
+        $hours = 0;
+        $minutes = 0;
+
+        while ($seconds >= 86400) {
+            $days++;
+            $seconds -= 86400;
+        }
+
+        while ($seconds >= 3600) {
+            $hours++;
+            $seconds -= 3600;
+        }
+
+        while ($seconds >= 60) {
+            $minutes++;
+            $seconds -= 60;
+        }
+
+        return ($days > 0 ? $days . "d, " : "") .
+            ($hours > 0 ? $hours . "h, " : "") .
+            ($minutes > 0 ? $minutes . "m, " : "") .
+            ($seconds > 0 ? floor($seconds) . "s" : "");
     }
 
-    public static function bytes(int $bytes, ?int $maxBytes = null): string {
+    public static function tps(float $tps, bool $suffix = true): string {
+        $tps = round($tps, 2);
+        $suffix = ($suffix ? " ticks/s" : "");
+        if ($tps < 0) return "§c???";
+        else if ($tps >= 17) return "§a" . $tps . $suffix;
+        else if ($tps >= 12) return "§6" . $tps . $suffix;
+        return "§c" . $tps . $suffix;
+    }
+
+    public static function bytes(int $bytes, ?int $maxBytes = null, ?float &$percent = null): string {
         if ($bytes < 0) return "§c???";
 
         $units = ["B", "KB", "MB", "GB", "TB", "PB", "EB"];
@@ -34,13 +61,13 @@ final class FormatUtils {
             $color = "§c";
         }
 
-        return sprintf("%s%s (%.1f%%)", $color, $formatted, $percent);
+        return sprintf("§b%s §8(%s%.1f%%§8)§r", $formatted, $color, $percent);
     }
 
-    public static function usagePercentage(float $percentage, bool $higherBetter = false): string {
+    public static function usagePercentage(float $percentage, bool $higherBetter = false, int $precision = 3): string {
         if ($percentage < 0) return "§c???";
 
-        $formatted = round($percentage, 3) . "%";
+        $formatted = round($percentage, $precision) . "%";
         if ($percentage < 60) {
             $color = ($higherBetter ? "§c" : "§a");
         } else if ($percentage < 85) {

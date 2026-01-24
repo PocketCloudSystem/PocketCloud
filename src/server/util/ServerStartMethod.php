@@ -6,6 +6,7 @@ use Closure;
 use InvalidArgumentException;
 use LogicException;
 use pocketcloud\cloud\server\CloudServer;
+use pocketcloud\cloud\util\benchmark\Benchmark;
 use pocketcloud\cloud\util\PathUtils;
 use pocketcloud\cloud\util\promise\Promise;
 use pocketcloud\cloud\util\TerminalUtils;
@@ -30,6 +31,7 @@ final class ServerStartMethod {
      */
     protected static function init(): void {
         self::add(new ServerStartMethod("screen", function (CloudServer $server, string $startCommand): Promise {
+            Benchmark::startTiming("screen_start");
             $screenName = $server->getName() . "-" . $server->getServerUuid();
             $cmd = "cd " . $server->getPath() . " && screen -dmS $screenName bash -c 'exec $startCommand' && " .
                 "screen -ls | grep $screenName | awk -F '.' '{print $1}'";
@@ -39,12 +41,15 @@ final class ServerStartMethod {
             if ($returnVar === 0 && isset($output[0])) {
                 $screenPid = (int) trim($output[0]);
                 $shellOutput = shell_exec("pgrep -P $screenPid");
+                Benchmark::stopTiming("screen_start");
                 if ($shellOutput === null) return Promise::rejected();
                 $pid = (int) trim($shellOutput);
                 if ($pid > 0) {
                     return Promise::resolved($pid);
                 }
             }
+
+            Benchmark::stopTiming("screen_start");
             return Promise::rejected();
         }, fn(): bool => TerminalUtils::checkCommand("screen")));
 

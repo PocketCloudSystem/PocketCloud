@@ -7,6 +7,12 @@ final class ProcessUtils {
     private static array $lastCheckTime = [];
     private static array $lastCpuTime = [];
     private static ?int $clockTicks = null;
+    private static ?int $cpuCores = null;
+
+    public static function getCpuCores(): int {
+        if (self::$cpuCores !== null) return self::$cpuCores;
+        return self::$cpuCores = preg_match_all("/^processor/m", file_get_contents("/proc/cpuinfo"));
+    }
 
     public static function getProcessStatus(?int $pid = null): ?array {
         $pid = $pid ?? "self";

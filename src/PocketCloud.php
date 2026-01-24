@@ -10,7 +10,6 @@ use pocketcloud\cloud\console\Console;
 use pocketcloud\cloud\console\log\level\CloudLogLevel;
 use pocketcloud\cloud\console\log\logger\MainLogger;
 use pocketcloud\cloud\console\log\output\OutputManager;
-use pocketcloud\cloud\console\screen\impl\DefaultScreen;
 use pocketcloud\cloud\console\screen\ScreenManager;
 use pocketcloud\cloud\crash\CrashDump;
 use pocketcloud\cloud\event\impl\cloud\CloudStartedEvent;
@@ -33,6 +32,8 @@ use pocketcloud\cloud\template\TemplateType;
 use pocketcloud\cloud\thread\ThreadManager;
 use pocketcloud\cloud\traffic\TrafficMonitorManager;
 use pocketcloud\cloud\update\UpdateChecker;
+use pocketcloud\cloud\util\benchmark\Benchmark;
+use pocketcloud\cloud\util\benchmark\BenchmarkTimingsSummary;
 use pocketcloud\cloud\util\bStats\CloudMetrics;
 use pocketcloud\cloud\util\FileUtils;
 use pocketcloud\cloud\util\misc\Queue;
@@ -74,6 +75,7 @@ final class PocketCloud {
 
     private bool $running = false;
     private int $tick = 0;
+    private float $nextTick = 0;
     private float $startTimestamp = 0;
 
     private array $tickTimes = [];
@@ -191,7 +193,7 @@ final class PocketCloud {
             $this->addStartNotification("§8====== §cATTENTION! §8======", CloudLogLevel::WARN())
                 ->addStartNotification("§rNew binaries have been downloaded.", CloudLogLevel::WARN())
                 ->addStartNotification("Please make sure that they are NOT corrupted due to issues with PharData.", CloudLogLevel::WARN())
-                ->addStartNotification("If they are, please download them manually.", CloudLogLevel::WARN())
+                ->addStartNotification("If they are, please download (& extract) them manually.", CloudLogLevel::WARN())
                 ->addStartNotification("Thank you.", CloudLogLevel::WARN());
         }
 
@@ -210,7 +212,7 @@ final class PocketCloud {
         TerminalUtils::clear();
         CloudLogger::get()->setSaveLogs(true);
         CloudLogger::get()->emptyLine()->setFormat("§r{message}")
-            ->info("  §bPocket§3Cloud §8- §rA cloud system for pocketmine servers with proxy support §8- §b{} §8- §rdeveloped by §b{}", VersionInfo::VERSION . (VersionInfo::BETA ? "§c@BETA" : ""), implode("§8, §b", VersionInfo::DEVELOPERS))
+            ->info("  §bPocket§3Cloud §8- §rA cloud system for §lPocketMine-MP servers§r with §lProxy support§r §8- §b{} §8- §rdeveloped by §b{}", VersionInfo::VERSION . (VersionInfo::BETA ? "§c@BETA" : ""), implode("§8, §b", VersionInfo::DEVELOPERS))
             ->info("  Join our discord for information: §bhttps://discord.gg/3HbPEpaE3T")
             ->emptyLine()->resetFormat();
 
@@ -237,6 +239,7 @@ final class PocketCloud {
         if (!$this->running) return;
         try {
             OutputManager::reset();
+            ScreenManager::getInstance()->resetScreen();
             $filePath = CrashDump::fromLastestError()->create();
             CloudLogger::get()->error("§cAn error has occurred and caused the Cloud to crash entirely.");
             CloudLogger::get()->error("§cA crashdump has been created.");
@@ -254,30 +257,59 @@ final class PocketCloud {
 
     public function shutdown(): void {
         if (!$this->running) return;
+
+        OutputManager::reset();
+        ScreenManager::getInstance()->resetScreen();
+
         CloudLogger::get()->info("§cShutting down §bPocket§3Cloud§r...");
         $this->running = false;
+
+        CloudLogger::get()->info("Writing timings... §8(§b{}§8)", $timingsPath = STORAGE_PATH . "latest_timings.txt");
+
+        @unlink($timingsPath);
+        $file = fopen($timingsPath, "w");
+        /** @var BenchmarkTimingsSummary $summary */
+        foreach (Benchmark::getSummary() as $summary) {
+            fwrite($file, $summary->format() . PHP_EOL);
+        }
+
+        fclose($file);
 
         if (isset($this->serverManager)) $this->serverManager->stopAll();
         if (isset($this->network)) $this->network->close();
         if (isset($this->httpServer)) $this->httpServer->stop();
+        if (isset($this->serverPreparator)) $this->serverPreparator->stop();
         $this->console->remove();
     }
 
     public function tick(): void {
-        $start = microtime(true);
+        $this->nextTick = microtime(true);
         ProcessUtils::getCpuUsage();
         while ($this->running) {
             $tickStart = microtime(true);
-
+            if (($tickStart - $this->nextTick) < -0.025) continue;
+            Benchmark::startTiming("full_cloud_tick");
             $this->tick++;
             TickableList::tickAll($this->tick);
+
             $this->console->readLine();
             if (($this->tick % 40) == 0) ProcessUtils::getCpuUsage();
 
-            $tickEnd = microtime(true);
-            $this->updatePerformanceMetrics($tickStart, $tickEnd);
+            if (($this->nextTick - $tickStart) < -1) {
+                $this->nextTick = $tickStart;
+            } else {
+                $this->nextTick += 1 / 20;
+            }
 
-            $this->sleeperHandler->sleepUntil($start);
+            Benchmark::stopTiming("full_cloud_tick");
+
+            if (($timeUntilNextTick = $this->nextTick - microtime(true)) > 0) {
+                usleep(floor($timeUntilNextTick * 1_000_000));
+            }
+
+            $this->updatePerformanceMetrics($tickStart, microtime(true));
+
+            $this->sleeperHandler->sleepUntil($this->nextTick);
         }
     }
 
@@ -379,6 +411,10 @@ final class PocketCloud {
         return $this->config;
     }
 
+    public function getLogSettingsConfig(): LogSettingsConfig {
+        return $this->logSettingsConfig;
+    }
+
     public function getSoftwareManager(): ServerSoftwareManager {
         return $this->softwareManager;
     }
@@ -389,6 +425,10 @@ final class PocketCloud {
 
     public function getNetwork(): Network {
         return $this->network;
+    }
+
+    public function getHttpServer(): HttpServer {
+        return $this->httpServer;
     }
 
     public function getAsyncPool(): AsyncPool {

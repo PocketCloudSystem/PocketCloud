@@ -15,6 +15,22 @@ abstract class IScreen {
         Console::getInstance()->disableHistory();
     }
 
+    final public function enableTyping(): void {
+        Console::getInstance()->enableTyping();
+    }
+
+    final public function disableTyping(): void {
+        Console::getInstance()->disableTyping();
+    }
+
+    final public function showTyping(): void {
+        Console::getInstance()->showTyping();
+    }
+
+    final public function hideTyping(): void {
+        Console::getInstance()->hideTyping();
+    }
+
     final public function clear(): void {
         TerminalUtils::clear();
     }

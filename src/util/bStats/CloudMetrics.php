@@ -29,7 +29,7 @@ final class CloudMetrics implements Tickable {
     }
 
     public function tick(int $currentTick): void {
-        if (!$this->mainConfig->isBStatsEnabled()) return;
+        if (!$this->metrics->getMetricsSettings()->isEnabled()) return;
         if ($currentTick >= $this->nextSubmitTick) {
             $this->nextSubmitTick = $currentTick + self::DEFAULT_SUBMIT_INTERVAL;
             CloudLogger::get()->debug("Sending bStats data...");

@@ -10,7 +10,10 @@ use RuntimeException;
 final class ManualConsole {
 
     private bool $closed = false;
+    private string $oldSttySettings;
 
+    private bool $typingEnabled = true;
+    private bool $visibleTyping = true;
     private bool $historyEnabled = true;
     private array $history = [];
     private int $historyIndex = 0;
@@ -30,12 +33,21 @@ final class ManualConsole {
     ) {
         stream_set_blocking(STDIN, false);
         mb_internal_encoding("UTF-8");
+        $this->oldSttySettings = shell_exec("stty -g");
         shell_exec("stty -echo");
         shell_exec("stty raw");
     }
 
-    public function setAddToHistory(bool $addToHistory): void {
-        $this->historyEnabled = $addToHistory;
+    public function setHistoryEnabled(bool $enabled): void {
+        $this->historyEnabled = $enabled;
+    }
+
+    public function setTypingEnabled(bool $enabled): void {
+        $this->typingEnabled = $enabled;
+    }
+
+    public function setVisibleTypingEnabled(bool $enabled): void {
+        $this->visibleTyping = $enabled;
     }
 
     public function readlineNonBlocking(int $timeoutMs = 0): ?string {
@@ -92,15 +104,18 @@ final class ManualConsole {
             return null;
         }
 
-        $this->input = mb_substr($this->input, 0, $this->cursor) . $char . mb_substr($this->input, $this->cursor);
-        $this->cursor++;
-        $this->redraw($this->prompt);
+        if ($this->typingEnabled) {
+            $this->input = mb_substr($this->input, 0, $this->cursor) . $char . mb_substr($this->input, $this->cursor);
+            $this->cursor++;
+            $this->redraw($this->prompt);
+        }
 
         return null;
     }
 
     private function handleTabCompletion(string $prompt): void {
         if ($this->completionCallback === null) return;
+        if (!$this->typingEnabled) return;
 
         $beforeCursor = substr($this->input, 0, $this->cursor);
         $afterCursor = substr($this->input, $this->cursor);
@@ -299,8 +314,8 @@ final class ManualConsole {
 
     private function redraw(string $prompt): void {
         echo "\033[2K\r";
-        echo $prompt . $this->input;
-        $back = mb_strlen($this->input) - $this->cursor;
+        echo $prompt . ($this->visibleTyping ? $this->input : "");
+        $back = mb_strlen($this->visibleTyping ? $this->input : "") - $this->cursor;
         if ($back > 0) echo str_repeat("\033[D", $back);
     }
 
@@ -362,8 +377,7 @@ final class ManualConsole {
 
     public function close(): void {
         $this->ensureOpen();
-        shell_exec("stty echo");
-        shell_exec("stty cooked");
+        shell_exec("stty " . $this->oldSttySettings);
         $this->closed = true;
         $this->history = [];
         $this->historyIndex = 0;
@@ -373,8 +387,7 @@ final class ManualConsole {
     }
 
     public function __destruct() {
-        shell_exec("stty echo");
-        shell_exec("stty cooked");
+        shell_exec("stty " . $this->oldSttySettings);
     }
 
     public function setPrompt(string $prompt): void {

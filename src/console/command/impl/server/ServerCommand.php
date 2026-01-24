@@ -28,8 +28,8 @@ final class ServerCommand extends Command {
         $this->registerSubCommand(SubCommand::fromClosure("start", $this->handleStartSub(...), ["start"])
             ->addParameter(new TemplateParameter("template", false))
             ->addParameter(new IntegerParameter("amount", true, function (int $number): int {
-                if ($number < 0 || $number > 20) return 1;
-                return $number;
+                if ($number < 0) return 1;
+                return min(20, $number);
             })));
 
         $this->registerSubCommand(SubCommand::fromClosure("stop", $this->handleStopSub(...), ["stop"])

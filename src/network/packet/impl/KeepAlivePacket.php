@@ -34,7 +34,7 @@ final class KeepAlivePacket extends CloudPacket implements ClientboundPacket, Cl
                 $peakMemoryUsage,
                 ProcessUtils::getMemoryLimit(),
                 ProcessUtils::getCpuUsage()
-            ), ($server->getTemplate()->getTemplateType()->getServerTimeout() / 2) * 20);
+            ), 20);
         }
     }
 
