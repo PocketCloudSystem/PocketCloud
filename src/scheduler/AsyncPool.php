@@ -124,7 +124,6 @@ final class AsyncPool implements Tickable {
             }
         }
 
-        #test
         return $ret;
     }
 
