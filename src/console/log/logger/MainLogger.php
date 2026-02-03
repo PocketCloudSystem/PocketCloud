@@ -98,8 +98,8 @@ class MainLogger implements ILogger {
 
         $threadName = "Main thread";
         try {
-            if (Thread::getCurrentThread() !== null) {
-                if (method_exists(Thread::getCurrentThread(), "getThreadName")) $threadName = Thread::getCurrentThread()->getThreadName();
+            if (($currentThread = Thread::getCurrentThread()) !== null) {
+                if (method_exists($currentThread, "getThreadName")) $threadName = $currentThread->getThreadName();
                 else $threadName = new ReflectionClass(Thread::getCurrentThread())->getShortName();
             }
         } catch (ReflectionException) {}
