@@ -7,8 +7,11 @@ use RuntimeException;
 
 final class Benchmark {
 
+    private const int MAX_TIMINGS = 100;
+
     /** @var array<array<BenchmarkTiming>> */
     private static array $timings = [];
+    private static array $timingsSummary = [];
 
     public static function measure(Closure $fn, int $iterations = 1, ?string $name = null): BenchmarkResult {
         $times = [];
@@ -25,13 +28,31 @@ final class Benchmark {
     public static function startTiming(string $name): BenchmarkTiming {
         self::$timings[$name][] = ($timing = new BenchmarkTiming($name));
         $timing->startTiming();
+
+        if (count(self::$timings[$name]) > self::MAX_TIMINGS) array_shift(self::$timings[$name]);
+
         return $timing;
     }
 
     public static function stopTiming(string $name): BenchmarkTiming {
         if (!isset(self::$timings[$name]) || empty(self::$timings[$name])) throw new RuntimeException("No timings started for '$name'");
-        $lastIndex = count(self::$timings[$name]) - 1;
-        ($timing = self::$timings[$name][$lastIndex])->stopTiming();
+        ($timing = self::$timings[$name][$index = count(self::$timings[$name]) - 1])->stopTiming();
+        unset(self::$timings[$name][$index]);
+
+        if (!isset(self::$timingsSummary[$name])) {
+            self::$timingsSummary[$name] = [
+                "count" => 0,
+                "sum" => 0,
+                "min" => PHP_FLOAT_MAX,
+                "max" => 0
+            ];
+        }
+
+        self::$timingsSummary[$name]["count"] += 1;
+        self::$timingsSummary[$name]["sum"] += $timing->getDuration();
+        self::$timingsSummary[$name]["min"] = min($timing->getDuration(), self::$timingsSummary[$name]["min"]);
+        self::$timingsSummary[$name]["max"] = max($timing->getDuration(), self::$timingsSummary[$name]["max"]);
+
         return $timing;
     }
 
@@ -45,9 +66,9 @@ final class Benchmark {
         $keys = $name !== null ? [$name] : array_keys(self::$timings);
 
         foreach ($keys as $key) {
-            $durations = array_map(fn(BenchmarkTiming $v) => $v->getDuration(), array_filter(self::$timings[$key] ?? [], fn(BenchmarkTiming $v) => $v->isDone()));
-            if (empty($durations)) continue;
-            $summary[$key] = new BenchmarkTimingsSummary($key, count($durations), array_sum($durations) / count($durations), min($durations), max($durations));
+            if (!isset(self::$timingsSummary[$key])) continue;
+            [$count, $sum, $min, $max] = array_values(self::$timingsSummary[$key]);
+            $summary[$key] = new BenchmarkTimingsSummary($key, $count, $sum / $count, $min, $max);
         }
 
         return $name !== null ? ($summary[$name] ?? null) : $summary;
