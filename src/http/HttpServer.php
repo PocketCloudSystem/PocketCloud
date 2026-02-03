@@ -9,6 +9,7 @@ use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\http\io\Request;
 use pocketcloud\cloud\http\io\Response;
 use pocketcloud\cloud\http\io\ResponseBuilder;
+use pocketcloud\cloud\http\route\ApiPath;
 use pocketcloud\cloud\http\route\impl\TestRoute;
 use pocketcloud\cloud\http\route\Path;
 use pocketcloud\cloud\http\route\RegularPath;
@@ -89,7 +90,7 @@ final class HttpServer {
 
         if ($path instanceof RegularPath) {
             $this->paths[$path->getMethod()][$path->getFullPath()] = $path;
-        } else {
+        } else if ($path instanceof ApiPath) {
             if (($version = $this->getVersion($path->getApiVersion())) !== null) {
                 if (!$version->isValidPath($path->getMethod(), $pathRoute)) $version->addPath($path->getMethod(), $pathRoute);
                 $this->paths[$path->getMethod()][$path->getFullPath()] = $path;

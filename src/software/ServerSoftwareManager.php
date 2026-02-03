@@ -3,7 +3,7 @@
 namespace pocketcloud\cloud\software;
 
 use Phar;
-use pocketcloud\cloud\config\impl\MainConfig;
+use pocketcloud\cloud\config\impl\ServerSettingsConfig;
 use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\PocketCloud;
 use pocketcloud\cloud\util\net\NetUtils;
@@ -29,7 +29,7 @@ final class ServerSoftwareManager implements Loadable {
     public function load(): void {
         $this->register(new ServerSoftware(
             "PocketMine-MP", 
-            MainConfig::getInstance()->getStartCommand("server"), 
+            ServerSettingsConfig::getInstance()->getStartCommand(ServerSettingsConfig::TYPE_SERVER),
             "https://github.com/pmmp/PocketMine-MP/releases/latest/download/PocketMine-MP.phar", 
             "PocketMine-MP.phar",
             ["pmmp"],
@@ -57,8 +57,8 @@ final class ServerSoftwareManager implements Loadable {
         ));
         
         $this->register(new ServerSoftware(
-            "WaterdogPE", 
-            MainConfig::getInstance()->getStartCommand("proxy"), 
+            "WaterdogPE",
+            ServerSettingsConfig::getInstance()->getStartCommand(ServerSettingsConfig::TYPE_PROXY),
             "https://github.com/WaterdogPE/WaterdogPE/releases/download/latest/Waterdog.jar", 
             "Waterdog.jar", 
             ["wdpe"],

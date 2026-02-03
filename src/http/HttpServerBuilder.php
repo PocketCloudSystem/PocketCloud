@@ -56,8 +56,8 @@ final class HttpServerBuilder {
     }
 
     public static function buildFromConfig(): HttpServer {
-        $rateLimitConfig = MainConfig::getInstance()->getHttpServerRateLimit();
-        $cachingConfig = MainConfig::getInstance()->getHttpServerCaching();
+        $rateLimitConfig = MainConfig::getInstance()->getHttpRateLimitConfiguration();
+        $cachingConfig = MainConfig::getInstance()->getHttpResponseCachingConfiguration();
         return self::create(Address::read(MainConfig::getInstance()->getHttpServer()))
             ->setEnableVersioning(true)
             ->setEnableResponseCaching($cachingConfig["enabled"])

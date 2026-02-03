@@ -170,9 +170,7 @@ final class Console {
         $line = trim($line ?? "");
 
         if ($line === "") {
-            if ($this->manualConsole->isPressedEnter()) {
-                Setup::getCurrentSetup()?->handleInput($line);
-            }
+            if ($this->manualConsole->isPressedEnter()) Setup::getCurrentSetup()?->handleInput($line);
             return;
         }
 

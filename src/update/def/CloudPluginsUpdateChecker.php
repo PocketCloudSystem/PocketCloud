@@ -17,7 +17,7 @@ final class CloudPluginsUpdateChecker implements IUpdateChecker {
         $result = [];
         $amount = count($all = TemplateType::getAll());
         foreach ($all as $type) {
-            $type->checkForUpdate()->then(function (bool $needsUpdate) use ($promise, &$i, &$result, $type, $amount): void {
+            $type->checkBridgeForUpdate()->then(function (bool $needsUpdate) use ($promise, &$i, &$result, $type, $amount): void {
                 $i++;
                 if ($needsUpdate) {
                     CloudLogger::get()->info("Your version of plugin §b{} §ris outdated...", $type->getRelativeBridgeFileLocation());
@@ -43,7 +43,7 @@ final class CloudPluginsUpdateChecker implements IUpdateChecker {
         foreach ($pluginList as $type) {
             $type = TemplateType::get($type);
             if ($type instanceof TemplateType) {
-                $type->update()->then(function (bool $success) use($type, $promise, &$i, $pluginList): void {
+                $type->updateBridge()->then(function (bool $success) use($type, $promise, &$i, $pluginList): void {
                     $i++;
                     if (!$success) {
                         CloudLogger::get()->warn("Failed to update plugin §b{}§r.", $type->getRelativeBridgeFileLocation());

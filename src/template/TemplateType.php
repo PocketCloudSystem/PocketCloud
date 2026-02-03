@@ -4,7 +4,7 @@ namespace pocketcloud\cloud\template;
 
 use Closure;
 use Phar;
-use pocketcloud\cloud\config\impl\MainConfig;
+use pocketcloud\cloud\config\impl\ServerSettingsConfig;
 use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\server\config\ServerProperties;
 use pocketcloud\cloud\server\config\ServerPropertiesGenerator;
@@ -153,16 +153,16 @@ final class TemplateType {
         Utils::validateCallbackSignature($this->bridgePluginUpdateClosure, [TemplateType::class], Promise::class);
     }
 
-    public function download(): bool {
+    public function downloadBridge(): bool {
         return ($this->bridgePluginDownloadClosure)($this);
     }
 
-    public function checkForUpdate(): Promise {
+    public function checkBridgeForUpdate(): Promise {
         if (!@file_exists($this->getBridgeFileLocation())) return Promise::resolved(true);
         return ($this->bridgePluginUpdateCheckClosure)($this);
     }
 
-    public function update(): Promise {
+    public function updateBridge(): Promise {
         return ($this->bridgePluginDownloadClosure)($this);
     }
 
@@ -179,11 +179,11 @@ final class TemplateType {
     }
 
     public function getServerTimeout(): int {
-        return MainConfig::getInstance()->getServerTimeout($this->name);
+        return ServerSettingsConfig::getInstance()->getServerTimeouts()[$this->name];
     }
 
     public function getServerPortRange(): array {
-        return MainConfig::getInstance()->getServerPortRange($this->name);
+        return ServerSettingsConfig::getInstance()->getServerPortRanges()[$this->name];
     }
 
     public function getSoftware(): ServerSoftware {

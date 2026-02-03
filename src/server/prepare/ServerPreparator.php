@@ -3,7 +3,7 @@
 namespace pocketcloud\cloud\server\prepare;
 
 use Closure;
-use pocketcloud\cloud\config\impl\MainConfig;
+use pocketcloud\cloud\config\impl\ServerSettingsConfig;
 use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\PocketCloud;
 use pocketcloud\cloud\server\CloudServer;
@@ -23,7 +23,7 @@ final class ServerPreparator implements Loadable {
 
     public function load(): void {
         self::setInstance($this);
-        CloudLogger::get()->debug("Starting threads to prepare starting servers... (" . ($count = MainConfig::getInstance()->getServerPrepareThreads()) . ")");
+        CloudLogger::get()->debug("Starting threads to prepare starting servers... (" . ($count = ServerSettingsConfig::getInstance()->getServerPrepareThreads()) . ")");
         if ($this->isAsync()) {
             for ($i = 0; $i < $count; $i++) {
                 $thread = new ServerPrepareThread();
@@ -69,7 +69,7 @@ final class ServerPreparator implements Loadable {
     }
 
     public function isAsync(): bool {
-        return MainConfig::getInstance()->getServerPrepareThreads() > 0;
+        return ServerSettingsConfig::getInstance()->getServerPrepareThreads() > 0;
     }
 
     public function getThreads(): array {

@@ -5,6 +5,7 @@ namespace pocketcloud\cloud;
 use Phar;
 use pocketcloud\cloud\config\impl\LogSettingsConfig;
 use pocketcloud\cloud\config\impl\MainConfig;
+use pocketcloud\cloud\config\impl\ServerSettingsConfig;
 use pocketcloud\cloud\console\command\CommandManager;
 use pocketcloud\cloud\console\Console;
 use pocketcloud\cloud\console\log\level\CloudLogLevel;
@@ -90,6 +91,7 @@ final class PocketCloud {
     private CommandManager $commandManager;
     private LibraryManager $libraryManager;
     private MainConfig $config;
+    private ServerSettingsConfig $serverSettingsConfig;
     private LogSettingsConfig $logSettingsConfig;
     private SleeperHandler $sleeperHandler;
     private Queue $startNotificationQueue;
@@ -146,7 +148,7 @@ final class PocketCloud {
         foreach (TemplateType::getAll() as $type) {
             if (!$type->checkBridge()) {
                 CloudLogger::get()->forceDebug("Starting download for bridge plugin: §b{}", $type->getRelativeBridgeFileLocation());
-                if ($type->download()) {
+                if ($type->downloadBridge()) {
                     CloudLogger::get()->success("Successfully downloaded bridge plugin: §b{} §8(§b{}§8)", $type->getRelativeBridgeFileLocation(), $type->getBridgeFileLocation());
                 } else {
                     $i++;
@@ -189,7 +191,7 @@ final class PocketCloud {
         $this->console->install();
         $this->console->register();
 
-        if (array_any($this->config->getAllBinaries(), fn(string $url, string $templateType) => BinaryDownloader::downloadBinary($url, $templateType) === true)) {
+        if (array_any($this->serverSettingsConfig->getBinaries(), fn(string $url, string $templateType) => BinaryDownloader::downloadBinary($url, $templateType) === true)) {
             $this->addStartNotification("§8====== §cATTENTION! §8======", CloudLogLevel::WARN())
                 ->addStartNotification("§rNew binaries have been downloaded.", CloudLogLevel::WARN())
                 ->addStartNotification("Please make sure that they are NOT corrupted due to issues with PharData.", CloudLogLevel::WARN())
@@ -266,16 +268,18 @@ final class PocketCloud {
         CloudLogger::get()->info("§cShutting down §bPocket§3Cloud§r...");
         $this->running = false;
 
-        CloudLogger::get()->info("Writing timings... §8(§b{}§8)", $timingsPath = STORAGE_PATH . "latest_timings.txt");
+        if ($this->config->isWriteTimingsOnShutdown()) {
+            CloudLogger::get()->info("Writing timings... §8(§b{}§8)", $timingsPath = STORAGE_PATH . "latest_timings.txt");
 
-        @unlink($timingsPath);
-        $file = fopen($timingsPath, "w");
-        /** @var BenchmarkTimingsSummary $summary */
-        foreach (Benchmark::getSummary() as $summary) {
-            fwrite($file, $summary->format() . PHP_EOL);
+            @unlink($timingsPath);
+            $file = fopen($timingsPath, "w");
+            /** @var BenchmarkTimingsSummary $summary */
+            foreach (Benchmark::getSummary() as $summary) {
+                fwrite($file, $summary->format() . PHP_EOL);
+            }
+
+            fclose($file);
         }
-
-        fclose($file);
 
         if (isset($this->serverManager)) $this->serverManager->stopAll();
         if (isset($this->network)) $this->network->close();
@@ -372,6 +376,10 @@ final class PocketCloud {
         return $this->tick;
     }
 
+    public function getNextTick(): float {
+        return $this->nextTick;
+    }
+
     public function getStartTimestamp(): float {
         return $this->startTimestamp;
     }
@@ -411,6 +419,10 @@ final class PocketCloud {
 
     public function getConfig(): MainConfig {
         return $this->config;
+    }
+
+    public function getServerSettingsConfig(): ServerSettingsConfig {
+        return $this->serverSettingsConfig;
     }
 
     public function getLogSettingsConfig(): LogSettingsConfig {

@@ -122,6 +122,55 @@ final class Utils {
         }
     }
 
+    public static function validateArraySignature(array $array, array $expectedSignature, bool $allowUnexpectedKeys = false, string $path = ""): void {
+        foreach ($expectedSignature as $key => $expectedType) {
+            $currentPath = $path === "" ? $key : $path . "." . $key;
+            if (!isset($array[$key])) throw new InvalidArgumentException("Missing key: $currentPath");
+            $value = $array[$key];
+
+            if (is_array($expectedType)) {
+                if (!is_array($value)) throw new InvalidArgumentException("Key $currentPath must be array");
+                self::validateArraySignature($value, $expectedType, $allowUnexpectedKeys, $currentPath);
+                continue;
+            }
+
+            if (!self::matchesType($value, $expectedType)) {
+                $actual = is_object($value) ? get_class($value) : gettype($value);
+                throw new InvalidArgumentException("Invalid type for $currentPath, expected $expectedType, got $actual");
+            }
+        }
+
+        $unexpected = array_diff(array_keys($array), array_keys($expectedSignature));
+        if (count($unexpected) > 0 && !$allowUnexpectedKeys) {
+            throw new InvalidArgumentException("Unexpected keys: " . implode(", ", array_map(fn(string $k) => ($path !== "" ? $path . "." : "") . $k, $unexpected)));
+        }
+    }
+
+    public static function matchesType(mixed $value, string $expectedType): bool {
+        if (str_starts_with($expectedType, "?")) {
+            if ($value === null) return true;
+            $expectedType = substr($expectedType, 1);
+        }
+
+        if (str_contains($expectedType, "|")) {
+            return array_any(explode("|", $expectedType), fn(string $type) => self::matchesType($value, $type));
+        }
+
+        if ($expectedType === "mixed") return true;
+        if (class_exists($expectedType) || interface_exists($expectedType)) return $value instanceof $expectedType;
+
+        return match ($expectedType) {
+            "int", "integer" => is_int($value),
+            "string" => is_string($value),
+            "bool", "boolean" => is_bool($value),
+            "float", "double" => is_float($value),
+            "array" => is_array($value),
+            "null" => is_null($value),
+            default => false
+        };
+    }
+
+
     /** @author PMMP https://github.com/pmmp/PocketMine-MP/blob/50430762cf4a93a19a5621f9d0157e8009a8c15c/src/utils/Utils.php#L200 */
     public static function getMachineUniqueId(string $extra = ""): UuidInterface {
         if (self::$machineUniqueId !== null && $extra === "") return self::$machineUniqueId;

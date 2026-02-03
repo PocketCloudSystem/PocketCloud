@@ -13,18 +13,19 @@ use xxFLORII\bStats\chart\def\SingleLineChart;
 use xxFLORII\bStats\Metrics;
 use xxFLORII\bStats\settings\MetricsSettings;
 
-final class CloudMetrics implements Tickable {
+final readonly class CloudMetrics implements Tickable {
 
-    private readonly Metrics $metrics;
+    private Metrics $metrics;
 
     public function __construct(
-        private readonly UuidInterface $uuid,
-        private readonly MainConfig $mainConfig
+        private UuidInterface $uuid,
+        private MainConfig $mainConfig
     ) {
+        [$enabled, $logFailedRequests, $logSentData, $lobStatusResponseText] = array_values($this->mainConfig->getBStats());
         $this->metrics = new Metrics(new MetricsSettings(
-            $this->mainConfig->isBStatsEnabled(), VersionInfo::METRICS_ID,
-            $this->mainConfig->isBStatsLogFailedRequests(), $this->mainConfig->isBStatsLogSentData(),
-            $this->mainConfig->isBStatsLogStatusResponseText(), $this->uuid->toString()
+            $enabled, VersionInfo::METRICS_ID,
+            $logFailedRequests, $logSentData,
+            $lobStatusResponseText, $this->uuid->toString()
         ));
 
         $this->metrics->addChart(new SingleLineChart("players", fn(): int => count(CloudPlayerManager::getInstance()->getAll())));

@@ -3,6 +3,7 @@
 namespace pocketcloud\cloud\config\impl;
 
 use configlib\Configuration;
+use InvalidArgumentException;
 use pocketcloud\cloud\console\handler\ExceptionHandler;
 use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\network\packet\data\NotificationType;
@@ -14,10 +15,20 @@ use const pocketcloud\STORAGE_PATH;
 final class LogSettingsConfig extends Configuration {
     use SingletonTrait;
 
+    /** @ignored */
+    public const string CATEGORY_CONNECTION = "connection_lifecycle";
+    /** @ignored */
+    public const string CATEGORY_FAILED_JOINS = "failed_joins";
+    /** @ignored */
+    public const string CATEGORY_KICKS = "kicks";
+    /** @ignored */
+    public const string CATEGORY_SERVER_SWITCHED = "server_switched";
+
     /**
      * @comment Whether you want to see debug logs or not
      */
     private bool $debugMode = false;
+
     /**
      * @comment Here you can decide whether you want to see / be notified when players join, leave, get kicked, cannot join, switch servers, ...
      * @comment connection_lifecycle => regular player join/leave messages
@@ -63,12 +74,46 @@ final class LogSettingsConfig extends Configuration {
         }, "Failed to load log settings config", fn() => PocketCloud::getInstance()->shutdown(), $defaultPlayerLogs);
     }
 
+    private function assertCategory(string $category): void {
+        if (!isset($this->playerLogs[$category])) throw new InvalidArgumentException("Unknown player log category: $category");
+    }
+
     public function setDebugMode(bool $debugMode): void {
         $this->debugMode = $debugMode;
         CloudLogger::get()->setDebugMode($debugMode);
     }
 
+    public function setPlayerLogCategory(string $category, bool $console, bool $inGame): self {
+        $this->assertCategory($category);
+
+        $this->playerLogs[$category] = [
+            "console" => $console,
+            "in_game" => $inGame
+        ];
+
+        return $this;
+    }
+
     public function setPlayerLogs(array $playerLogs): void {
+        Utils::validateArraySignature($playerLogs, [
+            self::CATEGORY_CONNECTION => [
+                "console" => "bool",
+                "in_game" => "bool"
+            ],
+            self::CATEGORY_FAILED_JOINS => [
+                "console" => "bool",
+                "in_game" => "bool"
+            ],
+            self::CATEGORY_KICKS => [
+                "console" => "bool",
+                "in_game" => "bool"
+            ],
+            self::CATEGORY_SERVER_SWITCHED => [
+                "console" => "bool",
+                "in_game" => "bool"
+            ]
+        ], true);
+
         $this->playerLogs = $playerLogs;
     }
 
@@ -77,10 +122,10 @@ final class LogSettingsConfig extends Configuration {
     }
 
     public function canNotify(NotificationType $type): bool {
-        $connectionLifecycle = $this->playerLogs["connection_lifecycle"]["in_game"];
-        $failedJoins = $this->playerLogs["failed_joins"]["in_game"];
-        $kicks = $this->playerLogs["kicks"]["in_game"];
-        $serverSwitched = $this->playerLogs["server_switched"]["in_game"];
+        $connectionLifecycle = $this->playerLogs[self::CATEGORY_CONNECTION]["in_game"];
+        $failedJoins = $this->playerLogs[self::CATEGORY_FAILED_JOINS]["in_game"];
+        $kicks = $this->playerLogs[self::CATEGORY_KICKS]["in_game"];
+        $serverSwitched = $this->playerLogs[self::CATEGORY_SERVER_SWITCHED]["in_game"];
 
         return match ($type) {
             NotificationType::PLAYER_JOINED, NotificationType::PLAYER_LEFT => $connectionLifecycle,
@@ -92,10 +137,10 @@ final class LogSettingsConfig extends Configuration {
     }
 
     public function canLog(NotificationType $type): bool {
-        $connectionLifecycle = $this->playerLogs["connection_lifecycle"]["console"];
-        $failedJoins = $this->playerLogs["failed_joins"]["console"];
-        $kicks = $this->playerLogs["kicks"]["console"];
-        $serverSwitched = $this->playerLogs["server_switched"]["console"];
+        $connectionLifecycle = $this->playerLogs[self::CATEGORY_CONNECTION]["console"];
+        $failedJoins = $this->playerLogs[self::CATEGORY_FAILED_JOINS]["console"];
+        $kicks = $this->playerLogs[self::CATEGORY_KICKS]["console"];
+        $serverSwitched = $this->playerLogs[self::CATEGORY_SERVER_SWITCHED]["console"];
 
         return match ($type) {
             NotificationType::PLAYER_JOINED, NotificationType::PLAYER_LEFT => $connectionLifecycle,

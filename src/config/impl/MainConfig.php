@@ -3,15 +3,11 @@
 namespace pocketcloud\cloud\config\impl;
 
 use configlib\Configuration;
+use InvalidArgumentException;
 use pocketcloud\cloud\console\handler\ExceptionHandler;
-use pocketcloud\cloud\console\log\level\CloudLogLevel;
 use pocketcloud\cloud\PocketCloud;
-use pocketcloud\cloud\provider\CloudProvider;
-use pocketcloud\cloud\server\util\ServerStartMethod;
-use pocketcloud\cloud\server\util\ServerUtils;
 use pocketcloud\cloud\util\trait\SingletonTrait;
 use pocketcloud\cloud\util\Utils;
-use Random\Randomizer;
 use const pocketcloud\STORAGE_PATH;
 
 final class MainConfig extends Configuration {
@@ -25,16 +21,12 @@ final class MainConfig extends Configuration {
     private bool $updateChecks = true;
     private bool $executeUpdates = true;
     private bool $startUpDelay = true;
-    private string $startMethod = "tmux";
+    private bool $writeTimingsOnShutdown = true;
     private array $bStats = [
         "enabled" => true,
         "log_failed_requests" => false,
         "log_sent_data" => false,
         "log_response_status_text" => false
-    ];
-
-    private array $binaries = [
-        "server" => "https://github.com/pmmp/PHP-Binaries/releases/latest/download/PHP-{php_ver}-Linux-x86_64-PM5.tar.gz"
     ];
 
     private array $network = [
@@ -58,7 +50,7 @@ final class MainConfig extends Configuration {
         ],
         "response-caching" => [
             "enabled" => false,
-            "caching_time_in_seconds" => 60,
+            "caching_time_in_seconds" => 60
         ]
     ];
 
@@ -70,227 +62,129 @@ final class MainConfig extends Configuration {
         "database" => "cloud"
     ];
 
-    private array $startCommands = [
-        "server" => "%BINARY_PATH%bin/php7/bin/php %SOFTWARE_PATH%PocketMine-MP.phar --no-wizard",
-        "proxy" => "java -jar %SOFTWARE_PATH%Waterdog.jar"
-    ];
-
-    private array $serverTimeouts = [
-        "server" => 15,
-        "proxy" => 20
-    ];
-
-    private array $serverPortRanges = [
-        "server" => [
-            "start" => 40000,
-            "end" => 65535,
-            "random-ports" => true
-        ],
-        "proxy" => [
-            "start" => 19132,
-            "end" => 20000,
-            "random-ports" => false
-        ]
-    ];
-
-    private int $serverPrepareThreads = 0; // By default, we are creating zero threads to save some resources. Recommended to use if you've got more than 5 templates or 9 servers running / booting at the same time to make it faster (completely depends on your template size)
-
     public function __construct() {
         parent::__construct(STORAGE_PATH . "config.json", self::TYPE_JSON);
         self::setInstance($this);
         $this->httpServer["auth-key"] = ($this->generatedKey = Utils::generateString(10));
 
         $defaultBStats = $this->bStats;
-        $defaultBinaries = $this->binaries;
         $defaultNetwork = $this->network;
         $defaultHttp = $this->httpServer;
         $defaultMySql = $this->mysqlSettings;
-        $defaultStartCommands = $this->startCommands;
-        $defaultServerTimeouts = $this->serverTimeouts;
-        $defaultServerPortRanges = $this->serverPortRanges;
 
-        ExceptionHandler::tryCatch(function (array $defaultBStats, array $defaultBinaries, array $defaultNetwork, array $defaultHttp, array $defaultMySql, array $defaultStartCommands, array $defaultServerTimeouts, array $defaultServerPortRanges): void {
+        ExceptionHandler::tryCatch(function (array $defaultBStats, array $defaultNetwork, array $defaultHttp, array $defaultMySql): void {
             $this->load();
-            foreach (array_keys($defaultBinaries) as $binary) {
-                if (!isset($this->binaries[$binary])) $this->binaries[$binary] = str_replace(["{php_ver}"], [substr(PHP_VERSION, 0, 3)], $defaultBinaries[$binary]);
-                else if ($this->binaries[$binary]) $this->binaries[$binary] = str_replace(["{php_ver}"], [substr(PHP_VERSION, 0, 3)], $this->binaries[$binary]);
-            }
 
             Utils::fillMissingKeys($this->bStats, $defaultBStats);
             Utils::fillMissingKeys($this->network, $defaultNetwork);
             Utils::fillMissingKeys($this->httpServer, $defaultHttp);
             Utils::fillMissingKeys($this->mysqlSettings, $defaultMySql);
-            Utils::fillMissingKeys($this->startCommands, $defaultStartCommands);
-            Utils::fillMissingKeys($this->serverTimeouts, $defaultServerTimeouts);
-            Utils::fillMissingKeys($this->serverPortRanges, $defaultServerPortRanges);
-
-            if (!in_array(strtolower($this->startMethod), ["tmux", "screen", "proc"])) {
-                $this->startMethod = "tmux";
-            }
 
             if (!in_array(strtolower($this->provider), ["mysql", "json"])) {
                 $this->provider = "json";
             }
 
-            if ($this->serverPrepareThreads < 0) $this->serverPrepareThreads = 0; // If this is 0, server preparing remains inside the main-thread, therefore blocking it during the process
-            else if ($this->serverPrepareThreads > 5) $this->serverPrepareThreads = 5;
-
-            foreach ($this->serverPortRanges as $key => $data) {
-                if (!is_array($data)) $this->serverPortRanges[$key] = [];
-                if (!isset($data["start"])) $this->serverPortRanges[$key]["start"] = mt_rand(40000, 41000);
-                if (!isset($data["end"])) $this->serverPortRanges[$key]["end"] = mt_rand(41000, 42000);
-                if (!isset($data["random-ports"])) $this->serverPortRanges[$key]["random-ports"] = (bool) round(new Randomizer()->getFloat(0, 1));
-
-                $start = $this->serverPortRanges[$key]["start"];
-                $end = $this->serverPortRanges[$key]["end"];
-                $randomPorts = $this->serverPortRanges[$key]["random-ports"] ?? false;
-
-                if ($start <= 0 || $end <= 0) {
-                    PocketCloud::getInstance()->addStartNotification("Invalid port range §8(§b{$start}§8-§b{$end}§8) §rfor server type §8'§b" . $key . "§8'§r: §bStart §7or §bend §7can not be less or equal to §b0§r: §cResetting the entry, please review your config...", CloudLogLevel::WARN());
-                    unset($this->serverPortRanges[$key]);
-                    continue;
-                }
-
-                if ($start > $end) {
-                    PocketCloud::getInstance()->addStartNotification("Invalid port range §8(§b{$start}§8-§b{$end}§8) §rfor server type §8'§b" . $key . "§8'§r: §bStart §ris §chigher §rthan §bend§r: §cResetting the entry, please review your config...", CloudLogLevel::WARN());
-                    unset($this->serverPortRanges[$key]);
-                    continue;
-                }
-
-                if (($start + 50) > $end) {
-                    PocketCloud::getInstance()->addStartNotification("Invalid port range §8(§b{$start}§8-§b{$end}§8) §rfor server type §8'§b" . $key . "§8'§r: §bEnd §rneeds to be at least §b50 ports higher §rthan §bstart§r: §cResetting the entry, please review your config...", CloudLogLevel::WARN());
-                    unset($this->serverPortRanges[$key]);
-                }
-
-                /**
-                 * Re-setting this due to strict declarations
-                 * @see ServerUtils
-                 */
-                $this->serverPortRanges[$key] = [
-                    "start" => $start, "end" => $end, "random-ports" => $randomPorts
-                ];
-            }
-
-            ServerStartMethod::set(ServerStartMethod::get($this->startMethod));
-
             $this->save();
-        }, "Failed to load main config", fn() => PocketCloud::getInstance()->shutdown(), $defaultBStats, $defaultBinaries, $defaultNetwork, $defaultHttp, $defaultMySql, $defaultStartCommands, $defaultServerTimeouts, $defaultServerPortRanges);
+        }, "Failed to load main config", fn() => PocketCloud::getInstance()->shutdown(), $defaultBStats, $defaultNetwork, $defaultHttp, $defaultMySql);
     }
 
-    public function setMemoryLimit(int $memoryLimit): void {
+    public function getGeneratedKey(): string {
+        return $this->generatedKey;
+    }
+
+    public function setMemoryLimit(int $memoryLimit): MainConfig {
         $this->memoryLimit = $memoryLimit;
-        ini_set("memory_limit", ($memoryLimit <= 0 ? "-1" : $memoryLimit . "M"));
-    }
-
-    public function setLanguage(string $language): void {
-        $this->language = $language;
-    }
-
-    public function setProvider(string $provider): void {
-        $this->provider = $provider;
-        CloudProvider::select();
-    }
-
-    public function setUpdateChecks(bool $updateChecks): void {
-        $this->updateChecks = $updateChecks;
-    }
-
-    public function setExecuteUpdates(bool $executeUpdates): void {
-        $this->executeUpdates = $executeUpdates;
-    }
-
-    public function setStartUpDelay(bool $startUpDelay): void {
-        $this->startUpDelay = $startUpDelay;
-    }
-
-    public function setStartMethod(string $startMethod): void {
-        $this->startMethod = $startMethod;
-    }
-
-    public function setBStats(array $bStats): void {
-        $this->bStats = $bStats;
-    }
-
-    public function setBinaries(string $templateType, string $url): void {
-        $this->binaries[$templateType] = $url;
-    }
-
-    public function setNetworkAddress(string $address): void {
-        $this->network["address"] = $address;
-    }
-
-    public function setNetworkPort(int $port): void {
-        $this->network["port"] = $port;
-    }
-
-    public function setNetworkEncryption(bool $value): void {
-        $this->network["encryption"] = $value;
-    }
-
-    public function setNetworkOnlyLocal(bool $value): void {
-        $this->network["onlyLocal"] = $value;
-    }
-
-    public function setHttpServerEnabled(bool $value): void {
-        $this->httpServer["enabled"] = $value;
-    }
-
-    public function setHttpServerAddress(string $value): void {
-        $this->httpServer["address"] = $value;
-    }
-
-    public function setHttpServerPort(int $value): void {
-        $this->httpServer["port"] = $value;
-    }
-
-    public function setHttpServerOnlyLocal(bool $value): void {
-        $this->httpServer["onlyLocal"] = $value;
-    }
-
-    public function setStartCommand(string $templateType, string $startCommand): void {
-        $this->startCommands[strtolower($templateType)] = $startCommand;
-    }
-
-    public function setServerTimeouts(string $templateType, int $timeout): void {
-        $this->serverTimeouts[strtolower($templateType)] = $timeout;
-    }
-
-    public function setServerPortRange(string $templateType, int $start, int $end, bool $randomPorts): void {
-        $this->serverPortRanges[strtolower($templateType)] = ["random-ports" => $randomPorts, "start" => $start, "end" => $end];
-    }
-
-    public function setServerPrepareThreads(int $serverPrepareThreads): void {
-        if ($serverPrepareThreads < 0) $serverPrepareThreads = 0;
-        else if ($serverPrepareThreads > 5) $serverPrepareThreads = 5;
-        $this->serverPrepareThreads = $serverPrepareThreads;
+        return $this;
     }
 
     public function getMemoryLimit(): int {
         return $this->memoryLimit;
     }
 
+    public function setLanguage(string $language): MainConfig {
+        $this->language = $language;
+        return $this;
+    }
+
     public function getLanguage(): string {
         return $this->language;
     }
 
+    public function setProvider(string $provider): MainConfig {
+        $this->provider = $provider;
+        return $this;
+    }
+
     public function getProvider(): string {
-        return strtolower($this->provider);
+        return $this->provider;
+    }
+
+    public function setUpdateChecks(bool $updateChecks): MainConfig {
+        $this->updateChecks = $updateChecks;
+        return $this;
     }
 
     public function isUpdateChecks(): bool {
         return $this->updateChecks;
     }
 
+    public function setExecuteUpdates(bool $executeUpdates): MainConfig {
+        $this->executeUpdates = $executeUpdates;
+        return $this;
+    }
+
     public function isExecuteUpdates(): bool {
         return $this->executeUpdates;
+    }
+
+    public function setStartUpDelay(bool $startUpDelay): MainConfig {
+        $this->startUpDelay = $startUpDelay;
+        return $this;
     }
 
     public function isStartUpDelay(): bool {
         return $this->startUpDelay;
     }
 
-    public function getStartMethod(): string {
-        return $this->startMethod;
+    public function setWriteTimingsOnShutdown(bool $writeTimingsOnShutdown): MainConfig {
+        $this->writeTimingsOnShutdown = $writeTimingsOnShutdown;
+        return $this;
+    }
+
+    public function isWriteTimingsOnShutdown(): bool {
+        return $this->writeTimingsOnShutdown;
+    }
+
+    public function setBStatsEnabled(bool $enabled): MainConfig {
+        $this->bStats["enabled"] = $enabled;
+        return $this;
+    }
+
+    public function setBStatsLogFailedRequests(bool $value): MainConfig {
+        $this->bStats["log_failed_requests"] = $value;
+        return $this;
+    }
+
+    public function setBStatsLogSentData(bool $value): MainConfig {
+        $this->bStats["log_sent_data"] = $value;
+        return $this;
+    }
+
+    public function setBStatsLogResponseStatusText(bool $value): MainConfig {
+        $this->bStats["log_response_status_text"] = $value;
+        return $this;
+    }
+
+    public function setBStats(array $bStats): MainConfig {
+        Utils::validateArraySignature($bStats, [
+            "enabled" => "bool",
+            "log_failed_requests" => "bool",
+            "log_sent_data" => "bool",
+            "log_response_status_text" => "bool"
+        ]);
+
+        $this->bStats = $bStats;
+        return $this;
     }
 
     public function isBStatsEnabled(): bool {
@@ -305,7 +199,7 @@ final class MainConfig extends Configuration {
         return $this->bStats["log_sent_data"];
     }
 
-    public function isBStatsLogStatusResponseText(): bool {
+    public function isBStatsLogResponseStatusText(): bool {
         return $this->bStats["log_response_status_text"];
     }
 
@@ -313,19 +207,40 @@ final class MainConfig extends Configuration {
         return $this->bStats;
     }
 
-    public function getBinaries(string $templateType): ?string {
-        return $this->binaries[$templateType] ?? null;
+    public function setNetworkAddress(string $address): MainConfig {
+        $this->network["address"] = $address;
+        return $this;
     }
 
-    public function getAllBinaries(): array {
-        return $this->binaries;
+    public function setNetworkPort(int $port): MainConfig {
+        if ($port < 1 || $port > 65535) throw new InvalidArgumentException("Invalid network port");
+        $this->network["port"] = $port;
+        return $this;
     }
 
-    public function getNetwork(): array {
-        return $this->network;
+    public function setNetworkEncryption(bool $enabled): MainConfig {
+        $this->network["encryption"] = $enabled;
+        return $this;
     }
 
-    public function getNetworkAddress(): int {
+    public function setNetworkOnlyLocal(bool $value): MainConfig {
+        $this->network["only-local"] = $value;
+        return $this;
+    }
+
+    public function setNetwork(array $network): MainConfig {
+        Utils::validateArraySignature($network, [
+            "address" => "string",
+            "port" => "int",
+            "encryption" => "bool",
+            "only-local" => "bool"
+        ]);
+
+        $this->network = $network;
+        return $this;
+    }
+
+    public function getNetworkAddress(): string {
         return $this->network["address"];
     }
 
@@ -338,11 +253,95 @@ final class MainConfig extends Configuration {
     }
 
     public function isNetworkOnlyLocal(): bool {
-        return $this->network["only-local"] ?? true;
+        return $this->network["only-local"];
     }
 
-    public function getHttpServer(): array {
-        return $this->httpServer;
+    public function getNetwork(): array {
+        return $this->network;
+    }
+
+    public function setHttpServerEnabled(bool $enabled): MainConfig {
+        $this->httpServer["enabled"] = $enabled;
+        return $this;
+    }
+
+    public function setHttpServerAddress(string $address): MainConfig {
+        $this->httpServer["address"] = $address;
+        return $this;
+    }
+
+    public function setHttpServerPort(int $port): MainConfig {
+        if ($port < 1 || $port > 65535) throw new InvalidArgumentException("Invalid HTTP port");
+        $this->httpServer["port"] = $port;
+        return $this;
+    }
+
+    public function setHttpServerAuthKey(string $key): MainConfig {
+        if ($key === "") throw new InvalidArgumentException("Auth key cannot be empty");
+        $this->httpServer["auth-key"] = $key;
+        return $this;
+    }
+
+    public function setHttpServerOnlyLocal(bool $value): MainConfig {
+        $this->httpServer["only-local"] = $value;
+        return $this;
+    }
+
+    public function setHttpRateLimitEnabled(bool $enabled): MainConfig {
+        $this->httpServer["rate-limit"]["enabled"] = $enabled;
+        return $this;
+    }
+
+    public function setHttpRateLimitTimeout(int $seconds): MainConfig {
+        if ($seconds < 1) throw new InvalidArgumentException("Timeout must be >= 1");
+        $this->httpServer["rate-limit"]["timeout_in_seconds"] = $seconds;
+        return $this;
+    }
+
+    public function setHttpRateLimitMaxRequests(int $max): MainConfig {
+        if ($max < 1) throw new InvalidArgumentException("Max requests must be >= 1");
+        $this->httpServer["rate-limit"]["max_requests"] = $max;
+        return $this;
+    }
+
+    public function setHttpRateLimitTimeFrame(int $seconds): MainConfig {
+        if ($seconds < 1) throw new InvalidArgumentException("Time frame must be >= 1");
+        $this->httpServer["rate-limit"]["time_frame_in_seconds"] = $seconds;
+        return $this;
+    }
+
+    public function setHttpResponseCachingEnabled(bool $enabled): MainConfig {
+        $this->httpServer["response-caching"]["enabled"] = $enabled;
+        return $this;
+    }
+
+    public function setHttpResponseCachingTime(int $seconds): MainConfig {
+        if ($seconds < 1) throw new InvalidArgumentException("Caching time must be >= 1");
+        $this->httpServer["response-caching"]["caching_time_in_seconds"] = $seconds;
+        return $this;
+    }
+
+    public function setHttpServer(array $httpServer): MainConfig {
+        Utils::validateArraySignature($httpServer, [
+            "enabled" => "bool",
+            "address" => "string",
+            "port" => "int",
+            "auth-key" => "int",
+            "only-local" => "bool",
+            "rate-limit" => [
+                "enabled" => "bool",
+                "timeout_in_seconds" => "int",
+                "max_requests" => "int",
+                "time_frame_in_seconds" => "int"
+            ],
+            "response-caching" => [
+                "enabled" => "bool",
+                "caching_time_in_seconds" => "60"
+            ]
+        ]);
+
+        $this->httpServer = $httpServer;
+        return $this;
     }
 
     public function isHttpServerEnabled(): bool {
@@ -361,63 +360,108 @@ final class MainConfig extends Configuration {
         return $this->httpServer["auth-key"];
     }
 
-    public function getHttpServerRateLimit(): array {
+    public function isHttpServerOnlyLocal(): bool {
+        return $this->httpServer["only-local"];
+    }
+
+    public function getHttpRateLimitConfiguration(): array {
         return $this->httpServer["rate-limit"];
     }
 
-    public function getHttpServerCaching(): array {
+    public function isHttpRateLimitEnabled(): bool {
+        return $this->httpServer["rate-limit"]["enabled"];
+    }
+
+    public function getHttpRateLimitTimeout(): int {
+        return $this->httpServer["rate-limit"]["timeout_in_seconds"];
+    }
+
+    public function getHttpRateLimitMaxRequests(): int {
+        return $this->httpServer["rate-limit"]["max_requests"];
+    }
+
+    public function getHttpRateLimitTimeFrame(): int {
+        return $this->httpServer["rate-limit"]["time_frame_in_seconds"];
+    }
+
+    public function getHttpResponseCachingConfiguration(): array {
         return $this->httpServer["response-caching"];
     }
 
-    public function isHttpServerOnlyLocal(): bool {
-        return $this->httpServer["only-local"] ?? true;
+    public function isHttpResponseCachingEnabled(): bool {
+        return $this->httpServer["response-caching"]["enabled"];
     }
 
-    public function getMySqlAddress(): string {
+    public function getHttpResponseCachingTime(): int {
+        return $this->httpServer["response-caching"]["caching_time_in_seconds"];
+    }
+
+    public function getHttpServer(): array {
+        return $this->httpServer;
+    }
+
+    public function setMysqlAddress(string $address): MainConfig {
+        $this->mysqlSettings["address"] = $address;
+        return $this;
+    }
+
+    public function setMysqlPort(int $port): MainConfig {
+        if ($port < 1 || $port > 65535) throw new InvalidArgumentException("Invalid MySQL port");
+        $this->mysqlSettings["port"] = $port;
+        return $this;
+    }
+
+    public function setMysqlUser(string $user): MainConfig {
+        if ($user === "") throw new InvalidArgumentException("MySQL user cannot be empty");
+        $this->mysqlSettings["user"] = $user;
+        return $this;
+    }
+
+    public function setMysqlPassword(string $password): MainConfig {
+        $this->mysqlSettings["password"] = $password;
+        return $this;
+    }
+
+    public function setMysqlDatabase(string $database): MainConfig {
+        if ($database === "") throw new InvalidArgumentException("Database cannot be empty");
+        $this->mysqlSettings["database"] = $database;
+        return $this;
+    }
+
+    public function setMysqlSettings(array $mysqlSettings): MainConfig {
+        Utils::validateArraySignature($mysqlSettings, [
+            "address" => "string",
+            "port" => "int",
+            "user" => "string",
+            "password" => "string",
+            "database" => "string"
+        ]);
+
+        $this->mysqlSettings = $mysqlSettings;
+        return $this;
+    }
+
+    public function getMysqlAddress(): string {
         return $this->mysqlSettings["address"];
     }
 
-    public function getMySqlPort(): int {
+    public function getMysqlPort(): int {
         return $this->mysqlSettings["port"];
     }
 
-    public function getMySqlUser(): string {
+    public function getMysqlUser(): string {
         return $this->mysqlSettings["user"];
     }
 
-    public function getMySqlPassword(): string {
+    public function getMysqlPassword(): string {
         return $this->mysqlSettings["password"];
     }
 
-    public function getMySqlDatabase(): string {
+    public function getMysqlDatabase(): string {
         return $this->mysqlSettings["database"];
     }
 
-    public function getStartCommand(string $software): string {
-        return $this->startCommands[strtolower($software)] ?? "";
-    }
-
-    public function getStartCommands(): array {
-        return $this->startCommands;
-    }
-
-    public function getServerTimeout(string $templateType): int {
-        return $this->serverTimeouts[strtolower($templateType)] ?? ServerUtils::DEFAULT_TIMEOUT;
-    }
-
-    public function getServerTimeouts(): array {
-        return $this->serverTimeouts;
-    }
-
-    public function getServerPortRange(string $templateType): ?array {
-        return $this->serverPortRanges[strtolower($templateType)] ?? null;
-    }
-
-    public function getServerPortRanges(): array {
-        return $this->serverPortRanges;
-    }
-
-    public function getServerPrepareThreads(): int {
-        return $this->serverPrepareThreads;
+    public function getMysqlSettings(): array {
+        return $this->mysqlSettings;
     }
 }
