@@ -76,7 +76,7 @@ final class ServerSettingsConfig extends Configuration {
     ];
 
     public function __construct() {
-        parent::__construct(STORAGE_PATH . "config.json", self::TYPE_YAML);
+        parent::__construct(STORAGE_PATH . "server_settings.yml", self::TYPE_YAML);
         self::setInstance($this);
 
         $defaultBinaries = $this->binaries;
