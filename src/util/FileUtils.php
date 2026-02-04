@@ -95,14 +95,14 @@ final class FileUtils {
         );
     }
 
-    public static function rename(string $src, string $dst): bool {
+    public static function rename(string $from, string $to): bool {
         return ExceptionHandler::tryCatch(
-            function (string $src, string $dst): bool {
-                return rename($src, $dst);
+            function (string $from, string $to): bool {
+                return rename($from, $to);
             },
-            "Failed to rename: " . $src . " to " . $dst,
+            "Failed to rename: " . $from . " to " . $to,
             null,
-            $src, $dst
+            $from, $to
         );
     }
 

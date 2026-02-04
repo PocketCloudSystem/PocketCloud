@@ -32,7 +32,7 @@ final class HttpServer {
     /** @var array<array<Path>> */
     private array $paths = [];
 
-    private SocketServer $server;
+    private ?SocketServer $server = null;
     private Closure $rateLimitResponse;
 
     public function __construct(
@@ -43,6 +43,12 @@ final class HttpServer {
         private readonly int $cachingTimeInSeconds = 60
     ) {
         self::setInstance($this);
+        $this->rateLimitResponse = function (SocketClient $client, Request $request, int $endTimestamp): Response {
+            return ResponseBuilder::create()
+                ->code(StatusCode::TOO_MANY_REQUESTS)
+                ->body(["message" => "You are being rate limited. Please try again in " . ($endTimestamp - time()) . " seconds.", "end_timestamp" => $endTimestamp])
+                ->build();
+        };
     }
 
     public function init(): void {
@@ -64,19 +70,12 @@ final class HttpServer {
     public function start(): bool {
         if (!MainConfig::getInstance()->isHttpServerEnabled()) return false;
         $this->server = new SocketServer($this->address, new ThreadSafeArray(), MainConfig::getInstance()->isHttpServerOnlyLocal());
-        $this->rateLimitResponse = function (SocketClient $client, Request $request, int $endTimestamp): Response {
-            return ResponseBuilder::create()
-                ->code(StatusCode::TOO_MANY_REQUESTS)
-                ->body(["message" => "You are being rate limited. Please try again in " . ($endTimestamp - time()) . " seconds.", "end_timestamp" => $endTimestamp])
-                ->build();
-        };
-
         if ($this->server->create()) return $this->server->start();
         return false;
     }
 
     public function stop(): void {
-        $this->server->close();
+        $this->server?->close();
     }
 
     public function setRateLimitResponse(Closure $closure): void {

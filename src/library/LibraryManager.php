@@ -59,6 +59,13 @@ final class LibraryManager implements Loadable {
                 "",
                 "src/",
                 false
+            ),
+            new Library(
+                "discord-webhook-lib",
+                "https://github.com/PocketCloudSystem/discord-webhook-lib/archive/refs/heads/main.zip",
+                "",
+                "src/",
+                false
             )
         ] as $library) {
             $this->libraryConfig->set($library->getName(), $library->write());
@@ -68,7 +75,7 @@ final class LibraryManager implements Loadable {
 
         foreach ($this->libraryConfig->getAll() as $library) {
             if (($library = Library::read($library)) !== null) {
-                CloudLogger::get()->forceDebug("Loading library: {}", $library->getName());
+                CloudLogger::get()->info("Loading library: {}", $library->getName());
                 $this->libraries[$library->getName()] = $library;
                 if (!$library->check()) {
                     if (!$library->download())

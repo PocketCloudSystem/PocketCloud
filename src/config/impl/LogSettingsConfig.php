@@ -29,6 +29,18 @@ final class LogSettingsConfig extends Configuration {
      */
     private bool $debugMode = false;
 
+    private array $discordWebhook = [
+        "enabled" => false,
+        "webhook-url" => "your-discord-webhook-url",
+        "notifications" => [
+            "crashed_servers" => true,
+            "timed_out_servers" => true,
+            "failed_server_starts" => true,
+            "failed_player_joins" => true,
+            "player_kicks" => true
+        ]
+    ];
+
     /**
      * @comment Here you can decide whether you want to see / be notified when players join, leave, get kicked, cannot join, switch servers, ...
      * @comment connection_lifecycle => regular player join/leave messages
@@ -63,15 +75,17 @@ final class LogSettingsConfig extends Configuration {
         self::setInstance($this);
 
         $defaultPlayerLogs = $this->playerLogs;
-        ExceptionHandler::tryCatch(function (array $defaultPlayerLogs): void {
+        $defaultDiscordWebhookSettings = $this->discordWebhook;
+        ExceptionHandler::tryCatch(function (array $defaultPlayerLogs, array $defaultDiscordWebhookSettings): void {
             $this->load();
 
             Utils::fillMissingKeys($this->playerLogs, $defaultPlayerLogs);
+            Utils::fillMissingKeys($this->discordWebhook, $defaultDiscordWebhookSettings);
 
             CloudLogger::get()->setDebugMode($this->debugMode);
 
             $this->save();
-        }, "Failed to load log settings config", fn() => PocketCloud::getInstance()->shutdown(), $defaultPlayerLogs);
+        }, "Failed to load log settings config", fn() => PocketCloud::getInstance()->shutdown(), $defaultPlayerLogs, $defaultDiscordWebhookSettings);
     }
 
     private function assertCategory(string $category): void {
@@ -81,6 +95,70 @@ final class LogSettingsConfig extends Configuration {
     public function setDebugMode(bool $debugMode): void {
         $this->debugMode = $debugMode;
         CloudLogger::get()->setDebugMode($debugMode);
+    }
+
+    public function isDebugMode(): bool {
+        return $this->debugMode;
+    }
+
+    public function setDiscordWebhookEnabled(bool $enabled): self {
+        $this->discordWebhook["enabled"] = $enabled;
+        return $this;
+    }
+
+    public function setDiscordWebhookUrl(?string $url): self {
+        if ($url === null) {
+            $this->discordWebhook["webhook-url"] = "your-discord-webhook-url";
+        } else {
+            if (filter_var($url, FILTER_VALIDATE_URL)) {
+                $this->discordWebhook["webhook-url"] = $url;
+            } else throw new InvalidArgumentException("Invalid webhook url: $url");
+        }
+
+        return $this;
+    }
+
+    public function setDiscordWebhookNotification(string $type, bool $enabled): self {
+        $this->discordWebhook["notifications"][$type] = $enabled;
+        return $this;
+    }
+
+    public function setDiscordWebhookNotifications(array $notifications): self {
+        Utils::validateArraySignature($notifications, [
+            "enabled" => "bool",
+            "webhook-url" => "string",
+            "notifications" => [
+                "crashed_servers" => "bool",
+                "timed_out_servers" => "bool",
+                "failed_server_starts" => "bool",
+                "failed_player_joins" => "bool",
+                "player_kicks" => "bool"
+            ]
+        ], true);
+
+        $this->discordWebhook["notifications"] = $notifications;
+        return $this;
+    }
+
+    public function canSendWebhook(NotificationType $type): bool {
+        $crashedServers = $this->discordWebhook["notifications"]["crashed_servers"];
+        $timedOutServers = $this->discordWebhook["notifications"]["timed_out_servers"];
+        $failedServerStarts = $this->discordWebhook["notifications"]["failed_server_starts"];
+        $failedPlayerJoins = $this->discordWebhook["notifications"]["failed_player_joins"];
+        $playerKicks = $this->discordWebhook["notifications"]["player_kicks"];
+
+        return match ($type) {
+            NotificationType::SERVER_CRASHED => $crashedServers,
+            NotificationType::SERVER_TIMED_OUT, NotificationType::SERVER_STOP_TIMED_OUT => $timedOutServers,
+            NotificationType::SERVER_START_FAILED => $failedServerStarts,
+            NotificationType::PLAYER_JOIN_FAILED => $failedPlayerJoins,
+            NotificationType::PLAYER_KICKED => $playerKicks,
+            default => false
+        };
+    }
+
+    public function getDiscordWebhook(): array {
+        return $this->discordWebhook;
     }
 
     public function setPlayerLogCategory(string $category, bool $console, bool $inGame): self {
@@ -115,10 +193,6 @@ final class LogSettingsConfig extends Configuration {
         ], true);
 
         $this->playerLogs = $playerLogs;
-    }
-
-    public function isDebugMode(): bool {
-        return $this->debugMode;
     }
 
     public function canNotify(NotificationType $type): bool {

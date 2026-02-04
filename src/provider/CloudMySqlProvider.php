@@ -7,9 +7,10 @@ use pocketcloud\cloud\cache\MaintenanceListCache;
 use pocketcloud\cloud\config\impl\MainConfig;
 use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\group\ServerGroup;
+use pocketcloud\cloud\migration\impl\JsonToMySqlMigrator;
+use pocketcloud\cloud\migration\MigratorManager;
 use pocketcloud\cloud\PocketCloud;
 use pocketcloud\cloud\provider\database\DatabaseQueries;
-use pocketcloud\cloud\provider\migration\MigrationList;
 use pocketcloud\cloud\template\Template;
 use r3pt1s\mysql\ConnectionPool;
 use pocketcloud\cloud\util\promise\Promise;
@@ -26,8 +27,11 @@ final class CloudMySqlProvider extends CloudProvider {
         });
 
         DatabaseQueries::createTables()->execute(function (): void {
-            if (MigrationList::JSON_TO_MYSQL()->checkForMigration()) {
-                MigrationList::JSON_TO_MYSQL()->migrate();
+            $migrator = MigratorManager::getInstance()->get("migrate-config-json-to-mysql");
+            if ($migrator instanceof JsonToMySqlMigrator) {
+                if ($migrator->requiresMigration()) {
+                    MigratorManager::getInstance()->migrate($migrator);
+                }
             }
         });
 

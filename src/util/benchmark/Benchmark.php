@@ -7,9 +7,7 @@ use RuntimeException;
 
 final class Benchmark {
 
-    private const int MAX_TIMINGS = 100;
-
-    /** @var array<array<BenchmarkTiming>> */
+    /** @var array<BenchmarkTiming> */
     private static array $timings = [];
     private static array $timingsSummary = [];
 
@@ -26,18 +24,15 @@ final class Benchmark {
     }
 
     public static function startTiming(string $name): BenchmarkTiming {
-        self::$timings[$name][] = ($timing = new BenchmarkTiming($name));
+        self::$timings[$name] = ($timing = new BenchmarkTiming($name));
         $timing->startTiming();
-
-        if (count(self::$timings[$name]) > self::MAX_TIMINGS) array_shift(self::$timings[$name]);
-
         return $timing;
     }
 
     public static function stopTiming(string $name): BenchmarkTiming {
-        if (!isset(self::$timings[$name]) || empty(self::$timings[$name])) throw new RuntimeException("No timings started for '$name'");
-        ($timing = self::$timings[$name][$index = count(self::$timings[$name]) - 1])->stopTiming();
-        unset(self::$timings[$name][$index]);
+        if (!isset(self::$timings[$name])) throw new RuntimeException("No timings started for '$name'");
+        ($timing = self::$timings[$name])->stopTiming();
+        unset(self::$timings[$name]);
 
         if (!isset(self::$timingsSummary[$name])) {
             self::$timingsSummary[$name] = [
@@ -54,11 +49,6 @@ final class Benchmark {
         self::$timingsSummary[$name]["max"] = max($timing->getDuration(), self::$timingsSummary[$name]["max"]);
 
         return $timing;
-    }
-
-    public static function getTimings(?string $name = null): array {
-        if ($name !== null) return self::$timings[$name] ?? [];
-        return self::$timings;
     }
 
     public static function getSummary(?string $name = null): array|BenchmarkTimingsSummary|null {

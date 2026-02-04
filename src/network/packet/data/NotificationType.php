@@ -29,7 +29,14 @@ enum NotificationType implements Writeable {
     public function notify(array $args): Promise {
         if (!$this->canNotify()) return Promise::rejected("Disabled inside the config for " . $this->getName());
         // We want the notifications to be sent via the proxy
+
+        //TODO: discord webhook
+
         return CloudNotificationPacket::create($this, $args)->broadcastPacket(...(count(CloudServerManager::getInstance()->getAll(...TemplateType::onlyProxy())) == 0 ? [] : TemplateType::onlyNonProxy()));
+    }
+
+    public function canSendWebhook(): bool {
+        return LogSettingsConfig::getInstance()->canSendWebhook($this);
     }
 
     public function canNotify(): bool {
