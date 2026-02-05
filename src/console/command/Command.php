@@ -79,7 +79,7 @@ abstract class Command {
             $usage = "";
             $lastSubCommand = array_key_last($this->subCommands);
             foreach ($this->subCommands as $name => $subCommand) {
-                $usage .= $this->getName() . " " . $subCommand->getUsage();
+                $usage .= $subCommand->getUsage();
                 if ($lastSubCommand !== $name) $usage .= "\n";
             }
 

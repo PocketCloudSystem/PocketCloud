@@ -151,7 +151,7 @@ trait CloudServerActionsTrait {
             $this->printCrashStackTrace($crashData);
             new ServerCrashEvent($this, $crashData)->call();
             CrashChecker::writeCrashFile($this, $crashData);
-            NotificationType::SERVER_CRASHED->notify(["server" => $this->getName()]);
+            NotificationType::SERVER_CRASHED->notify(["server" => $this->getName()], ["crashData" => $crashData]);
             return true;
         }
 

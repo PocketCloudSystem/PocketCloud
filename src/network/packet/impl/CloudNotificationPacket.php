@@ -19,6 +19,7 @@ final class CloudNotificationPacket extends CloudPacket implements ClientboundPa
     ) {}
 
     public function handle(ServerClient $client): void {
+        $extraArgs = [];
         if ($this->notificationType->canLog()) {
             switch ($this->notificationType) {
                 case NotificationType::PLAYER_JOIN_FAILED: {

@@ -4,12 +4,13 @@ namespace pocketcloud\cloud\console\command\impl;
 
 use pocketcloud\cloud\cache\MaintenanceListCache;
 use pocketcloud\cloud\console\command\Command;
+use pocketcloud\cloud\console\command\ITabComplete;
 use pocketcloud\cloud\console\command\parameter\def\StringParameter;
 use pocketcloud\cloud\console\command\sender\ICommandSender;
 use pocketcloud\cloud\console\command\SubCommand;
 use pocketcloud\cloud\provider\CloudProvider;
 
-final class MaintenanceCommand extends Command {
+final class MaintenanceCommand extends Command implements ITabComplete {
 
     public function __construct() {
         parent::__construct("maintenance", "Manage the whitelist", ["whitelist", "mnt"]);
@@ -51,5 +52,15 @@ final class MaintenanceCommand extends Command {
         if (empty($list)) $sender->info("§cNo players on the maintenance list");
         else $sender->info("§b" . implode("§8, §b", $list));
         return true;
+    }
+
+    public function onTabComplete(array $args): array {
+        if (count($args) == 2) {
+            if ($args[0] == "remove") {
+                return MaintenanceListCache::getAll();
+            }
+        }
+
+        return [];
     }
 }

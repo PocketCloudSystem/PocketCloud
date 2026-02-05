@@ -6,10 +6,12 @@ use configlib\Configuration;
 use InvalidArgumentException;
 use pocketcloud\cloud\console\handler\ExceptionHandler;
 use pocketcloud\cloud\console\log\CloudLogger;
+use pocketcloud\cloud\console\log\level\CloudLogLevel;
 use pocketcloud\cloud\network\packet\data\NotificationType;
 use pocketcloud\cloud\PocketCloud;
 use pocketcloud\cloud\util\trait\SingletonTrait;
 use pocketcloud\cloud\util\Utils;
+use r3pt1s\discord\webhook\Webhook;
 use const pocketcloud\STORAGE_PATH;
 
 final class LogSettingsConfig extends Configuration {
@@ -23,6 +25,9 @@ final class LogSettingsConfig extends Configuration {
     public const string CATEGORY_KICKS = "kicks";
     /** @ignored */
     public const string CATEGORY_SERVER_SWITCHED = "server_switched";
+
+    /** @ignored */
+    private ?Webhook $webhook = null;
 
     /**
      * @comment Whether you want to see debug logs or not
@@ -82,6 +87,11 @@ final class LogSettingsConfig extends Configuration {
             Utils::fillMissingKeys($this->playerLogs, $defaultPlayerLogs);
             Utils::fillMissingKeys($this->discordWebhook, $defaultDiscordWebhookSettings);
 
+            if (!filter_var($this->discordWebhook["webhook-url"], FILTER_VALIDATE_URL) && $this->discordWebhook["enabled"]) {
+                PocketCloud::getInstance()->addStartNotification("Invalid webhook url inside §b{}§r. Resetting to default value...", CloudLogLevel::WARN(), $this->discordWebhook["webhook-url"]);
+                $this->discordWebhook["webhook-url"] = $defaultDiscordWebhookSettings["webhook-url"];
+            }
+
             CloudLogger::get()->setDebugMode($this->debugMode);
 
             $this->save();
@@ -90,6 +100,14 @@ final class LogSettingsConfig extends Configuration {
 
     private function assertCategory(string $category): void {
         if (!isset($this->playerLogs[$category])) throw new InvalidArgumentException("Unknown player log category: $category");
+    }
+
+    public function getWebhook(): ?Webhook {
+        if ($this->discordWebhook["enabled"] && filter_var($this->discordWebhook["webhook-url"], FILTER_VALIDATE_URL)) {
+            $this->webhook = new Webhook($this->discordWebhook["webhook-url"]);
+        }
+
+        return $this->webhook;
     }
 
     public function setDebugMode(bool $debugMode): void {
