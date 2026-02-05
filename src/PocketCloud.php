@@ -51,6 +51,12 @@ use pocketcloud\cloud\util\TerminalUtils;
 use pocketcloud\cloud\util\Utils;
 use pocketcloud\cloud\util\VersionInfo;
 use pocketmine\snooze\SleeperHandler;
+use r3pt1s\discord\webhook\emoji\PartialEmoji;
+use r3pt1s\discord\webhook\message\component\impl\ActionRowComponent;
+use r3pt1s\discord\webhook\message\component\impl\ButtonComponent;
+use r3pt1s\discord\webhook\message\embed\Embed;
+use r3pt1s\discord\webhook\poll\Poll;
+use r3pt1s\discord\webhook\Webhook;
 use Ramsey\Uuid\UuidInterface;
 use ReflectionException;
 use RuntimeException;
@@ -247,6 +253,27 @@ final class PocketCloud {
         new CloudStartedEvent($time)->call();
 
         $this->metrics->getMetrics()->startSubmitting();
+
+        $webhook = Webhook::create("https://discord.com/api/webhooks/1468950122204495935/x_u7zYsjGMrZD8wTwKGH2I4nBacYA075wpSPWkZjhA86s5ABA2G-kSk9-7khPmc1a8IR");
+        $webhook->createMessage(wait: true, withComponents: true)
+            ->setContent("hi")
+            ->addEmbed(Embed::create()
+                ->setTitle("test1")
+                ->setDescription("test2")
+                ->setFooter("test3")
+                ->setTimestamp(time() - 60)
+                ->setAuthor("test webhook")
+                ->addField("hi", "whats poppin")
+            )
+            ->addComponent(ActionRowComponent::create()->addComponent(ButtonComponent::link("https://github.com/PocketCloudSystem/PocketCloud", "Github Repo")))
+            ->setPoll(Poll::create("test poll", time() + 30)->addAnswer("test1", PartialEmoji::fromUnicode("😎"))->addAnswer("Test2"))
+            ->send()->failure(function (array $res): void {
+                [$response, $code] = $res;
+                CloudLogger::get()->error("discord api responded with code §e{}§8: §c{}", $code, $response);
+            })->then(function (array $res): void {
+                [$response, $code] = $res;
+                CloudLogger::get()->success("discord api responded with code §e{}§8: §c{}", $code, $response);
+            });
 
         $this->tick();
     }

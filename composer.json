@@ -20,7 +20,8 @@
     "ext-json": "*",
     "ext-spl": "*",
     "ext-igbinary": "^3.0.1",
-    "ramsey/uuid": "^4.9"
+    "ramsey/uuid": "^4.9",
+    "ext-fileinfo": "*"
   },
   "autoload": {
     "psr-4": {

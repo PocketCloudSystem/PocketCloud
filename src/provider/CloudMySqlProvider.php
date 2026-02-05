@@ -7,7 +7,7 @@ use pocketcloud\cloud\cache\MaintenanceListCache;
 use pocketcloud\cloud\config\impl\MainConfig;
 use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\group\ServerGroup;
-use pocketcloud\cloud\migration\impl\JsonToMySqlMigrator;
+use pocketcloud\cloud\migration\IMigrator;
 use pocketcloud\cloud\migration\MigratorManager;
 use pocketcloud\cloud\PocketCloud;
 use pocketcloud\cloud\provider\database\DatabaseQueries;
@@ -26,9 +26,8 @@ final class CloudMySqlProvider extends CloudProvider {
             CloudLogger::get()->exception($throwable);
         });
 
-        DatabaseQueries::createTables()->execute(function (): void {
-            $migrator = MigratorManager::getInstance()->get("migrate-config-json-to-mysql");
-            if ($migrator instanceof JsonToMySqlMigrator) {
+        DatabaseQueries::createTables()->execute()->then(function (): void {
+            foreach (MigratorManager::getInstance()->getAll(fn(IMigrator $migrator) => str_starts_with($migrator->id(), "migrate-json-")) as $migrator) {
                 if ($migrator->requiresMigration()) {
                     MigratorManager::getInstance()->migrate($migrator);
                 }
@@ -42,23 +41,41 @@ final class CloudMySqlProvider extends CloudProvider {
         $this->getWhitelist()->then(fn(array $list) => MaintenanceListCache::sync($list));
     }
 
-    public function addTemplate(Template $template): void {
-        DatabaseQueries::addTemplate($template->write())->execute();
+    public function addTemplate(Template $template): Promise {
+        $promise = new Promise();
+
+        DatabaseQueries::addTemplate($template->write())->execute()
+            ->then(fn() => $promise->resolve())
+            ->failure(fn() => $promise->reject());
+
+        return $promise;
     }
 
-    public function removeTemplate(Template $template): void {
-        DatabaseQueries::removeTemplate($template->getName())->execute();
+    public function removeTemplate(Template $template): Promise {
+        $promise = new Promise();
+
+        DatabaseQueries::removeTemplate($template->getName())->execute()
+            ->then(fn() => $promise->resolve())
+            ->failure(fn() => $promise->reject());
+
+        return $promise;
     }
 
-    public function editTemplate(Template $template, array $newData): void {
-        DatabaseQueries::editTemplate($template->getName(), $newData)->execute();
+    public function editTemplate(Template $template, array $newData): Promise {
+        $promise = new Promise();
+
+        DatabaseQueries::editTemplate($template->getName(), $newData)->execute()
+            ->then(fn() => $promise->resolve())
+            ->failure(fn() => $promise->reject());
+
+        return $promise;
     }
 
     public function getTemplate(string $template): Promise {
         $promise = new Promise();
 
         DatabaseQueries::getTemplate($template)
-            ->execute(function (?array $result) use($promise): void {
+            ->execute()->then(function (?array $result) use($promise): void {
                 if (!is_array($result)) {
                     $promise->reject();
                     return;
@@ -67,7 +84,7 @@ final class CloudMySqlProvider extends CloudProvider {
                 if (($template = Template::read($result)) !== null) {
                     $promise->resolve($template);
                 } else $promise->reject();
-            });
+            })->failure(fn() => $promise->reject());
 
         return $promise;
     }
@@ -76,7 +93,8 @@ final class CloudMySqlProvider extends CloudProvider {
         $promise = new Promise();
 
         DatabaseQueries::checkTemplate($template)
-            ->execute(fn(?bool $check) => $promise->resolve($check ?? false));
+            ->execute()->then(fn(?bool $check) => $promise->resolve($check ?? false))
+            ->failure(fn() => $promise->reject());
 
         return $promise;
     }
@@ -85,7 +103,7 @@ final class CloudMySqlProvider extends CloudProvider {
         $promise = new Promise();
 
         DatabaseQueries::getTemplates()
-            ->execute(function (?array $result) use($promise): void {
+            ->execute()->then(function (?array $result) use($promise): void {
                 if (!is_array($result)) {
                     $promise->reject();
                     return;
@@ -99,29 +117,46 @@ final class CloudMySqlProvider extends CloudProvider {
                 }
 
                 $promise->resolve($templates);
-            });
+            })
+            ->failure(fn() => $promise->reject());
 
         return $promise;
     }
 
-    public function addServerGroup(ServerGroup $serverGroup): void {
-        DatabaseQueries::addServerGroup($serverGroup->write(true))->execute();
+    public function addServerGroup(ServerGroup $serverGroup): Promise {
+        $promise = new Promise();
+
+        DatabaseQueries::addServerGroup($serverGroup->write(true))->execute()
+            ->then(fn() => $promise->resolve())
+            ->failure(fn() => $promise->reject());
+
+        return $promise;
     }
 
-    public function removeServerGroup(ServerGroup $serverGroup): void {
+    public function removeServerGroup(ServerGroup $serverGroup): Promise {
+        $promise = new Promise();
+
         DatabaseQueries::removeServerGroup($serverGroup->getName())->execute();
+
+        return $promise;
     }
 
-    public function editServerGroup(ServerGroup $serverGroup, array $newData): void {
+    public function editServerGroup(ServerGroup $serverGroup, array $newData): Promise {
+        $promise = new Promise();
+
         if (is_array($newData["templates"])) $newData["templates"] = json_encode($newData["templates"]);
-        DatabaseQueries::editServerGroup($serverGroup->getName(), $newData)->execute();
+        DatabaseQueries::editServerGroup($serverGroup->getName(), $newData)->execute()
+            ->then(fn() => $promise->resolve($newData)
+            ->failure(fn() => $promise->reject()));
+
+        return $promise;
     }
 
     public function getServerGroup(string $serverGroup): Promise {
         $promise = new Promise();
 
         DatabaseQueries::getServerGroup($serverGroup)
-            ->execute(function (?array $result) use($promise): void {
+            ->execute()->then(function (?array $result) use($promise): void {
                 if (!is_array($result)) {
                     $promise->reject();
                     return;
@@ -130,7 +165,8 @@ final class CloudMySqlProvider extends CloudProvider {
                 if (($serverGroup = ServerGroup::read($result)) !== null) {
                     $promise->resolve($serverGroup);
                 } else $promise->reject();
-            });
+            })
+            ->failure(fn() => $promise->reject());
 
         return $promise;
     }
@@ -139,7 +175,8 @@ final class CloudMySqlProvider extends CloudProvider {
         $promise = new Promise();
 
         DatabaseQueries::checkServerGroup($serverGroup)
-            ->execute(fn(?bool $check) => $promise->resolve($check ?? false));
+            ->execute()->then(fn(?bool $check) => $promise->resolve($check ?? false))
+            ->failure(fn() => $promise->reject());
 
         return $promise;
     }
@@ -148,7 +185,7 @@ final class CloudMySqlProvider extends CloudProvider {
         $promise = new Promise();
 
         DatabaseQueries::getServerGroups()
-            ->execute(function (?array $result) use($promise): void {
+            ->execute()->then(function (?array $result) use($promise): void {
                 if (!is_array($result)) {
                     $promise->reject();
                     return;
@@ -162,38 +199,58 @@ final class CloudMySqlProvider extends CloudProvider {
                 }
 
                 $promise->resolve($serverGroups);
-            });
+            })
+            ->failure(fn() => $promise->reject());
 
         return $promise;
     }
 
-    public function setModuleState(string $module, bool $enabled): void {
+    public function setModuleState(string $module, bool $enabled): Promise {
+        $promise = new Promise();
+
         InGameModuleCache::setModuleState($module, $enabled);
-        DatabaseQueries::setModuleState($module, $enabled)->execute();
+        DatabaseQueries::setModuleState($module, $enabled)->execute()
+            ->then(fn() => $promise->resolve())
+            ->failure(fn() => $promise->reject());
+
+        return $promise;
     }
 
     public function getModuleState(string $module): Promise {
         $promise = new Promise();
 
         DatabaseQueries::getModuleState($module)
-            ->execute(fn(array $result) => $promise->resolve($result["enabled"] == 1));
+            ->execute()->then(fn(array $result) => $promise->resolve($result["enabled"] == 1))
+            ->failure(fn() => $promise->reject());
 
         return $promise;
     }
 
-    public function enablePlayerNotifications(string $player): void {
-        DatabaseQueries::enablePlayerNotifications($player)->execute();
+    public function enablePlayerNotifications(string $player): Promise {
+        $promise = new Promise();
+
+        DatabaseQueries::enablePlayerNotifications($player)->execute()
+            ->then(fn() => $promise->resolve())
+            ->failure(fn() => $promise->reject());
+
+        return $promise;
     }
 
-    public function disablePlayerNotifications(string $player): void {
-        DatabaseQueries::disablePlayerNotifications($player)->execute();
+    public function disablePlayerNotifications(string $player): Promise {
+        $promise = new Promise();
+
+        DatabaseQueries::disablePlayerNotifications($player)->execute()
+            ->then(fn() => $promise->resolve())
+            ->failure(fn() => $promise->reject());
+
+        return $promise;
     }
 
     public function hasNotificationsEnabled(string $player): Promise {
         $promise = new Promise();
 
         DatabaseQueries::hasNotificationsEnabled($player)
-            ->execute(fn(?bool $enabled) => $promise->resolve($enabled ?? false));
+            ->execute()->then(fn(?bool $enabled) => $promise->resolve($enabled ?? false));
 
         return $promise;
     }
@@ -202,26 +259,39 @@ final class CloudMySqlProvider extends CloudProvider {
         $promise = new Promise();
 
         DatabaseQueries::getNotificationList()
-            ->execute(fn(?array $list) => $promise->resolve($list === null ? [] : array_map(fn(array $r) => $r["player"], $list)));
+            ->execute()->then(fn(?array $list) => $promise->resolve($list === null ? [] : array_map(fn(array $r) => $r["player"], $list)));
 
         return $promise;
     }
 
-    public function addToWhitelist(string $player): void {
-        DatabaseQueries::addToWhitelist($player)->execute();
-         MaintenanceListCache::add($player);
+    public function addToWhitelist(string $player): Promise {
+        $promise = new Promise();
+
+        MaintenanceListCache::add($player);
+        DatabaseQueries::addToWhitelist($player)->execute()
+            ->then(fn() => $promise->resolve())
+            ->failure(fn() => $promise->reject());
+
+        return $promise;
     }
 
-    public function removeFromWhitelist(string $player): void {
-        DatabaseQueries::removeFromWhitelist($player)->execute();
+    public function removeFromWhitelist(string $player): Promise {
+        $promise = new Promise();
+
         MaintenanceListCache::remove($player);
+        DatabaseQueries::removeFromWhitelist($player)->execute()
+            ->then(fn() => $promise->resolve())
+            ->failure(fn() => $promise->reject());
+
+        return $promise;
     }
 
     public function isOnWhitelist(string $player): Promise {
         $promise = new Promise();
 
         DatabaseQueries::isOnWhitelist($player)
-            ->execute(fn(?bool $enabled) => $promise->resolve($enabled ?? false));
+            ->execute()->then(fn(?bool $enabled) => $promise->resolve($enabled ?? false))
+            ->failure(fn() => $promise->reject());
 
         return $promise;
     }
@@ -230,7 +300,8 @@ final class CloudMySqlProvider extends CloudProvider {
         $promise = new Promise();
 
         DatabaseQueries::getWhitelist()
-            ->execute(fn(?array $list) => $promise->resolve($list === null ? [] : array_map(fn(array $r) => $r["player"], $list)));
+            ->execute()->then(fn(?array $list) => $promise->resolve($list === null ? [] : array_map(fn(array $r) => $r["player"], $list)))
+            ->failure(fn() => $promise->reject());
 
         return $promise;
     }

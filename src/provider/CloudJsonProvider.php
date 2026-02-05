@@ -33,19 +33,19 @@ final class CloudJsonProvider extends CloudProvider {
         foreach ($this->modulesConfig->getAll() as $module => $enabled) InGameModuleCache::setModuleState($module, $enabled);
     }
 
-    public function addTemplate(Template $template): void {
+    public function addTemplate(Template $template): Promise {
         $this->templatesConfig->set($template->getName(), $template->write());
-        $this->templatesConfig->save();
+        return $this->templatesConfig->save() ? Promise::resolved() : Promise::rejected();
     }
 
-    public function removeTemplate(Template $template): void {
+    public function removeTemplate(Template $template): Promise {
         $this->templatesConfig->remove($template->getName());
-        $this->templatesConfig->save();
+        return $this->templatesConfig->save() ? Promise::resolved() : Promise::rejected();
     }
 
-    public function editTemplate(Template $template, array $newData): void {
+    public function editTemplate(Template $template, array $newData): Promise {
         $this->templatesConfig->set($template->getName(), $newData);
-        $this->templatesConfig->save();
+        return $this->templatesConfig->save() ? Promise::resolved() : Promise::rejected();
     }
 
     public function getTemplate(string $template): Promise {
@@ -76,19 +76,19 @@ final class CloudJsonProvider extends CloudProvider {
         return $promise;
     }
 
-    public function addServerGroup(ServerGroup $serverGroup): void {
+    public function addServerGroup(ServerGroup $serverGroup): Promise {
         $this->serverGroupsConfig->set($serverGroup->getName(), $serverGroup->write());
-        $this->serverGroupsConfig->save();
+        return $this->serverGroupsConfig->save() ? Promise::resolved() : Promise::rejected();
     }
 
-    public function removeServerGroup(ServerGroup $serverGroup): void {
+    public function removeServerGroup(ServerGroup $serverGroup): Promise {
         $this->serverGroupsConfig->remove($serverGroup->getName());
-        $this->serverGroupsConfig->save();
+        return $this->serverGroupsConfig->save() ? Promise::resolved() : Promise::rejected();
     }
 
-    public function editServerGroup(ServerGroup $serverGroup, array $newData): void {
+    public function editServerGroup(ServerGroup $serverGroup, array $newData): Promise {
         $this->serverGroupsConfig->set($serverGroup->getName(), $newData);
-        $this->serverGroupsConfig->save();
+        return $this->serverGroupsConfig->save() ? Promise::resolved() : Promise::rejected();
     }
 
     public function getServerGroup(string $serverGroup): Promise {
@@ -119,26 +119,26 @@ final class CloudJsonProvider extends CloudProvider {
         return $promise;
     }
 
-    public function setModuleState(string $module, bool $enabled): void {
+    public function setModuleState(string $module, bool $enabled): Promise {
         $this->modulesConfig->set($module, $enabled);
-        $this->modulesConfig->save();
         InGameModuleCache::setModuleState($module, $enabled);
+        return $this->modulesConfig->save() ? Promise::resolved() : Promise::rejected();
     }
 
     public function getModuleState(string $module): Promise {
         return Promise::resolved($this->modulesConfig->get($module, false));
     }
 
-    public function enablePlayerNotifications(string $player): void {
+    public function enablePlayerNotifications(string $player): Promise {
         $this->notificationsList->set($player, true);
-        $this->notificationsList->save();
         NotificationListCache::add($player);
+        return $this->notificationsList->save() ? Promise::resolved() : Promise::rejected();
     }
 
-    public function disablePlayerNotifications(string $player): void {
+    public function disablePlayerNotifications(string $player): Promise {
         $this->notificationsList->remove($player);
-        $this->notificationsList->save();
         NotificationListCache::remove($player);
+        return $this->notificationsList->save() ? Promise::resolved() : Promise::rejected();
     }
 
     public function hasNotificationsEnabled(string $player): Promise {
@@ -149,16 +149,16 @@ final class CloudJsonProvider extends CloudProvider {
         return Promise::resolved($this->notificationsList->getAll());
     }
 
-    public function addToWhitelist(string $player): void {
+    public function addToWhitelist(string $player): Promise {
         $this->maintenanceList->set($player, true);
-        $this->maintenanceList->save();
         MaintenanceListCache::add($player);
+        return $this->maintenanceList->save() ? Promise::resolved() : Promise::rejected();
     }
 
-    public function removeFromWhitelist(string $player): void {
+    public function removeFromWhitelist(string $player): Promise {
         $this->maintenanceList->remove($player);
-        $this->maintenanceList->save();
         MaintenanceListCache::remove($player);
+        return $this->maintenanceList->save() ? Promise::resolved() : Promise::rejected();
     }
 
     public function isOnWhitelist(string $player): Promise {

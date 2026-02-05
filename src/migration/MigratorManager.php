@@ -2,9 +2,14 @@
 
 namespace pocketcloud\cloud\migration;
 
+use Closure;
 use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\migration\impl\CloudPluginsMigrator;
-use pocketcloud\cloud\migration\impl\JsonToMySqlMigrator;
+use pocketcloud\cloud\migration\impl\JsonGroupsToMySqlMigrator;
+use pocketcloud\cloud\migration\impl\JsonMaintenanceListToMySqlMigrator;
+use pocketcloud\cloud\migration\impl\JsonModulesToMySqlMigrator;
+use pocketcloud\cloud\migration\impl\JsonNotificationsToMySqlMigrator;
+use pocketcloud\cloud\migration\impl\JsonTemplatesToMySqlMigrator;
 use pocketcloud\cloud\migration\impl\OldNotifyListToNotificationsMigrator;
 use pocketcloud\cloud\migration\impl\ProxyPluginsMigrator;
 use pocketcloud\cloud\migration\impl\ServerPluginsMigrator;
@@ -23,7 +28,11 @@ final class MigratorManager {
         $this->add(new ServerPluginsMigrator());
         $this->add(new ProxyPluginsMigrator());
         $this->add(new OldNotifyListToNotificationsMigrator());
-        $this->add(new JsonToMySqlMigrator());
+        $this->add(new JsonTemplatesToMySqlMigrator());
+        $this->add(new JsonGroupsToMySqlMigrator());
+        $this->add(new JsonModulesToMySqlMigrator());
+        $this->add(new JsonMaintenanceListToMySqlMigrator());
+        $this->add(new JsonNotificationsToMySqlMigrator());
     }
 
     public function migrateAll(): int {
@@ -75,5 +84,10 @@ final class MigratorManager {
 
     public function get(string $id): ?IMigrator {
         return $this->migrators[$id] ?? null;
+    }
+
+    public function getAll(?Closure $filter = null): array {
+        if ($filter !== null) return array_filter($this->migrators, $filter);
+        return $this->migrators;
     }
 }

@@ -4,9 +4,11 @@ namespace pocketcloud\cloud\scheduler;
 
 use pmmp\thread\Thread;
 use pocketcloud\cloud\config\impl\MainConfig;
+use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\util\misc\Tickable;
 use pocketcloud\cloud\util\trait\SingletonTrait;
 use pocketmine\snooze\SleeperHandler;
+use ReflectionClass;
 use SplQueue;
 
 final class AsyncPool implements Tickable {
@@ -87,7 +89,11 @@ final class AsyncPool implements Tickable {
             $task = $queue->bottom();
             if ($task->isDone()) {
                 $queue->dequeue();
-                $task->onCompletion();
+                if ($task->isCrashed()) {
+                    $task->onFailure($exception = $task->getResult());
+                    CloudLogger::get()->error("§cAsynchronous task §8'§e" . new ReflectionClass($this)->getShortName() . "§8' §ccrashed!");
+                    CloudLogger::get()->exception($exception);
+                } else $task->onCompletion();
             } else {
                 $more = true;
                 break;
