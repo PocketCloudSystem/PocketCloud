@@ -19,7 +19,7 @@ use const pocketcloud\IN_GAME_PATH;
 final class Language {
     use RegistryTrait;
 
-    public const string FALLBACK = "en";
+    public const string FALLBACK = "en_US";
 
     public static function init(): void {
         self::register("german", new Language(

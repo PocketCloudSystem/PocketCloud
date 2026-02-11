@@ -51,6 +51,8 @@ use pocketcloud\cloud\util\TerminalUtils;
 use pocketcloud\cloud\util\Utils;
 use pocketcloud\cloud\util\VersionInfo;
 use pocketmine\snooze\SleeperHandler;
+use r3pt1s\discord\webhook\message\embed\Embed;
+use r3pt1s\discord\webhook\Webhook;
 use Ramsey\Uuid\UuidInterface;
 use ReflectionException;
 use RuntimeException;
@@ -256,12 +258,51 @@ final class PocketCloud {
         try {
             OutputManager::reset();
             ScreenManager::getInstance()->resetScreen();
-            $filePath = CrashDump::fromLastestError()->create();
+            $crashDump = CrashDump::fromLastestError();
+            $filePath = $crashDump->create();
+
+            if (isset($this->logSettingsConfig)) {
+                $webhook = LogSettingsConfig::getInstance()->getWebhook();
+                if ($webhook instanceof Webhook) {
+                    $trace = substr($crashDump->hasTrace() ? $crashDump->stringifyTrace()  : "No trace available", 0, 1000);
+                    $webhook->createMessage(false)
+                        ->setUsername("PocketCloud Notifications")
+                        ->setAvatarUrl("https://avatars.githubusercontent.com/u/97796660?s=400&u=a65bced92fb37ce5bafc5f1eff9e2845fe66a9cb&v=4")
+                        ->addEmbed(Embed::create()
+                            ->setTitle("Notification | Cloud Crashed")
+                            ->setDescription("`The cloud crashed.`")
+                            ->setColor(0xFF0000)
+                            ->addField("**Error Type**", "> " . $crashDump->getType(), true)
+                            ->addField("**File**", "> " . $crashDump->getFile() . " (L: " . $crashDump->getLine() . ")", true)
+                            ->addField("**Message**", "> " . $crashDump->getMessage())
+                            ->addField("**Trace**", "```php\n" . $trace . "\n```")
+                            ->setTimestamp(time())
+                        )
+                        ->send();
+                }
+            }
+
             CloudLogger::get()->error("§cAn error has occurred and caused the Cloud to crash entirely.");
             CloudLogger::get()->error("§cA crashdump has been created.");
             CloudLogger::get()->error("§c(§b{}§c)", $filePath);
         } catch (Throwable $e) {
             CloudLogger::get()->error("§cFailed to create crashdump§8: §e" . $e->getMessage());
+            if (isset($this->logSettingsConfig)) {
+                $webhook = LogSettingsConfig::getInstance()->getWebhook();
+                if ($webhook instanceof Webhook) {
+                    $webhook->createMessage(false)
+                        ->setUsername("PocketCloud Notifications")
+                        ->setAvatarUrl("https://avatars.githubusercontent.com/u/97796660?s=400&u=a65bced92fb37ce5bafc5f1eff9e2845fe66a9cb&v=4")
+                        ->addEmbed(Embed::create()
+                            ->setTitle("Notification | Cloud Crashed")
+                            ->setDescription("`The cloud crashed while creating a crash dump.`")
+                            ->setColor(0xFF0000)
+                            ->addField("**Message**", "> " . $e->getMessage())
+                            ->setTimestamp(time())
+                        )
+                        ->send();
+                }
+            }
         }
 
         $this->shutdown();

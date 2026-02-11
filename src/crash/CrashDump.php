@@ -42,6 +42,30 @@ final class CrashDump {
         ], JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR), ZLIB_ENCODING_DEFLATE, 6);
     }
 
+    public function stringifyTrace(): string {
+        $result = "";
+        $i = 0;
+        foreach ($this->trace as $trace) {
+            $i++;
+            $args = implode(", ", array_map(function(mixed $argument): string {
+                if (is_object($argument)) {
+                    try {
+                        return new ReflectionClass($argument)->getShortName();
+                    } catch (ReflectionException) {
+                        return get_class($argument);
+                    }
+                } else if (is_array($argument)) {
+                    return "array(" . count($argument) . ")";
+                }
+                return gettype($argument);
+            }, ($trace["args"] ?? [])));
+
+            $result .= FormatUtils::interpolate("#{} {}({}): {}({})", [$i, PathUtils::clean($trace["file"] ?? $trace["class"]), $trace["line"] ?? "???", $trace["function"], $args]) . PHP_EOL;
+        }
+
+        return $result;
+    }
+
     public function create(): string {
         $filePath = CRASHES_PATH . date("Y-m-d_H:i:s_e") . ".log";
         $this->cFile = fopen($filePath, "w");
@@ -86,6 +110,38 @@ final class CrashDump {
     private function addLine(string $line = ""): void {
         if ($this->cFile === null) return;
         fwrite($this->cFile, $line . PHP_EOL);
+    }
+
+    public function hasTrace(): bool {
+        return count($this->trace) > 0;
+    }
+
+    public function getType(): string {
+        return $this->type;
+    }
+
+    public function getMessage(): string {
+        return $this->message;
+    }
+
+    public function getFile(): string {
+        return $this->file;
+    }
+
+    public function getLine(): int {
+        return $this->line;
+    }
+
+    public function getCode(): int {
+        return $this->code;
+    }
+
+    public function getTrace(): array {
+        return $this->trace;
+    }
+
+    public function getEncodedData(): string {
+        return $this->encodedData;
     }
 
     /**

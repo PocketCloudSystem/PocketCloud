@@ -209,7 +209,6 @@ final class Utils {
             $data .= $ext . ":" . phpversion($ext);
         }
 
-        //TODO: use of NIL as namespace is a hack; it works for now, but we should have a proper namespace UUID
         $uuid = Uuid::uuid3(Uuid::NIL, $data);
 
         if ($extra === "") self::$machineUniqueId = $uuid;
