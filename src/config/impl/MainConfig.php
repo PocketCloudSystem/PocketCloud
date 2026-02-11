@@ -15,6 +15,7 @@ final class MainConfig extends Configuration {
 
     /** @ignored */
     private string $generatedKey;
+    private string $cloudName = "main-cloud";
     private int $memoryLimit = 512;
     private string $language = "en_US";
     private string $provider = "json";
@@ -90,6 +91,14 @@ final class MainConfig extends Configuration {
 
     public function getGeneratedKey(): string {
         return $this->generatedKey;
+    }
+
+    public function setCloudName(string $cloudName): void {
+        $this->cloudName = $cloudName;
+    }
+
+    public function getCloudName(): string {
+        return $this->cloudName;
     }
 
     public function setMemoryLimit(int $memoryLimit): MainConfig {

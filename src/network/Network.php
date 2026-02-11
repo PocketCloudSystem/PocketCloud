@@ -52,7 +52,8 @@ final class Network extends Thread {
             /** @var UnhandledPacket $unhandledPacket */
             while (($unhandledPacketData = $this->buffer->shift()) !== null) {
                 if (!$this->established) return;
-                [, , , $unhandledPacket] = $unhandledPacketData;
+                [$address, $port, $buffer, $bytes] = $unhandledPacketData;
+                $unhandledPacket = new UnhandledPacket($buffer, Address::create($address, $port), $bytes);
                 $continue = true;
 
                 TrafficMonitorManager::getInstance()->pushBytes(TrafficMonitorManager::TRAFFIC_NETWORK, $bytes = $unhandledPacket->getBytes(), TrafficMonitor::REGULAR_MODE_IN);
@@ -114,8 +115,7 @@ final class Network extends Thread {
             if (socket_select($read, $write, $except, 0, 50 * 1000) > 0) {
                 if ($this->read($bytes, $buffer, $address, $port)) {
                     if (!$this->isAlive() || !$this->established) break;
-                    $address = Address::create($address, $port);
-                    $this->buffer[] = ThreadSafeArray::fromArray([$buffer, $address, $port, new UnhandledPacket($buffer, $address, $bytes)]);
+                    $this->buffer[] = ThreadSafeArray::fromArray([$address, $port, $buffer, $bytes]);
                     $notifier->wakeupSleeper();
                 }
             }

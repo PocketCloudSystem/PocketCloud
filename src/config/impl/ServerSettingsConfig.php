@@ -140,8 +140,6 @@ final class ServerSettingsConfig extends Configuration {
 
             ServerStartMethod::set(ServerStartMethod::get($this->startMethod));
 
-            var_dump($this->startCommands);
-
             $this->save();
         }, "Failed to load server settings config", fn() => PocketCloud::getInstance()->shutdown(), $defaultBinaries, $defaultStartCommands, $defaultServerTimeouts, $defaultServerPortRanges);
     }

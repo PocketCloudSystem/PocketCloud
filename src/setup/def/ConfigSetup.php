@@ -24,6 +24,10 @@ final class ConfigSetup extends Setup {
 
     public function applyQuestions(): array {
         return [
+            QuestionBuilder::builder("cloudName", "What's the name of the cloud?")
+                ->default(MainConfig::getInstance()->getCloudName(), MainConfig::getInstance()->getCloudName())
+                ->canSkipped(true)
+                ->build(),
             QuestionBuilder::builder("memoryLimit", "What's the memory limit for the cloud? (in MB)")
                 ->parser(function(string $input): ?int {
                     if (!is_numeric($input) || intval($input) <= 0) return null;
@@ -116,6 +120,7 @@ final class ConfigSetup extends Setup {
 
     public function handleResults(array $results): void {
         $config = [
+            "cloudName" => $results["cloudName"],
             "memoryLimit" => $results["memoryLimit"],
             "language" => $results["language"],
             "updateChecks" => $results["updateChecks"],
@@ -136,6 +141,7 @@ final class ConfigSetup extends Setup {
             ]
         ];
 
+        MainConfig::getInstance()->setCloudName($config["cloudName"]);
         MainConfig::getInstance()->setMemoryLimit($config["memoryLimit"]);
         MainConfig::getInstance()->setLanguage($config["language"]);
         MainConfig::getInstance()->setUpdateChecks($config["updateChecks"]);

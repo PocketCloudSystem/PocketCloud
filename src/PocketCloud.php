@@ -129,7 +129,7 @@ final class PocketCloud {
         $this->lastTickTime = microtime(true);
 
         CloudLogger::set($this->logger = new MainLogger(LOG_PATH, false, false));
-        $this->console = new Console();
+        ($this->console = new Console())->register();
         ($this->screenManager = new ScreenManager())->resetScreen();
         $this->commandManager = new CommandManager();
         ($this->libraryManager = new LibraryManager())->load();
@@ -203,7 +203,6 @@ final class PocketCloud {
         } else usleep(50 * 1000);
 
         $this->console->install();
-        $this->console->register();
 
         if (array_any($this->serverSettingsConfig->getBinaries(), fn(string $url, string $templateType) => BinaryDownloader::downloadBinary($url, $templateType) === true)) {
             $this->addStartNotification("§8====== §cATTENTION! §8======", CloudLogLevel::WARN())
@@ -266,7 +265,7 @@ final class PocketCloud {
                 if ($webhook instanceof Webhook) {
                     $trace = substr($crashDump->hasTrace() ? $crashDump->stringifyTrace()  : "No trace available", 0, 1000);
                     $webhook->createMessage(false)
-                        ->setUsername("PocketCloud Notifications")
+                        ->setUsername("PocketCloud Notifications | " . MainConfig::getInstance()->getCloudName())
                         ->setAvatarUrl("https://avatars.githubusercontent.com/u/97796660?s=400&u=a65bced92fb37ce5bafc5f1eff9e2845fe66a9cb&v=4")
                         ->addEmbed(Embed::create()
                             ->setTitle("Notification | Cloud Crashed")

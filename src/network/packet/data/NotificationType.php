@@ -3,6 +3,7 @@
 namespace pocketcloud\cloud\network\packet\data;
 
 use pocketcloud\cloud\config\impl\LogSettingsConfig;
+use pocketcloud\cloud\config\impl\MainConfig;
 use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\language\LanguageKey;
 use pocketcloud\cloud\network\packet\impl\CloudNotificationPacket;
@@ -69,7 +70,7 @@ enum NotificationType implements Writeable {
 
     public function craftDiscordMessage(array $args, array $extraArgs = []): ?Message {
         $message = new Message(false);
-        $message->setUsername("PocketCloud Notifications");
+        $message->setUsername("PocketCloud Notifications | " . MainConfig::getInstance()->getCloudName());
         $message->setAvatarUrl("https://avatars.githubusercontent.com/u/97796660?s=400&u=a65bced92fb37ce5bafc5f1eff9e2845fe66a9cb&v=4");
 
         switch ($this) {
