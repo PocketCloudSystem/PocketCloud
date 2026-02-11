@@ -24,7 +24,7 @@ final class DebugCommand extends Command {
             LogSettingsConfig::getInstance()->setDebugMode(true);
         }
 
-        ExceptionHandler::tryCatch(fn() => MainConfig::getInstance()->save(), "Failed to save main config");
+        ExceptionHandler::tryCatch(fn() => LogSettingsConfig::getInstance()->save(), "Failed to save main config");
         return true;
     }
 }
