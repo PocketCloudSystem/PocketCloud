@@ -51,6 +51,10 @@ final class ServerClient {
         return $this->address;
     }
 
+    public function hasServer(): bool {
+        return $this->getServer() !== null;
+    }
+
     public function getServer(): ?CloudServer {
         return ServerClientCache::getInstance()->getServer($this);
     }

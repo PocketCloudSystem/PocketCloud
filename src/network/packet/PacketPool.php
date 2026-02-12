@@ -4,6 +4,7 @@ namespace pocketcloud\cloud\network\packet;
 
 use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\network\packet\impl\CloudNotificationPacket;
+use pocketcloud\cloud\network\packet\impl\CloudSyncServerStoragePacket;
 use pocketcloud\cloud\network\packet\impl\CommandAnswerPacket;
 use pocketcloud\cloud\network\packet\impl\CommandExecutePacket;
 use pocketcloud\cloud\network\packet\impl\DisconnectPacket;
@@ -19,6 +20,7 @@ use pocketcloud\cloud\network\packet\impl\PlayerKickPacket;
 use pocketcloud\cloud\network\packet\impl\PlayerSwitchServerPacket;
 use pocketcloud\cloud\network\packet\impl\PlayerSyncPacket;
 use pocketcloud\cloud\network\packet\impl\PlayerUpdateNotificationStatePacket;
+use pocketcloud\cloud\network\packet\impl\ProxyPlayerTransferPacket;
 use pocketcloud\cloud\network\packet\impl\ProxyRegisterServerPacket;
 use pocketcloud\cloud\network\packet\impl\ProxyUnregisterServerPacket;
 use pocketcloud\cloud\network\packet\impl\request\PlayerNotificationCheckRequestPacket;
@@ -27,6 +29,7 @@ use pocketcloud\cloud\network\packet\impl\request\ServerHandshakeRequestPacket;
 use pocketcloud\cloud\network\packet\impl\response\PlayerNotificationCheckResponsePacket;
 use pocketcloud\cloud\network\packet\impl\response\PlayerWhitelistCheckResponsePacket;
 use pocketcloud\cloud\network\packet\impl\response\ServerHandshakeResponsePacket;
+use pocketcloud\cloud\network\packet\impl\ServerChangeStatusPacket;
 use pocketcloud\cloud\network\packet\impl\ServerGroupSyncPacket;
 use pocketcloud\cloud\network\packet\impl\ServerSyncPacket;
 use pocketcloud\cloud\network\packet\impl\TemplateSyncPacket;
@@ -73,6 +76,9 @@ final class PacketPool {
         $this->register(PlayerUpdateNotificationStatePacket::class);
         $this->register(MaintenanceListSyncPacket::class);
         $this->register(NotificationListSyncPacket::class);
+        $this->register(ServerChangeStatusPacket::class);
+        $this->register(CloudSyncServerStoragePacket::class);
+        $this->register(ProxyPlayerTransferPacket::class);
     }
 
     public function register(string $packetClass): void {
@@ -81,7 +87,7 @@ final class PacketPool {
             CloudLogger::get()->debug("Registering packet " . ($packetName = new ReflectionClass($packetClass)->getShortName()) . " (" . $packetClass . ")");
             $this->packets[$packetName] = $packetClass;
         } catch (ReflectionException $e) {
-            CloudLogger::get()->error("§cFailed to register packet §e{}§c." . $packetClass);
+            CloudLogger::get()->error("§cFailed to register packet §e{}§c.", $packetClass);
             CloudLogger::get()->exception($e);
         }
     }

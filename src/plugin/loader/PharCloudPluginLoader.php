@@ -30,7 +30,7 @@ final class PharCloudPluginLoader implements CloudPluginLoader {
         if ($pluginYml === null) return "Invalid plugin.yml";
 
         CloudLogger::get()->debug("Adding plugin to class loader (" . $path . ")");
-        PocketCloud::getInstance()->getClassLoader()->addPrefix($pluginYml->getSrcNamespacePrefix(), "phar://" . $path . "/src/");
+        PocketCloud::getInstance()->getClassLoader()->addPrefix($pluginYml->getSrcNamespacePrefix(), "phar://" . $path . "/src");
         $plugin = new ($pluginYml->getMain())($pluginYml, PathUtils::join(PLUGINS_PATH, strtolower($pluginYml->getName())) . "/", $phar->getPath());
         if (!is_subclass_of($plugin, CloudPlugin::class)) return "Is not a valid CloudPlugin";
         return $plugin;

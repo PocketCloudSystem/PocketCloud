@@ -2,6 +2,7 @@
 
 namespace pocketcloud\cloud\server\data;
 
+use pocketcloud\cloud\network\packet\impl\ServerSyncPacket;
 use pocketcloud\cloud\server\CloudServer;
 
 final class CloudServerStorage {
@@ -17,7 +18,7 @@ final class CloudServerStorage {
     }
 
     private function outgoingSync(): void {
-        //TODO: CloudSyncStoragesPacket::create()->broadcastPacket();
+        ServerSyncPacket::create($this->server, false)->broadcastPacket();
     }
 
     public function set(string $k, mixed $v): self {
