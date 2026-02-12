@@ -9,7 +9,7 @@ use pocketcloud\cloud\console\log\output\OutputHandler;
 use pocketcloud\cloud\console\log\output\OutputManager;
 use pocketcloud\cloud\util\TerminalUtils;
 
-abstract class IScreen {
+abstract class Screen {
 
     abstract public function initialize(Console $console): void;
 

@@ -5,8 +5,8 @@ namespace pocketcloud\cloud\console\screen\impl;
 use pocketcloud\cloud\console\Console;
 use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\console\log\color\CloudConsoleColor;
-use pocketcloud\cloud\console\log\output\MonitorOutputHandler;
-use pocketcloud\cloud\console\screen\IScreen;
+use pocketcloud\cloud\console\log\output\impl\MonitorOutputHandler;
+use pocketcloud\cloud\console\screen\Screen;
 use pocketcloud\cloud\console\screen\ScreenManager;
 use pocketcloud\cloud\server\CloudServer;
 use pocketcloud\cloud\server\CloudServerManager;
@@ -15,7 +15,7 @@ use pocketcloud\cloud\util\FormatUtils;
 use pocketcloud\cloud\util\ProcessUtils;
 use pocketcloud\cloud\util\Utils;
 
-final class MonitorScreen extends IScreen {
+final class MonitorScreen extends Screen {
 
     private bool $firstCycle = true;
     private string $latestInput = "";

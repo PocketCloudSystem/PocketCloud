@@ -30,6 +30,7 @@ use pocketcloud\cloud\server\data\CloudServerStorage;
 use pocketcloud\cloud\server\prepare\ServerPreparator;
 use pocketcloud\cloud\server\prepare\ServerPrepareEntry;
 use pocketcloud\cloud\server\util\CloudServerActionsTrait;
+use pocketcloud\cloud\server\util\ServerLogStream;
 use pocketcloud\cloud\server\util\ServerStartMethod;
 use pocketcloud\cloud\server\util\ServerStatus;
 use pocketcloud\cloud\template\Template;
@@ -143,6 +144,10 @@ final class CloudServer implements Tickable, Writeable {
         foreach ($packets as $packet) $this->sendPacket($packet);
     }
 
+    public function openLogStream(): ServerLogStream {
+        return new ServerLogStream($this);
+    }
+
     /**
      * @param CloudPacket $packet
      * @param int $ticks delay in ticks (20 = 1s)
@@ -158,11 +163,8 @@ final class CloudServer implements Tickable, Writeable {
     }
 
     public function retrieveLogs(): ?array {
-        $basePath = $this->getPath();
-        $logFile = $this->getTemplate()->getTemplateType()->getRelativeLogFileLocation();
-
-        if (@file_exists($basePath . $logFile)) {
-            return explode("\n", file_get_contents($basePath . $logFile));
+        if (@file_exists($path = $this->getLogFilePath())) {
+            return explode("\n", file_get_contents($path));
         }
 
         return null;
@@ -215,6 +217,12 @@ final class CloudServer implements Tickable, Writeable {
 
     public function getPath(): string {
         return PathUtils::join(TEMP_PATH, $this->serverUuid) . "/";
+    }
+
+    public function getLogFilePath(): string {
+        $basePath = $this->getPath();
+        $logFile = $this->getTemplate()->getTemplateType()->getRelativeLogFileLocation();
+        return $basePath . $logFile;
     }
 
     public function getServerUuid(): string {

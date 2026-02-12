@@ -12,7 +12,7 @@ use RuntimeException;
 final class ScreenManager implements Tickable {
     use SingletonTrait;
 
-    private ?IScreen $currentScreen = null;
+    private ?Screen $currentScreen = null;
 
     public function __construct() {
         self::setInstance($this);
@@ -22,7 +22,7 @@ final class ScreenManager implements Tickable {
         $this->currentScreen?->tick($currentTick);
     }
 
-    public function setCurrentScreen(IScreen $currentScreen): void {
+    public function setCurrentScreen(Screen $currentScreen): void {
         $this->currentScreen?->onRemove(PocketCloud::getInstance()->getTick());
         $this->currentScreen = $currentScreen;
         $this->currentScreen->initialize(Console::getInstance());
@@ -32,7 +32,7 @@ final class ScreenManager implements Tickable {
         $this->setCurrentScreen(new DefaultScreen());
     }
 
-    public function getCurrentScreen(): IScreen {
+    public function getCurrentScreen(): Screen {
         return $this->currentScreen ?? throw new RuntimeException("Current screen cannot be null");
     }
 }

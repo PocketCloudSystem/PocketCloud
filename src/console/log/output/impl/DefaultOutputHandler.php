@@ -1,14 +1,15 @@
 <?php
 
-namespace pocketcloud\cloud\console\log\output;
+namespace pocketcloud\cloud\console\log\output\impl;
 
 use pocketcloud\cloud\console\Console;
 use pocketcloud\cloud\console\log\logger\ILogger;
+use pocketcloud\cloud\console\log\output\OutputHandler;
 
-final class MonitorOutputHandler implements OutputHandler {
+final class DefaultOutputHandler implements OutputHandler {
 
     public function shouldOutput(ILogger $logger): bool {
-        return false;
+        return true;
     }
 
     public function handleOutput(string $message): void {

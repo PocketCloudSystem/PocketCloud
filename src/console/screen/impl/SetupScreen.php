@@ -5,11 +5,11 @@ namespace pocketcloud\cloud\console\screen\impl;
 use pocketcloud\cloud\console\Console;
 use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\console\log\logger\ILogger;
-use pocketcloud\cloud\console\log\output\SetupOutputHandler;
-use pocketcloud\cloud\console\screen\IScreen;
+use pocketcloud\cloud\console\log\output\impl\SetupOutputHandler;
+use pocketcloud\cloud\console\screen\Screen;
 use pocketcloud\cloud\setup\Setup;
 
-final class SetupScreen extends IScreen {
+final class SetupScreen extends Screen {
 
     private ?SetupOutputHandler $outputHandler = null;
     private ?ILogger $logger = null;

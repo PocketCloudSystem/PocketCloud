@@ -6,10 +6,10 @@ use pocketcloud\cloud\console\command\CommandManager;
 use pocketcloud\cloud\console\command\sender\ConsoleCommandSender;
 use pocketcloud\cloud\console\Console;
 use pocketcloud\cloud\console\log\CloudLogger;
-use pocketcloud\cloud\console\screen\IScreen;
+use pocketcloud\cloud\console\screen\Screen;
 use pocketcloud\cloud\util\Utils;
 
-final class DefaultScreen extends IScreen {
+final class DefaultScreen extends Screen {
 
     public function initialize(Console $console): void {
         $this->restorePrompt();

@@ -1,11 +1,10 @@
 <?php
 
-namespace pocketcloud\cloud\console\log\output;
+namespace pocketcloud\cloud\console\log\output\trait;
 
-use pocketcloud\cloud\console\Console;
 use pocketcloud\cloud\console\log\logger\ILogger;
 
-final class SetupOutputHandler implements OutputHandler {
+trait AuthorizedLoggerBase {
 
     private array $authorizedLoggers = [];
 
@@ -17,11 +16,7 @@ final class SetupOutputHandler implements OutputHandler {
         unset($this->authorizedLoggers[spl_object_id($logger)]);
     }
 
-    public function shouldOutput(ILogger $logger): bool {
+    public function isAuthorizedLogger(ILogger $logger): bool {
         return isset($this->authorizedLoggers[spl_object_id($logger)]);
-    }
-
-    public function handleOutput(string $message): void {
-        Console::getInstance()->println($message);
     }
 }

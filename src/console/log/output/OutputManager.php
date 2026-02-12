@@ -2,6 +2,8 @@
 
 namespace pocketcloud\cloud\console\log\output;
 
+use pocketcloud\cloud\console\log\output\impl\DefaultOutputHandler;
+
 final class OutputManager {
 
     private static ?OutputHandler $handler = null;

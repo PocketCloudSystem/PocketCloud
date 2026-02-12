@@ -13,6 +13,8 @@ use pocketcloud\cloud\console\command\parameter\def\TemplateParameter;
 use pocketcloud\cloud\console\command\Command;
 use pocketcloud\cloud\console\command\sender\ICommandSender;
 use pocketcloud\cloud\console\command\SubCommand;
+use pocketcloud\cloud\console\screen\impl\ServerConsoleMonitorScreen;
+use pocketcloud\cloud\console\screen\ScreenManager;
 use pocketcloud\cloud\network\packet\data\ServerCommandExecutionResult;
 use pocketcloud\cloud\server\CloudServer;
 use pocketcloud\cloud\server\CloudServerManager;
@@ -55,6 +57,9 @@ final class ServerCommand extends Command {
             ->addParameter(new ServerParameter("server", false)));
 
         $this->registerSubCommand(SubCommand::fromClosure("save", $this->handleSaveSub(...), ["save"])
+            ->addParameter(new ServerParameter("server", false)));
+
+        $this->registerSubCommand(SubCommand::fromClosure("screen", $this->handleScreenSub(...), ["screen"])
             ->addParameter(new ServerParameter("server", false)));
     }
 
@@ -170,6 +175,13 @@ final class ServerCommand extends Command {
         $start = microtime(true) * 1000;
         CloudServerManager::getInstance()->save($server)->then(fn() => $sender->success("Successfully §asaved §b{}§r. §8(§rTook §b{}ms§8)", $server->getName(), round((microtime(true) * 1000) - $start, 3)))
             ->failure(fn(?string $reason) => $sender->warn("Failed to save §b{}§r: §c{}", $server->getName(), $reason ?? "No reason applied"));
+        return true;
+    }
+
+    private function handleScreenSub(ICommandSender $sender, string $label, array $args): bool {
+        /** @var CloudServer $server */
+        $server = $args["server"];
+        ScreenManager::getInstance()->setCurrentScreen(new ServerConsoleMonitorScreen($server->getName()));
         return true;
     }
 }
