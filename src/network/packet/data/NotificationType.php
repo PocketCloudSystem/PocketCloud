@@ -91,7 +91,8 @@ enum NotificationType implements Writeable {
                         ->setColor(0xFF0000)
                     );
                 } else {
-                    $trace = substr($crashData["trace"] ?? "No trace available", 0, 1000);
+                    $crashTrace = isset($crashData["trace"]) ? implode("\n", $crashData["trace"]) : null;
+                    $trace = substr($crashTrace ?? "No trace available", 0, 1000);
                     $errorData = $crashData["error"] ?? [];
                     $errorType = $errorData["type"] ?? "No error type found.";
                     $errorMessage = $errorData["message"] ?? "No error message found.";
