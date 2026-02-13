@@ -19,7 +19,6 @@ final class CloudNotificationPacket extends CloudPacket implements ClientboundPa
     ) {}
 
     public function handle(ServerClient $client): void {
-        $extraArgs = [];
         if ($this->notificationType->canLog()) {
             switch ($this->notificationType) {
                 case NotificationType::PLAYER_JOIN_FAILED: {
@@ -57,6 +56,7 @@ final class CloudNotificationPacket extends CloudPacket implements ClientboundPa
     }
 
     private function formatReason(string $reason): string {
+        if ($reason == "") return "No reason applied.";
         $newReason = substr(current(explode("\n", $reason)), 0, 100);
         if (strlen($newReason) !== strlen($reason)) $newReason .= "...";
         return $newReason;
