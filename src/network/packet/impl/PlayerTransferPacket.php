@@ -9,7 +9,7 @@ use pocketcloud\cloud\network\packet\CloudPacket;
 use pocketcloud\cloud\network\packet\util\PacketData;
 use pocketcloud\cloud\player\CloudPlayerManager;
 
-final class ProxyPlayerTransferPacket extends CloudPacket implements ClientboundPacket, CloudboundPacket {
+final class PlayerTransferPacket extends CloudPacket implements ClientboundPacket, CloudboundPacket {
 
     public function __construct(
         private string $player = "",
