@@ -2,7 +2,10 @@
 
 namespace pocketcloud\cloud\update\def;
 
+use pocketcloud\cloud\config\impl\MainConfig;
 use pocketcloud\cloud\console\log\CloudLogger;
+use pocketcloud\cloud\console\log\level\CloudLogLevel;
+use pocketcloud\cloud\PocketCloud;
 use pocketcloud\cloud\software\ServerSoftware;
 use pocketcloud\cloud\software\ServerSoftwareManager;
 use pocketcloud\cloud\update\IUpdateChecker;
@@ -21,6 +24,7 @@ final class SoftwareUpdateChecker implements IUpdateChecker {
             $software->checkForUpdate()->then(function (bool $needsUpdate) use ($promise, &$i, &$result, $software, $amount): void {
                 $i++;
                 if ($needsUpdate) {
+                    if (!MainConfig::getInstance()->isExecuteUpdates()) PocketCloud::getInstance()->addStartNotification("Your version of §b{} §ris outdated. Please update it manually.", CloudLogLevel::WARN(), $software->getName());
                     CloudLogger::get()->info("Your version of §b{} §ris outdated...", $software->getName());
                     $result[] = $software->getName();
                 }

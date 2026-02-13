@@ -2,8 +2,10 @@
 
 namespace pocketcloud\cloud\library;
 
+use pocketcloud\cloud\config\impl\MainConfig;
 use pocketcloud\cloud\console\handler\ExceptionHandler;
 use pocketcloud\cloud\console\log\CloudLogger;
+use pocketcloud\cloud\console\log\level\CloudLogLevel;
 use pocketcloud\cloud\PocketCloud;
 use pocketcloud\cloud\util\FileUtils;
 use pocketcloud\cloud\util\net\NetUtils;
@@ -28,25 +30,37 @@ final readonly class Library {
 
     /**
      * //Todo: check for updates by comparing file sizes
+     * -> Concept for this: When the .zip gets downloaded, save the filesize of it into a .size file inside the library folder,
+     * then compare the size with the content size of the URL
+     * If size mismatches, library got updated
+     * If size matches, library is up-to-date
      * When downloaded a library, the cloud expects the zip Archive to have the following structure:
      * -> library.zip -> Library-main (or any name) -> the actual library contents (src, readme.md, ...)
-     *
+     * @param bool $needsUpdate
      * @return bool
+     * @internal
      */
-    public function download(): bool {
-        if ($this->check()) return false;
+    public function download(bool $needsUpdate = false): bool {
+        if ($needsUpdate && !MainConfig::getInstance()->isExecuteUpdates()) {
+            PocketCloud::getInstance()->addStartNotification("Library §b{} §rrequires an §cUPDATE§r, but inside your §bconfig.yml§r, you have §cdisabled §8'§eexecuteUpdates§8'§r.", CloudLogLevel::WARN(), $this->name);
+            PocketCloud::getInstance()->addStartNotification("Please §are-enable §rit or update the library manually.", CloudLogLevel::WARN());
+            return false;
+        }
+
+        if (@is_dir($this->libPath)) FileUtils::removeDirectory($this->libPath);
         return ExceptionHandler::tryCatch(
             function (string $name, string $downloadUrl, string $libPath): bool {
                 CloudLogger::get()->info("Downloading source for library: {}...", $name);
-                NetUtils::download($downloadUrl, $archivePath = PathUtils::join(LIBRARIES_PATH, uniqid()));
+                $size = NetUtils::download($downloadUrl, $archivePath = PathUtils::join(LIBRARIES_PATH, uniqid()));
                 $archive = new ZipArchive();
                 if ($archive->open($archivePath)) {
                     $mainPath = rtrim($archive->getNameIndex(0), "/");
                     $archive->extractTo(LIBRARIES_PATH);
                     $archive->close();
 
-                    if (!file_exists($libPath)) mkdir($libPath);
+                    if (!is_dir($libPath)) mkdir($libPath);
                     FileUtils::rename(PathUtils::join(LIBRARIES_PATH, $mainPath) . "/", $libPath);
+                    file_put_contents(PathUtils::join($libPath, ".size"), $size);
                 }
 
                 unlink($archivePath);
@@ -69,7 +83,15 @@ final readonly class Library {
         return file_exists($this->libPath) &&
             is_dir($this->libPath) &&
             count(scandir($this->libPath)) > 0 &&
-            @file_exists($this->libPath . $this->namespaceFolder);
+            @is_dir(PathUtils::join($this->libPath, $this->namespaceFolder)) &&
+            @file_exists(PathUtils::join($this->libPath, ".size"));
+    }
+
+    public function needsAnUpdate(): bool {
+        if (!@file_exists(PathUtils::join($this->libPath, ".size"))) return true;
+        $lastDownloadSize = intval(file_get_contents(PathUtils::join($this->libPath, ".size")));
+        $newestDownloadSize = NetUtils::fileSize($this->downloadUrl);
+        return $newestDownloadSize !== $lastDownloadSize;
     }
 
     public function getLibPath(): string {

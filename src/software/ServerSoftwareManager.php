@@ -6,6 +6,7 @@ use Phar;
 use pocketcloud\cloud\config\impl\ServerSettingsConfig;
 use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\PocketCloud;
+use pocketcloud\cloud\util\FormatUtils;
 use pocketcloud\cloud\util\net\NetUtils;
 use pocketcloud\cloud\util\misc\Loadable;
 use pocketcloud\cloud\util\promise\Promise;
@@ -92,7 +93,7 @@ final class ServerSoftwareManager implements Loadable {
             return false;
         }
 
-        $temporaryLogger->success("Successfully downloaded software: {} ({})", $software->getName(), SOFTWARE_PATH . $software->getFileName());
+        $temporaryLogger->success("Successfully downloaded software: {} ({}, {})", $software->getName(), FormatUtils::bytes($result), SOFTWARE_PATH . $software->getFileName());
         return true;
     }
 

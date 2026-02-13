@@ -3,6 +3,7 @@
 namespace pocketcloud\cloud\library;
 
 use pocketcloud\cloud\config\Config;
+use pocketcloud\cloud\config\impl\MainConfig;
 use pocketcloud\cloud\config\type\ConfigTypeList;
 use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\util\misc\Loadable;
@@ -86,6 +87,19 @@ final class LibraryManager implements Loadable {
                     throw new RuntimeException("Library '" . $library->getName() . "' with namespace folder: " . $library->getNamespaceFolder() . " is not available");
             }
         }
+    }
+
+    public function checkForUpdates(): int {
+        if (!MainConfig::getInstance()->isUpdateChecks()) return -1;
+        $updatedLibs = 0;
+        foreach ($this->libraries as $library) {
+            if ($library->needsAnUpdate()) {
+                $updatedLibs++;
+                $library->download(true);
+            }
+        }
+
+        return $updatedLibs;
     }
 
     public function add(Library $library): bool {

@@ -63,6 +63,7 @@ use const pocketcloud\CLOUD_PATH;
 use const pocketcloud\CRASHES_PATH;
 use const pocketcloud\GLOBAL_TEMPLATES_PATH;
 use const pocketcloud\IN_GAME_PATH;
+use const pocketcloud\INTERNAL_PATH;
 use const pocketcloud\IS_PHAR;
 use const pocketcloud\LIBRARIES_PATH;
 use const pocketcloud\LOG_PATH;
@@ -118,7 +119,10 @@ final class PocketCloud {
     private UuidInterface $cloudUniqueId;
     private CloudMetrics $metrics;
 
-    public function __construct(private readonly ClassLoader $classLoader) {
+    public function __construct(
+        private readonly ClassLoader $classLoader,
+        private readonly ?int $latestStartTimestamp
+    ) {
         self::$instance = $this;
     }
 
@@ -127,6 +131,8 @@ final class PocketCloud {
         $this->startTimestamp = microtime(true);
         $this->running = true;
         $this->lastTickTime = microtime(true);
+
+        $eligibleForUpdates = $this->latestStartTimestamp !== null && (time() - $this->latestStartTimestamp) >= 300;
 
         CloudLogger::set($this->logger = new MainLogger(LOG_PATH, false, false));
         ($this->console = new Console())->register();
@@ -156,6 +162,15 @@ final class PocketCloud {
             $this->getLogger()->exception($e);
             $this->shutdown();
             return;
+        }
+
+        if ($eligibleForUpdates) {
+            CloudLogger::get()->info("Checking for library updates...");
+            if ($this->libraryManager->checkForUpdates() > 0) {
+                CloudLogger::get()->info("One or more libraries have been updated, please restart the cloud.");
+                $this->shutdown();
+                return;
+            }
         }
 
         $i = 0;
@@ -194,7 +209,7 @@ final class PocketCloud {
         $this->cloudUniqueId = Utils::getMachineUniqueId($this->network->getAddress()->getAddress() . $this->network->getAddress()->getPort());
         $this->metrics = new CloudMetrics($this->cloudUniqueId, $this->config);
 
-        $this->updateChecker->checkForUpdates();
+        if ($eligibleForUpdates) $this->updateChecker->checkForUpdates();
         CloudProvider::select();
 
         if ($this->config->isStartUpDelay()) {
@@ -574,6 +589,7 @@ define("pocketcloud\CLOUD_PATH", (IS_PHAR ?
 
 define("pocketcloud\STORAGE_PATH", PathUtils::join(CLOUD_PATH, "storage") . "/");
 define("pocketcloud\BACKUPS_PATH", PathUtils::join(STORAGE_PATH, "backups") . "/");
+define("pocketcloud\INTERNAL_PATH", PathUtils::join(STORAGE_PATH, "internal") . "/");
 define("pocketcloud\CRASHES_PATH", PathUtils::join(STORAGE_PATH, "crashes") . "/");
 define("pocketcloud\SERVER_CRASHES_PATH", PathUtils::join(CRASHES_PATH, "servers") . "/");
 define("pocketcloud\BINARIES_PATH", PathUtils::join(STORAGE_PATH, "binaries") . "/");
@@ -590,7 +606,7 @@ define("pocketcloud\SERVER_GROUPS_PATH", PathUtils::join(CLOUD_PATH, "groups") .
 define("pocketcloud\FIRST_RUN", !file_exists(STORAGE_PATH . "config.json"));
 
 foreach ([
-    STORAGE_PATH, BACKUPS_PATH, CRASHES_PATH, SERVER_CRASHES_PATH, BINARIES_PATH, LIBRARIES_PATH, PLUGINS_PATH, SOFTWARE_PATH, IN_GAME_PATH, LOG_PATH,
+    STORAGE_PATH, BACKUPS_PATH, INTERNAL_PATH, CRASHES_PATH, SERVER_CRASHES_PATH, BINARIES_PATH, LIBRARIES_PATH, PLUGINS_PATH, SOFTWARE_PATH, IN_GAME_PATH, LOG_PATH,
     TEMP_PATH,
     TEMPLATES_PATH, GLOBAL_TEMPLATES_PATH,
     SERVER_GROUPS_PATH
@@ -607,7 +623,17 @@ $classLoader->init();
 
 $lockFile = createLockFile();
 
-$cloud = new PocketCloud($classLoader);
+$latest_start_timestamp = null;
+if (file_exists(PathUtils::join(INTERNAL_PATH, ".latest_start_timestamp"))) {
+    $contents = file_get_contents(PathUtils::join(INTERNAL_PATH, ".latest_start_timestamp"));
+    if (is_numeric($contents)) {
+        $latest_start_timestamp = intval($contents);
+    }
+}
+
+file_put_contents(PathUtils::join(INTERNAL_PATH, ".latest_start_timestamp"), time());
+
+$cloud = new PocketCloud($classLoader, $latest_start_timestamp);
 $cloud->start();
 
 if (ThreadManager::getInstance()->stopAll() > 0) {
@@ -634,7 +660,7 @@ function checkRunning(?int &$pid = null): bool {
 }
 
 function createLockFile() {
-    $file = fopen(STORAGE_PATH . "cloud.lock", "a+b");
+    $file = fopen(INTERNAL_PATH . "cloud.lock", "a+b");
     if ($file === false) throw new RuntimeException("Failed to create cloud.lock file");
     if (!flock($file, LOCK_EX | LOCK_NB)) flock($file, LOCK_SH);
     ftruncate($file, 0);
@@ -647,7 +673,7 @@ function createLockFile() {
 function releaseLockFile(mixed $lockFile): void {
     flock($lockFile, LOCK_UN);
     fclose($lockFile);
-    unlink(STORAGE_PATH . "cloud.lock");
+    unlink(INTERNAL_PATH . "cloud.lock");
 }
 
 function checkPlatform(): void {

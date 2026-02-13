@@ -29,7 +29,7 @@ final class UpdateChecker {
 
     public function checkForUpdates(): void {
         if (!MainConfig::getInstance()->isUpdateChecks()) return;
-        CloudLogger::get()->info("Checking for updates...");
+        CloudLogger::get()->info("Checking for software updates...");
         foreach ($this->updateCheckers as $updateChecker) {
             $updateChecker->needsUpdate()->then(function (array $result) use ($updateChecker): void {
                 [$needsUpdate] = ($result = array_values($result));

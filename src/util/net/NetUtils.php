@@ -3,6 +3,7 @@
 namespace pocketcloud\cloud\util\net;
 
 use pocketcloud\cloud\console\handler\ExceptionHandler;
+use pocketcloud\cloud\PocketCloud;
 use RuntimeException;
 
 final class NetUtils {
@@ -15,8 +16,8 @@ final class NetUtils {
         return $ok === false;
     }
 
-    public static function download(string $url, string $fileLocation): bool {
-        return ExceptionHandler::tryCatch(function (string $url, string $fileLocation): bool {
+    public static function download(string $url, string $fileLocation): int|false {
+        return ExceptionHandler::tryCatch(function (string $url, string $fileLocation): int|false {
             if (!@file_exists(dirname($fileLocation))) mkdir(dirname($fileLocation), 0777, true);
             $tmpFile = $fileLocation . ".tmp";
             $file = fopen($tmpFile, "wb");
@@ -36,27 +37,105 @@ final class NetUtils {
             curl_close($ch);
             fclose($file);
 
+            $size = filesize($tmpFile);
+
             if ($success === false || $err !== 0 || $httpCode >= 400) {
                 @unlink($tmpFile);
                 return false;
             }
 
-            return rename($tmpFile, $fileLocation);
+            if (rename($tmpFile, $fileLocation)) return $size;
+            return false;
         }, "Failed to download: " . $url, null, $url, $fileLocation) ?? false;
     }
 
-
-    public static function fileSize(string $url): ?int {
+    private static function tryHeadRequest(string $url): ?int {
         $ch = curl_init($url);
-        curl_setopt($ch, CURLOPT_NOBODY, true);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HEADER => false,
+            CURLOPT_NOBODY => true,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_USERAGENT => "Mozilla/5.0"
+        ]);
 
         curl_exec($ch);
+
+        if (curl_errno($ch)) {
+            curl_close($ch);
+            return null;
+        }
+
         $size = curl_getinfo($ch, CURLINFO_CONTENT_LENGTH_DOWNLOAD);
         curl_close($ch);
 
-        return $size !== -1 ? intval($size) : null;
+        return ($size > 0) ? (int) $size : null;
+    }
+
+    private static function tryRangeRequest(string $url): ?int {
+        $ch = curl_init($url);
+        $totalSize = null;
+
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HEADER => false,
+            CURLOPT_NOBODY => false,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_USERAGENT => "Mozilla/5.0",
+            CURLOPT_RANGE => "0-0",
+            CURLOPT_HEADERFUNCTION => function($curl, $header) use (&$totalSize) {
+                if (preg_match("/Content-Range:\s*bytes\s+\d+-\d+\/(\d+)/i", $header, $m)) {
+                    $totalSize = (int) $m[1];
+                }
+                return strlen($header);
+            }
+        ]);
+
+        curl_exec($ch);
+
+        if (curl_errno($ch)) {
+            curl_close($ch);
+            return null;
+        }
+
+        curl_close($ch);
+        return $totalSize;
+    }
+
+    private static function tryFullDownload(string $url): ?int {
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_USERAGENT => "Mozilla/5.0"
+        ]);
+
+        $content = curl_exec($ch);
+        curl_close($ch);
+
+        return $content !== false ? strlen($content) : null;
+    }
+
+    public static function fileSize(string $url): ?int {
+        $size = self::tryHeadRequest($url);
+        if ($size !== null) {
+            return $size;
+        }
+
+        $size = self::tryRangeRequest($url);
+        if ($size !== null) {
+            return $size;
+        }
+
+        $size = self::tryFullDownload($url);
+        if ($size !== null) {
+            return $size;
+        }
+
+        return null;
     }
 }
