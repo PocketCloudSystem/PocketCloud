@@ -59,7 +59,7 @@ final class CloudPluginsUpdateChecker implements IUpdateChecker {
                     CloudLogger::get()->info("Successfully §adownloaded §rthe latest version of §b{}§r.", $type->getRelativeBridgeFileLocation());
 
                     if ($i == count($pluginList)) {
-                        $promise->resolve();
+                        $promise->resolve(true);
                     }
                 })->reject(function () use($promise, $type): void {
                     CloudLogger::get()->warn("Failed to update plugin §b{}§r, some error happened.", $type->getName());

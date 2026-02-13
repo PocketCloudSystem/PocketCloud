@@ -72,7 +72,7 @@ final class CloudUpdateChecker implements IUpdateChecker {
     }
 
     public function update(mixed $extraData): Promise {
-        return Promise::resolved();
+        return Promise::resolved(true);
     }
 
     public function id(): string {

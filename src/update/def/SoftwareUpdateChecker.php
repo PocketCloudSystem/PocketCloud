@@ -60,7 +60,7 @@ final class SoftwareUpdateChecker implements IUpdateChecker {
                     CloudLogger::get()->info("Successfully §adownloaded §rthe latest version of §b{}§r.", $software->getName());
 
                     if ($i == count($softwareList)) {
-                        $promise->resolve();
+                        $promise->resolve(true);
                     }
                 })->reject(function () use($promise, $software): void {
                     CloudLogger::get()->warn("Failed to update software §b{}§r, some error happened.", $software->getName());
