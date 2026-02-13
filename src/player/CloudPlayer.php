@@ -2,6 +2,7 @@
 
 namespace pocketcloud\cloud\player;
 
+use pocketcloud\cloud\network\packet\impl\PlayerTransferPacket;
 use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\event\impl\player\PlayerKickEvent;
 use pocketcloud\cloud\network\packet\data\TextType;
@@ -35,14 +36,26 @@ final class CloudPlayer implements Writeable {
     }
 
     public function kick(string $reason, string $disconnectScreenMessage = ""): void {
-        CloudLogger::get()->info("Kicking {}, reason: {}", $this->name, ($reason == "" ? "NULL" : $reason));
+        if ($this->getCurrentServer() === null) return;
+        CloudLogger::get()->debug("Kicking {}, reason: {}", $this->name, ($reason == "" ? "NULL" : $reason));
         ($ev = new PlayerKickEvent($this, $reason, $disconnectScreenMessage))->call();
         if ($ev->isCancelled()) return;
-        PlayerKickPacket::create($this->getName(), $reason, $disconnectScreenMessage)->sendPacket($this->getCurrentProxy() ?? $this->getCurrentServer());
+        PlayerKickPacket::create($this->getName(), $reason, $disconnectScreenMessage)->sendPacket($this->getCurrentServer());
+    }
+
+    public function transfer(CloudServer $server): void {
+        $currentProxy = $this->getCurrentProxy();
+        $currentServer = $this->getCurrentServer();
+        if ($currentProxy !== null) {
+            $currentProxy->sendPacket(PlayerTransferPacket::create($this->getName(), $server->getName()));
+            return;
+        }
+
+        $currentServer?->sendPacket(PlayerTransferPacket::create($this->getName(), $server->getName()));
     }
 
     public function send(string $message, TextType $textType): void {
-        #CloudLogger::get()->debug("Sending text (" . $textType->getName() . ") to  " . $this->name);
+        CloudLogger::get()->debug("Sending text ({}) to {}", $textType->getName(), $this->name);
         /** PlayerTextPacket::create($this->getName(), $message, $textType)->broadcastPacket(
             ...ServerClientCache::getInstance()->pick(fn(ServerClient $client) => $client->getServer() !== null && $client->getServer()->getTemplate()->getTemplateType()->isProxy())
         ); */

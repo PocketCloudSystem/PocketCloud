@@ -162,7 +162,7 @@ enum NotificationType implements Writeable {
                     ->setColor(0xFF0000)
                     ->addField("**Affected Player**", "> " . $player)
                     ->addField("**Initial Server**", "> " . $server)
-                    ->addField("**Reason**", "> " . $reason)
+                    ->addField("**Reason**", "> " . (($reason ?? "") == "" ? "No reason applied." : $reason))
                     ->setFooter("Notification Type: " . $this->name)
                 );
                 break;
@@ -175,7 +175,7 @@ enum NotificationType implements Writeable {
                     ->setColor(0xFF0000)
                     ->addField("**Affected Player**", "> " . $player)
                     ->addField("**Server**", "> " . $server)
-                    ->addField("**Reason**", "> " . $reason)
+                    ->addField("**Reason**", "> " . (($reason ?? "") == "" ? "No reason applied." : $reason))
                     ->setFooter("Notification Type: " . $this->name)
                 );
                 break;
