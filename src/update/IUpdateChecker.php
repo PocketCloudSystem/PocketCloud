@@ -15,4 +15,6 @@ interface IUpdateChecker {
      * @return Promise<bool>
      */
     public function update(mixed $extraData): Promise;
+
+    public function id(): string;
 }

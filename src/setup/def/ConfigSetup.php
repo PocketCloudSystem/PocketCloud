@@ -42,18 +42,6 @@ final class ConfigSetup extends Setup {
                 ->possibleAnswers(...array_map(fn(Language $language) => $language->getAliases()[0], Language::getAll()))
                 ->default(Language::current()->getAliases()[0], Language::current()->getAliases()[0])
                 ->build(),
-            QuestionBuilder::builder("updateChecks", "Should the cloud check for updates?")
-                ->parser(fn(string $input) => strtolower($input) == "yes")
-                ->canSkipped(true)
-                ->possibleAnswers("yes", "no")
-                ->default(MainConfig::getInstance()->isUpdateChecks() ? "Yes" : "No", MainConfig::getInstance()->isUpdateChecks())
-                ->build(),
-            QuestionBuilder::builder("executeUpdates", "Should updates be executed automatically?")
-                ->parser(fn(string $input) => strtolower($input) == "yes")
-                ->canSkipped(true)
-                ->possibleAnswers("yes", "no")
-                ->default(MainConfig::getInstance()->isExecuteUpdates() ? "Yes" : "No", MainConfig::getInstance()->isExecuteUpdates())
-                ->build(),
             QuestionBuilder::builder("startUpDelay", "Should there be a startup delay?")
                 ->parser(fn(string $input) => strtolower($input) == "yes")
                 ->canSkipped(true)
@@ -123,8 +111,6 @@ final class ConfigSetup extends Setup {
             "cloudName" => $results["cloudName"],
             "memoryLimit" => $results["memoryLimit"],
             "language" => $results["language"],
-            "updateChecks" => $results["updateChecks"],
-            "executeUpdates" => $results["executeUpdates"],
             "startUpDelay" => $results["startUpDelay"],
             "writeTimingsOnShutdown" => $results["writeTimingsOnShutdown"],
             "bStats" => [
@@ -144,8 +130,6 @@ final class ConfigSetup extends Setup {
         MainConfig::getInstance()->setCloudName($config["cloudName"]);
         MainConfig::getInstance()->setMemoryLimit($config["memoryLimit"]);
         MainConfig::getInstance()->setLanguage($config["language"]);
-        MainConfig::getInstance()->setUpdateChecks($config["updateChecks"]);
-        MainConfig::getInstance()->setExecuteUpdates($config["executeUpdates"]);
         MainConfig::getInstance()->setStartUpDelay($config["startUpDelay"]);
         MainConfig::getInstance()->setWriteTimingsOnShutdown($config["writeTimingsOnShutdown"]);
         MainConfig::getInstance()->setBStats($config["bStats"]);

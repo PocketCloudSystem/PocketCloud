@@ -7,6 +7,7 @@ use pocketcloud\cloud\console\handler\ExceptionHandler;
 use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\console\log\level\CloudLogLevel;
 use pocketcloud\cloud\PocketCloud;
+use pocketcloud\cloud\update\UpdateChecker;
 use pocketcloud\cloud\util\FileUtils;
 use pocketcloud\cloud\util\net\NetUtils;
 use pocketcloud\cloud\util\PathUtils;
@@ -41,7 +42,7 @@ final readonly class Library {
      * @internal
      */
     public function download(bool $needsUpdate = false): bool {
-        if ($needsUpdate && !MainConfig::getInstance()->isExecuteUpdates()) {
+        if ($needsUpdate && !MainConfig::getInstance()->canUpdate(UpdateChecker::TYPE_LIBRARIES)) {
             PocketCloud::getInstance()->addStartNotification("Library §b{} §rrequires an §cUPDATE§r, but inside your §bconfig.yml§r, you have §cdisabled §8'§eexecuteUpdates§8'§r.", CloudLogLevel::WARN(), $this->name);
             PocketCloud::getInstance()->addStartNotification("Please §are-enable §rit or update the library manually.", CloudLogLevel::WARN());
             return false;

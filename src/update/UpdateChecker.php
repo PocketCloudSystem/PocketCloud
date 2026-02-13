@@ -4,6 +4,7 @@ namespace pocketcloud\cloud\update;
 
 use pocketcloud\cloud\config\impl\MainConfig;
 use pocketcloud\cloud\console\log\CloudLogger;
+use pocketcloud\cloud\console\log\level\CloudLogLevel;
 use pocketcloud\cloud\PocketCloud;
 use pocketcloud\cloud\update\def\CloudPluginsUpdateChecker;
 use pocketcloud\cloud\update\def\CloudUpdateChecker;
@@ -12,6 +13,11 @@ use pocketcloud\cloud\util\trait\SingletonTrait;
 
 final class UpdateChecker {
     use SingletonTrait;
+
+    public const string TYPE_CLOUD = "cloud";
+    public const string TYPE_LIBRARIES = "libraries";
+    public const string TYPE_SERVER_SOFTWARE = "server_software";
+    public const string TYPE_CLOUD_PLUGINS = "cloud_plugins";
 
     /** @var array<IUpdateChecker> */
     private array $updateCheckers = [];
@@ -28,14 +34,19 @@ final class UpdateChecker {
     }
 
     public function checkForUpdates(): void {
-        if (!MainConfig::getInstance()->isUpdateChecks()) return;
-        CloudLogger::get()->info("Checking for software updates...");
+        CloudLogger::get()->info("Checking for general updates...");
         foreach ($this->updateCheckers as $updateChecker) {
+            if (!MainConfig::getInstance()->canCheckForUpdates($updateChecker->id())) {
+                CloudLogger::get()->debug("Skipping updates for {}, as it is disabled in the config", $updateChecker::class);
+                PocketCloud::getInstance()->addStartNotification("Skipped updates for §b{}§8, §ras it is disabled in the config.", CloudLogLevel::INFO(), $updateChecker->id());
+                continue;
+            }
+
             $updateChecker->needsUpdate()->then(function (array $result) use ($updateChecker): void {
                 [$needsUpdate] = ($result = array_values($result));
                 if (!$needsUpdate) return;
-                if (!MainConfig::getInstance()->isExecuteUpdates()) {
-                    CloudLogger::get()->debug("Skipping updates for {}, as it is disabled in the config", $updateChecker::class);
+                if (!MainConfig::getInstance()->canUpdate($updateChecker->id())) {
+                    CloudLogger::get()->debug("Skipping execution of updates for {}, as it is disabled in the config", $updateChecker::class);
                     return;
                 }
 

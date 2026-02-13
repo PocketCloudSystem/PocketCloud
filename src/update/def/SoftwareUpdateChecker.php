@@ -9,6 +9,7 @@ use pocketcloud\cloud\PocketCloud;
 use pocketcloud\cloud\software\ServerSoftware;
 use pocketcloud\cloud\software\ServerSoftwareManager;
 use pocketcloud\cloud\update\IUpdateChecker;
+use pocketcloud\cloud\update\UpdateChecker;
 use pocketcloud\cloud\util\promise\Promise;
 use RuntimeException;
 
@@ -24,7 +25,7 @@ final class SoftwareUpdateChecker implements IUpdateChecker {
             $software->checkForUpdate()->then(function (bool $needsUpdate) use ($promise, &$i, &$result, $software, $amount): void {
                 $i++;
                 if ($needsUpdate) {
-                    if (!MainConfig::getInstance()->isExecuteUpdates()) PocketCloud::getInstance()->addStartNotification("Your version of §b{} §ris outdated. Please update it manually.", CloudLogLevel::WARN(), $software->getName());
+                    if (!MainConfig::getInstance()->canUpdate($this)) PocketCloud::getInstance()->addStartNotification("Your version of §b{} §ris outdated. Please update it manually.", CloudLogLevel::WARN(), $software->getName());
                     CloudLogger::get()->info("Your version of §b{} §ris outdated...", $software->getName());
                     $result[] = $software->getName();
                 }
@@ -69,5 +70,9 @@ final class SoftwareUpdateChecker implements IUpdateChecker {
         }
 
         return $promise;
+    }
+
+    public function id(): string {
+        return UpdateChecker::TYPE_SERVER_SOFTWARE;
     }
 }

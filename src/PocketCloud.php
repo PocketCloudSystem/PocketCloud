@@ -61,6 +61,7 @@ use const pocketcloud\BACKUPS_PATH;
 use const pocketcloud\BINARIES_PATH;
 use const pocketcloud\CLOUD_PATH;
 use const pocketcloud\CRASHES_PATH;
+use const pocketcloud\FIRST_RUN;
 use const pocketcloud\GLOBAL_TEMPLATES_PATH;
 use const pocketcloud\IN_GAME_PATH;
 use const pocketcloud\INTERNAL_PATH;
@@ -119,10 +120,7 @@ final class PocketCloud {
     private UuidInterface $cloudUniqueId;
     private CloudMetrics $metrics;
 
-    public function __construct(
-        private readonly ClassLoader $classLoader,
-        private readonly ?int $latestStartTimestamp
-    ) {
+    public function __construct(private readonly ClassLoader $classLoader) {
         self::$instance = $this;
     }
 
@@ -131,8 +129,6 @@ final class PocketCloud {
         $this->startTimestamp = microtime(true);
         $this->running = true;
         $this->lastTickTime = microtime(true);
-
-        $eligibleForUpdates = $this->latestStartTimestamp !== null && (time() - $this->latestStartTimestamp) >= 300;
 
         CloudLogger::set($this->logger = new MainLogger(LOG_PATH, false, false));
         ($this->console = new Console())->register();
@@ -164,13 +160,11 @@ final class PocketCloud {
             return;
         }
 
-        if ($eligibleForUpdates) {
-            CloudLogger::get()->info("Checking for library updates...");
-            if ($this->libraryManager->checkForUpdates() > 0) {
-                CloudLogger::get()->info("One or more libraries have been updated, please restart the cloud.");
-                $this->shutdown();
-                return;
-            }
+        CloudLogger::get()->info("Checking for library updates...");
+        if ($this->libraryManager->checkForUpdates() > 0) {
+            CloudLogger::get()->info("One or more libraries have been updated, please restart the cloud.");
+            $this->shutdown();
+            return;
         }
 
         $i = 0;
@@ -209,7 +203,7 @@ final class PocketCloud {
         $this->cloudUniqueId = Utils::getMachineUniqueId($this->network->getAddress()->getAddress() . $this->network->getAddress()->getPort());
         $this->metrics = new CloudMetrics($this->cloudUniqueId, $this->config);
 
-        if ($eligibleForUpdates) $this->updateChecker->checkForUpdates();
+        $this->updateChecker->checkForUpdates();
         CloudProvider::select();
 
         if ($this->config->isStartUpDelay()) {
@@ -623,17 +617,7 @@ $classLoader->init();
 
 $lockFile = createLockFile();
 
-$latest_start_timestamp = null;
-if (file_exists(PathUtils::join(INTERNAL_PATH, ".latest_start_timestamp"))) {
-    $contents = file_get_contents(PathUtils::join(INTERNAL_PATH, ".latest_start_timestamp"));
-    if (is_numeric($contents)) {
-        $latest_start_timestamp = intval($contents);
-    }
-}
-
-file_put_contents(PathUtils::join(INTERNAL_PATH, ".latest_start_timestamp"), time());
-
-$cloud = new PocketCloud($classLoader, $latest_start_timestamp);
+$cloud = new PocketCloud($classLoader);
 $cloud->start();
 
 if (ThreadManager::getInstance()->stopAll() > 0) {

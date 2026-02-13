@@ -6,6 +6,7 @@ use configlib\Configuration;
 use InvalidArgumentException;
 use pocketcloud\cloud\console\handler\ExceptionHandler;
 use pocketcloud\cloud\PocketCloud;
+use pocketcloud\cloud\update\IUpdateChecker;
 use pocketcloud\cloud\util\trait\SingletonTrait;
 use pocketcloud\cloud\util\Utils;
 use const pocketcloud\STORAGE_PATH;
@@ -19,8 +20,23 @@ final class MainConfig extends Configuration {
     private int $memoryLimit = 512;
     private string $language = "en_US";
     private string $provider = "json";
-    private bool $updateChecks = true;
-    private bool $executeUpdates = true;
+    private array $individualUpdateChecks = [
+        "cloud" => [
+            "check" => true
+        ],
+        "cloud_plugins" => [
+            "check" => true,
+            "update" => false
+        ],
+        "libraries" => [
+            "check" => true,
+            "update" => false
+        ],
+        "server_software" => [
+            "check" => true,
+            "update" => false
+        ]
+    ];
     private bool $startUpDelay = true;
     private bool $writeTimingsOnShutdown = true;
     private array $bStats = [
@@ -68,14 +84,16 @@ final class MainConfig extends Configuration {
         self::setInstance($this);
         $this->httpServer["auth-key"] = ($this->generatedKey = Utils::generateString(10));
 
+        $defaultUpdateChecks = $this->individualUpdateChecks;
         $defaultBStats = $this->bStats;
         $defaultNetwork = $this->network;
         $defaultHttp = $this->httpServer;
         $defaultMySql = $this->mysqlSettings;
 
-        ExceptionHandler::tryCatch(function (array $defaultBStats, array $defaultNetwork, array $defaultHttp, array $defaultMySql): void {
+        ExceptionHandler::tryCatch(function (array $defaultUpdateChecks, array $defaultBStats, array $defaultNetwork, array $defaultHttp, array $defaultMySql): void {
             $this->load();
 
+            Utils::fillMissingKeys($this->individualUpdateChecks, $defaultUpdateChecks);
             Utils::fillMissingKeys($this->bStats, $defaultBStats);
             Utils::fillMissingKeys($this->network, $defaultNetwork);
             Utils::fillMissingKeys($this->httpServer, $defaultHttp);
@@ -86,7 +104,7 @@ final class MainConfig extends Configuration {
             }
 
             $this->save();
-        }, "Failed to load main config", fn() => PocketCloud::getInstance()->shutdown(), $defaultBStats, $defaultNetwork, $defaultHttp, $defaultMySql);
+        }, "Failed to load main config", fn() => PocketCloud::getInstance()->shutdown(), $defaultUpdateChecks, $defaultBStats, $defaultNetwork, $defaultHttp, $defaultMySql);
     }
 
     public function getGeneratedKey(): string {
@@ -128,22 +146,16 @@ final class MainConfig extends Configuration {
         return $this->provider;
     }
 
-    public function setUpdateChecks(bool $updateChecks): MainConfig {
-        $this->updateChecks = $updateChecks;
-        return $this;
+    public function canCheckForUpdates(IUpdateChecker|string $type): bool {
+        $type = $type instanceof IUpdateChecker ? $type->id() : $type;
+        if (!isset($this->individualUpdateChecks[$type])) return false;
+        return $this->individualUpdateChecks[$type]["check"] ?? false;
     }
 
-    public function isUpdateChecks(): bool {
-        return $this->updateChecks;
-    }
-
-    public function setExecuteUpdates(bool $executeUpdates): MainConfig {
-        $this->executeUpdates = $executeUpdates;
-        return $this;
-    }
-
-    public function isExecuteUpdates(): bool {
-        return $this->executeUpdates;
+    public function canUpdate(IUpdateChecker|string $type): bool {
+        $type = $type instanceof IUpdateChecker ? $type->id() : $type;
+        if (!isset($this->individualUpdateChecks[$type])) return false;
+        return $this->individualUpdateChecks[$type]["update"] ?? false;
     }
 
     public function setStartUpDelay(bool $startUpDelay): MainConfig {

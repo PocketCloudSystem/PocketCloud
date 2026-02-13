@@ -5,6 +5,7 @@ namespace pocketcloud\cloud\update\def;
 use JsonException;
 use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\update\IUpdateChecker;
+use pocketcloud\cloud\update\UpdateChecker;
 use pocketcloud\cloud\util\AsyncExecutor;
 use pocketcloud\cloud\util\promise\Promise;
 use pocketcloud\cloud\util\VersionInfo;
@@ -38,13 +39,13 @@ final class CloudUpdateChecker implements IUpdateChecker {
             }
         }, function(null|string|array|false $result) use($promise): void {
             if (is_array($result)) {
-                CloudLogger::get()->error("§cError occurred while checking for new updates: §e{}", $result[1]);
+                CloudLogger::get()->error("§cError occurred while checking for new cloud updates: §e{}", $result[1]);
                 $promise->reject($result[1]);
             } else if ($result === false) {
-                CloudLogger::get()->error("§cError occurred while checking for new updates!");
+                CloudLogger::get()->error("§cError occurred while checking for new cloud updates!");
                 $promise->reject();
             } else if ($result === null) {
-                CloudLogger::get()->warn("§cThe API rate limit was exceeded for this IP address while checking for new updates!");
+                CloudLogger::get()->warn("§cThe API rate limit was exceeded for this IP address while checking for new cloud updates!");
                 $promise->resolve([false]);
             } else {
                 $outdated = version_compare(VersionInfo::VERSION, $result, "<");
@@ -73,4 +74,10 @@ final class CloudUpdateChecker implements IUpdateChecker {
     public function update(mixed $extraData): Promise {
         return Promise::resolved();
     }
+
+    public function id(): string {
+        return UpdateChecker::TYPE_CLOUD;
+    }
+
+    public function informManualUpdateRequired(mixed $extraData): void {}
 }
