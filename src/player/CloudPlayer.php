@@ -2,6 +2,7 @@
 
 namespace pocketcloud\cloud\player;
 
+use pocketcloud\cloud\network\packet\impl\PlayerTextPacket;
 use pocketcloud\cloud\network\packet\impl\PlayerTransferPacket;
 use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\event\impl\player\PlayerKickEvent;
@@ -55,10 +56,9 @@ final class CloudPlayer implements Writeable {
     }
 
     public function send(string $message, TextType $textType): void {
+        if ($this->getCurrentServer() === null && $this->getCurrentProxy()) return;
         CloudLogger::get()->debug("Sending text ({}) to {}", $textType->getName(), $this->name);
-        /** PlayerTextPacket::create($this->getName(), $message, $textType)->broadcastPacket(
-            ...ServerClientCache::getInstance()->pick(fn(ServerClient $client) => $client->getServer() !== null && $client->getServer()->getTemplate()->getTemplateType()->isProxy())
-        ); */
+        PlayerTextPacket::create($this->getName(), $message, $textType)->sendPacket($this->getCurrentProxy() ?? $this->getCurrentServer());
     }
 
     public function sendMessage(string $message): void {

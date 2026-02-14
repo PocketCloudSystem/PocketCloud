@@ -7,6 +7,6 @@ use UnitEnum;
 trait EnumHelperTrait {
 
     public static function fromName(string $name): ?self {
-        return array_find(self::cases(), fn(UnitEnum $case) => $case->name == $name);
+        return array_find(self::cases(), fn(UnitEnum $case) => strtolower($case->name) == strtolower($name));
     }
 }

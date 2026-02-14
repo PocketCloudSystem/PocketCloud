@@ -50,8 +50,8 @@ final class UpdateChecker {
                     return;
                 }
 
-                $updateChecker->update($result[1] ?? null)->then(function (bool $success) use ($updateChecker): void {
-                    if (!$success) {
+                $updateChecker->update($result[1] ?? null)->then(function (?bool $success) use ($updateChecker): void {
+                    if ($success === false) {
                         PocketCloud::getInstance()->shutdown();
                     }
                 })->failure(fn() => PocketCloud::getInstance()->shutdown());
