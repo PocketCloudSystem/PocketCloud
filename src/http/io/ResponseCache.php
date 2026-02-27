@@ -51,7 +51,7 @@ final class ResponseCache {
         $cacheKey = $apiVersion . ":" . $path->getMethod() . ":" . $fullPath;
 
         self::$cache->synchronized(function() use ($cacheKey, $response) {
-            self::$cache[$cacheKey] = serialize([$response, time()]);
+            self::$cache[$cacheKey] = ThreadSafeArray::fromArray([$response, time()]);
         });
     }
 
@@ -70,7 +70,7 @@ final class ResponseCache {
         return self::$cache->synchronized(function() use ($cacheKey, $fullPath, $request) {
             if (!isset(self::$cache[$cacheKey])) return null;
 
-            $entry = unserialize(self::$cache[$cacheKey]);
+            $entry = (array) self::$cache[$cacheKey];
             [$response, $time] = $entry;
 
             if (time() >= ($time + HttpServer::getInstance()->getCachingTimeInSeconds())) {

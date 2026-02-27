@@ -20,6 +20,10 @@ final class Address extends ThreadSafe {
         return $this->port;
     }
 
+    public function toString(): string {
+        return (string) $this;
+    }
+
     public function __toString(): string {
         return $this->address . ":" . $this->port;
     }

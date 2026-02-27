@@ -24,6 +24,9 @@ final class CloudServerManager implements Tickable {
     private float $lastServerStartTime = 0;
     private float $lastServerStopTime = 0;
 
+    /** @var array<string> */
+    private array $latestServerStartTimes = [];
+
     /** @var Queue<CloudServer> */
     private Queue $serverPrepareQueue;
     /** @var Queue<CloudServer> */
@@ -47,6 +50,7 @@ final class CloudServerManager implements Tickable {
                     $port = ServerUtils::getFreePort($template->getTemplateType());
                     if ($port > 0) {
                         $server = new CloudServer($id, Uuid::uuid4()->toString(), $template->getName(), new CloudServerData($template->getName() . "-" . $id, $port, $template->getSettings()->getMaxPlayerCount(), null), ServerStatus::STARTING);
+                        $this->latestServerStartTimes[$template->getName()] = $server->getName();
                         $this->add($server);
                         $this->serverPrepareQueue->add($server);
                     } else {
@@ -135,10 +139,8 @@ final class CloudServerManager implements Tickable {
     }
 
     public function getLatest(Template $template): ?CloudServer {
-        $servers = $this->getAll($template);
-        if (empty($servers)) return null;
-        usort($servers, fn(CloudServer $a, CloudServer $b) => $a->getStartTime() <=> $b->getStartTime());
-        return $servers[array_key_last($servers)];
+        if (!isset($this->latestServerStartTimes[$template->getName()])) return null;
+        return $this->servers[$this->latestServerStartTimes[$template->getName()]] ?? null;
     }
 
     public function getAll(Template|TemplateType|ServerGroup|string|null ...$templateOrGroups): array {

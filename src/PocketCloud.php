@@ -356,7 +356,11 @@ final class PocketCloud {
         ProcessUtils::startCpuRetrieveCycle();
         while ($this->running) {
             $tickStart = microtime(true);
-            if (($tickStart - $this->nextTick) < -0.025) continue;
+            if (($tickStart - $this->nextTick) < -0.025) {
+                $this->sleeperHandler->sleepUntil($this->nextTick);
+                continue;
+            }
+
             Benchmark::startTiming("full_cloud_tick");
             $this->tick++;
             TickableList::tickAll($this->tick);

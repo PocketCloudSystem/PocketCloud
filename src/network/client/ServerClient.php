@@ -59,6 +59,10 @@ final class ServerClient {
         return ServerClientCache::getInstance()->getServer($this);
     }
 
+    public function toString(): string {
+        return (string) $this;
+    }
+
     public function __toString(): string {
         return "ServerClient[address=" . $this->getAddress() . "]";
     }
