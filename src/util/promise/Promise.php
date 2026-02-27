@@ -89,26 +89,26 @@ final class Promise {
         $all = new Promise();
         $results = [];
         $remaining = count($promises);
+        if ($remaining === 0) return $all->resolve([]);
 
-        if ($remaining === 0) {
-            $all->resolve([]);
-            return $all;
-        }
-
-        /**
-         * @var int $i
-         * @var Promise $promise
-         */
+        $settled = false;
         foreach ($promises as $i => $promise) {
-            $promise->then(function (mixed $value) use (&$results, &$remaining, $i, $all) {
+            $promise->then(function (mixed $value) use (&$results, &$remaining, &$settled, $i, $all): void {
+                if ($settled) return;
                 $results[$i] = $value;
                 $remaining--;
-
                 if ($remaining === 0) {
+                    $settled = true;
                     ksort($results);
                     $all->resolve($results);
+                    $results = [];
                 }
-            })->failure(fn(mixed $reason) => $all->reject($reason));
+
+            })->failure(function (mixed $reason) use (&$settled, $all): void {
+                if ($settled) return;
+                $settled = true;
+                $all->reject($reason);
+            });
         }
 
         return $all;
