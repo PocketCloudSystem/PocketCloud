@@ -47,8 +47,9 @@ final class CloudServer implements Tickable, Writeable {
     use CloudServerActionsTrait;
 
     private int $lastCheckTime;
-    private int $startTime;
-    private int $stopTime = 0;
+    private ?int $startTime = null;
+    private ?int $stopTime = null;
+    private ?ServerStatus $serverStatus = null;
     private VerifyStatus $verifyStatus;
     private CloudServerStorage $serverStorage;
 
@@ -57,24 +58,23 @@ final class CloudServer implements Tickable, Writeable {
         private readonly string $serverUuid,
         private readonly string $template,
         private readonly CloudServerData $serverData,
-        private ServerStatus $serverStatus,
         array $serverStorage = []
     ) {
-        $this->startTime = time();
         $this->verifyStatus = VerifyStatus::NOT_APPLIED;
         $this->serverStorage = new CloudServerStorage($this, $serverStorage);
     }
 
     public function tick(int $currentTick): void {
-        $this->tickCommandOrders();
-
+        if ($this->startTime === null) return;
         if ($this->serverStatus === ServerStatus::STARTING) {
             if (($this->startTime + $this->getTemplate()->getTemplateType()->getServerTimeout()) < time()) {
                 $this->handleFailedStart();
             }
-        } else if ($this->serverStatus->isOnline()) {
+        } else if ($this->serverStatus?->isOnline()) {
             if (!$this->checkAlive()) {
                 $this->handleTimeout();
+            } else {
+                $this->tickCommandOrders();
             }
         } else if ($this->serverStatus === ServerStatus::STOPPING) {
             if (($this->getStopTime() + 10) <= time()) {
@@ -94,11 +94,15 @@ final class CloudServer implements Tickable, Writeable {
     }
 
     public function start(): void {
+        $this->setServerStatus(ServerStatus::STARTING);
         new ServerStartEvent($this)->call();
         CloudLogger::get()->info("§aStarting §b{}§r...", $this);
         NotificationType::SERVER_STARTING->notify(["server" => $this->getName()]);
 
-        ServerStartMethod::current()?->startServer($this)->then(fn(?int $tmpPid) => $this->serverData->setTempProcessId($tmpPid))->failure(function (): void {
+        ServerStartMethod::current()?->startServer($this)->then(function (?int $tmpPid): void {
+            $this->startTime = time();
+            $this->serverData->setTempProcessId($tmpPid);
+        })->failure(function (): void {
             CloudLogger::get()->warn("Failed to start server §b{}§8, §rcould not create the process...", $this);
             NotificationType::SERVER_START_FAILED->notify(["server" => $this->getName(), "reason" => "Failed to create process"]);
             $this->remove();
@@ -132,6 +136,7 @@ final class CloudServer implements Tickable, Writeable {
 
         foreach (TemplateManager::getInstance()->getAll() as $template) $packets[] = TemplateSyncPacket::create($template, false);
         foreach (CloudServerManager::getInstance()->getAll() as $server) {
+            if ($server->getServerStatus() === null) continue;
             $packets[] = ServerSyncPacket::create($server, false);
             if ($this->getTemplate()->getTemplateType()->isProxy() && $server->getTemplate()->getTemplateType()->isServer()) $packets[] = ProxyRegisterServerPacket::create($server->getName(), $server->getServerData()->getPort());
         }
@@ -246,11 +251,11 @@ final class CloudServer implements Tickable, Writeable {
         return $this->serverData;
     }
 
-    public function getServerStatus(): ServerStatus {
+    public function getServerStatus(): ?ServerStatus {
         return $this->serverStatus;
     }
 
-    public function getStartTime(): float {
+    public function getStartTime(): ?float {
         return $this->startTime;
     }
 
@@ -262,7 +267,7 @@ final class CloudServer implements Tickable, Writeable {
         return $this->serverStorage;
     }
 
-    public function getStopTime(): float {
+    public function getStopTime(): ?float {
         return $this->stopTime;
     }
 

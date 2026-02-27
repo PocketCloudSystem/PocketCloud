@@ -153,7 +153,7 @@ final class ServerCommand extends Command {
                 } else if (str_contains($key, "Usage")) {
                     return FormatUtils::usagePercentage($value);
                 } else if ($key == "serverStatus") {
-                    return $server->getServerStatus()->getDisplay();
+                    return $server->getServerStatus()?->getDisplay() ?? "Not Applied";
                 }
 
                 return $value;

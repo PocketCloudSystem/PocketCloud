@@ -51,7 +51,7 @@ final class CloudServerManager implements Tickable {
                 if ($id !== -1) {
                     $port = ServerUtils::getFreePort($template->getTemplateType());
                     if ($port > 0) {
-                        $server = new CloudServer($id, Uuid::uuid4()->toString(), $template->getName(), new CloudServerData($template->getName() . "-" . $id, $port, $template->getSettings()->getMaxPlayerCount(), null), ServerStatus::STARTING);
+                        $server = new CloudServer($id, Uuid::uuid4()->toString(), $template->getName(), new CloudServerData($template->getName() . "-" . $id, $port, $template->getSettings()->getMaxPlayerCount(), null));
                         $this->latestServerStartTimes[$template->getName()] = $server->getName();
                         $this->add($server);
                         $this->serverPrepareQueue->add($server);

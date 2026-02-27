@@ -79,7 +79,7 @@ trait CloudServerActionsTrait {
     }
 
     public function handleTimeout(): void {
-        if (!$this->getServerStatus()->isOnline()) return;
+        if (!$this->getServerStatus()?->isOnline()) return;
         $this->setServerStatus(ServerStatus::OFFLINE);
         $this->remove();
         $this->killProcess();
@@ -142,7 +142,7 @@ trait CloudServerActionsTrait {
     }
 
     public function killProcess(): void {
-        if ($this->getServerData()->getProcessId() !== 0) ProcessUtils::kill($this->getServerData()->getProcessId());
+        if ($this->getServerData()->getProcessId() !== null) ProcessUtils::kill($this->getServerData()->getProcessId());
     }
 
     public function checkForCrash(): bool {
