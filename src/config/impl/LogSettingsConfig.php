@@ -81,7 +81,7 @@ final class LogSettingsConfig extends Configuration {
 
         $defaultPlayerLogs = $this->playerLogs;
         $defaultDiscordWebhookSettings = $this->discordWebhook;
-        ExceptionHandler::tryCatch(function (array $defaultPlayerLogs, array $defaultDiscordWebhookSettings): void {
+        ExceptionHandler::require(function (array $defaultPlayerLogs, array $defaultDiscordWebhookSettings): void {
             $this->load();
 
             Utils::fillMissingKeys($this->playerLogs, $defaultPlayerLogs);

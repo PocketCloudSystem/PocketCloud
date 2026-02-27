@@ -38,7 +38,7 @@ final class StatusCommand extends Command {
                     } else if (is_array($value) && $key == "threads") {
                         return "§c" . implode("§8, §c", array_map(fn(object $obj) => $obj::class, $value));
                     } else if (in_array($key, ["tick_usage", "cpu_usage"])) {
-                        return FormatUtils::usagePercentage($key == "cpu_usage" ? ($value / ProcessUtils::getCpuCores()) : $value, $key == "tick_usage");
+                        return FormatUtils::usagePercentage($key == "cpu_usage" ? ($value / ProcessUtils::getCpuCores()) : $value);
                     } else if ($key == "uptime") {
                         return FormatUtils::uptime($value) . " §8(§c" . PocketCloud::getInstance()->getTick() . "§8)";
                     }

@@ -12,7 +12,7 @@ use pocketcloud\cloud\network\packet\PacketPool;
 final class PacketSerializer {
 
     public static function encode(ClientboundPacket $packet, bool $encryptionEnabled, string $authenticationKey): ?string {
-        return ExceptionHandler::tryCatch(function (ClientboundPacket $packet, bool $encryptionEnabled, string $authenticationKey): string {
+        return ExceptionHandler::attempt(function (ClientboundPacket $packet, bool $encryptionEnabled, string $authenticationKey): string {
             $packet->encode($buffer = new PacketData());
             $buffer->write($authenticationKey);
             $stringBuffer = json_encode($buffer, JSON_THROW_ON_ERROR);

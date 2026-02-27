@@ -90,7 +90,7 @@ final class MainConfig extends Configuration {
         $defaultHttp = $this->httpServer;
         $defaultMySql = $this->mysqlSettings;
 
-        ExceptionHandler::tryCatch(function (array $defaultUpdateChecks, array $defaultBStats, array $defaultNetwork, array $defaultHttp, array $defaultMySql): void {
+        ExceptionHandler::require(function (array $defaultUpdateChecks, array $defaultBStats, array $defaultNetwork, array $defaultHttp, array $defaultMySql): void {
             $this->load();
 
             Utils::fillMissingKeys($this->individualUpdateChecks, $defaultUpdateChecks);
@@ -347,7 +347,7 @@ final class MainConfig extends Configuration {
             "enabled" => "bool",
             "address" => "string",
             "port" => "int",
-            "auth-key" => "int",
+            "auth-key" => "string",
             "only-local" => "bool",
             "rate-limit" => [
                 "enabled" => "bool",
@@ -357,7 +357,7 @@ final class MainConfig extends Configuration {
             ],
             "response-caching" => [
                 "enabled" => "bool",
-                "caching_time_in_seconds" => "60"
+                "caching_time_in_seconds" => "int"
             ]
         ]);
 

@@ -19,7 +19,7 @@ final class BinaryDownloader {
         @mkdir(BINARIES_PATH . "$templateType/");
         CloudLogger::get()->info("Downloading §b$templateType binaries §8(§b{}§8)§r...", $downloadUrl);
 
-        return ExceptionHandler::tryCatch(function (string $downloadUrl, string $templateType): bool {
+        return ExceptionHandler::require(function (string $downloadUrl, string $templateType): bool {
             if (NetUtils::download($downloadUrl, BINARIES_PATH . ($fileName = basename($downloadUrl)))) {
                 if (file_exists(BINARIES_PATH . $fileName)) {
                     $knownFileNames = [$fileName];

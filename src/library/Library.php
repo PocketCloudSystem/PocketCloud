@@ -49,7 +49,7 @@ final readonly class Library {
         }
 
         if (@is_dir($this->libPath)) FileUtils::removeDirectory($this->libPath);
-        return ExceptionHandler::tryCatch(
+        return ExceptionHandler::require(
             function (string $name, string $downloadUrl, string $libPath): bool {
                 CloudLogger::get()->info("Downloading source for library: {}...", $name);
                 $size = NetUtils::download($downloadUrl, $archivePath = PathUtils::join(LIBRARIES_PATH, uniqid()));

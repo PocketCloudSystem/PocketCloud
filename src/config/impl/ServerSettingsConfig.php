@@ -84,7 +84,7 @@ final class ServerSettingsConfig extends Configuration {
         $defaultServerTimeouts = $this->serverTimeouts;
         $defaultServerPortRanges = $this->serverPortRanges;
 
-        ExceptionHandler::tryCatch(function (array $defaultBinaries, array $defaultStartCommands, array $defaultServerTimeouts, array $defaultServerPortRanges): void {
+        ExceptionHandler::require(function (array $defaultBinaries, array $defaultStartCommands, array $defaultServerTimeouts, array $defaultServerPortRanges): void {
             $this->load();
             foreach (array_keys($defaultBinaries) as $binary) {
                 if (!isset($this->binaries[$binary])) $this->binaries[$binary] = str_replace(["{php_ver}"], [substr(PHP_VERSION, 0, 3)], $defaultBinaries[$binary]);

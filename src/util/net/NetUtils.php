@@ -17,7 +17,7 @@ final class NetUtils {
     }
 
     public static function download(string $url, string $fileLocation): int|false {
-        return ExceptionHandler::tryCatch(function (string $url, string $fileLocation): int|false {
+        return ExceptionHandler::require(function (string $url, string $fileLocation): int|false {
             if (!@file_exists(dirname($fileLocation))) mkdir(dirname($fileLocation), 0777, true);
             $tmpFile = $fileLocation . ".tmp";
             $file = fopen($tmpFile, "wb");

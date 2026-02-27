@@ -13,7 +13,7 @@ use SplFileInfo;
 final class FileUtils {
 
     public static function copyFile(string $src, string $dst): bool {
-        return ExceptionHandler::tryCatch(
+        return ExceptionHandler::attempt(
             function (string $src, string $dst): bool {
                 if (!@file_exists($src)) return false;
                 return copy($src, $dst);
@@ -25,7 +25,7 @@ final class FileUtils {
     }
 
     public static function createDir(string $path): bool {
-        return ExceptionHandler::tryCatch(
+        return ExceptionHandler::attempt(
             function (string $path): bool {
                 if (@file_exists($path)) return true;
                 return mkdir($path, 0777, true);
@@ -37,7 +37,7 @@ final class FileUtils {
     }
 
     public static function filePutContents(string $filePath, string $content): int|false {
-        return ExceptionHandler::tryCatch(
+        return ExceptionHandler::attempt(
             function (string $filePath, string $content): int|false {
                 $previousPath = dirname($filePath);
                 $return = self::createDir($previousPath);
@@ -51,7 +51,7 @@ final class FileUtils {
     }
 
     public static function fileGetContents(string $filePath, string $default = ""): ?string {
-        return ExceptionHandler::tryCatch(
+        return ExceptionHandler::attempt(
             function (string $filePath, mixed $default): string {
                 if (!@file_exists($filePath)) return $default;
                 return file_get_contents($filePath);
@@ -65,7 +65,7 @@ final class FileUtils {
     public static function copyDirectory(string $src, string $dst): bool {
         $src = PathUtils::normalize($src);
         $dst = PathUtils::normalize($dst);
-        return ExceptionHandler::tryCatch(
+        return ExceptionHandler::attempt(
             function (string $src, string $dst): bool {
                 if (!is_dir($src)) throw new InvalidArgumentException("Source directory does not exist: $src");
 
@@ -96,7 +96,7 @@ final class FileUtils {
     }
 
     public static function rename(string $from, string $to): bool {
-        return ExceptionHandler::tryCatch(
+        return ExceptionHandler::attempt(
             function (string $from, string $to): bool {
                 return rename($from, $to);
             },
@@ -107,14 +107,14 @@ final class FileUtils {
     }
 
     public static function unlinkFile(string $filePath): bool {
-        return ExceptionHandler::tryCatch(
+        return ExceptionHandler::attempt(
             fn() => unlink($filePath),
             "Failed to unlink file: " . $filePath
         ) ?? false;
     }
 
     public static function removeDirectory(string $directoryPath): bool {
-        return ExceptionHandler::tryCatch(
+        return ExceptionHandler::attempt(
             function (string $directoryPath): bool {
                 if (!@is_dir($directoryPath)) {
                     return false;
@@ -150,7 +150,7 @@ final class FileUtils {
     }
 
     public static function encodeJson(array $jsonArray, int $flags = 0, int $depth = 512): ?string {
-        return ExceptionHandler::tryCatch(
+        return ExceptionHandler::attempt(
             function (array $jsonArray, int $flags, int $depth): ?string {
                 $encode = json_encode($jsonArray, JSON_THROW_ON_ERROR | $flags, $depth);
                 return is_string($encode) ? $encode : null;
@@ -162,11 +162,11 @@ final class FileUtils {
     }
 
     public static function encodeJsonFile(string $filePath, array $jsonArray, int $flags = 0, int $depth = 512): ?bool {
-        return ExceptionHandler::tryCatch(
-            function (string $filePath, array $jsonArray, int $flags, int $depth): ?string {
+        return ExceptionHandler::attempt(
+            function (string $filePath, array $jsonArray, int $flags, int $depth): ?bool {
                 $encode = json_encode($jsonArray, JSON_THROW_ON_ERROR | $flags, $depth);
                 if (is_string($encode)) return is_int(file_put_contents($filePath, $encode));
-                return is_string($encode) ? $encode : null;
+                return false;
             },
             "Failed to encode & place json string into a file",
             null,
@@ -175,7 +175,7 @@ final class FileUtils {
     }
 
     public static function decodeJson(string $jsonString, int $depth = 512, int $flags = 0): ?array {
-        return ExceptionHandler::tryCatch(
+        return ExceptionHandler::attempt(
             function (string $jsonString, int $depth, int $flags): ?array {
                 $decode = json_decode($jsonString, true, $depth, JSON_THROW_ON_ERROR | $flags);
                 return is_array($decode) ? $decode : null;
@@ -187,7 +187,7 @@ final class FileUtils {
     }
 
     public static function decodeJsonFile(string $filePath, int $depth = 512, int $flags = 0): ?array {
-        return ExceptionHandler::tryCatch(
+        return ExceptionHandler::attempt(
             function (string $filePath, int $depth, int $flags): ?array {
                 $decode = json_decode(file_get_contents($filePath), true, $depth, JSON_THROW_ON_ERROR | $flags);
                 return is_array($decode) ? $decode : null;
@@ -199,7 +199,7 @@ final class FileUtils {
     }
 
     public static function emitYaml(mixed $yamlData, int $encoding = YAML_ANY_ENCODING, int $linebreak = YAML_ANY_BREAK): string {
-        return ExceptionHandler::tryCatch(
+        return ExceptionHandler::attempt(
             function (mixed $yamlData, int $encoding, int $linebreak): ?string {
                 $emitted = yaml_emit($yamlData, $encoding, $linebreak);
                 return is_string($emitted) ? $emitted : null;
@@ -211,7 +211,7 @@ final class FileUtils {
     }
 
     public static function emitYamlFile(string $filePath, mixed $yamlData, int $encoding = YAML_ANY_ENCODING, int $linebreak = YAML_ANY_BREAK): bool {
-        return ExceptionHandler::tryCatch(
+        return ExceptionHandler::attempt(
             function (string $filePath, mixed $yamlData, int $encoding, int $linebreak): bool {
                 return yaml_emit_file($filePath, $yamlData, $encoding, $linebreak);
             },
@@ -222,7 +222,7 @@ final class FileUtils {
     }
 
     public static function parseYaml(string $yamlString): ?array {
-        return ExceptionHandler::tryCatch(
+        return ExceptionHandler::attempt(
             function (string $yamlString): ?array {
                 $parsed = yaml_parse($yamlString);
                 return is_array($parsed) ? $parsed : null;
@@ -234,7 +234,7 @@ final class FileUtils {
     }
 
     public static function parseYamlFile(string $filePath): ?array {
-        return ExceptionHandler::tryCatch(
+        return ExceptionHandler::attempt(
             function (string $filePath): ?array {
                 $parsed = yaml_parse_file($filePath);
                 return is_array($parsed) ? $parsed : null;

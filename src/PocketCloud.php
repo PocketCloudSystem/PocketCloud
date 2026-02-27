@@ -86,6 +86,7 @@ final class PocketCloud {
     private float $startTimestamp = 0;
 
     private array $tickTimes = [];
+    private float $tickTimesSum = 0.0;
     private float $lastTickTime = 0;
     private float $currentTPS = 20.0;
     private float $averageTPS = 20.0;
@@ -130,65 +131,104 @@ final class PocketCloud {
         $this->running = true;
         $this->lastTickTime = microtime(true);
 
+        $this->initBootstrap();
+        if (!$this->runMigrations()) return;
+        $this->initConfigs();
+        if (!$this->initSoftware()) return;
+        if (!$this->checkLibraryUpdates()) return;
+        if (!$this->checkBridgePlugins()) return;
+        $this->initManagers();
+        $this->initServices();
+        $this->registerTickables();
+        $this->printBanner();
+        $this->boot();
+
+        $this->tick();
+    }
+
+    private function initBootstrap(): void {
         CloudLogger::set($this->logger = new MainLogger(LOG_PATH, false, false));
         ($this->console = new Console())->register();
         ($this->screenManager = new ScreenManager())->resetScreen();
         $this->commandManager = new CommandManager();
         ($this->libraryManager = new LibraryManager())->load();
         $this->migratorManager = new MigratorManager();
+    }
+
+    /** @return bool false if startup should abort */
+    private function runMigrations(): bool {
         CloudLogger::get()->info("Checking for available migrations...");
-        if ($this->migratorManager->checkForAnyMigration()) {
-            if (($failedMigrations = $this->migratorManager->migrateAll()) > 0) {
-                CloudLogger::get()->error("§b{} migration{} failed, shutting down...", $failedMigrations, $failedMigrations == 1 ? "" : "s");
-                $this->shutdown();
-                return;
-            }
+        if (!$this->migratorManager->checkForAnyMigration()) return true;
+
+        if (($failedMigrations = $this->migratorManager->migrateAll()) > 0) {
+            CloudLogger::get()->error("§b{} migration{} failed, shutting down...", $failedMigrations, $failedMigrations == 1 ? "" : "s");
+            $this->shutdown();
+            return false;
         }
 
+        return true;
+    }
+
+    private function initConfigs(): void {
         $this->config = new MainConfig();
         $this->serverSettingsConfig = new ServerSettingsConfig();
         $this->logSettingsConfig = new LogSettingsConfig();
         $this->sleeperHandler = new SleeperHandler();
         $this->startNotificationQueue = Queue::fromType([]);
+    }
+
+    /** @return bool false if startup should abort */
+    private function initSoftware(): bool {
         try {
             ($this->softwareManager = new ServerSoftwareManager())->load();
             $this->softwareManager->downloadAll();
+            return true;
         } catch (ReflectionException $e) {
             $this->getLogger()->error("§cFailed to load server software, shutting down...");
             $this->getLogger()->exception($e);
             $this->shutdown();
-            return;
+            return false;
         }
+    }
 
+    /** @return bool false if startup should abort */
+    private function checkLibraryUpdates(): bool {
         CloudLogger::get()->info("Checking for library updates...");
         if ($this->libraryManager->checkForUpdates() > 0) {
             CloudLogger::get()->info("One or more libraries have been updated, please restart the cloud.");
             $this->shutdown();
-            return;
+            return false;
         }
 
-        $i = 0;
+        return true;
+    }
+
+    /** @return bool false if startup should abort */
+    private function checkBridgePlugins(): bool {
+        $failures = 0;
         foreach (TemplateType::getAll() as $type) {
             if (!$type->checkBridge()) {
                 CloudLogger::get()->info("Starting download for bridge plugin: §b{}", $type->getRelativeBridgeFileLocation());
                 if ($type->downloadBridge()) {
                     CloudLogger::get()->success("Successfully downloaded bridge plugin: §b{} §8(§b{}§8)", $type->getRelativeBridgeFileLocation(), $type->getBridgeFileLocation());
                 } else {
-                    $i++;
+                    $failures++;
                     CloudLogger::get()->error("Failed to download bridge plugin: §b{} §8(§b{}§8)", $type->getRelativeBridgeFileLocation());
                 }
             }
         }
 
-        if ($i > 0) {
+        if ($failures > 0) {
             CloudLogger::get()->warn("At least one bridge plugin download failed, shutting down...");
             $this->shutdown();
-            return;
+            return false;
         }
 
+        return true;
+    }
+
+    private function initManagers(): void {
         $this->threadManager = new ThreadManager();
-        $this->network = new Network(Address::read($this->config->getNetwork()));
-        $this->httpServer = HttpServerBuilder::buildFromConfig();
         $this->asyncPool = new AsyncPool();
         $this->serverPreparator = new ServerPreparator();
         $this->templateManager = new TemplateManager();
@@ -199,6 +239,11 @@ final class PocketCloud {
         $this->trafficMonitorManager = new TrafficMonitorManager();
         $this->pluginManager = new CloudPluginManager();
         $this->updateChecker = new UpdateChecker();
+    }
+
+    private function initServices(): void {
+        $this->network = new Network(Address::read($this->config->getNetwork()));
+        $this->httpServer = HttpServerBuilder::buildFromConfig();
 
         $this->cloudUniqueId = Utils::getMachineUniqueId($this->network->getAddress()->getAddress() . $this->network->getAddress()->getPort());
         $this->metrics = new CloudMetrics($this->cloudUniqueId, $this->config);
@@ -220,7 +265,9 @@ final class PocketCloud {
                 ->addStartNotification("If they are, please download (& extract) them manually.", CloudLogLevel::WARN())
                 ->addStartNotification("Thank you.", CloudLogLevel::WARN());
         }
+    }
 
+    private function registerTickables(): void {
         TickableList::add(
             $this->trafficMonitorManager, $this->serverManager, $this->commandManager, $this->metrics,
             $this->asyncPool, $this->serverClientCache, $this->templateManager, $this->screenManager
@@ -232,14 +279,18 @@ final class PocketCloud {
             $this->serverPropertiesGenerator, $this->serverPreparator,
             $this->pluginManager
         );
+    }
 
+    private function printBanner(): void {
         TerminalUtils::clearConsole();
         CloudLogger::get()->setSaveLogs(true);
         CloudLogger::get()->emptyLine()->setFormat("§r{message}")
             ->info("  §bPocket§3Cloud §8- §rA cloud system for §lPocketMine-MP servers§r with §lProxy support§r §8- §b{} §8- §rdeveloped by §b{}", VersionInfo::VERSION . (VersionInfo::BETA ? "§c@BETA" : ""), implode("§8, §b", VersionInfo::DEVELOPERS))
             ->info("  Join our discord for information: §bhttps://discord.gg/3HbPEpaE3T")
             ->emptyLine()->resetFormat();
+    }
 
+    private function boot(): void {
         CloudLogger::get()->info("The §bCloud §ris §astarting§r...");
 
         Language::init();
@@ -257,8 +308,6 @@ final class PocketCloud {
         new CloudStartedEvent($time)->call();
 
         $this->metrics->getMetrics()->startSubmitting();
-
-        $this->tick();
     }
 
     public function crash(): void {
@@ -367,6 +416,7 @@ final class PocketCloud {
 
             Benchmark::stopTiming("full_cloud_tick");
 
+            $tickWorkEnd = microtime(true);
             $this->console->readLine();
             if (($this->tick % 40) == 0) ProcessUtils::restartCpuRetrieveCycle();
 
@@ -376,37 +426,30 @@ final class PocketCloud {
                 $this->nextTick += 1 / 20;
             }
 
-            if (($timeUntilNextTick = $this->nextTick - microtime(true)) > 0) {
-                usleep(floor($timeUntilNextTick * 1_000_000));
-            }
-
-            $this->updatePerformanceMetrics($tickStart, microtime(true));
+            $this->updatePerformanceMetrics($tickStart, $tickWorkEnd);
 
             $this->sleeperHandler->sleepUntil($this->nextTick);
         }
     }
 
-    private function updatePerformanceMetrics(float $tickStart, float $tickEnd): void {
-        $tickDuration = $tickEnd - $tickStart;
+    private function updatePerformanceMetrics(float $tickStart, float $tickWorkEnd): void {
         $timeSinceLastTick = $tickStart - $this->lastTickTime;
+        $this->lastTickTime = $tickStart;
 
         if ($timeSinceLastTick > 0) {
-            $this->currentTPS = min(20.0, 1 / $timeSinceLastTick);
+            $this->currentTPS = min(20.0, 1.0 / $timeSinceLastTick);
         }
 
+        $this->tickTimesSum += $timeSinceLastTick;
         $this->tickTimes[] = $timeSinceLastTick;
         if (count($this->tickTimes) > 20) {
-            array_shift($this->tickTimes);
+            $this->tickTimesSum -= array_shift($this->tickTimes);
         }
 
-        if (!empty($this->tickTimes)) {
-            $avgTickTime = array_sum($this->tickTimes) / count($this->tickTimes);
-            $this->averageTPS = $avgTickTime > 0 ? min(20.0, 1.0 / $avgTickTime) : 20.0;
-        }
+        $avgTickTime = $this->tickTimesSum / count($this->tickTimes);
+        $this->averageTPS = $avgTickTime > 0 ? min(20.0, 1.0 / $avgTickTime) : 20.0;
 
-        $this->tickUsage = min(100.0, ($tickDuration / 0.05) * 100);
-
-        $this->lastTickTime = $tickStart;
+        $this->tickUsage = min(100.0, ($tickWorkEnd - $tickStart) * 2000.0);
     }
 
     public function addStartNotification(string $logMessage, ?CloudLogLevel $logLevel = null, mixed... $params): self {
@@ -634,8 +677,8 @@ releaseLockFile($lockFile);
 exit(0);
 
 function checkRunning(?int &$pid = null): bool {
-    if (!file_exists(STORAGE_PATH)) return false;
-    $file = fopen(STORAGE_PATH . "cloud.lock", "a+b");
+    if (!file_exists(INTERNAL_PATH)) return false;
+    $file = fopen(INTERNAL_PATH . "cloud.lock", "a+b");
     if ($file === false) return false;
     if (!flock($file, LOCK_EX | LOCK_NB)) {
         flock($file, LOCK_SH);

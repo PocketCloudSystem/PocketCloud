@@ -134,7 +134,7 @@ final class ConfigSetup extends Setup {
         MainConfig::getInstance()->setWriteTimingsOnShutdown($config["writeTimingsOnShutdown"]);
         MainConfig::getInstance()->setBStats($config["bStats"]);
         MainConfig::getInstance()->setNetwork($config["network"]);
-        ExceptionHandler::tryCatch(function (): void {
+        ExceptionHandler::attempt(function (): void {
             MainConfig::getInstance()->save();
             CloudLogger::get()->success("Your configuration has been §asaved§r. Restart the cloud mto apply the changes made.");
         }, "Failed to save configuration");

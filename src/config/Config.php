@@ -20,11 +20,7 @@ final class Config {
         ?ConfigType $type = null,
         private readonly array $defaultContent = []
     ) {
-        if (!@file_exists(dirname($this->path))) {
-            ExceptionHandler::tryCatch(fn() => throw new InvalidArgumentException("The given file path doesn't exists"));
-            return;
-        }
-
+        if (!@file_exists(dirname($this->path))) throw new InvalidArgumentException("The given file path doesn't exists");
         if ($type === null) $type = ConfigTypeList::detectType($this->path);
         if ($type === null) throw new InvalidConfigTypeException("No config type specified, auto-detection found none");
         $this->type = $type;
@@ -41,7 +37,7 @@ final class Config {
 
         $fileContent = file_get_contents($this->path);
         if (!$fileContent) return;
-        ExceptionHandler::tryCatch(function () use($fileContent): void {
+        ExceptionHandler::attempt(function () use($fileContent): void {
             $this->content = $this->type->decodeContent($fileContent);
         });
     }
@@ -60,12 +56,12 @@ final class Config {
         if (!$this->changed) return true;
         $this->changed = false;
         if ($customSaveHandler !== null) {
-            return ExceptionHandler::tryCatch(function (Closure $customSaveHandler): bool {
+            return ExceptionHandler::attempt(function (Closure $customSaveHandler): bool {
                 return ($customSaveHandler)($this->path, $this->content, $this->type);
             }, "Failed to save configuration using custom handler", fn() => $this->changed = true, $customSaveHandler);
         }
 
-        return ExceptionHandler::tryCatch(function (): bool {
+        return ExceptionHandler::attempt(function (): bool {
             $rawContent = $this->type->encodeContent($this->content);
             return is_int(file_put_contents($this->path, $rawContent));
         }, "Failed to save configuration", fn() => $this->changed = true);
