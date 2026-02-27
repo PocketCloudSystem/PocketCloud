@@ -124,7 +124,7 @@ final class TemplateCommand extends Command implements ITabComplete {
         if (count($args) == 4) {
             if ($args[0] == "edit") {
                 $selectedKey = TemplateHelper::convert($args[2]);
-                if (TemplateHelper::checkKey($selectedKey) && in_array($selectedKey, ["lobby", "maintenance", "autoStart", "static", "alwaysCopyToStaticServers"])) {
+                if (TemplateHelper::checkKey($selectedKey) && in_array($selectedKey, ["lobby", "maintenance", "autostart", "static", "alwayscopytostaticservers"])) {
                     return ["true", "false"];
                 }
             }

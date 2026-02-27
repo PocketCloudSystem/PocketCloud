@@ -15,6 +15,7 @@ final class Queue implements ArrayAccess {
     private const int QUEUE_TYPE_DATA_TYPE = 0;
     private const int QUEUE_TYPE_CLASS = 1;
 
+    private bool $locked = false;
     private SplQueue $queue;
 
     private function __construct(
@@ -28,10 +29,20 @@ final class Queue implements ArrayAccess {
         }
     }
 
+    /** Locks the queue. If locked, no element can be added nor removed. */
+    public function lock(): void {
+        $this->locked = true;
+    }
+
+    public function release(): void {
+        $this->locked = false;
+    }
+
     /**
      * @param T $element
      */
     public function add(mixed $element): void {
+        if ($this->locked) return;
         $this->checkElement($element);
         $this->queue->enqueue($element);
     }
@@ -45,6 +56,7 @@ final class Queue implements ArrayAccess {
     }
 
     public function clear(): void {
+        if ($this->locked) return;
         $this->queue = new SplQueue();
     }
 
@@ -72,11 +84,13 @@ final class Queue implements ArrayAccess {
     }
 
     public function offsetSet(mixed $offset, mixed $value): void {
+        if ($this->locked) return;
         $this->checkElement($value);
         $this->queue->add($offset, $value);
     }
 
     public function offsetUnset(mixed $offset): void {
+        if ($this->locked) return;
         if (isset($this->queue[$offset])) {
             unset($this->queue[$offset]);
         }

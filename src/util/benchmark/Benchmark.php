@@ -3,6 +3,7 @@
 namespace pocketcloud\cloud\util\benchmark;
 
 use Closure;
+use pocketcloud\cloud\console\log\CloudLogger;
 use RuntimeException;
 
 final class Benchmark {
@@ -53,10 +54,9 @@ final class Benchmark {
 
     public static function getSummary(?string $name = null): array|BenchmarkTimingsSummary|null {
         $summary = [];
-        $keys = $name !== null ? [$name] : array_keys(self::$timings);
+        $keys = $name !== null ? [$name] : array_keys(self::$timingsSummary);
 
         foreach ($keys as $key) {
-            if (!isset(self::$timingsSummary[$key])) continue;
             [$count, $sum, $min, $max] = array_values(self::$timingsSummary[$key]);
             $summary[$key] = new BenchmarkTimingsSummary($key, $count, $sum / $count, $min, $max);
         }

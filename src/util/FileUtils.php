@@ -116,23 +116,32 @@ final class FileUtils {
     public static function removeDirectory(string $directoryPath): bool {
         return ExceptionHandler::tryCatch(
             function (string $directoryPath): bool {
-                if (@is_dir($directoryPath)) {
-                    $iterator = new RecursiveIteratorIterator(
-                        new RecursiveDirectoryIterator($directoryPath, FilesystemIterator::SKIP_DOTS),
-                        RecursiveIteratorIterator::CHILD_FIRST
-                    );
+                if (!@is_dir($directoryPath)) {
+                    return false;
+                }
 
-                    foreach ($iterator as $file) {
-                        if ($file->isDir()) {
-                            rmdir($file->getRealPath());
-                        } else {
-                            unlink($file->getPathname());
+                $iterator = new RecursiveIteratorIterator(
+                    new RecursiveDirectoryIterator($directoryPath, FilesystemIterator::SKIP_DOTS),
+                    RecursiveIteratorIterator::CHILD_FIRST
+                );
+
+                foreach ($iterator as $file) {
+                    $path = $file->getPathname();
+
+                    if ($file->isLink() || $file->isFile()) {
+                        if (!unlink($path)) throw new RuntimeException("Failed to delete file: $path");
+                    } elseif ($file->isDir()) {
+                        if (!rmdir($path)) {
+                            throw new RuntimeException("Failed to remove subdirectory: $path");
                         }
                     }
-
-                    return rmdir($directoryPath);
                 }
-                return false;
+
+                if (!rmdir($directoryPath)) {
+                    throw new RuntimeException("Failed to remove root directory: $directoryPath");
+                }
+
+                return true;
             },
             "Failed to remove directory: " . $directoryPath,
             null,

@@ -24,6 +24,8 @@ final class CloudServerManager implements Tickable {
     private float $lastServerStartTime = 0;
     private float $lastServerStopTime = 0;
 
+    private float $nextServerStartTime = 0;
+
     /** @var array<string> */
     private array $latestServerStartTimes = [];
 
@@ -130,7 +132,11 @@ final class CloudServerManager implements Tickable {
         }
 
         Benchmark::startTiming("check_server_start_queue");
-        if (!$this->serverStartQueue->isEmpty()) $this->serverStartQueue->next()->start();
+        if ($currentTick >= $this->nextServerStartTime && !$this->serverStartQueue->isEmpty()) {
+            $this->nextServerStartTime = $currentTick + 10;
+            $this->serverStartQueue->next()->start();
+        }
+
         Benchmark::stopTiming("check_server_start_queue");
     }
 

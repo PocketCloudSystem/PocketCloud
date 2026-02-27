@@ -33,20 +33,42 @@ final class ServerStartMethod {
         self::add(new ServerStartMethod("screen", function (CloudServer $server, string $startCommand): Promise {
             Benchmark::startTiming("screen_start");
             $screenName = $server->getName() . "-" . $server->getServerUuid();
-            $cmd = "cd " . $server->getPath() . " && screen -dmS $screenName bash -c 'exec $startCommand' && " .
-                "screen -ls | grep $screenName | awk -F '.' '{print $1}'";
+            $workingDirectory = $server->getPath();
 
-            exec($cmd, $output, $returnVar);
+            $command = "cd " . escapeshellarg($workingDirectory) .
+                " && screen -dmS " . escapeshellarg($screenName) .
+                " bash -lc " . escapeshellarg("exec " . $startCommand);
+            exec($command, $output, $returnVar);
 
-            if ($returnVar === 0 && isset($output[0])) {
-                $screenPid = (int) trim($output[0]);
-                $shellOutput = shell_exec("pgrep -P $screenPid");
+            if ($returnVar !== 0) {
                 Benchmark::stopTiming("screen_start");
-                if ($shellOutput === null) return Promise::rejected();
-                $pid = (int) trim($shellOutput);
-                if ($pid > 0) {
-                    return Promise::resolved($pid);
+                return Promise::rejected();
+            }
+
+            $screenPid = null;
+            for ($i = 0; $i < 15; $i++) {
+                $pidOutput = shell_exec("screen -ls | grep -F " . escapeshellarg($screenName) . " | awk -F '.' '{print \$1}' | head -n1");
+                if (is_string($pidOutput) && ($parsed = (int) trim($pidOutput)) > 0) {
+                    $screenPid = $parsed;
+                    break;
                 }
+
+                usleep(100 * 1000);
+            }
+
+            if ($screenPid === null) {
+                Benchmark::stopTiming("screen_start");
+                return Promise::rejected();
+            }
+
+            for ($i = 0; $i < 15; $i++) {
+                $childOutput = shell_exec("pgrep -P " . $screenPid . " | head -n1");
+                if (is_string($childOutput) && ($childPid = (int) trim($childOutput)) > 0) {
+                    Benchmark::stopTiming("screen_start");
+                    return Promise::resolved($childPid);
+                }
+
+                usleep(100 * 1000);
             }
 
             Benchmark::stopTiming("screen_start");
@@ -54,14 +76,31 @@ final class ServerStartMethod {
         }, fn(): bool => TerminalUtils::checkCommand("screen")));
 
         self::add(new ServerStartMethod("tmux", function (CloudServer $server, string $startCommand): Promise {
+            Benchmark::startTiming("tmux_start");
             $paneName = $server->getName() . "-" . $server->getServerUuid();
-            $cmd = "cd " . $server->getPath() . " && " .
-                "tmux new-session -d -s $paneName bash -c '" . $startCommand . "' && " .
-                "tmux list-panes -t $paneName -F '#{pane_pid}'";
+            $workingDirectory = $server->getPath();
 
-            exec($cmd, $output, $returnVar);
+            $command = "cd " . escapeshellarg($workingDirectory) .
+                " && tmux new-session -d -s " . escapeshellarg($paneName) .
+                " bash -lc " . escapeshellarg("exec " . $startCommand);
+            exec($command, $output, $returnVar);
 
-            if ($returnVar === 0) return Promise::resolved((int) $output[0]);
+            if ($returnVar !== 0) {
+                Benchmark::stopTiming("tmux_start");
+                return Promise::rejected();
+            }
+
+            for ($i = 0; $i < 15; $i++) {
+                $panePidOutput = shell_exec("tmux list-panes -t " . escapeshellarg($paneName) . " -F '#{pane_pid}' 2>/dev/null | head -n1");
+                if (is_string($panePidOutput) && ($panePid = (int) trim($panePidOutput)) > 0) {
+                    Benchmark::stopTiming("tmux_start");
+                    return Promise::resolved($panePid);
+                }
+
+                usleep(100 * 1000);
+            }
+
+            Benchmark::stopTiming("tmux_start");
             return Promise::rejected();
         }, fn(): bool => TerminalUtils::checkCommand("tmux")));
 

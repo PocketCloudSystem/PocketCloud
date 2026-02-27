@@ -344,7 +344,7 @@ final class PocketCloud {
             }
         }
 
-        if (isset($this->serverManager)) $this->serverManager->stopAll();
+        if (isset($this->serverManager)) $this->serverManager->stopAll(true);
         if (isset($this->network)) $this->network->close();
         if (isset($this->httpServer)) $this->httpServer->stop();
         if (isset($this->serverPreparator)) $this->serverPreparator->stop();
