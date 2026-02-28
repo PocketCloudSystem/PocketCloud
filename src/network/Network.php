@@ -16,8 +16,10 @@ use pocketcloud\cloud\network\client\ServerClient;
 use pocketcloud\cloud\network\client\ServerClientCache;
 use pocketcloud\cloud\network\packet\ClientboundPacket;
 use pocketcloud\cloud\network\packet\PacketPool;
+use pocketcloud\cloud\network\packet\ResponseClientPacket;
 use pocketcloud\cloud\network\packet\UnhandledPacket;
 use pocketcloud\cloud\network\packet\util\PacketSerializer;
+use pocketcloud\cloud\network\request\RequestManager;
 use pocketcloud\cloud\PocketCloud;
 use pocketcloud\cloud\template\TemplateType;
 use pocketcloud\cloud\thread\Thread;
@@ -79,7 +81,13 @@ final class Network extends Thread {
                             );
 
                             ($ev = new NetworkPacketReceiveEvent($packet, $client))->call();
-                            if (!$ev->isCancelled()) $packet->handle($client);
+                            if ($ev->isCancelled()) return;
+                            $packet->handle($client);
+
+                            if ($packet instanceof ResponseClientPacket) {
+                                RequestManager::getInstance()->resolve($packet);
+                                RequestManager::getInstance()->remove($packet->getRequestId());
+                            }
                         } else CloudLogger::get()->debug("Received an unknown packet from §b{}§r, ignoring...", $unhandledPacket->getAddress())->debug("Packet buffer: " . $unhandledPacket->getBuffer());
                     } catch (PacketException|JsonException $e) {
                         CloudLogger::get()->warn("§cFailed to decode packet from §b{}§8: §e{}", $client->getAddress(), $e->getMessage())

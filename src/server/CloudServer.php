@@ -74,8 +74,6 @@ final class CloudServer implements Tickable, Writeable {
         } else if ($this->serverStatus?->isOnline()) {
             if (!$this->checkAlive()) {
                 $this->handleTimeout();
-            } else {
-                $this->tickCommandOrders();
             }
         } else if ($this->serverStatus === ServerStatus::STOPPING) {
             if (($this->getStopTime() + 10) <= time()) {

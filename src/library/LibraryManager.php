@@ -94,7 +94,7 @@ final class LibraryManager implements Loadable {
 
     public function checkForUpdates(): int {
         if (!MainConfig::getInstance()->canCheckForUpdates(UpdateChecker::TYPE_LIBRARIES)) {
-            PocketCloud::getInstance()->addStartNotification("Skipped updates for §b{}§8, §ras it is disabled in the config.", CloudLogLevel::INFO(), UpdateChecker::TYPE_LIBRARIES);
+            PocketCloud::getInstance()->addStartNotification("Skipped updates for §b{}§8, §ras it is disabled in the config.", CloudLogLevel::DEBUG(), UpdateChecker::TYPE_LIBRARIES);
             return -1;
         }
 

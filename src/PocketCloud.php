@@ -21,6 +21,7 @@ use pocketcloud\cloud\language\Language;
 use pocketcloud\cloud\migration\MigratorManager;
 use pocketcloud\cloud\network\client\ServerClientCache;
 use pocketcloud\cloud\network\Network;
+use pocketcloud\cloud\network\request\RequestManager;
 use pocketcloud\cloud\plugin\CloudPluginManager;
 use pocketcloud\cloud\provider\CloudProvider;
 use pocketcloud\cloud\scheduler\AsyncPool;
@@ -112,6 +113,7 @@ final class PocketCloud {
     private HttpServer $httpServer;
     private AsyncPool $asyncPool;
     private ServerPreparator $serverPreparator;
+    private RequestManager $requestManager;
     private TemplateManager $templateManager;
     private ServerGroupManager $serverGroupManager;
     private ServerPropertiesGenerator $serverPropertiesGenerator;
@@ -158,7 +160,6 @@ final class PocketCloud {
         $this->migratorManager = new MigratorManager();
     }
 
-    /** @return bool false if startup should abort */
     private function runMigrations(): bool {
         CloudLogger::get()->info("Checking for available migrations...");
         if (!$this->migratorManager->checkForAnyMigration()) return true;
@@ -180,7 +181,6 @@ final class PocketCloud {
         $this->startNotificationQueue = Queue::fromType([]);
     }
 
-    /** @return bool false if startup should abort */
     private function initSoftware(): bool {
         try {
             ($this->softwareManager = new ServerSoftwareManager())->load();
@@ -194,7 +194,6 @@ final class PocketCloud {
         }
     }
 
-    /** @return bool false if startup should abort */
     private function checkLibraryUpdates(): bool {
         CloudLogger::get()->info("Checking for library updates...");
         if ($this->libraryManager->checkForUpdates() > 0) {
@@ -206,7 +205,6 @@ final class PocketCloud {
         return true;
     }
 
-    /** @return bool false if startup should abort */
     private function checkBridgePlugins(): bool {
         $failures = 0;
         foreach (TemplateType::getAll() as $type) {
@@ -234,6 +232,7 @@ final class PocketCloud {
         $this->threadManager = new ThreadManager();
         $this->asyncPool = new AsyncPool();
         $this->serverPreparator = new ServerPreparator();
+        $this->requestManager = new RequestManager();
         $this->templateManager = new TemplateManager();
         $this->serverGroupManager = new ServerGroupManager();
         $this->serverPropertiesGenerator = new ServerPropertiesGenerator();
@@ -272,7 +271,7 @@ final class PocketCloud {
 
     private function registerTickables(): void {
         TickableList::add(
-            $this->trafficMonitorManager, $this->serverManager, $this->commandManager, $this->metrics,
+            $this->requestManager, $this->trafficMonitorManager, $this->serverManager, $this->commandManager, $this->metrics,
             $this->asyncPool, $this->serverClientCache, $this->templateManager, $this->screenManager
         );
 
@@ -304,7 +303,9 @@ final class PocketCloud {
         $this->pluginManager->enableAll();
 
         while (($entry = $this->startNotificationQueue->next()) !== null) {
-            CloudLogger::get()->log($entry[0], $entry[1], ...$entry[2]);
+            if (($entry[0] === CloudLogLevel::DEBUG() && $this->logSettingsConfig->isDebugMode()) || ($entry[0] !== null && $entry[0] !== CloudLogLevel::DEBUG())) {
+                CloudLogger::get()->log($entry[0], $entry[1], ...$entry[2]);
+            }
         }
 
         CloudLogger::get()->success("§bCloud §rhas been §astarted§r. §8(§rTook §b" . number_format($time = (microtime(true) - $this->startTimestamp), 3) . "s§8)");
@@ -456,7 +457,11 @@ final class PocketCloud {
     }
 
     public function addStartNotification(string $logMessage, ?CloudLogLevel $logLevel = null, mixed... $params): self {
-        if ($this->tick > 0) CloudLogger::get()->log($logLevel, $logMessage, $params);
+        if ($this->tick > 0) {
+            if (($logLevel === CloudLogLevel::DEBUG() && $this->logSettingsConfig->isDebugMode()) || ($logLevel !== null && $logLevel !== CloudLogLevel::DEBUG())) {
+                CloudLogger::get()->log($logLevel, $logMessage, $params);
+            }
+        }
         else $this->startNotificationQueue->add([$logLevel ?? CloudLogLevel::INFO(), $logMessage, $params]);
         return $this;
     }

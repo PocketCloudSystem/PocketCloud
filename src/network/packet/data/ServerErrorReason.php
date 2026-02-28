@@ -8,7 +8,7 @@ use pocketcloud\cloud\util\trait\EnumHelperTrait;
 enum ServerErrorReason implements Writeable {
     use EnumHelperTrait;
 
-    case NO_ERROR;
+    case NONE;
     case TEMPLATE_EXISTENCE;
     case MAX_SERVERS;
     case SERVER_EXISTENCE;

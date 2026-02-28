@@ -91,7 +91,9 @@ final class ServerCommand extends Command {
             $sender->success("Successfully ran the command on §b{}§r, server responded with the following messages:", $server->getName());
             if (empty($result->getMessages())) $sender->success("§cNone");
             foreach ($result->getMessages() as $message) {
-                $sender->success($message);
+                foreach (explode("\n", $message) as $msgPart) {
+                    $sender->success(trim($msgPart));
+                }
             }
         })->failure(fn() => $sender->warn("The command execution request ran out. §8(§b{}§8)", $commandLine));
         return true;

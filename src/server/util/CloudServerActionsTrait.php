@@ -11,8 +11,9 @@ use pocketcloud\cloud\event\impl\server\ServerTimeOutEvent;
 use pocketcloud\cloud\network\client\ServerClientCache;
 use pocketcloud\cloud\network\packet\data\NotificationType;
 use pocketcloud\cloud\network\packet\data\ServerCommandExecutionResult;
-use pocketcloud\cloud\network\packet\impl\CommandExecutePacket;
 use pocketcloud\cloud\network\packet\impl\ProxyRegisterServerPacket;
+use pocketcloud\cloud\network\packet\impl\request\client\CommandExecuteRequestPacket;
+use pocketcloud\cloud\network\packet\impl\response\client\CommandExecuteResponsePacket;
 use pocketcloud\cloud\server\CloudServerManager;
 use pocketcloud\cloud\server\crash\CrashChecker;
 use pocketcloud\cloud\template\TemplateType;
@@ -26,6 +27,7 @@ trait CloudServerActionsTrait {
     /** @var array<array{Promise, int}> */
     private array $commandExecutionOrders = [];
 
+    /** @deprecated */
     public function tickCommandOrders(): void {
         foreach ($this->commandExecutionOrders as $id => $order) {
             if (($order[1] + 5) <= time()) {
@@ -46,7 +48,10 @@ trait CloudServerActionsTrait {
     public function executeCommand(string $commandLine): Promise {
         $promise = new Promise();
         if (($client = $this->getServerClient()) === null) return Promise::rejected("Not verified yet");
-        if (!CommandExecutePacket::create($commandLine, $id = uniqid("command-"))->sendPacket($client)) return Promise::rejected("Failed to send packet");
+        if (!($reqPacket = CommandExecuteRequestPacket::create($commandLine, $id = uniqid("command-")))->sendRequest($client)) return Promise::rejected("Failed to send packet");
+        $reqPacket->then(fn(CommandExecuteResponsePacket $packet) => $this->handleCommandResponse($packet->getCommandExecutionResult()))
+            ->failure(fn() => $this->handleFailedCommandResponse($id));
+
         $this->commandExecutionOrders[$id] = [$promise, time()];
         return $promise;
     }

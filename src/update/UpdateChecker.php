@@ -37,8 +37,7 @@ final class UpdateChecker {
         CloudLogger::get()->info("Checking for general updates...");
         foreach ($this->updateCheckers as $updateChecker) {
             if (!MainConfig::getInstance()->canCheckForUpdates($updateChecker->id())) {
-                CloudLogger::get()->debug("Skipping updates for {}, as it is disabled in the config", $updateChecker::class);
-                PocketCloud::getInstance()->addStartNotification("Skipped updates for §b{}§8, §ras it is disabled in the config.", CloudLogLevel::INFO(), $updateChecker->id());
+                PocketCloud::getInstance()->addStartNotification("Skipped updates for §b{}§8, §ras it is disabled in the config.", CloudLogLevel::DEBUG(), $updateChecker->id());
                 continue;
             }
 

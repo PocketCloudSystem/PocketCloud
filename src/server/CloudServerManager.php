@@ -5,7 +5,6 @@ namespace pocketcloud\cloud\server;
 use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\group\ServerGroup;
 use pocketcloud\cloud\server\data\CloudServerData;
-use pocketcloud\cloud\server\util\ServerStatus;
 use pocketcloud\cloud\server\util\ServerUtils;
 use pocketcloud\cloud\template\Template;
 use pocketcloud\cloud\template\TemplateType;

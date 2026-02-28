@@ -1,14 +1,13 @@
 <?php
 
-namespace pocketcloud\cloud\network\packet\impl;
+namespace pocketcloud\cloud\network\packet\impl\response\client;
 
 use pocketcloud\cloud\network\client\ServerClient;
-use pocketcloud\cloud\network\packet\CloudboundPacket;
-use pocketcloud\cloud\network\packet\CloudPacket;
 use pocketcloud\cloud\network\packet\data\ServerCommandExecutionResult;
+use pocketcloud\cloud\network\packet\ResponseClientPacket;
 use pocketcloud\cloud\network\packet\util\PacketData;
 
-final class CommandAnswerPacket extends CloudPacket implements CloudboundPacket {
+final class CommandExecuteResponsePacket extends ResponseClientPacket {
 
     public function __construct(private ?ServerCommandExecutionResult $commandExecutionResult = null) {}
 

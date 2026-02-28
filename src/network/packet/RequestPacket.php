@@ -5,6 +5,10 @@ namespace pocketcloud\cloud\network\packet;
 use pocketcloud\cloud\network\client\ServerClient;
 use pocketcloud\cloud\network\packet\util\PacketData;
 
+/**
+ * The normal request packet sent from sub-servers to the cloud, which will answer through regular ResponsePacket
+ * @see ResponsePacket
+ */
 abstract class RequestPacket extends CloudPacket implements CloudboundPacket {
 
     private string $requestId = "";

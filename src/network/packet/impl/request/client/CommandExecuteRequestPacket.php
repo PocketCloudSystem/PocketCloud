@@ -1,20 +1,16 @@
 <?php
 
-namespace pocketcloud\cloud\network\packet\impl;
+namespace pocketcloud\cloud\network\packet\impl\request\client;
 
-use pocketcloud\cloud\network\client\ServerClient;
-use pocketcloud\cloud\network\packet\ClientboundPacket;
-use pocketcloud\cloud\network\packet\CloudPacket;
+use pocketcloud\cloud\network\packet\RequestClientPacket;
 use pocketcloud\cloud\network\packet\util\PacketData;
 
-final class CommandExecutePacket extends CloudPacket implements ClientboundPacket {
+final class CommandExecuteRequestPacket extends RequestClientPacket {
 
     public function __construct(
         private readonly string $commandLine = "",
         private readonly string $id = ""
     ) {}
-
-    public function handle(ServerClient $client): void {}
 
     public function encodePayload(PacketData $packetData): void {
         $packetData->writeAll($this->commandLine, $this->id);
