@@ -61,7 +61,6 @@ use const pocketcloud\BACKUPS_PATH;
 use const pocketcloud\BINARIES_PATH;
 use const pocketcloud\CLOUD_PATH;
 use const pocketcloud\CRASHES_PATH;
-use const pocketcloud\FIRST_RUN;
 use const pocketcloud\GLOBAL_TEMPLATES_PATH;
 use const pocketcloud\IN_GAME_PATH;
 use const pocketcloud\INTERNAL_PATH;
@@ -75,6 +74,10 @@ use const pocketcloud\SOFTWARE_PATH;
 use const pocketcloud\STORAGE_PATH;
 use const pocketcloud\TEMP_PATH;
 use const pocketcloud\TEMPLATES_PATH;
+
+/**
+ * TODO: HTTP routes, commands
+ */
 
 final class PocketCloud {
 

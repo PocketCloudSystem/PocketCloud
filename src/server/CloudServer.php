@@ -90,7 +90,8 @@ final class CloudServer implements Tickable, Writeable {
 
     public function prepare(): Promise {
         $promise = new Promise();
-        ServerPreparator::getInstance()->submitEntry($this, ServerPrepareEntry::fromServer($this), fn() => $promise->resolve());
+        //todo: preparator entry crash handling
+        ServerPreparator::getInstance()->submitEntry($this, ServerPrepareEntry::fromServer($this), fn() => $promise->resolve($this));
         return $promise;
     }
 

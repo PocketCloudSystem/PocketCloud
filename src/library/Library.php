@@ -30,11 +30,6 @@ final readonly class Library {
     }
 
     /**
-     * //Todo: check for updates by comparing file sizes
-     * -> Concept for this: When the .zip gets downloaded, save the filesize of it into a .size file inside the library folder,
-     * then compare the size with the content size of the URL
-     * If size mismatches, library got updated
-     * If size matches, library is up-to-date
      * When downloaded a library, the cloud expects the zip Archive to have the following structure:
      * -> library.zip -> Library-main (or any name) -> the actual library contents (src, readme.md, ...)
      * @param bool $needsUpdate
