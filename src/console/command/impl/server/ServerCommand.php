@@ -31,7 +31,7 @@ final class ServerCommand extends Command {
             ->addParameter(new TemplateParameter("template", false))
             ->addParameter(new IntegerParameter("amount", true, function (int $number): int {
                 if ($number < 0) return 1;
-                return min(20, $number);
+                return min(50, $number);
             })));
 
         $this->registerSubCommand(SubCommand::fromClosure("stop", $this->handleStopSub(...), ["stop"])

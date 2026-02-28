@@ -41,6 +41,7 @@ use pocketcloud\cloud\util\PathUtils;
 use pocketcloud\cloud\util\promise\Promise;
 use pocketcloud\cloud\util\Utils;
 use const pocketcloud\CLOUD_PATH;
+use const pocketcloud\STATIC_SERVERS_PATH;
 use const pocketcloud\TEMP_PATH;
 
 final class CloudServer implements Tickable, Writeable {
@@ -218,6 +219,7 @@ final class CloudServer implements Tickable, Writeable {
     }
 
     public function getPath(): string {
+        if ($this->getTemplate()?->isStatic()) return PathUtils::join(STATIC_SERVERS_PATH, $this->getName()) . "/";
         return PathUtils::join(TEMP_PATH, $this->serverUuid) . "/";
     }
 

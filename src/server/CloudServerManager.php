@@ -117,6 +117,14 @@ final class CloudServerManager implements Tickable {
         return count($this->getAll($template)) < $template->getSettings()->getMaxServerCount();
     }
 
+    private function addToStartQueue(CloudServer $server): void {
+        $this->serverStartQueue->add($server);
+    }
+
+    private function onStartFailed(CloudServer $server): void {
+        CloudLogger::get()->warn("§cFailed to prepare server §e{}§c.", $server);
+    }
+
     public function tick(int $currentTick): void {
         //keep alive, timeout,... etc
         // ABOVE > QUEUES (first the above, then the queues, SERVER BY SERVER (1 server/tick).
@@ -124,9 +132,9 @@ final class CloudServerManager implements Tickable {
 
         if (!$this->serverPrepareQueue->isEmpty()) {
             Benchmark::startTiming("check_server_prepare_queue");
-            ($server = $this->serverPrepareQueue->next())->prepare()
-                ->then(fn() => $this->serverStartQueue->add($server))
-                ->failure(fn() => CloudLogger::get()->warn("§cFailed to prepare server §e{}§c.", $server));
+            $this->serverPrepareQueue->next()->prepare()
+                ->then($this->addToStartQueue(...))
+                ->failure($this->onStartFailed(...));
             Benchmark::stopTiming("check_server_prepare_queue");
             return;
         }
