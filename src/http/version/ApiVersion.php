@@ -6,6 +6,8 @@ use pocketcloud\cloud\http\socket\auth\Authentication;
 
 class ApiVersion {
 
+    public const string V1 = "v1";
+
     /**
      * @param string $version
      * @param Authentication $authentication

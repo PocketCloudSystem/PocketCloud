@@ -10,16 +10,15 @@ use pocketcloud\cloud\http\io\Request;
 use pocketcloud\cloud\http\io\Response;
 use pocketcloud\cloud\http\io\ResponseBuilder;
 use pocketcloud\cloud\http\route\ApiPath;
-use pocketcloud\cloud\http\route\impl\TestRoute;
 use pocketcloud\cloud\http\route\Path;
 use pocketcloud\cloud\http\route\RegularPath;
-use pocketcloud\cloud\http\socket\auth\DefaultAuthentication;
 use pocketcloud\cloud\http\socket\SocketClient;
 use pocketcloud\cloud\http\socket\SocketServer;
 use pocketcloud\cloud\http\util\HttpConstants;
 use pocketcloud\cloud\http\util\RateLimiter;
 use pocketcloud\cloud\http\util\StatusCode;
 use pocketcloud\cloud\http\version\ApiVersion;
+use pocketcloud\cloud\PocketCloud;
 use pocketcloud\cloud\util\net\Address;
 use pocketcloud\cloud\util\trait\SingletonTrait;
 use Throwable;
@@ -63,8 +62,6 @@ final class HttpServer {
             CloudLogger::get()->warn("Failed to setup the HTTP server, continuing...");
             CloudLogger::get()->exception($e);
         }
-
-        $this->registerPath(new TestRoute("/test", HttpConstants::GET, new DefaultAuthentication()));
     }
 
     public function start(): bool {
@@ -93,6 +90,7 @@ final class HttpServer {
             if (($version = $this->getVersion($path->getApiVersion())) !== null) {
                 if (!$version->isValidPath($path->getMethod(), $pathRoute)) $version->addPath($path->getMethod(), $pathRoute);
                 $this->paths[$path->getMethod()][$path->getFullPath()] = $path;
+                PocketCloud::getInstance()->addStartNotification($path->getFullPath() . " | " . $pathRoute);
                 return true;
             }
         }

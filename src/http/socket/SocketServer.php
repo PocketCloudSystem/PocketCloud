@@ -47,15 +47,15 @@ final class SocketServer extends Thread {
                  * @var string $buffer
                  * @var Address $address
                  * @var string $clientId
-                 * @var int $contentLength
+                 * @var int $bufferSize
                  */
-                [$buffer, $address, $clientId, $contentLength] = [$unhandledRequest->getBuffer(), $unhandledRequest->getAddress(), $unhandledRequest->getClientId(), $unhandledRequest->getContentLength()];
+                [$buffer, $address, $clientId, $bufferSize] = [$unhandledRequest->getBuffer(), $unhandledRequest->getAddress(), $unhandledRequest->getClientId(), $unhandledRequest->getContentLength()];
 
-                TrafficMonitorManager::getInstance()->pushBytes(TrafficMonitorManager::TRAFFIC_HTTP, $contentLength, TrafficMonitor::REGULAR_MODE_IN);
+                TrafficMonitorManager::getInstance()->pushBytes(TrafficMonitorManager::TRAFFIC_HTTP, $bufferSize, TrafficMonitor::REGULAR_MODE_IN);
                 TrafficMonitorManager::getInstance()->callHandlers(
                     TrafficMonitorManager::TRAFFIC_HTTP,
                     TrafficMonitor::REGULAR_MODE_IN,
-                    $buffer, $contentLength, $address
+                    $buffer, $bufferSize, $address
                 );
 
                 $this->processCompleteRequest($clientId, $buffer, $address);
@@ -160,7 +160,7 @@ final class SocketServer extends Thread {
 
         $buffer["buffer"] .= $chunk;
 
-        if (strlen($buffer["buffer"]) > HttpConstants::MAX_REQUEST_SIZE) {
+        if (($bufferSize = strlen($buffer["buffer"])) > HttpConstants::MAX_REQUEST_SIZE) {
             CloudLogger::get()->warn("Request too large from §b{}§r, §cclosing§8...", $clientId);
             $this->closeClient($clientId);
             return false;
@@ -189,7 +189,7 @@ final class SocketServer extends Thread {
             $currentBodyLength = strlen($buffer["buffer"]) - $buffer["bodyStartPos"];
 
             if ($currentBodyLength >= $buffer["contentLength"]) {
-                $data = ["buffer" => $buffer["buffer"], "address" => $buffer["address"], "clientId" => $clientId, "contentLength" => $buffer["contentLength"]];
+                $data = ["buffer" => $buffer["buffer"], "address" => $buffer["address"], "clientId" => $clientId, "bufferSize" => $bufferSize, "contentLength" => $buffer["contentLength"]];
                 return true;
             }
         }
@@ -235,7 +235,6 @@ final class SocketServer extends Thread {
         );
 
         $path = $request->getPath();
-
         if ($path->getApiVersion() !== null) {
             $ver = HttpServer::getInstance()->getVersion($path->getApiVersion());
             if ($ver !== null && !$ver->getAuthentication()->authenticate($client, $request)) {

@@ -17,6 +17,10 @@ use pocketcloud\cloud\event\impl\cloud\CloudStartedEvent;
 use pocketcloud\cloud\group\ServerGroupManager;
 use pocketcloud\cloud\http\HttpServer;
 use pocketcloud\cloud\http\HttpServerBuilder;
+use pocketcloud\cloud\http\route\impl\v1\TestRoute;
+use pocketcloud\cloud\http\socket\auth\DefaultAuthentication;
+use pocketcloud\cloud\http\util\HttpConstants;
+use pocketcloud\cloud\http\version\ApiVersion;
 use pocketcloud\cloud\language\Language;
 use pocketcloud\cloud\migration\MigratorManager;
 use pocketcloud\cloud\network\client\ServerClientCache;
@@ -77,7 +81,7 @@ use const pocketcloud\TEMP_PATH;
 use const pocketcloud\TEMPLATES_PATH;
 
 /**
- * TODO: HTTP routes, commands
+ * TODO: HTTP routes
  */
 final class PocketCloud {
 
@@ -245,6 +249,9 @@ final class PocketCloud {
     private function initServices(): void {
         $this->network = new Network(Address::read($this->config->getNetwork()));
         $this->httpServer = HttpServerBuilder::buildFromConfig();
+        $this->httpServer->registerVersion(new ApiVersion("v1", new DefaultAuthentication()));
+
+        $this->httpServer->registerPath(new TestRoute());
 
         $this->cloudUniqueId = Utils::getMachineUniqueId($this->network->getAddress()->getAddress() . $this->network->getAddress()->getPort());
         $this->metrics = new CloudMetrics($this->cloudUniqueId, $this->config);
