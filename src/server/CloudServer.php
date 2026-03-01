@@ -40,6 +40,7 @@ use pocketcloud\cloud\util\misc\Writeable;
 use pocketcloud\cloud\util\PathUtils;
 use pocketcloud\cloud\util\promise\Promise;
 use pocketcloud\cloud\util\Utils;
+use Throwable;
 use const pocketcloud\CLOUD_PATH;
 use const pocketcloud\STATIC_SERVERS_PATH;
 use const pocketcloud\TEMP_PATH;
@@ -88,8 +89,7 @@ final class CloudServer implements Tickable, Writeable {
 
     public function prepare(): Promise {
         $promise = new Promise();
-        //todo: preparator entry crash handling
-        ServerPreparator::getInstance()->submitEntry($this, ServerPrepareEntry::fromServer($this), fn() => $promise->resolve($this));
+        ServerPreparator::getInstance()->submitEntry($this, ServerPrepareEntry::fromServer($this), fn() => $promise->resolve($this), fn(?Throwable $e) => $promise->reject([$this->getName(), $e]));
         return $promise;
     }
 

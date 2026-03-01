@@ -14,8 +14,6 @@ final class ServerHandshakeResponsePacket extends ResponsePacket {
         $packetData->writeAll($this->verifyStatus);
     }
 
-    public function decodePayload(PacketData $packetData): void {}
-
     public static function create(VerifyStatus $verifyStatus): self {
         return new self($verifyStatus);
     }

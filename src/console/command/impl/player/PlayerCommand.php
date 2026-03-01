@@ -85,12 +85,9 @@ final class PlayerCommand extends Command {
 
     public function handleListSub(ICommandSender $sender, string $label, array $args): bool {
         $sender->info("Players §8(§b{}§8):", count($players = CloudPlayerManager::getInstance()->getAll()));
-        if (empty($players)) {
-            $sender->info("§cNo players online.");
-        } else {
-            foreach ($players as $player) {
-                $sender->info("§b{} §8- §rCurrentServer: §b{} §8- §rCurrentProxy: §b{}", $player->getName(), $player->getCurrentServerName() ?? "None", $player->getCurrentProxyName() ?? "None");
-            }
+        if (empty($players)) $sender->info("§cNo players online.");
+        foreach ($players as $player) {
+            $sender->info("§b{} §8| §rCurrentServer: §b{} §8| §rCurrentProxy: §b{}", $player->getName(), $player->getCurrentServerName() ?? "None", $player->getCurrentProxyName() ?? "None");
         }
         
         return true;

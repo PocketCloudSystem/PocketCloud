@@ -5,6 +5,7 @@ namespace pocketcloud\cloud\server\prepare;
 use pmmp\thread\ThreadSafeArray;
 use pocketcloud\cloud\thread\Thread;
 use pocketmine\snooze\SleeperHandlerEntry;
+use Throwable;
 
 /** @internal */
 final class ServerPrepareThread extends Thread {
@@ -30,7 +31,12 @@ final class ServerPrepareThread extends Thread {
 
             /** @var ServerPrepareEntry $entry */
             if (($entry = $this->prepareQueue->shift()) !== null) {
-                $entry->run();
+                try {
+                    $entry->run();
+                } catch (Throwable $e) {
+                    $entry->setException($e);
+                }
+
                 $this->finishedPreparations[] = $entry;
                 $this->sleeperHandlerEntry->createNotifier()->wakeupSleeper();
             }

@@ -16,8 +16,6 @@ final class PlayerNotificationCheckRequestPacket extends RequestPacket {
         $this->sendResponse(PlayerNotificationCheckResponsePacket::create(NotificationListCache::is($this->player)), $client);
     }
 
-    public function encodePayload(PacketData $packetData): void {}
-
     public function decodePayload(PacketData $packetData): void {
         $packetData->readAll($this->player);
     }

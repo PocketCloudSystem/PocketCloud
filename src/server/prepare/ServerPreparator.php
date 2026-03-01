@@ -9,6 +9,7 @@ use pocketcloud\cloud\PocketCloud;
 use pocketcloud\cloud\server\CloudServer;
 use pocketcloud\cloud\util\misc\Loadable;
 use pocketcloud\cloud\util\trait\SingletonTrait;
+use Throwable;
 
 final class ServerPreparator implements Loadable {
     use SingletonTrait;
@@ -32,8 +33,13 @@ final class ServerPreparator implements Loadable {
                         /** @var ServerPrepareEntry $entry */
                         while (($entry = $thread->getFinishedPreparations()->shift()) !== null) {
                             $id = spl_object_id($entry);
-                            [$completionHandler] = $this->completionHandlers[$id];
-                            if ($completionHandler !== null) ($completionHandler)();
+                            [$completionHandler, , $crashHandler] = $this->completionHandlers[$id];
+                            if (($exception = $entry->getException()) !== null) {
+                                if ($crashHandler !== null) ($crashHandler)($exception);
+                            } else {
+                                if ($completionHandler !== null) ($completionHandler)();
+                            }
+
                             unset($this->completionHandlers[$id]);
                         }
                     }
@@ -50,15 +56,19 @@ final class ServerPreparator implements Loadable {
         }
     }
 
-    public function submitEntry(CloudServer $server, ServerPrepareEntry $entry, ?Closure $completionHandler): void {
+    public function submitEntry(CloudServer $server, ServerPrepareEntry $entry, ?Closure $completionHandler, ?Closure $crashHandler): void {
         CloudLogger::get()->debug("Preparing server {}: §b{}", $server->getName(), ($this->isAsync() ? "async" : "sync"));
         if (!$this->isAsync()) {
-            $entry->run();
-            if ($completionHandler !== null) ($completionHandler)();
+            try {
+                $entry->run();
+                if ($completionHandler !== null) ($completionHandler)();
+            } catch (Throwable $e) {
+                if ($crashHandler !== null) ($crashHandler)($e);
+            }
             return;
         }
 
-        $this->completionHandlers[spl_object_id($entry)] = [$completionHandler, $entry];
+        $this->completionHandlers[spl_object_id($entry)] = [$completionHandler, $entry, $crashHandler];
         $this->getLeastBusyThread()->pushToQueue($entry);
     }
 

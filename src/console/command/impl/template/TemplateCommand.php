@@ -95,9 +95,10 @@ final class TemplateCommand extends Command implements ITabComplete {
 
     public function handleListSub(ICommandSender $sender, string $label, array $args): bool {
         $type = $args["type"] ?? TemplateType::getAll();
+        if (empty(TemplateManager::getInstance()->getAll(...$type))) $sender->info("§cNo templates found.");
         foreach (TemplateManager::getInstance()->getAll(...$type) as $template) {
             $sender->info(FormatUtils::implodeWithKeys(
-                $template->write(),
+                array_merge($template->write(), ["players" => $template->getPlayerCount()]),
                 " §8| §r",
                 "§8: §b",
                 fn(string $key) => ucfirst($key),

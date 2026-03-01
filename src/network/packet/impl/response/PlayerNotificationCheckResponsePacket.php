@@ -13,8 +13,6 @@ final class PlayerNotificationCheckResponsePacket extends ResponsePacket {
         $packetData->writeAll($this->enabled);
     }
 
-    public function decodePayload(PacketData $packetData): void {}
-
     public function isEnabled(): bool {
         return $this->enabled;
     }

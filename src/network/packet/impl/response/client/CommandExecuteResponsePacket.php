@@ -17,8 +17,6 @@ final class CommandExecuteResponsePacket extends ResponseClientPacket {
         }
     }
 
-    public function encodePayload(PacketData $packetData): void {}
-
     public function decodePayload(PacketData $packetData): void {
         $packetData->readAllTypeSafe([&$this->commandExecutionResult], [fn() => $packetData->readServerCommandExecutionResult()]);
     }

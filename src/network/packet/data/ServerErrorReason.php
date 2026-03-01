@@ -12,6 +12,7 @@ enum ServerErrorReason implements Writeable {
     case TEMPLATE_EXISTENCE;
     case MAX_SERVERS;
     case SERVER_EXISTENCE;
+    case REQUEST_TIMEOUT;
 
     public function getName(): string {
         return $this->name;

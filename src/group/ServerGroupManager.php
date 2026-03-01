@@ -74,6 +74,10 @@ final class ServerGroupManager implements Loadable {
         CloudLogger::get()->success("Successfully §cremoved §rthe template §b" . $template->getName() . " §rfrom the server group §b" . $serverGroup->getName() . "§r. §8(§rTook §b" . number_format(microtime(true) - $startTime, 3) . "s§8)");
     }
 
+    public function check(string $name): bool {
+        return isset($this->serverGroups[$name]);
+    }
+
     public function get(Template|string $name): ?ServerGroup {
         $name = $name instanceof Template ? $name->getName() : $name;
         if (isset($this->serverGroups[$name])) return $this->serverGroups[$name];

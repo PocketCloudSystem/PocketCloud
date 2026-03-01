@@ -13,8 +13,6 @@ final class PlayerWhitelistCheckResponsePacket extends ResponsePacket {
         $packetData->writeAll($this->whitelisted);
     }
 
-    public function decodePayload(PacketData $packetData): void {}
-
     public function isWhitelisted(): bool {
         return $this->whitelisted;
     }

@@ -14,6 +14,7 @@ use pocketcloud\cloud\util\misc\Tickable;
 use pocketcloud\cloud\util\promise\Promise;
 use pocketcloud\cloud\util\trait\SingletonTrait;
 use Ramsey\Uuid\Uuid;
+use Throwable;
 
 final class CloudServerManager implements Tickable {
     use SingletonTrait;
@@ -71,7 +72,7 @@ final class CloudServerManager implements Tickable {
             return Promise::resolved();
         }
 
-        $server->executeCommand("save-all")->then(function () use ($server, $promise) {
+        $server->executeCommand($saveCommandLine)->then(function () use ($server, $promise) {
             $server->saveFiles();
             $promise->resolve();
         })->failure(fn() => $promise->reject("Request timeout"));
@@ -120,8 +121,10 @@ final class CloudServerManager implements Tickable {
         $this->serverStartQueue->add($server);
     }
 
-    private function onStartFailed(CloudServer $server): void {
-        CloudLogger::get()->warn("§cFailed to prepare server §e{}§c.", $server);
+    private function onStartFailed(array $crashData): void {
+        [$server, $exception] = $crashData;
+        CloudLogger::get()->warn("§cFailed to prepare server §e{}§8: §e", $server, $exception?->getMessage() ?? "Unknown error");
+        if ($exception instanceof Throwable) CloudLogger::get()->exception($exception);
     }
 
     public function tick(int $currentTick): void {

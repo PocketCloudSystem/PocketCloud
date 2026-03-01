@@ -4,6 +4,8 @@ namespace pocketcloud\cloud\template;
 
 use pocketcloud\cloud\group\ServerGroup;
 use pocketcloud\cloud\group\ServerGroupManager;
+use pocketcloud\cloud\player\CloudPlayer;
+use pocketcloud\cloud\player\CloudPlayerManager;
 use pocketcloud\cloud\server\CloudServerManager;
 use pocketcloud\cloud\util\misc\Writeable;
 use pocketcloud\cloud\util\PathUtils;
@@ -56,6 +58,15 @@ final readonly class Template implements Writeable {
     public function setAutoStart(bool $autoStart): self {
         $this->templateSettings->setAutoStart($autoStart);
         return $this;
+    }
+
+    /** @return array<CloudPlayer> */
+    public function getPlayers(): array {
+        return array_filter(CloudPlayerManager::getInstance()->getAll(), fn(CloudPlayer $player) => str_starts_with($player->getCurrentProxyName(), $this->getName()) || str_starts_with($player->getCurrentServerName(), $this->getName()));
+    }
+
+    public function getPlayerCount(): int {
+        return count($this->getPlayers());
     }
 
     public function getName(): string {

@@ -101,28 +101,25 @@ final class ServerCommand extends Command {
 
     private function handleListSub(ICommandSender $sender, string $label, array $args): bool {
         $template = $args["template"] ?? null;
-        if (empty(CloudServerManager::getInstance()->getAll($template))) {
-            $sender->success("§cNo servers running.");
-        } else {
-            $sender->info("Servers §8(§b{}§8/§b{}§8)§r:", count($servers = CloudServerManager::getInstance()->getAll($template)), $template?->getName() ?? "All");
-            foreach ($servers as $server) {
-                $sender->info(FormatUtils::implodeWithKeys(
-                    $server->write(),
-                    " §8| §r",
-                    "§8: §b",
-                    fn(string $key) => ucfirst($key),
-                    function (string $key, mixed $value) use ($server): mixed {
-                        if ($key == "serverStatus") {
-                            return ServerStatus::fromName($value)?->getDisplay() ?? $value;
-                        } else if ($key == "template") {
-                            return $server->getTemplateName() . ($server->getTemplate()?->getParentServerGroup() !== null ? " §8(§e" . $server->getTemplate()->getParentServerGroup()->getName() . "§8)" : "");
-                        }
+        if (empty(CloudServerManager::getInstance()->getAll($template))) $sender->info("§cNo servers running.");
+        $sender->info("Servers §8(§b{}§8/§b{}§8)§r:", count($servers = CloudServerManager::getInstance()->getAll($template)), $template?->getName() ?? "All");
+        foreach ($servers as $server) {
+            $sender->info(FormatUtils::implodeWithKeys(
+                $server->write(),
+                " §8| §r",
+                "§8: §b",
+                fn(string $key) => ucfirst($key),
+                function (string $key, mixed $value) use ($server): mixed {
+                    if ($key == "serverStatus") {
+                        return ServerStatus::fromName($value)?->getDisplay() ?? $value;
+                    } else if ($key == "template") {
+                        return $server->getTemplateName() . ($server->getTemplate()?->getParentServerGroup() !== null ? " §8(§e" . $server->getTemplate()->getParentServerGroup()->getName() . "§8)" : "");
+                    }
 
-                        return $value;
-                    },
-                    "uuid", "id", "internalStorage", "tps", "avgTps", "memoryUsage", "memoryPeak", "memoryLimit", "cpuUsage"
-                ));
-            }
+                    return $value;
+                },
+                "uuid", "id", "internalStorage", "tps", "avgTps", "memoryUsage", "memoryPeak", "memoryLimit", "cpuUsage"
+            ));
         }
 
         return true;

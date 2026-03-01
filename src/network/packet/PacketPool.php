@@ -26,10 +26,16 @@ use pocketcloud\cloud\network\packet\impl\request\client\CommandExecuteRequestPa
 use pocketcloud\cloud\network\packet\impl\request\PlayerNotificationCheckRequestPacket;
 use pocketcloud\cloud\network\packet\impl\request\PlayerWhitelistCheckRequestPacket;
 use pocketcloud\cloud\network\packet\impl\request\ServerHandshakeRequestPacket;
+use pocketcloud\cloud\network\packet\impl\request\ServerSaveRequestPacket;
+use pocketcloud\cloud\network\packet\impl\request\ServerStartRequestPacket;
+use pocketcloud\cloud\network\packet\impl\request\ServerStopRequestPacket;
 use pocketcloud\cloud\network\packet\impl\response\client\CommandExecuteResponsePacket;
 use pocketcloud\cloud\network\packet\impl\response\PlayerNotificationCheckResponsePacket;
 use pocketcloud\cloud\network\packet\impl\response\PlayerWhitelistCheckResponsePacket;
 use pocketcloud\cloud\network\packet\impl\response\ServerHandshakeResponsePacket;
+use pocketcloud\cloud\network\packet\impl\response\ServerSaveResponsePacket;
+use pocketcloud\cloud\network\packet\impl\response\ServerStartResponsePacket;
+use pocketcloud\cloud\network\packet\impl\response\ServerStopResponsePacket;
 use pocketcloud\cloud\network\packet\impl\ServerChangeStatusPacket;
 use pocketcloud\cloud\network\packet\impl\ServerGroupSyncPacket;
 use pocketcloud\cloud\network\packet\impl\ServerSyncPacket;
@@ -81,6 +87,12 @@ final class PacketPool {
         $this->register(CloudSyncServerStoragePacket::class);
         $this->register(PlayerTransferPacket::class);
         $this->register(PlayerTextPacket::class);
+        $this->register(ServerStartRequestPacket::class);
+        $this->register(ServerStartResponsePacket::class);
+        $this->register(ServerStopRequestPacket::class);
+        $this->register(ServerStopResponsePacket::class);
+        $this->register(ServerSaveRequestPacket::class);
+        $this->register(ServerSaveResponsePacket::class);
     }
 
     public function register(string $packetClass): void {

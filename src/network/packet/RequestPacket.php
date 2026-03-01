@@ -23,6 +23,8 @@ abstract class RequestPacket extends CloudPacket implements CloudboundPacket {
         $this->requestId = $packetData->readString();
     }
 
+    final public function encodePayload(PacketData $packetData): void {}
+
     public function sendResponse(ResponsePacket $packet, ServerClient $client): void {
         $client->sendPacket($packet->setRequestId($this->requestId));
     }

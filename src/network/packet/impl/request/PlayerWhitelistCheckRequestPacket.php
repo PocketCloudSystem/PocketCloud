@@ -16,8 +16,6 @@ final class PlayerWhitelistCheckRequestPacket extends RequestPacket {
         $this->sendResponse(PlayerWhitelistCheckResponsePacket::create(MaintenanceListCache::is($this->player)), $client);
     }
 
-    public function encodePayload(PacketData $packetData): void {}
-
     public function decodePayload(PacketData $packetData): void {
         $packetData->readAll($this->player);
     }

@@ -69,17 +69,13 @@ final class PluginCommand extends Command {
 
     public function handleListSub(ICommandSender $sender, string $label, array $args): bool {
         $sender->info("Plugins §8(§b{}§8):", count($plugins = CloudPluginManager::getInstance()->getAll()));
-        if (empty($plugins)) {
-            $sender->info("§cNo plugins found.");
-        } else {
-            $pluginMessageParts = [];
-            foreach ($plugins as $plugin) {
-                $pluginMessageParts[] = ($plugin->isEnabled() ? "§a" : "§c") .  $plugin->getDescription()->getName() . " v" . $plugin->getDescription()->getVersion();
-            }
-
-            $sender->info(implode("§8, §b", $pluginMessageParts));
+        if (empty($plugins)) $sender->info("§cNo plugins found.");
+        $pluginMessageParts = [];
+        foreach ($plugins as $plugin) {
+            $pluginMessageParts[] = ($plugin->isEnabled() ? "§a" : "§c") .  $plugin->getDescription()->getName() . " v" . $plugin->getDescription()->getVersion();
         }
 
+        $sender->info(implode("§8, §b", $pluginMessageParts));
         return true;
     }
 }

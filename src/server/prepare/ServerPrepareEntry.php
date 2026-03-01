@@ -10,10 +10,13 @@ use pocketcloud\cloud\group\ServerGroupManager;
 use pocketcloud\cloud\server\CloudServer;
 use pocketcloud\cloud\util\FileUtils;
 use pocketcloud\cloud\util\PathUtils;
+use Throwable;
 use const pocketcloud\GLOBAL_TEMPLATES_PATH;
 use const pocketcloud\SERVER_GROUPS_PATH;
 
 final class ServerPrepareEntry extends ThreadSafe {
+
+    private ?string $serializedException = null;
 
     public function __construct(
         private readonly string $serverPath,
@@ -84,6 +87,15 @@ final class ServerPrepareEntry extends ThreadSafe {
                 }
             }
         }
+    }
+
+    public function setException(Throwable $e): void {
+        $this->serializedException = serialize($e);
+    }
+
+    public function getException(): ?Throwable {
+        if ($this->serializedException !== null) return unserialize($this->serializedException);
+        return null;
     }
 
     public static function create(

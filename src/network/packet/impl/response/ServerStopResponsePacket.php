@@ -6,7 +6,7 @@ use pocketcloud\cloud\network\packet\data\ServerErrorReason;
 use pocketcloud\cloud\network\packet\ResponsePacket;
 use pocketcloud\cloud\network\packet\util\PacketData;
 
-final class ServerStartResponsePacket extends ResponsePacket {
+final class ServerStopResponsePacket extends ResponsePacket {
 
     public function __construct(private readonly ?ServerErrorReason $errorReason = null) {}
 

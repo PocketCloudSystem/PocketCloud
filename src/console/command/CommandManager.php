@@ -9,6 +9,7 @@ use pocketcloud\cloud\console\command\impl\DebugCommand;
 use pocketcloud\cloud\console\command\impl\ExitCommand;
 use pocketcloud\cloud\console\command\impl\group\GroupCommand;
 use pocketcloud\cloud\console\command\impl\HelpCommand;
+use pocketcloud\cloud\console\command\impl\ListCommand;
 use pocketcloud\cloud\console\command\impl\MaintenanceCommand;
 use pocketcloud\cloud\console\command\impl\MonitorCommand;
 use pocketcloud\cloud\console\command\impl\player\PlayerCommand;
@@ -45,7 +46,7 @@ final class CommandManager implements Loadable, Tickable {
         $this->registerAll(
             new ExitCommand(), new HelpCommand(), new ClearCommand(), new MaintenanceCommand(),
             new ConfigureCommand(), new VersionCommand(), new DebugCommand(), new StatusCommand(),
-            new MonitorCommand()
+            new MonitorCommand(), new ListCommand()
         );
 
         $this->registerAll(new ServerCommand(), new TemplateCommand(), new GroupCommand(), new PlayerCommand(), new PluginCommand());

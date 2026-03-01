@@ -32,6 +32,14 @@ final class ServerGroup implements Writeable {
         return in_array($template, $this->templates);
     }
 
+    public function getPlayers(): array {
+        return array_unique(array_merge(...array_map(fn(string $template) => TemplateManager::getInstance()->get($template)?->getPlayers() ?? [], $this->templates)));
+    }
+
+    public function getPlayerCount(): int {
+        return count($this->getPlayers());
+    }
+
     public function getName(): string {
         return $this->name;
     }

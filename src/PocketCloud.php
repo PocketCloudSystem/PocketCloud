@@ -79,7 +79,6 @@ use const pocketcloud\TEMPLATES_PATH;
 /**
  * TODO: HTTP routes, commands
  */
-
 final class PocketCloud {
 
     private static ?self $instance = null;

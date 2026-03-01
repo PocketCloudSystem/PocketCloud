@@ -16,8 +16,6 @@ final class CommandExecuteRequestPacket extends RequestClientPacket {
         $packetData->writeAll($this->commandLine, $this->id);
     }
 
-    public function decodePayload(PacketData $packetData): void {}
-
     public function getCommandLine(): string {
         return $this->commandLine;
     }

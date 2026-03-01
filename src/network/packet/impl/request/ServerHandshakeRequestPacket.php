@@ -39,8 +39,6 @@ final class ServerHandshakeRequestPacket extends RequestPacket {
         }
     }
 
-    public function encodePayload(PacketData $packetData): void {}
-
     public function decodePayload(PacketData $packetData): void {
         $packetData->readAll($this->serverName, $this->processId, $this->maxPlayers);
     }
