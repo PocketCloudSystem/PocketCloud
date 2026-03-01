@@ -85,10 +85,10 @@
 
 ## 📊 Meta & Health
 
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | `/health` | Simple health check — always returns `200 OK`, no auth required |
-| `GET` | `/v1/stats` | Cloud-wide stats: server count, player count, uptime, traffic |
+| Method | Path        | Description                                                     |
+|--------|-------------|-----------------------------------------------------------------|
+| `GET`  | `/health`   | Simple health check — always returns `200 OK`, no auth required |
+| `GET`  | `/v1/stats` | Cloud-wide stats: server count, player count, uptime, traffic   |
 
 ---
 
