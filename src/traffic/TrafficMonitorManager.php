@@ -130,4 +130,15 @@ final class TrafficMonitorManager implements Tickable {
 
         return [$inAvg, $outAvg];
     }
+
+    public function getTotalTraffic(): ?array {
+        $in = 0;
+        $out = 0;
+        foreach ($this->allTimeTraffic as $times) {
+            $in += $times[TrafficMonitor::REGULAR_MODE_IN];
+            $out += $times[TrafficMonitor::REGULAR_MODE_OUT];
+        }
+
+        return [$in, $out];
+    }
 }

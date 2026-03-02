@@ -17,9 +17,15 @@ use pocketcloud\cloud\event\impl\cloud\CloudStartedEvent;
 use pocketcloud\cloud\group\ServerGroupManager;
 use pocketcloud\cloud\http\HttpServer;
 use pocketcloud\cloud\http\HttpServerBuilder;
-use pocketcloud\cloud\http\route\impl\v1\TestRoute;
+use pocketcloud\cloud\http\route\impl\HealthRoute;
+use pocketcloud\cloud\http\route\impl\v1\maintenance\ListMaintenanceRoute;
+use pocketcloud\cloud\http\route\impl\v1\maintenance\MaintenanceAddRoute;
+use pocketcloud\cloud\http\route\impl\v1\maintenance\MaintenanceRemoveRoute;
+use pocketcloud\cloud\http\route\impl\v1\notification\ListNotificationsRoute;
+use pocketcloud\cloud\http\route\impl\v1\notification\NotificationsDisableRoute;
+use pocketcloud\cloud\http\route\impl\v1\notification\NotificationsEnableRoute;
+use pocketcloud\cloud\http\route\impl\v1\StatsRoute;
 use pocketcloud\cloud\http\socket\auth\DefaultAuthentication;
-use pocketcloud\cloud\http\util\HttpConstants;
 use pocketcloud\cloud\http\version\ApiVersion;
 use pocketcloud\cloud\language\Language;
 use pocketcloud\cloud\migration\MigratorManager;
@@ -249,9 +255,8 @@ final class PocketCloud {
     private function initServices(): void {
         $this->network = new Network(Address::read($this->config->getNetwork()));
         $this->httpServer = HttpServerBuilder::buildFromConfig();
-        $this->httpServer->registerVersion(new ApiVersion("v1", new DefaultAuthentication()));
-
-        $this->httpServer->registerPath(new TestRoute());
+        $this->httpServer->registerVersion(new ApiVersion(ApiVersion::V1, new DefaultAuthentication()));
+        $this->registerHttpPaths($this->httpServer);
 
         $this->cloudUniqueId = Utils::getMachineUniqueId($this->network->getAddress()->getAddress() . $this->network->getAddress()->getPort());
         $this->metrics = new CloudMetrics($this->cloudUniqueId, $this->config);
@@ -273,6 +278,19 @@ final class PocketCloud {
                 ->addStartNotification("If they are, please download (& extract) them manually.", CloudLogLevel::WARN())
                 ->addStartNotification("Thank you.", CloudLogLevel::WARN());
         }
+    }
+
+    private function registerHttpPaths(HttpServer $server): void {
+        $server->registerPath(new HealthRoute());
+        $server->registerPath(new StatsRoute());
+
+        $server->registerPath(new ListMaintenanceRoute());
+        $server->registerPath(new MaintenanceAddRoute());
+        $server->registerPath(new MaintenanceRemoveRoute());
+
+        $server->registerPath(new ListNotificationsRoute());
+        $server->registerPath(new NotificationsEnableRoute());
+        $server->registerPath(new NotificationsDisableRoute());
     }
 
     private function registerTickables(): void {

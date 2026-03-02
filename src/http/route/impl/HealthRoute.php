@@ -1,25 +1,25 @@
 <?php
 
-namespace pocketcloud\cloud\http\route\impl\v1;
+namespace pocketcloud\cloud\http\route\impl;
 
 use pocketcloud\cloud\http\io\Request;
 use pocketcloud\cloud\http\io\Response;
 use pocketcloud\cloud\http\io\ResponseBuilder;
-use pocketcloud\cloud\http\route\ApiPath;
+use pocketcloud\cloud\http\route\RegularPath;
 use pocketcloud\cloud\http\socket\auth\NoAuthRequiredAuthentication;
 use pocketcloud\cloud\http\util\HttpConstants;
-use pocketcloud\cloud\http\version\ApiVersion;
+use pocketcloud\cloud\http\util\StatusCode;
 
-final class TestRoute extends ApiPath {
+final class HealthRoute extends RegularPath {
 
     public function __construct() {
-        parent::__construct("/test", ApiVersion::V1, HttpConstants::GET, new NoAuthRequiredAuthentication());
+        parent::__construct("/health", HttpConstants::GET, new NoAuthRequiredAuthentication());
     }
 
     public function handle(Request $request): Response {
         return ResponseBuilder::create()
-            ->code(200)
-            ->body(["just" => "whatever"])
+            ->code(StatusCode::OK)
+            ->body(["status" => "ok"])
             ->build();
     }
 
