@@ -65,8 +65,10 @@ final class ServerGroup implements Writeable {
 
         $templates = [];
         foreach ((is_array($data["templates"]) ? $data["templates"] : []) as $name) {
-            if (TemplateManager::getInstance()->check($name)) $templates[] = $name;
-            else CloudLogger::get()->debug("Indexing ServerGroup {}, missing template {}, skipping...", $data["name"], $name);
+            if (is_string($name)) {
+                if (TemplateManager::getInstance()->check($name)) $templates[] = $name;
+                else CloudLogger::get()->debug("Indexing ServerGroup {}, missing template {}, skipping...", $data["name"], $name);
+            }
         }
 
         return new self(

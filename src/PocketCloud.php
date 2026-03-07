@@ -18,6 +18,12 @@ use pocketcloud\cloud\group\ServerGroupManager;
 use pocketcloud\cloud\http\HttpServer;
 use pocketcloud\cloud\http\HttpServerBuilder;
 use pocketcloud\cloud\http\route\impl\HealthRoute;
+use pocketcloud\cloud\http\route\impl\v1\group\AddTemplatesToGroupRoute;
+use pocketcloud\cloud\http\route\impl\v1\group\CreateGroupRoute;
+use pocketcloud\cloud\http\route\impl\v1\group\GroupInfoRoute;
+use pocketcloud\cloud\http\route\impl\v1\group\ListGroupsRoute;
+use pocketcloud\cloud\http\route\impl\v1\group\RemoveGroupRoute;
+use pocketcloud\cloud\http\route\impl\v1\group\RemoveTemplatesFromGroupRoute;
 use pocketcloud\cloud\http\route\impl\v1\maintenance\ListMaintenanceRoute;
 use pocketcloud\cloud\http\route\impl\v1\maintenance\MaintenanceAddRoute;
 use pocketcloud\cloud\http\route\impl\v1\maintenance\MaintenanceRemoveRoute;
@@ -343,6 +349,13 @@ final class PocketCloud {
         $server->registerPath(new DisablePluginRoute());
         $server->registerPath(new EnableAllPluginsRoute());
         $server->registerPath(new DisableAllPluginsRoute());
+
+        $server->registerPath(new ListGroupsRoute());
+        $server->registerPath(new GroupInfoRoute());
+        $server->registerPath(new CreateGroupRoute());
+        $server->registerPath(new RemoveGroupRoute());
+        $server->registerPath(new AddTemplatesToGroupRoute());
+        $server->registerPath(new RemoveTemplatesFromGroupRoute());
     }
 
     private function registerTickables(): void {

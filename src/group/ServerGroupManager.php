@@ -54,20 +54,20 @@ final class ServerGroupManager implements Loadable {
         CloudLogger::get()->success("Successfully §cremoved §rthe server group §b" . $serverGroup->getName() . "§r. §8(§rTook §b" . number_format(microtime(true) - $startTime, 3) . "s§8)");
     }
 
-    public function addTemplate(ServerGroup $serverGroup, Template $template): void {
+    public function addTemplate(ServerGroup $serverGroup, Template $template, bool $update = true): void {
         $startTime = microtime(true);
         $serverGroup->add($template);
-        CloudProvider::current()->editServerGroup($serverGroup, $serverGroup->write());
+        if ($update) CloudProvider::current()->editServerGroup($serverGroup, $serverGroup->write());
 
         new ServerGroupEditEvent($serverGroup, $serverGroup->getTemplates())->call();
 
         CloudLogger::get()->success("Successfully §aadded §rthe template §b" . $template->getName() . " §rto the server group §b" . $serverGroup->getName() . "§r. §8(§rTook §b" . number_format(microtime(true) - $startTime, 3) . "s§8)");
     }
 
-    public function removeTemplate(ServerGroup $serverGroup, Template $template): void {
+    public function removeTemplate(ServerGroup $serverGroup, Template $template, bool $update = true): void {
         $startTime = microtime(true);
         $serverGroup->remove($template);
-        CloudProvider::current()->editServerGroup($serverGroup, $serverGroup->write());
+        if ($update) CloudProvider::current()->editServerGroup($serverGroup, $serverGroup->write());
 
         new ServerGroupEditEvent($serverGroup, $serverGroup->getTemplates())->call();
 
