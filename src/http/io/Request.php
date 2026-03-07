@@ -7,13 +7,14 @@ use pocketcloud\cloud\util\net\Address;
 
 final readonly class Request {
 
-	public function __construct(
+    public function __construct(
         private Address $address,
         private string $method,
         private Path $path,
         private array $queries,
         private array $headers,
-        protected ?string $body = null
+        protected ?string $body = null,
+        private array $parameters = []
     ) {}
 
     public function hasQuery(string $key): bool {
@@ -24,12 +25,20 @@ final readonly class Request {
         return isset($this->headers[$key]);
     }
 
+    public function hasParameter(string $key): bool {
+        return isset($this->parameters[$key]);
+    }
+
     public function getQuery(string $key, mixed $default = null): mixed {
         return $this->queries[$key] ?? $default;
     }
 
     public function getHeader(string $key, mixed $default = null): mixed {
         return $this->headers[$key] ?? $default;
+    }
+
+    public function getParameter(string $key, mixed $default = null): mixed {
+        return $this->parameters[$key] ?? $default;
     }
 
     public function getAddress(): Address {
@@ -56,5 +65,9 @@ final readonly class Request {
 
     public function getBody(): ?string {
         return $this->body;
+    }
+
+    public function getParameters(): array {
+        return $this->parameters;
     }
 }

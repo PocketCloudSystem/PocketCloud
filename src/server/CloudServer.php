@@ -51,7 +51,7 @@ final class CloudServer implements Tickable, Writeable {
     private int $lastCheckTime;
     private ?int $startTime = null;
     private ?int $stopTime = null;
-    private ?ServerStatus $serverStatus = null;
+    private ?ServerStatus $serverStatus;
     private VerifyStatus $verifyStatus;
     private CloudServerStorage $serverStorage;
 
@@ -60,10 +60,12 @@ final class CloudServer implements Tickable, Writeable {
         private readonly string $serverUuid,
         private readonly string $template,
         private readonly CloudServerData $serverData,
-        array $serverStorage = []
+        array $serverStorage = [],
+        ?ServerStatus $serverStatus = null
     ) {
         $this->verifyStatus = VerifyStatus::NOT_APPLIED;
         $this->serverStorage = new CloudServerStorage($this, $serverStorage);
+        $this->serverStatus = $serverStatus;
     }
 
     public function tick(int $currentTick): void {
@@ -112,7 +114,7 @@ final class CloudServer implements Tickable, Writeable {
 
     public function stop(bool $force = false): void {
         new ServerStopEvent($this, $force)->call();
-        CloudLogger::get()->info("§cStopping §b{}§r...", $this->getName());
+        CloudLogger::get()->info("§cStopping §b{}§r...{}", $this->getName(), $force ? " §8(§cforcefully!§8)" : "");
         NotificationType::SERVER_STOPPING->notify(["server" => $this->getName()]);
         $this->setServerStatus(ServerStatus::STOPPING);
         $this->setStopTime(time());
@@ -308,8 +310,8 @@ final class CloudServer implements Tickable, Writeable {
             $data["uuid"],
             $template,
             new CloudServerData($data["name"], intval($data["port"]), intval($data["maxPlayers"]), ($data["processId"] === null ? null : intval($data["processId"]))),
-            ServerStatus::fromName($data["serverStatus"]) ?? ServerStatus::ONLINE,
-            $data["internalStorage"] ?? []
+            $data["internalStorage"] ?? [],
+            ServerStatus::fromName($data["serverStatus"]) ?? ServerStatus::ONLINE
         );
     }
 }

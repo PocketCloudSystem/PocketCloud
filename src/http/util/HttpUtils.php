@@ -79,9 +79,10 @@ final class HttpUtils {
             }
         }
 
-        $path = HttpServer::getInstance()->getPath($method, $path);
-        if ($path === null) return StatusCode::NOT_FOUND;
-        return new Request($address, $method, $path, $queryParams, $headers, $body);
+        $match = HttpServer::getInstance()->findPath($method, $path);
+        if ($match === null) return StatusCode::NOT_FOUND;
+        [$path, $parameters] = $match;
+        return new Request($address, $method, $path, $queryParams, $headers, $body, $parameters);
     }
 
     public static function encodeHeaders(array $headers): array {

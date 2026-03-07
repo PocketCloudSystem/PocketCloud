@@ -40,7 +40,8 @@ final class CloudServerManager implements Tickable {
         $this->serverStartQueue = Queue::fromClass(CloudServer::class);
     }
 
-    public function start(Template $template, int $count = 1): void {
+    public function start(Template $template, int $count = 1): array {
+        $startedServers = [];
         if (!$this->checkCapacity($template)) {
             CloudLogger::get()->warn("Failed to start any more servers of §b{} §rdue to the max amount of servers already being reached.", $template->getName());
         } else {
@@ -55,13 +56,16 @@ final class CloudServerManager implements Tickable {
                         $this->latestServerStartTimes[$template->getName()] = $server->getName();
                         $this->add($server);
                         $this->serverPrepareQueue->add($server);
+                        $startedServers[] = $server->getName();
                     } else {
                         CloudLogger::get()->warn("Failed to start any more servers of §b{}§8: §cNo available ports found.", $template->getName());
-                        return;
+                        break;
                     }
                 }
             }
         }
+
+        return $startedServers;
     }
 
     public function save(CloudServer $server): Promise {
@@ -164,9 +168,10 @@ final class CloudServerManager implements Tickable {
             foreach ($templateOrGroups as $templateOrGroup) {
                 if ($templateOrGroup === null) continue;
                 $templateOrGroup = is_string($templateOrGroup) ? $templateOrGroup : $templateOrGroup->getName();
-                return $server->getTemplateName() == $templateOrGroup ||
-                    $server->getTemplate()->getParentServerGroup()?->getName() == $templateOrGroup ||
-                    $server->getTemplate()->getTemplateType()->getName() == $templateOrGroup;
+                return $server->getName() == $templateOrGroup ||
+                    $server->getTemplateName() == $templateOrGroup ||
+                    $server->getTemplate()?->getParentServerGroup()?->getName() == $templateOrGroup ||
+                    $server->getTemplate()?->getTemplateType()->getName() == $templateOrGroup;
             }
 
             return true;

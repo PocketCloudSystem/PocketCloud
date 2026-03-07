@@ -24,6 +24,14 @@ use pocketcloud\cloud\http\route\impl\v1\maintenance\MaintenanceRemoveRoute;
 use pocketcloud\cloud\http\route\impl\v1\notification\ListNotificationsRoute;
 use pocketcloud\cloud\http\route\impl\v1\notification\NotificationsDisableRoute;
 use pocketcloud\cloud\http\route\impl\v1\notification\NotificationsEnableRoute;
+use pocketcloud\cloud\http\route\impl\v1\server\ListServersRoute;
+use pocketcloud\cloud\http\route\impl\v1\server\ServerInfoRoute;
+use pocketcloud\cloud\http\route\impl\v1\server\ServerLogsRoute;
+use pocketcloud\cloud\http\route\impl\v1\server\ServerSaveRoute;
+use pocketcloud\cloud\http\route\impl\v1\server\ServerSendCommandRoute;
+use pocketcloud\cloud\http\route\impl\v1\server\ServerStartRoute;
+use pocketcloud\cloud\http\route\impl\v1\server\ServerStopAllRoute;
+use pocketcloud\cloud\http\route\impl\v1\server\ServerStopRoute;
 use pocketcloud\cloud\http\route\impl\v1\StatsRoute;
 use pocketcloud\cloud\http\socket\auth\DefaultAuthentication;
 use pocketcloud\cloud\http\version\ApiVersion;
@@ -291,6 +299,15 @@ final class PocketCloud {
         $server->registerPath(new ListNotificationsRoute());
         $server->registerPath(new NotificationsEnableRoute());
         $server->registerPath(new NotificationsDisableRoute());
+
+        $server->registerPath(new ListServersRoute());
+        $server->registerPath(new ServerInfoRoute());
+        $server->registerPath(new ServerStartRoute());
+        $server->registerPath(new ServerStopAllRoute());
+        $server->registerPath(new ServerStopRoute());
+        $server->registerPath(new ServerSaveRoute());
+        $server->registerPath(new ServerSendCommandRoute());
+        $server->registerPath(new ServerLogsRoute());
     }
 
     private function registerTickables(): void {

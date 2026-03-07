@@ -2,12 +2,14 @@
 
 namespace pocketcloud\cloud\http\route\util;
 
+use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\http\io\Request;
 use pocketcloud\cloud\http\io\Response;
 use pocketcloud\cloud\http\io\ResponseBuilder;
 use pocketcloud\cloud\http\route\ApiPath;
 use pocketcloud\cloud\http\socket\auth\Authentication;
 use pocketcloud\cloud\http\util\StatusCode;
+use pocketcloud\cloud\util\PathUtils;
 use pocketcloud\cloud\util\Utils;
 use Throwable;
 
@@ -50,23 +52,37 @@ abstract class ApiJsonPath extends ApiPath {
     abstract public function onHandle(Request $request, ResponseBuilder $builder, array $requestBody): void;
 
     final public function isBadRequest(Request $request, ResponseBuilder $response): bool {
-        if ($request->getHeader("Content-Type") !== "application/json" && $this->maxPayloadLength > 0) return true;
-        $body = substr($request->getBody(), 0, $this->maxPayloadLength + 1);
-        if (strlen($body) > $this->maxPayloadLength) {
-            $response->code(StatusCode::PAYLOAD_TOO_LARGE);
-            return true;
-        }
-
-        if ($this->maxPayloadLength == 0) return false;
-
         try {
+            if ($request->getHeader("Content-Type") !== "application/json" && $this->maxPayloadLength > 0) return true;
+            $body = substr($request->getBody(), 0, $this->maxPayloadLength + 1);
+            if (($bodyPayloadLength = strlen($body)) > $this->maxPayloadLength) {
+                $response->code(StatusCode::PAYLOAD_TOO_LARGE);
+                return true;
+            }
+
+            if ($bodyPayloadLength == 0 && $this->maxPayloadLength > 0) {
+                $response->code(StatusCode::BAD_REQUEST);
+                $response->body(["message" => "A json body is required to run this request."]);
+                return true;
+            }
+
+            if ($this->maxPayloadLength == 0) {
+                return $this->checkForBadRequest($request, $response, []);
+            }
+
             $this->requestBody = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
             Utils::validateArraySignature($this->requestBody, $this->requiredBodyStructure);
-            if ($this->checkForBadRequest($request, $response, $this->requestBody)) return true;
-            return false;
+            return $this->checkForBadRequest($request, $response, $this->requestBody);
         } catch (Throwable $e) {
-            $response->body(["message" => "Exception occurred while processing your request.", "exception" => $e->getMessage()]);
             $this->requestBody = null;
+            $response->body([
+                "message" => "Exception occurred while processing your request.",
+                "exception_type" => $e::class,
+                "exception" => $e->getMessage(),
+                "code" => $e->getCode(),
+                "file" => PathUtils::clean($e->getFile()),
+                "line" => $e->getLine()
+            ]);
         }
 
         return true;

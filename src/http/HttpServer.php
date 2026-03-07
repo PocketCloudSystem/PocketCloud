@@ -31,6 +31,9 @@ final class HttpServer {
     /** @var array<array<Path>> */
     private array $paths = [];
 
+    /** @var array<array<array{path: Path, pattern: string, paramNames: list<string>}>> */
+    private array $parameterizedPaths = [];
+
     private ?SocketServer $server = null;
     private Closure $rateLimitResponse;
 
@@ -86,16 +89,35 @@ final class HttpServer {
 
         if ($path instanceof RegularPath) {
             $this->paths[$path->getMethod()][$path->getFullPath()] = $path;
+            $this->maybeRegisterParameterizedPath($path, $path->getFullPath());
         } else if ($path instanceof ApiPath) {
             if (($version = $this->getVersion($path->getApiVersion())) !== null) {
                 if (!$version->isValidPath($path->getMethod(), $pathRoute)) $version->addPath($path->getMethod(), $pathRoute);
                 $this->paths[$path->getMethod()][$path->getFullPath()] = $path;
+                $this->maybeRegisterParameterizedPath($path, $path->getFullPath());
                 PocketCloud::getInstance()->addStartNotification($path->getFullPath() . " | " . $pathRoute);
                 return true;
             }
         }
 
         return false;
+    }
+
+    private function maybeRegisterParameterizedPath(Path $path, string $fullPath): void {
+        if (!preg_match("/\{([^}]+)\}/", $fullPath)) return;
+
+        $paramNames = [];
+        $pattern = preg_replace_callback("/\{([^}]+)\}/", function (array $m) use (&$paramNames): string {
+            $paramNames[] = $m[1];
+            return "([^/]+)";
+        }, $fullPath);
+        $pattern = "#^" . $pattern . "$#";
+
+        $this->parameterizedPaths[$path->getMethod()][] = [
+            "path" => $path,
+            "pattern" => $pattern,
+            "paramNames" => $paramNames
+        ];
     }
 
     public function registerVersion(ApiVersion $version): bool {
@@ -117,6 +139,24 @@ final class HttpServer {
 
     public function getPath(string $method, string $path): ?Path {
         return $this->paths[$method][$path] ?? null;
+    }
+
+    /**
+     * Find a path for the given method and request URI, extracting any route parameters.
+     *
+     * @return array{0: Path, 1: array<string, string>}|null  [matched Path, extracted parameters]
+     */
+    public function findPath(string $method, string $path): ?array {
+        if (isset($this->paths[$method][$path])) return [$this->paths[$method][$path], []];
+        foreach ($this->parameterizedPaths[$method] ?? [] as $entry) {
+            if (preg_match($entry["pattern"], $path, $matches)) {
+                array_shift($matches);
+                $params = array_combine($entry["paramNames"], $matches);
+                return [$entry["path"], $params];
+            }
+        }
+
+        return null;
     }
 
     public function getPaths(): array {

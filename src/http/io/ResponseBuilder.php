@@ -27,6 +27,7 @@ final class ResponseBuilder {
     public function body(string|array $body): self {
         $this->body = (is_array($body) ? json_encode($body) : $body);
         if (is_array($body)) $this->contentType("application/json");
+        else if (is_string($body)) $this->contentType("text/plain");
         $this->headers["Content-Length"] = strlen($this->body);
         return $this;
     }

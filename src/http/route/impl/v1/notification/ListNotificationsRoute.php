@@ -5,21 +5,16 @@ namespace pocketcloud\cloud\http\route\impl\v1\notification;
 use pocketcloud\cloud\cache\NotificationListCache;
 use pocketcloud\cloud\http\io\Request;
 use pocketcloud\cloud\http\io\ResponseBuilder;
-use pocketcloud\cloud\http\route\util\ApiJsonPath;
-use pocketcloud\cloud\http\socket\auth\NoAuthRequiredAuthentication;
+use pocketcloud\cloud\http\route\impl\v1\ApiV1JsonPath;
 use pocketcloud\cloud\http\util\HttpConstants;
-use pocketcloud\cloud\http\version\ApiVersion;
 
-final class ListNotificationsRoute extends ApiJsonPath {
+final class ListNotificationsRoute extends ApiV1JsonPath {
 
     public function __construct() {
         parent::__construct(
             "/notifications",
-            ApiVersion::V1,
             HttpConstants::GET,
-            0,
-            [],
-            new NoAuthRequiredAuthentication()
+            0
         );
     }
 
