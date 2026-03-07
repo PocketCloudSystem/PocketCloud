@@ -29,6 +29,12 @@ use pocketcloud\cloud\http\route\impl\v1\player\ListPlayerRoute;
 use pocketcloud\cloud\http\route\impl\v1\player\PlayerInfoRoute;
 use pocketcloud\cloud\http\route\impl\v1\player\TextPlayerRoute;
 use pocketcloud\cloud\http\route\impl\v1\player\TransferPlayerRoute;
+use pocketcloud\cloud\http\route\impl\v1\plugin\DisableAllPluginsRoute;
+use pocketcloud\cloud\http\route\impl\v1\plugin\DisablePluginRoute;
+use pocketcloud\cloud\http\route\impl\v1\plugin\EnableAllPluginsRoute;
+use pocketcloud\cloud\http\route\impl\v1\plugin\EnablePluginRoute;
+use pocketcloud\cloud\http\route\impl\v1\plugin\ListPluginsRoute;
+use pocketcloud\cloud\http\route\impl\v1\plugin\PluginInfoRoute;
 use pocketcloud\cloud\http\route\impl\v1\server\ListServersRoute;
 use pocketcloud\cloud\http\route\impl\v1\server\ServerInfoRoute;
 use pocketcloud\cloud\http\route\impl\v1\server\ServerLogsRoute;
@@ -330,6 +336,13 @@ final class PocketCloud {
         $server->registerPath(new KickPlayerRoute());
         $server->registerPath(new TransferPlayerRoute());
         $server->registerPath(new TextPlayerRoute());
+
+        $server->registerPath(new ListPluginsRoute());
+        $server->registerPath(new PluginInfoRoute());
+        $server->registerPath(new EnablePluginRoute());
+        $server->registerPath(new DisablePluginRoute());
+        $server->registerPath(new EnableAllPluginsRoute());
+        $server->registerPath(new DisableAllPluginsRoute());
     }
 
     private function registerTickables(): void {
