@@ -116,9 +116,6 @@ use const pocketcloud\STORAGE_PATH;
 use const pocketcloud\TEMP_PATH;
 use const pocketcloud\TEMPLATES_PATH;
 
-/**
- * TODO: HTTP routes
- */
 final class PocketCloud {
 
     private static ?self $instance = null;
