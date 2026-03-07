@@ -6,6 +6,17 @@ use pocketcloud\cloud\util\Utils;
 
 final class TemplateSettings {
 
+    /**
+     * @param bool $lobby
+     * @param bool $maintenance
+     * @param bool $static
+     * @param bool $alwaysCopyToStaticServers
+     * @param int $maxPlayerCount
+     * @param int $minServerCount
+     * @param int $maxServerCount
+     * @param float $startNewPercentage 0-100%, so 0 - 100 (e.g. 30.4 = 30.4%)
+     * @param bool $autoStart
+     */
     public function __construct(
         private bool $lobby,
         private bool $maintenance,

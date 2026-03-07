@@ -14,6 +14,7 @@ final class TemplateHelper {
     public const array UNNECESSARY_KEYS = ["maintenance", "static", "alwaysCopyToStaticServers", "maxPlayerCount", "minServerCount", "maxServerCount", "startNewPercentage", "autoStart"];
     public const array DEFAULT_VALUES = ["maintenance" => true, "static" => false, "alwaysCopyToStaticServers" => false, "mayPlayerCount" => 20, "minServerCount" => 0, "maxServerCount" => 2, "startNewPercentage" => 100, "autoStart" => true];
     private const array CONVERSION = [
+        "alwayscopytostaticservers" => "alwaysCopyToStaticServers",
         "maxplayercount" => "maxPlayerCount",
         "minservercount" => "minServerCount",
         "maxservercount" => "maxServerCount",
@@ -48,6 +49,25 @@ final class TemplateHelper {
                 return true;
             }
         }
+
+        return false;
+    }
+
+    public static function checkRawValue(mixed $value, string $key, ?string &$expected = null, mixed &$realValue = null): bool {
+        if ($key == "lobby" || $key == "maintenance" || $key == "autoStart" || $key == "static" || $key == "alwaysCopyToStaticServers") {
+            $expected = "boolean";
+            if (is_bool($value)) {
+                $realValue = $value;
+                return true;
+            }
+        } else if ($key == "maxPlayerCount" || $key == "minServerCount" || $key == "maxServerCount" || $key == "startNewPercentage") {
+            $expected = "number";
+            if (is_numeric($value)) {
+                $realValue = max($key == "startNewPercentage" ? floatval($value) : intval($value), 0);
+                return true;
+            }
+        }
+
         return false;
     }
 

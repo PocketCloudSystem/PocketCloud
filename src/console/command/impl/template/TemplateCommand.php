@@ -73,6 +73,7 @@ final class TemplateCommand extends Command implements ITabComplete {
                 ($key == "lobby" ? $realValue : null),
                 ($key == "maintenance" ? $realValue : null),
                 ($key == "static" ? $realValue : null),
+                ($key == "alwayscopytostaticservers" ? $realValue : null),
                 ($key == "maxplayercount" ? $realValue : null),
                 ($key == "minservercount" ? $realValue : null),
                 ($key == "maxsevrercount" ? $realValue : null),
@@ -98,7 +99,7 @@ final class TemplateCommand extends Command implements ITabComplete {
         if (empty(TemplateManager::getInstance()->getAll(...$type))) $sender->info("§cNo templates found.");
         foreach (TemplateManager::getInstance()->getAll(...$type) as $template) {
             $sender->info(FormatUtils::implodeWithKeys(
-                array_merge($template->write(), ["players" => $template->getPlayerCount()]),
+                $template->write(),
                 " §8| §r",
                 "§8: §b",
                 fn(string $key) => ucfirst($key),
@@ -108,7 +109,7 @@ final class TemplateCommand extends Command implements ITabComplete {
                     } else if ($key == "name") {
                         return $value . ($template->getParentServerGroup() !== null ? " §8(§b" . $template->getParentServerGroup()->getName() . "§8)" : "");
                     } else if ($key == "startNewPercentage") {
-                        return ($value * 100) . "%";
+                        return $value . "%";
                     } else if ($key == "templateType") {
                         return strtoupper($value);
                     }

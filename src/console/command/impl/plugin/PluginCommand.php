@@ -75,7 +75,7 @@ final class PluginCommand extends Command {
             $pluginMessageParts[] = ($plugin->isEnabled() ? "§a" : "§c") .  $plugin->getDescription()->getName() . " v" . $plugin->getDescription()->getVersion();
         }
 
-        $sender->info(implode("§8, §b", $pluginMessageParts));
+        if (!empty($pluginMessageParts)) $sender->info(implode("§8, §b", $pluginMessageParts));
         return true;
     }
 }

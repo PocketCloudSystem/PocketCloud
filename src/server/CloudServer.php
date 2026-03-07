@@ -286,6 +286,7 @@ final class CloudServer implements Tickable, Writeable {
             "template" => $this->template,
             "serverStatus" => $this->serverStatus?->getName(),
             "port" => $this->serverData->getPort(),
+            "players" => $this->getPlayerCount(),
             "maxPlayers" => $this->serverData->getMaxPlayers(),
             "processId" => $this->serverData->getProcessId(),
             "tps" => $this->serverData->getTps(),

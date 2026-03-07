@@ -71,7 +71,7 @@ abstract class ApiJsonPath extends ApiPath {
             }
 
             $this->requestBody = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
-            Utils::validateArraySignature($this->requestBody, $this->requiredBodyStructure);
+            if (!empty($this->requiredBodyStructure)) Utils::validateArraySignature($this->requestBody, $this->requiredBodyStructure);
             return $this->checkForBadRequest($request, $response, $this->requestBody);
         } catch (Throwable $e) {
             $this->requestBody = null;

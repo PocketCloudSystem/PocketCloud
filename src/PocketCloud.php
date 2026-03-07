@@ -33,6 +33,11 @@ use pocketcloud\cloud\http\route\impl\v1\server\ServerStartRoute;
 use pocketcloud\cloud\http\route\impl\v1\server\ServerStopAllRoute;
 use pocketcloud\cloud\http\route\impl\v1\server\ServerStopRoute;
 use pocketcloud\cloud\http\route\impl\v1\StatsRoute;
+use pocketcloud\cloud\http\route\impl\v1\template\CreateTemplateRoute;
+use pocketcloud\cloud\http\route\impl\v1\template\EditTemplateRoute;
+use pocketcloud\cloud\http\route\impl\v1\template\ListTemplatesRoute;
+use pocketcloud\cloud\http\route\impl\v1\template\RemoveTemplateRoute;
+use pocketcloud\cloud\http\route\impl\v1\template\TemplateInfoRoute;
 use pocketcloud\cloud\http\socket\auth\DefaultAuthentication;
 use pocketcloud\cloud\http\version\ApiVersion;
 use pocketcloud\cloud\language\Language;
@@ -308,6 +313,12 @@ final class PocketCloud {
         $server->registerPath(new ServerSaveRoute());
         $server->registerPath(new ServerSendCommandRoute());
         $server->registerPath(new ServerLogsRoute());
+
+        $server->registerPath(new ListTemplatesRoute());
+        $server->registerPath(new TemplateInfoRoute());
+        $server->registerPath(new CreateTemplateRoute());
+        $server->registerPath(new RemoveTemplateRoute());
+        $server->registerPath(new EditTemplateRoute());
     }
 
     private function registerTickables(): void {

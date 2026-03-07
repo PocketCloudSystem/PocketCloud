@@ -34,15 +34,9 @@ final class TemplateManager implements Loadable, Tickable {
 
         CloudProvider::current()->getTemplates()
             ->then(function(array $templates): void {
-                /** @var Template $template */
-                foreach ((array_find($templates, fn(Template $template) => $template->getStartNewPercentage() > 1) ?? []) as $template) {
-                    $template->setStartNewPercentage($template->getStartNewPercentage() / 100);
-                    CloudProvider::current()->editTemplate($template, $template->write());
-                }
-
                 $this->templates = $templates;
 
-                if (array_sum(array_map(fn(Template $template) => $template->getSettings()->getMinServerCount(), array_filter($this->templates, fn(Template $template) => $template->getSettings()->isAutoStart()))) >= 9 && count(ServerPreparator::getInstance()->getThreads()) == 0) {
+                if (array_sum(array_map(fn(Template $template) => $template->getMinServerCount(), array_filter($this->templates, fn(Template $template) => $template->isAutoStart()))) >= 9 && count(ServerPreparator::getInstance()->getThreads()) == 0) {
                     CloudLogger::get()->warn("Your total active server count exceeds §b9§8, §rtherefore you should set §8'§bserverPrepareThreads§8' §rinside your §bconfig.json §rto at least §b1 §ror §b2 §rand restart the the §bcloud§r.");
                 }
 
@@ -77,16 +71,17 @@ final class TemplateManager implements Loadable, Tickable {
         TemplateSyncPacket::create($template, true)->broadcastPacket();
     }
 
-    public function edit(Template $template, ?bool $lobby, ?bool $maintenance, ?bool $static, ?int $maxPlayerCount, ?int $minServerCount, ?int $maxServerCount, ?float $startNewPercentage, ?bool $autoStart): void {
+    public function edit(Template $template, ?bool $lobby, ?bool $maintenance, ?bool $static, ?bool $alwaysCopyToStaticServers, ?int $maxPlayerCount, ?int $minServerCount, ?int $maxServerCount, ?float $startNewPercentage, ?bool $autoStart): void {
         $startTime = microtime(true);
-        $template->getSettings()->setLobby(($lobby === null ? $template->getSettings()->isLobby() : $lobby));
-        $template->getSettings()->setMaintenance(($maintenance === null ? $template->getSettings()->isMaintenance() : $maintenance));
-        $template->getSettings()->setStatic(($static === null ? $template->getSettings()->isStatic() : $static));
-        $template->getSettings()->setMaxPlayerCount(($maxPlayerCount === null ? $template->getSettings()->getMaxPlayerCount() : $maxPlayerCount));
-        $template->getSettings()->setMinServerCount(($minServerCount === null ? $template->getSettings()->getMinServerCount() : $minServerCount));
-        $template->getSettings()->setMaxServerCount(($maxServerCount === null ? $template->getSettings()->getMaxServerCount() : $maxServerCount));
-        $template->getSettings()->setStartNewPercentage(($startNewPercentage === null ? $template->getSettings()->getStartNewPercentage() : $startNewPercentage));
-        $template->getSettings()->setAutoStart(($autoStart === null ? $template->getSettings()->isAutoStart() : $autoStart));
+        $template->setLobby($lobby === null ? $template->isLobby() : $lobby);
+        $template->setMaintenance($maintenance === null ? $template->isMaintenance() : $maintenance);
+        $template->setStatic($static === null ? $template->isStatic() : $static);
+        $template->setAlwaysCopyToStaticServers($alwaysCopyToStaticServers === null ? $template->isAlwaysCopyToStaticServers() : $alwaysCopyToStaticServers);
+        $template->setMaxPlayerCount($maxPlayerCount === null ? $template->getMaxPlayerCount() : $maxPlayerCount);
+        $template->setMinServerCount($minServerCount === null ? $template->getMinServerCount() : $minServerCount);
+        $template->setMaxServerCount($maxServerCount === null ? $template->getMaxServerCount() : $maxServerCount);
+        $template->setStartNewPercentage($startNewPercentage === null ? $template->getStartNewPercentage() : $startNewPercentage);
+        $template->setAutoStart($autoStart === null ? $template->isAutoStart() : $autoStart);
 
         new TemplateEditEvent($template, $lobby, $maintenance, $static, $maxPlayerCount, $minServerCount, $maxServerCount, $startNewPercentage, $autoStart)->call();
 
@@ -109,10 +104,10 @@ final class TemplateManager implements Loadable, Tickable {
     public function tick(int $currentTick): void {
         if (!ServerGroupManager::getInstance()->isLoaded()) return;
         foreach (TemplateManager::getInstance()->getAll() as $template) {
-            if ($template->getSettings()->isAutoStart()) {
-                if (($running = count(CloudServerManager::getInstance()->getAll($template))) < $template->getSettings()->getMaxServerCount()) {
+            if ($template->isAutoStart()) {
+                if (($running = count(CloudServerManager::getInstance()->getAll($template))) < $template->getMaxServerCount()) {
                     if ((microtime(true) - CloudServerManager::getInstance()->getLastServerStopTime()) >= 0.5)
-                        CloudServerManager::getInstance()->start($template, ($template->getSettings()->getMinServerCount() - $running));
+                        CloudServerManager::getInstance()->start($template, ($template->getMinServerCount() - $running));
                 }
             }
 
@@ -120,8 +115,7 @@ final class TemplateManager implements Loadable, Tickable {
                 $players = $latest->getPlayerCount();
                 $requiredPercentage = $template->getStartNewPercentage();
                 if ($requiredPercentage <= 0) continue;
-                if ($requiredPercentage < 1) $requiredPercentage = $requiredPercentage * 100;
-                $percentage = 100 * $players / $requiredPercentage;
+                $percentage = (100 * $players) / $latest->getServerData()->getMaxPlayers();
                 if ($percentage >= $requiredPercentage && CloudServerManager::getInstance()->checkCapacity($template)) {
                     CloudServerManager::getInstance()->start($template);
                 }

@@ -35,6 +35,11 @@ final readonly class Template implements Writeable {
         return $this;
     }
 
+    public function setAlwaysCopyToStaticServers(bool $alwaysCopyToStaticServers): self {
+        $this->templateSettings->setAlwaysCopyToStaticServers($alwaysCopyToStaticServers);
+        return $this;
+    }
+
     public function setMaxPlayerCount(int $maxPlayerCount): self {
         $this->templateSettings->setMaxPlayerCount($maxPlayerCount);
         return $this;
@@ -85,6 +90,10 @@ final readonly class Template implements Writeable {
         return $this->templateSettings->isStatic();
     }
 
+    public function isAlwaysCopyToStaticServers(): bool {
+        return $this->templateSettings->isAlwaysCopyToStaticServers();
+    }
+
     public function getMaxPlayerCount(): int {
         return $this->templateSettings->getMaxPlayerCount();
     }
@@ -122,29 +131,24 @@ final readonly class Template implements Writeable {
     }
 
     public function write(): array {
-        return [
-            "name" => $this->name,
-            "lobby" => $this->templateSettings->isLobby(),
-            "maintenance" => $this->templateSettings->isMaintenance(),
-            "static" => $this->templateSettings->isStatic(),
-            "alwaysCopyToStaticServers" => $this->templateSettings->isAlwaysCopyToStaticServers(),
-            "maxPlayerCount" => $this->templateSettings->getMaxPlayerCount(),
-            "minServerCount" => $this->templateSettings->getMinServerCount(),
-            "maxServerCount" => $this->templateSettings->getMaxServerCount(),
-            "startNewPercentage" => $this->templateSettings->getStartNewPercentage(),
-            "autoStart" => $this->templateSettings->isAutoStart(),
-            "templateType" => $this->templateType->getName()
-        ];
-    }
-
-    public function detailedWrite(): array {
         $playerCount = 0;
         $serverCount = count(CloudServerManager::getInstance()->getAll($this));
         foreach (CloudServerManager::getInstance()->getAll($this) as $server) $playerCount += $server->getPlayerCount();
-        return array_merge($this->write(), [
-            "playerCount" => $playerCount,
-            "serverCount" => $serverCount
-        ]);
+        return [
+            "name" => $this->name,
+            "lobby" => $this->isLobby(),
+            "maintenance" => $this->isMaintenance(),
+            "static" => $this->isStatic(),
+            "players" => $playerCount,
+            "servers" => $serverCount,
+            "alwaysCopyToStaticServers" => $this->isMaintenance(),
+            "maxPlayerCount" => $this->getMaxPlayerCount(),
+            "minServerCount" => $this->getMinServerCount(),
+            "maxServerCount" => $this->getMaxServerCount(),
+            "startNewPercentage" => $this->getStartNewPercentage(),
+            "autoStart" => $this->isAutoStart(),
+            "templateType" => $this->templateType->getName()
+        ];
     }
 
     public static function create(string $name, TemplateSettings $templateSettings, TemplateType $templateType): self {

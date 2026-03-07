@@ -29,7 +29,7 @@ final class ListServersRoute extends ApiV1JsonPath {
 
         $serverList = [];
         foreach (CloudServerManager::getInstance()->getAll(...$availableFilters) as $server) {
-            $serverList[] = [
+            $serverList[$server->getName()] = [
                 "name" => $server->getName(),
                 "uuid" => $server->getServerUuid(),
                 "player_count" => $server->getPlayerCount(),
