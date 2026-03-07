@@ -21,7 +21,7 @@ final class ServerSaveRoute extends APiV1JsonPath {
     public function onHandle(Request $request, ResponseBuilder $builder, array $requestBody): void {
         $server = CloudServerManager::getInstance()->get($request->getParameter("name"));
         CloudServerManager::getInstance()->save($server);
-        $builder->body(["message" => "Attempting to save the server."]);
+        $builder->body(["message" => "Attempted to save the server."]);
     }
 
     public function checkForBadRequest(Request $request, ResponseBuilder $response, array $body): bool {

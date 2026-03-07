@@ -36,7 +36,7 @@ final class ServerStartRoute extends ApiV1JsonPath {
         }
 
         $startedServers = CloudServerManager::getInstance()->start($template, $count);
-        $builder->body(["message" => "Attempting to start " . $count . " server(s).", "started_servers" => $startedServers]);
+        $builder->body(["message" => "Attempted to start " . $count . " server(s).", "started_servers" => $startedServers]);
     }
 
     public function checkForBadRequest(Request $request, ResponseBuilder $response, array $body): bool {

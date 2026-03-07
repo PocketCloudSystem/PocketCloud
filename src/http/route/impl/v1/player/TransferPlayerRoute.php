@@ -1,39 +1,46 @@
 <?php
 
-namespace pocketcloud\cloud\http\route\impl\v1\server;
+namespace pocketcloud\cloud\http\route\impl\v1\player;
 
 use pocketcloud\cloud\http\io\Request;
 use pocketcloud\cloud\http\io\ResponseBuilder;
 use pocketcloud\cloud\http\route\impl\v1\ApiV1JsonPath;
 use pocketcloud\cloud\http\util\HttpConstants;
+use pocketcloud\cloud\player\CloudPlayerManager;
 use pocketcloud\cloud\server\CloudServerManager;
 
-final class ServerSendCommandRoute extends ApiV1JsonPath {
+final class TransferPlayerRoute extends ApiV1JsonPath {
 
     public const array EXAMPLE_PAYLOAD = [
-        "command" => "op r3pt1s"
+        "server" => "Lobby-1"
     ];
 
     public function __construct() {
         parent::__construct(
-            "/servers/{name}/execute",
+            "/players/{name}/transfer",
             HttpConstants::POST,
-            2**8,
-            ["command" => "string"]
+            64,
+            ["server" => "string"]
         );
     }
 
     public function onHandle(Request $request, ResponseBuilder $builder, array $requestBody): void {
-        $server = CloudServerManager::getInstance()->get($request->getParameter("name"));
-        $command = $requestBody["command"];
-        $server->executeCommand($command);
-        $builder->body(["message" => "Attempted to execute the command on the server."]);
+        $player = CloudPlayerManager::getInstance()->get($request->getParameter("name"));
+        $server = CloudServerManager::getInstance()->get($requestBody["server"]);
+        $player->transfer($server);
+        $builder->body(["message" => "Attempted to transfer the player."]);
     }
 
     public function checkForBadRequest(Request $request, ResponseBuilder $response, array $body): bool {
-        $server = $request->getParameter("name");
-        if ($server === null) {
-            $response->body(["message" => "Please specify a server name or uuid."]);
+        $player = $request->getParameter("name");
+        $server = $body["server"];
+        if ($player === null) {
+            $response->body(["message" => "Please specify a player name."]);
+            return true;
+        }
+
+        if (CloudPlayerManager::getInstance()->get($player) === null) {
+            $response->body(["message" => "Player not found."]);
             return true;
         }
 

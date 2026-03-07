@@ -73,12 +73,12 @@ final class TemplateCommand extends Command implements ITabComplete {
                 ($key == "lobby" ? $realValue : null),
                 ($key == "maintenance" ? $realValue : null),
                 ($key == "static" ? $realValue : null),
-                ($key == "alwayscopytostaticservers" ? $realValue : null),
-                ($key == "maxplayercount" ? $realValue : null),
-                ($key == "minservercount" ? $realValue : null),
-                ($key == "maxsevrercount" ? $realValue : null),
-                ($key == "startnewpercentage" ? $realValue : null),
-                ($key == "autostart" ? $realValue : null),
+                ($key == "alwaysCopyToStaticServers" ? $realValue : null),
+                ($key == "maxPlayerCount" ? $realValue : null),
+                ($key == "minServerCount" ? $realValue : null),
+                ($key == "maxServerCount" ? $realValue : null),
+                ($key == "startNewPercentage" ? $realValue : null),
+                ($key == "autoStart" ? $realValue : null),
             );
         } else $sender->error("Wrong value provided, expected an §b{} §rwhen editing §b{}§r.", $expected, $key);
 
