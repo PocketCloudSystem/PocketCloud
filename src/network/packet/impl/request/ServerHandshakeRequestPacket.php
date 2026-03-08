@@ -24,7 +24,7 @@ final class ServerHandshakeRequestPacket extends RequestPacket {
     public function handle(ServerClient $client): void {
         if (($server = CloudServerManager::getInstance()->get($this->serverName)) !== null && ServerClientCache::getInstance()->getServer($client) === null) {
             ServerClientCache::getInstance()->add($server, $client);
-            CloudLogger::get()->success("The server §b{} §rhas §aconnected §rto the cloud.", $server->getName());
+            CloudLogger::get()->success("The server §b{} §rhas §aconnected §rto the cloud. §8(§rTook §b{}§rs§8)", $server->getName(), round(microtime(true) - $server->getStartTime(), 3));
             $server->getServerData()->setMaxPlayers($this->maxPlayers);
             $server->getServerData()->setProcessId($this->processId);
             $server->setVerifyStatus(VerifyStatus::VERIFIED);

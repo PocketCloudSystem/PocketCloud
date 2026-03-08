@@ -36,7 +36,7 @@ final class TemplateType {
             "crashdumps", "log_archive", "players", "plugin_data", "plugins", "resource_packs",
             "virions", "worlds", "pocketmine.yml", "banned-ips.txt", "banned-players.txt", "ops.txt",
             "plugin_list.yml", "server.log", "white-list.txt"
-        ], "save-all", "server.log", "plugins/CloudBridge.phar", false, function (TemplateType $type): bool {
+        ], "save-all", "server.properties", "server.log", "plugins/CloudBridge.phar", false, function (TemplateType $type): bool {
             return NetUtils::download("https://github.com/PocketCloudSystem/CloudBridge/releases/latest/download/CloudBridge.phar", $type->getBridgeFileLocation());
         }, function (TemplateType $type): Promise {
             $ch = curl_init("https://api.github.com/repos/PocketCloudSystem/CloudBridge/releases/latest");
@@ -71,7 +71,7 @@ final class TemplateType {
 
         self::add(new TemplateType("proxy", ServerSoftwareManager::getInstance()->get("WaterdogPE"), [
             "logs", "packs", "plugins", "lang.ini"
-        ], null, "logs/server.log", "plugins/CloudBridge.jar", true, function (TemplateType $type): bool {
+        ], null, "config.yml", "logs/server.log", "plugins/CloudBridge.jar", true, function (TemplateType $type): bool {
             return NetUtils::download("https://github.com/PocketCloudSystem/CloudBridge-Proxy/releases/latest/download/CloudBridge.jar", $type->getBridgeFileLocation());
         }, function (TemplateType $type): Promise {
             $ch = curl_init("https://api.github.com/repos/PocketCloudSystem/CloudBridge-Proxy/releases/latest");
@@ -141,6 +141,7 @@ final class TemplateType {
         private readonly ServerSoftware $software,
         private readonly array $savableFiles,
         private readonly ?string $saveCommandLine,
+        private readonly string $mainConfigurationFile,
         private readonly string $relativeLogFileLocation,
         private readonly string $bridgeFileLocation,
         private readonly bool $proxy,
@@ -196,6 +197,10 @@ final class TemplateType {
 
     public function getSaveCommandLine(): ?string {
         return $this->saveCommandLine;
+    }
+
+    public function getMainConfigurationFile(): string {
+        return $this->mainConfigurationFile;
     }
 
     public function getRelativeLogFileLocation(): string {

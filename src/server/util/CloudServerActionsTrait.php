@@ -12,6 +12,7 @@ use pocketcloud\cloud\network\client\ServerClientCache;
 use pocketcloud\cloud\network\packet\data\NotificationType;
 use pocketcloud\cloud\network\packet\data\ServerCommandExecutionResult;
 use pocketcloud\cloud\network\packet\impl\ProxyRegisterServerPacket;
+use pocketcloud\cloud\network\packet\impl\ProxyUnregisterServerPacket;
 use pocketcloud\cloud\network\packet\impl\request\client\CommandExecuteRequestPacket;
 use pocketcloud\cloud\network\packet\impl\response\client\CommandExecuteResponsePacket;
 use pocketcloud\cloud\server\CloudServerManager;
@@ -141,9 +142,22 @@ trait CloudServerActionsTrait {
         }
     }
 
+    public function removeFromProxies(): void {
+        if ($this->getTemplate()->getTemplateType()->isServer()) {
+            foreach (ServerClientCache::getInstance()->getAll(...TemplateType::onlyProxy()) as $client) {
+                ProxyUnregisterServerPacket::create($this->getName())->sendPacket($client);
+            }
+        }
+    }
+
     public function remove(): void {
         CloudServerManager::getInstance()->remove($this);
         ServerClientCache::getInstance()->remove($this);
+
+        if ($this->getTemplate()->getTemplateType() === TemplateType::SERVER()) {
+            if ($this->getProperties()->get("auto-save") === true) $this->saveFiles();
+            $this->removeFromProxies();
+        }
     }
 
     public function killProcess(): void {
@@ -167,7 +181,7 @@ trait CloudServerActionsTrait {
         $logFileLocation = $this->getPath() . $this->getTemplate()->getTemplateType()->getRelativeLogFileLocation();
         if (file_exists($logFileLocation)) {
             if (!@is_dir($logArchivePath = PathUtils::join($this->getTemplate()->getPath(), "cloud_log_archive"))) @mkdir($logArchivePath, 0777, true);
-            FileUtils::copyFile($logFileLocation, PathUtils::join($logArchivePath, date("Y-m-d_H:i:s.v_e", $this->startTime) . "_" . basename($logFileLocation) . ".log"));
+            FileUtils::copyFile($logFileLocation, PathUtils::join($logArchivePath, date("Y-m-d_H:i:s.v_e", (int) floor($this->startTime)) . "_" . basename($logFileLocation) . ".log"));
             @unlink($logFileLocation);
         }
     }

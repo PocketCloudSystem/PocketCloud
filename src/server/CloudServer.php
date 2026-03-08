@@ -3,6 +3,7 @@
 namespace pocketcloud\cloud\server;
 
 use Closure;
+use pocketcloud\cloud\config\Config;
 use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\event\impl\server\ServerStartEvent;
 use pocketcloud\cloud\event\impl\server\ServerStopEvent;
@@ -49,8 +50,9 @@ final class CloudServer implements Tickable, Writeable {
     use CloudServerActionsTrait;
 
     private int $lastCheckTime;
-    private ?int $startTime = null;
+    private ?float $startTime = null;
     private ?int $stopTime = null;
+    private ?Config $mainProperties = null;
     private ?ServerStatus $serverStatus;
     private VerifyStatus $verifyStatus;
     private CloudServerStorage $serverStorage;
@@ -71,7 +73,7 @@ final class CloudServer implements Tickable, Writeable {
     public function tick(int $currentTick): void {
         if ($this->startTime === null) return;
         if ($this->serverStatus === ServerStatus::STARTING) {
-            if (($this->startTime + $this->getTemplate()->getTemplateType()->getServerTimeout()) < time()) {
+            if (($this->startTime + $this->getTemplate()->getTemplateType()->getServerTimeout()) < microtime(true)) {
                 $this->handleFailedStart();
             }
         } else if ($this->serverStatus?->isOnline()) {
@@ -102,7 +104,7 @@ final class CloudServer implements Tickable, Writeable {
         NotificationType::SERVER_STARTING->notify(["server" => $this->getName()]);
 
         ServerStartMethod::current()?->startServer($this)->then(function (?int $tmpPid): void {
-            $this->startTime = time();
+            $this->startTime = microtime(true);
             $this->serverData->setTempProcessId($tmpPid);
         })->failure(function (): void {
             CloudLogger::get()->warn("Failed to start server §b{}§8, §rcould not create the process...", $this);
@@ -193,7 +195,7 @@ final class CloudServer implements Tickable, Writeable {
 
     public function checkAlive(): bool {
         $timeout = $this->getTemplate()->getTemplateType()->getServerTimeout();
-        if ((time() - $this->startTime) < $timeout) return true;
+        if ((microtime(true) - $this->startTime) < $timeout) return true;
         if (!isset($this->lastCheckTime)) return false;
         if ((time() - $this->lastCheckTime) < $timeout) return true;
         return false;
@@ -228,6 +230,10 @@ final class CloudServer implements Tickable, Writeable {
         $basePath = $this->getPath();
         $logFile = $this->getTemplate()->getTemplateType()->getRelativeLogFileLocation();
         return $basePath . $logFile;
+    }
+
+    public function getProperties(): Config {
+        return $this->mainProperties ??= new Config(PathUtils::join($this->getPath(), $this->getTemplate()->getTemplateType()->getMainConfigurationFile()));
     }
 
     public function getServerUuid(): string {
