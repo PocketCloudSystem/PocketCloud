@@ -164,7 +164,7 @@ final class Console {
     }
 
     public function readLine(): void {
-        if (!Server::getInstance()->isRunning()) return;
+        if (!$Server::getInstance()->running) return;
 
         $line = $this->manualConsole->readlineNonBlocking(self::READLINE_TIMEOUT_MS);
         $line = trim($line ?? "");

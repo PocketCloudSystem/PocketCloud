@@ -53,7 +53,7 @@ final class CommandManager implements Loadable, Tickable {
     }
 
     public function waitForConfirmation(Command $command, ICommandSender $sender, string $prompt, array $keywordsAccept, int $timeout = 10): Promise {
-        $this->confirmationPromises[] = [$command->getName(), $sender, $prompt, Server::getInstance()->getTick() + (20 * $timeout), $promise = new Promise(), $keywordsAccept];
+        $this->confirmationPromises[] = [$command->getName(), $sender, $prompt, $Server::getInstance()->tick + (20 * $timeout), $promise = new Promise(), $keywordsAccept];
         return $promise;
     }
 
@@ -115,7 +115,7 @@ final class CommandManager implements Loadable, Tickable {
         if ($this->currentConfirmationData !== null) {
             /** @var ICommandSender $sender */
             [, $sender, , $expireTick, $promise] = $this->currentConfirmationData;
-            if ($expireTick <= Server::getInstance()->getTick()) {
+            if ($expireTick <= $Server::getInstance()->tick) {
                 $this->currentConfirmationData = null;
                 $promise->reject();
                 $sender->warn("§cConfirmation timed out.");

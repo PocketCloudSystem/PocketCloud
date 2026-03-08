@@ -2,7 +2,6 @@
 
 namespace pocketcloud\cloud;
 
-use Phar;
 use pocketcloud\cloud\config\impl\LogSettingsConfig;
 use pocketcloud\cloud\config\impl\MainConfig;
 use pocketcloud\cloud\config\impl\ServerSettingsConfig;
@@ -78,7 +77,6 @@ use pocketcloud\cloud\update\UpdateChecker;
 use pocketcloud\cloud\util\benchmark\Benchmark;
 use pocketcloud\cloud\util\benchmark\BenchmarkTimingsSummary;
 use pocketcloud\cloud\util\bStats\CloudMetrics;
-use pocketcloud\cloud\util\FileUtils;
 use pocketcloud\cloud\util\misc\Queue;
 use pocketcloud\cloud\library\LibraryManager;
 use pocketcloud\cloud\console\log\CloudLogger;
@@ -86,7 +84,6 @@ use pocketcloud\cloud\util\loader\ClassLoader;
 use pocketcloud\cloud\util\misc\LoadableList;
 use pocketcloud\cloud\util\misc\TickableList;
 use pocketcloud\cloud\util\net\Address;
-use pocketcloud\cloud\util\PathUtils;
 use pocketcloud\cloud\util\ProcessUtils;
 use pocketcloud\cloud\util\TerminalUtils;
 use pocketcloud\cloud\util\Utils;
@@ -96,73 +93,189 @@ use r3pt1s\discord\webhook\message\embed\Embed;
 use r3pt1s\discord\webhook\Webhook;
 use Ramsey\Uuid\UuidInterface;
 use ReflectionException;
-use RuntimeException;
 use Throwable;
-use const pocketcloud\BACKUPS_PATH;
-use const pocketcloud\BINARIES_PATH;
-use const pocketcloud\CLOUD_PATH;
-use const pocketcloud\CRASHES_PATH;
-use const pocketcloud\GLOBAL_TEMPLATES_PATH;
-use const pocketcloud\IN_GAME_PATH;
-use const pocketcloud\INTERNAL_PATH;
-use const pocketcloud\IS_PHAR;
-use const pocketcloud\LIBRARIES_PATH;
 use const pocketcloud\LOG_PATH;
-use const pocketcloud\PLUGINS_PATH;
-use const pocketcloud\SERVER_CRASHES_PATH;
-use const pocketcloud\SERVER_GROUPS_PATH;
-use const pocketcloud\SOFTWARE_PATH;
 use const pocketcloud\STORAGE_PATH;
-use const pocketcloud\TEMP_PATH;
-use const pocketcloud\TEMPLATES_PATH;
 
 final class Server {
 
     private static ?self $instance = null;
 
-    private bool $running = false;
-    private int $tick = 0;
-    private float $nextTick = 0;
-    private float $startTimestamp = 0;
+    public bool $running = false {
+		get {
+			return $this->running;
+		}
+	}
+	public int $tick = 0 {
+		get {
+			return $this->tick;
+		}
+	}
+	private float $nextTick = 0 {
+		get {
+			return $this->nextTick;
+		}
+	}
+	private float $startTimestamp = 0 {
+		get {
+			return $this->startTimestamp;
+		}
+	}
 
-    private array $tickTimes = [];
+	private array $tickTimes = [];
     private float $tickTimesSum = 0.0;
     private float $lastTickTime = 0;
-    private float $currentTPS = 20.0;
-    private float $averageTPS = 20.0;
-    private float $tickUsage = 0.0;
+    public float $currentTPS = 20.0 {
+		get {
+			return $this->currentTPS;
+		}
+	}
+	public float $averageTPS = 20.0 {
+		get {
+			return $this->averageTPS;
+		}
+	}
+	private float $tickUsage = 0.0 {
+		get {
+			return $this->tickUsage;
+		}
+	}
 
-    private MainLogger $logger;
-    private Console $console;
-    private ScreenManager $screenManager;
-    private CommandManager $commandManager;
-    private LibraryManager $libraryManager;
-    private MigratorManager $migratorManager;
-    private MainConfig $config;
-    private ServerSettingsConfig $serverSettingsConfig;
-    private LogSettingsConfig $logSettingsConfig;
-    private SleeperHandler $sleeperHandler;
-    private Queue $startNotificationQueue;
-    private ServerSoftwareManager $softwareManager;
-    private ThreadManager $threadManager;
-    private Network $network;
-    private HttpServer $httpServer;
-    private AsyncPool $asyncPool;
-    private ServerPreparator $serverPreparator;
-    private RequestManager $requestManager;
-    private TemplateManager $templateManager;
-    private ServerGroupManager $serverGroupManager;
-    private ServerPropertiesGenerator $serverPropertiesGenerator;
-    private CloudServerManager $serverManager;
-    private ServerClientCache $serverClientCache;
-    private TrafficMonitorManager $trafficMonitorManager;
-    private CloudPluginManager $pluginManager;
-    private UpdateChecker $updateChecker;
+	public MainLogger $logger {
+		get {
+			return $this->logger;
+		}
+	}
+	private Console $console {
+		get {
+			return $this->console;
+		}
+	}
+	private ScreenManager $screenManager {
+		get {
+			return $this->screenManager;
+		}
+	}
+	private CommandManager $commandManager {
+		get {
+			return $this->commandManager;
+		}
+	}
+	private LibraryManager $libraryManager {
+		get {
+			return $this->libraryManager;
+		}
+	}
+	private MigratorManager $migratorManager;
+    private MainConfig $config {
+		get {
+			return $this->config;
+		}
+	}
+	private ServerSettingsConfig $serverSettingsConfig {
+		get {
+			return $this->serverSettingsConfig;
+		}
+	}
+	private LogSettingsConfig $logSettingsConfig {
+		get {
+			return $this->logSettingsConfig;
+		}
+	}
+	public SleeperHandler $sleeperHandler {
+		get {
+			return $this->sleeperHandler;
+		}
+	}
+	private Queue $startNotificationQueue {
+		get {
+			return $this->startNotificationQueue;
+		}
+	}
+	private ServerSoftwareManager $softwareManager {
+		get {
+			return $this->softwareManager;
+		}
+	}
+	private ThreadManager $threadManager {
+		get {
+			return $this->threadManager;
+		}
+	}
+	private Network $network {
+		get {
+			return $this->network;
+		}
+	}
+	private HttpServer $httpServer {
+		get {
+			return $this->httpServer;
+		}
+	}
+	private AsyncPool $asyncPool {
+		get {
+			return $this->asyncPool;
+		}
+	}
+	private ServerPreparator $serverPreparator {
+		get {
+			return $this->serverPreparator;
+		}
+	}
+	private RequestManager $requestManager;
+    private TemplateManager $templateManager {
+		get {
+			return $this->templateManager;
+		}
+	}
+	private ServerGroupManager $serverGroupManager {
+		get {
+			return $this->serverGroupManager;
+		}
+	}
+	private ServerPropertiesGenerator $serverPropertiesGenerator {
+		get {
+			return $this->serverPropertiesGenerator;
+		}
+	}
+	private CloudServerManager $serverManager {
+		get {
+			return $this->serverManager;
+		}
+	}
+	private ServerClientCache $serverClientCache {
+		get {
+			return $this->serverClientCache;
+		}
+	}
+	private TrafficMonitorManager $trafficMonitorManager {
+		get {
+			return $this->trafficMonitorManager;
+		}
+	}
+	private CloudPluginManager $pluginManager {
+		get {
+			return $this->pluginManager;
+		}
+	}
+	private UpdateChecker $updateChecker {
+		get {
+			return $this->updateChecker;
+		}
+	}
 
-    private UuidInterface $cloudUniqueId;
-    private CloudMetrics $metrics;
+	private UuidInterface $cloudUniqueId {
+		get {
+			return $this->cloudUniqueId;
+		}
+	}
+	private CloudMetrics $metrics {
+		get {
+			return $this->metrics;
+		}
+	}
 
-    public function __construct(private readonly ClassLoader $classLoader) {
+	public function __construct(private readonly ClassLoader $classLoader) {
         if (self::$instance !== null) {
             throw new \LogicException('Cloud server is already initialized');
         }
@@ -226,8 +339,8 @@ final class Server {
             $this->softwareManager->downloadAll();
             return true;
         } catch (ReflectionException $e) {
-            $this->getLogger()->error("§cFailed to load server software, shutting down...");
-            $this->getLogger()->exception($e);
+            $this->logger->error("§cFailed to load server software, shutting down...");
+            $this->logger->exception($e);
             $this->shutdown();
             return false;
         }
@@ -555,19 +668,7 @@ final class Server {
         return $this;
     }
 
-    public function getCurrentTPS(): float {
-        return $this->currentTPS;
-    }
-
-    public function getAverageTPS(): float {
-        return $this->averageTPS;
-    }
-
-    public function getTickUsage(): float {
-        return $this->tickUsage;
-    }
-
-    public function getTickPerformanceMetrics(): array {
+	public function getTickPerformanceMetrics(): array {
         return [
             "current_tps" => $this->currentTPS,
             "average_tps" => $this->averageTPS,
@@ -575,132 +676,12 @@ final class Server {
         ];
     }
 
-    public function isRunning(): bool {
-        return $this->running;
-    }
-
-    public function getTick(): int {
-        return $this->tick;
-    }
-
-    public function getNextTick(): float {
-        return $this->nextTick;
-    }
-
-    public function getStartTimestamp(): float {
-        return $this->startTimestamp;
-    }
-
-    public function getUptime(): float {
+	public function getUptime(): float {
         if ($this->startTimestamp <= 0) return 0;
         return microtime(true) - $this->startTimestamp;
     }
 
-    public function getLogger(): MainLogger {
-        return $this->logger;
-    }
-
-    public function getConsole(): Console {
-        return $this->console;
-    }
-
-    public function getScreenManager(): ScreenManager {
-        return $this->screenManager;
-    }
-
-    public function getCommandManager(): CommandManager {
-        return $this->commandManager;
-    }
-
-    public function getLibraryManager(): LibraryManager {
-        return $this->libraryManager;
-    }
-
-    public function getSleeperHandler(): SleeperHandler {
-        return $this->sleeperHandler;
-    }
-
-    public function getStartNotificationQueue(): Queue {
-        return $this->startNotificationQueue;
-    }
-
-    public function getConfig(): MainConfig {
-        return $this->config;
-    }
-
-    public function getServerSettingsConfig(): ServerSettingsConfig {
-        return $this->serverSettingsConfig;
-    }
-
-    public function getLogSettingsConfig(): LogSettingsConfig {
-        return $this->logSettingsConfig;
-    }
-
-    public function getSoftwareManager(): ServerSoftwareManager {
-        return $this->softwareManager;
-    }
-
-    public function getThreadManager(): ThreadManager {
-        return $this->threadManager;
-    }
-
-    public function getNetwork(): Network {
-        return $this->network;
-    }
-
-    public function getHttpServer(): HttpServer {
-        return $this->httpServer;
-    }
-
-    public function getAsyncPool(): AsyncPool {
-        return $this->asyncPool;
-    }
-
-    public function getServerPreparator(): ServerPreparator {
-        return $this->serverPreparator;
-    }
-
-    public function getTemplateManager(): TemplateManager {
-        return $this->templateManager;
-    }
-
-    public function getServerGroupManager(): ServerGroupManager {
-        return $this->serverGroupManager;
-    }
-
-    public function getServerPropertiesGenerator(): ServerPropertiesGenerator {
-        return $this->serverPropertiesGenerator;
-    }
-
-    public function getServerManager(): CloudServerManager {
-        return $this->serverManager;
-    }
-
-    public function getServerClientCache(): ServerClientCache {
-        return $this->serverClientCache;
-    }
-
-    public function getTrafficMonitorManager(): TrafficMonitorManager {
-        return $this->trafficMonitorManager;
-    }
-
-    public function getPluginManager(): CloudPluginManager {
-        return $this->pluginManager;
-    }
-
-    public function getUpdateChecker(): UpdateChecker {
-        return $this->updateChecker;
-    }
-
-    public function getCloudUniqueId(): UuidInterface {
-        return $this->cloudUniqueId;
-    }
-
-    public function getMetrics(): CloudMetrics {
-        return $this->metrics;
-    }
-
-    public function getClassLoader(): ClassLoader {
+	public function getClassLoader(): ClassLoader {
         return $this->classLoader;
     }
 

@@ -77,7 +77,7 @@ trait ThreadPartsTrait {
     public function start(int $options = NativeThread::INHERIT_NONE): bool {
         $this->setClassLoaders();
 
-        $this->logger = new ThreadLogger($buffer = new ThreadSafeArray(), Server::getInstance()->getSleeperHandler()->addNotifier(function () use($buffer): void {
+        $this->logger = new ThreadLogger($buffer = new ThreadSafeArray(), $Server::getInstance()->sleeperHandler->addNotifier(function () use($buffer): void {
             while (($logEntry = $buffer->shift()) !== null) {
                 CloudLogger::get()->echo($logEntry);
             }

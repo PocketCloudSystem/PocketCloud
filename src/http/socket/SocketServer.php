@@ -40,7 +40,7 @@ final class SocketServer extends Thread {
         $this->clients = new ThreadSafeArray();
         $this->clientBuffers = new ThreadSafeArray();
 
-        $this->entry = Server::getInstance()->getSleeperHandler()->addNotifier(function (): void {
+        $this->entry = $Server::getInstance()->sleeperHandler->addNotifier(function (): void {
             /** @var UnhandledHttpRequest $unhandledRequest */
             while (($unhandledRequest = $this->buffer->shift()) !== null) {
                 /**

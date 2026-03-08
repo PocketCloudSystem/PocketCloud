@@ -40,7 +40,7 @@ final class StatusCommand extends Command {
                     } else if (in_array($key, ["tick_usage", "cpu_usage"])) {
                         return FormatUtils::usagePercentage($key == "cpu_usage" ? ($value / ProcessUtils::getCpuCores()) : $value);
                     } else if ($key == "uptime") {
-                        return FormatUtils::uptime($value) . " §8(§c" . Server::getInstance()->getTick() . "§8)";
+                        return FormatUtils::uptime($value) . " §8(§c" . $Server::getInstance()->tick . "§8)";
                     }
 
                     return $value;

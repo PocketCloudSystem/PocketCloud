@@ -10,19 +10,17 @@ use pocketcloud\cloud\util\FileUtils;
 use pocketcloud\cloud\util\loader\ClassLoader;
 use pocketcloud\cloud\util\ProcessUtils;
 use pocketcloud\cloud\util\TerminalUtils;
+use const pocketcloud\INTERNAL_PATH;
 
 error_reporting(-1);
 
-require_once \pocketcloud\VENDOR_AUTOLOAD_PATH;
-
 checkPlatform();
 
-
 foreach ([
-             \pocketcloud\STORAGE_PATH, \pocketcloud\BACKUPS_PATH, \pocketcloud\INTERNAL_PATH, CRASHES_PATH, SERVER_CRASHES_PATH, BINARIES_PATH, LIBRARIES_PATH, PLUGINS_PATH, SOFTWARE_PATH, IN_GAME_PATH, LOG_PATH,
-             TEMP_PATH,
-             TEMPLATES_PATH, GLOBAL_TEMPLATES_PATH,
-             SERVER_GROUPS_PATH
+             \pocketcloud\STORAGE_PATH, \pocketcloud\BACKUPS_PATH, INTERNAL_PATH, \pocketcloud\CRASHES_PATH, \pocketcloud\SERVER_CRASHES_PATH, \pocketcloud\BINARIES_PATH, \pocketcloud\LIBRARIES_PATH, \pocketcloud\PLUGINS_PATH, \pocketcloud\SOFTWARE_PATH, \pocketcloud\IN_GAME_PATH, \pocketcloud\LOG_PATH,
+			 \pocketcloud\TEMP_PATH,
+			 \pocketcloud\TEMPLATES_PATH, \pocketcloud\GLOBAL_TEMPLATES_PATH,
+			 \pocketcloud\SERVER_GROUPS_PATH
          ] as $dir) {
     FileUtils::createDir($dir);
 }

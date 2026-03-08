@@ -28,8 +28,8 @@ final class KeepAlivePacket extends CloudPacket implements ClientboundPacket, Cl
 
             [$memoryUsage, $peakMemoryUsage] = array_values(ProcessUtils::getProcessStatus());
             $server->sendDelayedPacket(KeepAlivePacket::create(
-                Server::getInstance()->getCurrentTPS(),
-                Server::getInstance()->getAverageTPS(),
+                $Server::getInstance()->currentTPS,
+				$Server::getInstance()->averageTPS,
                 $memoryUsage,
                 $peakMemoryUsage,
                 ProcessUtils::getMemoryLimit(),

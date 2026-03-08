@@ -35,7 +35,7 @@ final class ServerConsoleMonitorScreen extends Screen {
                 $this->stream->startStream();
             } catch (Throwable $e) {
                 $this->printInfoMessage("§8[§c!§8] §cFailed to open log stream§8: §e{}§r, trying again in 3 seconds...", $e->getMessage());
-                $this->nextOpenStreamTry = Server::getInstance()->getTick() + (20 * 3);
+                $this->nextOpenStreamTry = $Server::getInstance()->tick + (20 * 3);
                 $this->stream = null;
             }
         } else {
@@ -55,7 +55,7 @@ final class ServerConsoleMonitorScreen extends Screen {
                 $this->justStopped = true;
             }
         } else {
-            if ($this->stream === null && Server::getInstance()->getTick() >= $this->nextOpenStreamTry) {
+            if ($this->stream === null && $Server::getInstance()->tick >= $this->nextOpenStreamTry) {
                 $this->justStopped = false;
                 $this->printInfoMessage("§8[§c!§8] §rThe server §b{} §rhas been §astarted§r. Starting log stream...", $this->serverName);
                 $this->openLogStream();

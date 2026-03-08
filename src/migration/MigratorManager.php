@@ -39,7 +39,7 @@ final class MigratorManager {
         $failedMigrations = 0;
         $availableMigrations = array_filter($this->migrators, fn(IMigrator $migrator) => $migrator->requiresMigration());
         foreach ($availableMigrations as $migrator) {
-            if (!$migrator->runOnStartup() && Server::getInstance()->getTick() == 0) continue;
+            if (!$migrator->runOnStartup() && $Server::getInstance()->tick == 0) continue;
             if (!$this->migrate($migrator)) {
                 $failedMigrations++;
             }

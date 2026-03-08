@@ -20,7 +20,7 @@ abstract class CloudPlugin {
         private readonly string $pluginDirPath
     ) {
         $this->scheduler = new TaskScheduler($this);
-        $this->prefixedLogger = new PrefixedLogger(Server::getInstance()->getLogger(), "[" . $this->description->getName() . "]");
+        $this->prefixedLogger = new PrefixedLogger($Server::getInstance()->logger, "[" . $this->description->getName() . "]");
     }
 
     public function saveResource(string $relativePath, bool $replace = false): bool {

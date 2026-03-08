@@ -40,7 +40,7 @@ final class ServerClient {
      * @return void
      */
     public function sendDelayedPacket(CloudPacket $packet, int $ticks, ?Closure $onSend = null): void {
-        $this->delayedPackets[] = [$packet, Server::getInstance()->getTick() + $ticks, $onSend];
+        $this->delayedPackets[] = [$packet, $Server::getInstance()->tick + $ticks, $onSend];
     }
 
     public function getDelayedPackets(): array {

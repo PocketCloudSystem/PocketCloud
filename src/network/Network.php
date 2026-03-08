@@ -50,7 +50,7 @@ final class Network extends Thread {
 
         PacketPool::init();
 
-        $this->handlerEntry = Server::getInstance()->getSleeperHandler()->addNotifier(function (): void {
+        $this->handlerEntry = $Server::getInstance()->sleeperHandler->addNotifier(function (): void {
             /** @var UnhandledPacket $unhandledPacket */
             while (($unhandledPacketData = $this->buffer->shift()) !== null) {
                 if (!$this->established) return;
@@ -210,7 +210,7 @@ final class Network extends Thread {
 
     public function close(): void {
         if (!$this->established) return;
-        Server::getInstance()->getSleeperHandler()->removeNotifier($this->handlerEntry->getNotifierId());
+        $Server::getInstance()->sleeperHandler->removeNotifier($this->handlerEntry->getNotifierId());
         $this->buffer = new ThreadSafeArray();
         @socket_close($this->socket);
         $this->established = false;

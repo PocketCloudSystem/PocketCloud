@@ -21,7 +21,7 @@ final class CloudMySqlProvider extends CloudProvider {
     private ?ConnectionPool $connectionPool;
 
     public function __construct() {
-        $this->connectionPool = new ConnectionPool(MainConfig::getInstance()->getMysqlSettings(), 1, Server::getInstance()->getSleeperHandler(), function (Throwable $throwable): void {
+        $this->connectionPool = new ConnectionPool(MainConfig::getInstance()->getMysqlSettings(), 1, $Server::getInstance()->sleeperHandler, function (Throwable $throwable): void {
             CloudLogger::get()->error("Something unexpected happened while executing a mysql query...");
             CloudLogger::get()->exception($throwable);
         });

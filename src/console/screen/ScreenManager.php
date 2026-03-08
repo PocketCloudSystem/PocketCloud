@@ -23,7 +23,7 @@ final class ScreenManager implements Tickable {
     }
 
     public function setCurrentScreen(Screen $currentScreen): void {
-        $this->currentScreen?->onRemove(Server::getInstance()->getTick());
+        $this->currentScreen?->onRemove($Server::getInstance()->tick);
         $this->currentScreen = $currentScreen;
         $this->currentScreen->initialize(Console::getInstance());
     }

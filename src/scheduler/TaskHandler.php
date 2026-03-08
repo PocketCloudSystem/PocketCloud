@@ -20,7 +20,7 @@ final class TaskHandler {
         private readonly CloudPlugin $owner
     ) {
         $this->id = mt_rand(PHP_INT_MIN, PHP_INT_MAX);
-        $this->nextRun = Server::getInstance()->getTick() + $this->delay;
+        $this->nextRun = $Server::getInstance()->tick + $this->delay;
     }
 
     public function cancel(): void {
