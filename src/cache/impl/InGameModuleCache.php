@@ -1,10 +1,11 @@
 <?php
 
-namespace pocketcloud\cloud\cache;
+namespace pocketcloud\cloud\cache\impl;
 
+use pocketcloud\cloud\cache\Cache;
 use pocketcloud\cloud\network\packet\impl\ModuleSyncPacket;
 
-final class InGameModuleCache {
+final class InGameModuleCache implements Cache {
 
     public const string SIGN_MODULE = "sign_module";
     public const string NPC_MODULE = "npc_module";
@@ -16,7 +17,8 @@ final class InGameModuleCache {
         self::HUB_COMMAND_MODULE => false
     ];
 
-    private static function syncOut(): void {
+    /** @internal  */
+    public static function syncOut(): void {
         ModuleSyncPacket::fromModuleCache()->broadcastPacket();
     }
 

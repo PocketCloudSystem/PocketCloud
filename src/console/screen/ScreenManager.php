@@ -4,7 +4,7 @@ namespace pocketcloud\cloud\console\screen;
 
 use pocketcloud\cloud\console\Console;
 use pocketcloud\cloud\console\screen\impl\DefaultScreen;
-use pocketcloud\cloud\PocketCloud;
+use pocketcloud\cloud\Server;
 use pocketcloud\cloud\util\misc\Tickable;
 use pocketcloud\cloud\util\trait\SingletonTrait;
 use RuntimeException;
@@ -23,7 +23,7 @@ final class ScreenManager implements Tickable {
     }
 
     public function setCurrentScreen(Screen $currentScreen): void {
-        $this->currentScreen?->onRemove(PocketCloud::getInstance()->getTick());
+        $this->currentScreen?->onRemove(Server::getInstance()->getTick());
         $this->currentScreen = $currentScreen;
         $this->currentScreen->initialize(Console::getInstance());
     }

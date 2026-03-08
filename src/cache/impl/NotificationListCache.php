@@ -1,14 +1,16 @@
 <?php
 
-namespace pocketcloud\cloud\cache;
+namespace pocketcloud\cloud\cache\impl;
 
+use pocketcloud\cloud\cache\Cache;
 use pocketcloud\cloud\network\packet\impl\NotificationListSyncPacket;
 
-final class NotificationListCache {
+final class NotificationListCache implements Cache {
 
     private static array $notificationList = [];
 
-    private static function syncOut(): void {
+    /** @internal  */
+    public static function syncOut(): void {
         NotificationListSyncPacket::create(self::getAll())->broadcastPacket();
     }
 

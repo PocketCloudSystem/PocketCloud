@@ -6,7 +6,7 @@ use Phar;
 use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\plugin\CloudPlugin;
 use pocketcloud\cloud\plugin\CloudPluginDescription;
-use pocketcloud\cloud\PocketCloud;
+use pocketcloud\cloud\Server;
 use pocketcloud\cloud\util\FileUtils;
 use pocketcloud\cloud\util\PathUtils;
 use const pocketcloud\PLUGINS_PATH;
@@ -30,7 +30,7 @@ final class PharCloudPluginLoader implements CloudPluginLoader {
         if ($pluginYml === null) return "Invalid plugin.yml";
 
         CloudLogger::get()->debug("Adding plugin to class loader (" . $path . ")");
-        PocketCloud::getInstance()->getClassLoader()->addPrefix($pluginYml->getSrcNamespacePrefix(), "phar://" . $path . "/src");
+        Server::getInstance()->getClassLoader()->addPrefix($pluginYml->getSrcNamespacePrefix(), "phar://" . $path . "/src");
         $plugin = new ($pluginYml->getMain())($pluginYml, PathUtils::join(PLUGINS_PATH, strtolower($pluginYml->getName())) . "/", $phar->getPath());
         if (!is_subclass_of($plugin, CloudPlugin::class)) return "Is not a valid CloudPlugin";
         return $plugin;

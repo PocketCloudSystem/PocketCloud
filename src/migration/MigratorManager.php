@@ -13,7 +13,7 @@ use pocketcloud\cloud\migration\impl\JsonTemplatesToMySqlMigrator;
 use pocketcloud\cloud\migration\impl\OldNotifyListToNotificationsMigrator;
 use pocketcloud\cloud\migration\impl\ProxyPluginsMigrator;
 use pocketcloud\cloud\migration\impl\ServerPluginsMigrator;
-use pocketcloud\cloud\PocketCloud;
+use pocketcloud\cloud\Server;
 use pocketcloud\cloud\util\trait\SingletonTrait;
 
 final class MigratorManager {
@@ -39,7 +39,7 @@ final class MigratorManager {
         $failedMigrations = 0;
         $availableMigrations = array_filter($this->migrators, fn(IMigrator $migrator) => $migrator->requiresMigration());
         foreach ($availableMigrations as $migrator) {
-            if (!$migrator->runOnStartup() && PocketCloud::getInstance()->getTick() == 0) continue;
+            if (!$migrator->runOnStartup() && Server::getInstance()->getTick() == 0) continue;
             if (!$this->migrate($migrator)) {
                 $failedMigrations++;
             }

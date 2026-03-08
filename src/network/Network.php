@@ -20,7 +20,7 @@ use pocketcloud\cloud\network\packet\ResponseClientPacket;
 use pocketcloud\cloud\network\packet\UnhandledPacket;
 use pocketcloud\cloud\network\packet\util\PacketSerializer;
 use pocketcloud\cloud\network\request\RequestManager;
-use pocketcloud\cloud\PocketCloud;
+use pocketcloud\cloud\Server;
 use pocketcloud\cloud\template\TemplateType;
 use pocketcloud\cloud\thread\Thread;
 use pocketcloud\cloud\traffic\impl\NetworkTrafficMonitor;
@@ -50,7 +50,7 @@ final class Network extends Thread {
 
         PacketPool::init();
 
-        $this->handlerEntry = PocketCloud::getInstance()->getSleeperHandler()->addNotifier(function (): void {
+        $this->handlerEntry = Server::getInstance()->getSleeperHandler()->addNotifier(function (): void {
             /** @var UnhandledPacket $unhandledPacket */
             while (($unhandledPacketData = $this->buffer->shift()) !== null) {
                 if (!$this->established) return;
@@ -210,7 +210,7 @@ final class Network extends Thread {
 
     public function close(): void {
         if (!$this->established) return;
-        PocketCloud::getInstance()->getSleeperHandler()->removeNotifier($this->handlerEntry->getNotifierId());
+        Server::getInstance()->getSleeperHandler()->removeNotifier($this->handlerEntry->getNotifierId());
         $this->buffer = new ThreadSafeArray();
         @socket_close($this->socket);
         $this->established = false;

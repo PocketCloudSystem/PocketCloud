@@ -11,7 +11,7 @@ use pocketcloud\cloud\http\util\HttpConstants;
 use pocketcloud\cloud\http\util\StatusCode;
 use pocketcloud\cloud\http\util\HttpUtils;
 use pocketcloud\cloud\http\util\UnhandledHttpRequest;
-use pocketcloud\cloud\PocketCloud;
+use pocketcloud\cloud\Server;
 use pocketcloud\cloud\thread\Thread;
 use pocketcloud\cloud\traffic\impl\HttpTrafficMonitor;
 use pocketcloud\cloud\traffic\TrafficMonitor;
@@ -40,7 +40,7 @@ final class SocketServer extends Thread {
         $this->clients = new ThreadSafeArray();
         $this->clientBuffers = new ThreadSafeArray();
 
-        $this->entry = PocketCloud::getInstance()->getSleeperHandler()->addNotifier(function (): void {
+        $this->entry = Server::getInstance()->getSleeperHandler()->addNotifier(function (): void {
             /** @var UnhandledHttpRequest $unhandledRequest */
             while (($unhandledRequest = $this->buffer->shift()) !== null) {
                 /**

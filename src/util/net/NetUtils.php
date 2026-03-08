@@ -3,7 +3,6 @@
 namespace pocketcloud\cloud\util\net;
 
 use pocketcloud\cloud\console\handler\ExceptionHandler;
-use pocketcloud\cloud\PocketCloud;
 use RuntimeException;
 
 final class NetUtils {

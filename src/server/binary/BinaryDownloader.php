@@ -6,7 +6,7 @@ use Exception;
 use PharData;
 use pocketcloud\cloud\console\handler\ExceptionHandler;
 use pocketcloud\cloud\console\log\CloudLogger;
-use pocketcloud\cloud\PocketCloud;
+use pocketcloud\cloud\Server;
 use pocketcloud\cloud\util\net\NetUtils;
 use RuntimeException;
 use ZipArchive;
@@ -72,7 +72,7 @@ final class BinaryDownloader {
 
             throw new Exception("Failed to download $templateType binaries");
         }, "§cFailed to download §b$templateType binaries §8(§b" . $downloadUrl . "§8)", function (): void {
-            PocketCloud::getInstance()->shutdown();
+            Server::getInstance()->shutdown();
         }, $downloadUrl, $templateType) ?? false;
     }
 }

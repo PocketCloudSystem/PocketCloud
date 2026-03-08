@@ -7,7 +7,7 @@ use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\network\Network;
 use pocketcloud\cloud\network\packet\ClientboundPacket;
 use pocketcloud\cloud\network\packet\CloudPacket;
-use pocketcloud\cloud\PocketCloud;
+use pocketcloud\cloud\Server;
 use pocketcloud\cloud\server\CloudServer;
 use pocketcloud\cloud\util\net\Address;
 
@@ -40,7 +40,7 @@ final class ServerClient {
      * @return void
      */
     public function sendDelayedPacket(CloudPacket $packet, int $ticks, ?Closure $onSend = null): void {
-        $this->delayedPackets[] = [$packet, PocketCloud::getInstance()->getTick() + $ticks, $onSend];
+        $this->delayedPackets[] = [$packet, Server::getInstance()->getTick() + $ticks, $onSend];
     }
 
     public function getDelayedPackets(): array {

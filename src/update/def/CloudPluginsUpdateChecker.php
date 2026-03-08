@@ -5,7 +5,7 @@ namespace pocketcloud\cloud\update\def;
 use pocketcloud\cloud\config\impl\MainConfig;
 use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\console\log\level\CloudLogLevel;
-use pocketcloud\cloud\PocketCloud;
+use pocketcloud\cloud\Server;
 use pocketcloud\cloud\template\TemplateType;
 use pocketcloud\cloud\update\IUpdateChecker;
 use pocketcloud\cloud\update\UpdateChecker;
@@ -24,7 +24,7 @@ final class CloudPluginsUpdateChecker implements IUpdateChecker {
             $type->checkBridgeForUpdate()->then(function (bool $needsUpdate) use ($promise, &$i, &$result, $type, $amount): void {
                 $i++;
                 if ($needsUpdate) {
-                    if (!MainConfig::getInstance()->canUpdate($this)) PocketCloud::getInstance()->addStartNotification("Your version of plugin §b{} §ris outdated. Please update it manually.", CloudLogLevel::WARN(), $type->getRelativeBridgeFileLocation());
+                    if (!MainConfig::getInstance()->canUpdate($this)) Server::getInstance()->addStartNotification("Your version of plugin §b{} §ris outdated. Please update it manually.", CloudLogLevel::WARN(), $type->getRelativeBridgeFileLocation());
                     CloudLogger::get()->info("Your version of plugin §b{} §ris outdated...", $type->getRelativeBridgeFileLocation());
                     $result[] = $type->getName();
                 }

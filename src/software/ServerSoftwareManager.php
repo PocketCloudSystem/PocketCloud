@@ -5,7 +5,7 @@ namespace pocketcloud\cloud\software;
 use Phar;
 use pocketcloud\cloud\config\impl\ServerSettingsConfig;
 use pocketcloud\cloud\console\log\CloudLogger;
-use pocketcloud\cloud\PocketCloud;
+use pocketcloud\cloud\Server;
 use pocketcloud\cloud\util\FormatUtils;
 use pocketcloud\cloud\util\net\NetUtils;
 use pocketcloud\cloud\util\misc\Loadable;
@@ -92,7 +92,7 @@ final class ServerSoftwareManager implements Loadable {
         foreach ($this->software as $software) {
             if (!$this->check($software)) {
                 if (!$this->download($software)) {
-                    PocketCloud::getInstance()->shutdown();
+                    Server::getInstance()->shutdown();
                     break;
                 }
             }

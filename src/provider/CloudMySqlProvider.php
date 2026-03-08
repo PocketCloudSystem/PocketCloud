@@ -2,18 +2,18 @@
 
 namespace pocketcloud\cloud\provider;
 
-use pocketcloud\cloud\cache\InGameModuleCache;
-use pocketcloud\cloud\cache\MaintenanceListCache;
+use pocketcloud\cloud\cache\impl\InGameModuleCache;
+use pocketcloud\cloud\cache\impl\MaintenanceListCache;
 use pocketcloud\cloud\config\impl\MainConfig;
 use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\group\ServerGroup;
 use pocketcloud\cloud\migration\IMigrator;
 use pocketcloud\cloud\migration\MigratorManager;
-use pocketcloud\cloud\PocketCloud;
 use pocketcloud\cloud\provider\database\DatabaseQueries;
+use pocketcloud\cloud\Server;
 use pocketcloud\cloud\template\Template;
-use r3pt1s\mysql\ConnectionPool;
 use pocketcloud\cloud\util\promise\Promise;
+use r3pt1s\mysql\ConnectionPool;
 use Throwable;
 
 final class CloudMySqlProvider extends CloudProvider {
@@ -21,7 +21,7 @@ final class CloudMySqlProvider extends CloudProvider {
     private ?ConnectionPool $connectionPool;
 
     public function __construct() {
-        $this->connectionPool = new ConnectionPool(MainConfig::getInstance()->getMysqlSettings(), 1, PocketCloud::getInstance()->getSleeperHandler(), function (Throwable $throwable): void {
+        $this->connectionPool = new ConnectionPool(MainConfig::getInstance()->getMysqlSettings(), 1, Server::getInstance()->getSleeperHandler(), function (Throwable $throwable): void {
             CloudLogger::get()->error("Something unexpected happened while executing a mysql query...");
             CloudLogger::get()->exception($throwable);
         });

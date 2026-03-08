@@ -5,7 +5,7 @@ namespace pocketcloud\cloud\update;
 use pocketcloud\cloud\config\impl\MainConfig;
 use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\console\log\level\CloudLogLevel;
-use pocketcloud\cloud\PocketCloud;
+use pocketcloud\cloud\Server;
 use pocketcloud\cloud\update\def\CloudPluginsUpdateChecker;
 use pocketcloud\cloud\update\def\CloudUpdateChecker;
 use pocketcloud\cloud\update\def\SoftwareUpdateChecker;
@@ -37,7 +37,7 @@ final class UpdateChecker {
         CloudLogger::get()->info("Checking for general updates...");
         foreach ($this->updateCheckers as $updateChecker) {
             if (!MainConfig::getInstance()->canCheckForUpdates($updateChecker->id())) {
-                PocketCloud::getInstance()->addStartNotification("Skipped updates for §b{}§8, §ras it is disabled in the config.", CloudLogLevel::DEBUG(), $updateChecker->id());
+                Server::getInstance()->addStartNotification("Skipped updates for §b{}§8, §ras it is disabled in the config.", CloudLogLevel::DEBUG(), $updateChecker->id());
                 continue;
             }
 
@@ -51,9 +51,9 @@ final class UpdateChecker {
 
                 $updateChecker->update($result[1] ?? null)->then(function (?bool $success) use ($updateChecker): void {
                     if ($success === false) {
-                        PocketCloud::getInstance()->shutdown();
+                        Server::getInstance()->shutdown();
                     }
-                })->failure(fn() => PocketCloud::getInstance()->shutdown());
+                })->failure(fn() => Server::getInstance()->shutdown());
             });
         }
     }

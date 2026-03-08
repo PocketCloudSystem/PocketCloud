@@ -21,7 +21,7 @@ use pocketcloud\cloud\console\command\impl\VersionCommand;
 use pocketcloud\cloud\console\command\sender\ICommandSender;
 use pocketcloud\cloud\console\Console;
 use pocketcloud\cloud\console\log\color\CloudConsoleColor;
-use pocketcloud\cloud\PocketCloud;
+use pocketcloud\cloud\Server;
 use pocketcloud\cloud\util\FormatUtils;
 use pocketcloud\cloud\util\misc\Loadable;
 use pocketcloud\cloud\util\misc\Tickable;
@@ -53,7 +53,7 @@ final class CommandManager implements Loadable, Tickable {
     }
 
     public function waitForConfirmation(Command $command, ICommandSender $sender, string $prompt, array $keywordsAccept, int $timeout = 10): Promise {
-        $this->confirmationPromises[] = [$command->getName(), $sender, $prompt, PocketCloud::getInstance()->getTick() + (20 * $timeout), $promise = new Promise(), $keywordsAccept];
+        $this->confirmationPromises[] = [$command->getName(), $sender, $prompt, Server::getInstance()->getTick() + (20 * $timeout), $promise = new Promise(), $keywordsAccept];
         return $promise;
     }
 
@@ -115,7 +115,7 @@ final class CommandManager implements Loadable, Tickable {
         if ($this->currentConfirmationData !== null) {
             /** @var ICommandSender $sender */
             [, $sender, , $expireTick, $promise] = $this->currentConfirmationData;
-            if ($expireTick <= PocketCloud::getInstance()->getTick()) {
+            if ($expireTick <= Server::getInstance()->getTick()) {
                 $this->currentConfirmationData = null;
                 $promise->reject();
                 $sender->warn("§cConfirmation timed out.");

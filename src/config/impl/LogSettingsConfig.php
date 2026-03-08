@@ -8,7 +8,7 @@ use pocketcloud\cloud\console\handler\ExceptionHandler;
 use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\console\log\level\CloudLogLevel;
 use pocketcloud\cloud\network\packet\data\NotificationType;
-use pocketcloud\cloud\PocketCloud;
+use pocketcloud\cloud\Server;
 use pocketcloud\cloud\util\trait\SingletonTrait;
 use pocketcloud\cloud\util\Utils;
 use r3pt1s\discord\webhook\Webhook;
@@ -88,14 +88,14 @@ final class LogSettingsConfig extends Configuration {
             Utils::fillMissingKeys($this->discordWebhook, $defaultDiscordWebhookSettings);
 
             if (!filter_var($this->discordWebhook["webhook-url"], FILTER_VALIDATE_URL) && $this->discordWebhook["enabled"]) {
-                PocketCloud::getInstance()->addStartNotification("Invalid webhook url inside §b{}§r. Resetting to default value...", CloudLogLevel::WARN(), $this->discordWebhook["webhook-url"]);
+                Server::getInstance()->addStartNotification("Invalid webhook url inside §b{}§r. Resetting to default value...", CloudLogLevel::WARN(), $this->discordWebhook["webhook-url"]);
                 $this->discordWebhook["webhook-url"] = $defaultDiscordWebhookSettings["webhook-url"];
             }
 
             CloudLogger::get()->setDebugMode($this->debugMode);
 
             $this->save();
-        }, "Failed to load log settings config", fn() => PocketCloud::getInstance()->shutdown(), $defaultPlayerLogs, $defaultDiscordWebhookSettings);
+        }, "Failed to load log settings config", fn() => Server::getInstance()->shutdown(), $defaultPlayerLogs, $defaultDiscordWebhookSettings);
     }
 
     private function assertCategory(string $category): void {

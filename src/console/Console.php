@@ -12,7 +12,7 @@ use pocketcloud\cloud\console\handler\ExceptionHandler;
 use pocketcloud\cloud\console\handler\ShutdownHandler;
 use pocketcloud\cloud\console\log\color\CloudConsoleColor;
 use pocketcloud\cloud\console\screen\ScreenManager;
-use pocketcloud\cloud\PocketCloud;
+use pocketcloud\cloud\Server;
 use pocketcloud\cloud\setup\Setup;
 use pocketcloud\cloud\util\TerminalUtils;
 use pocketcloud\cloud\util\trait\SingletonTrait;
@@ -41,7 +41,7 @@ final class Console {
         $this->manualConsole = new ManualConsole(
             $this->createDefaultPrompt(),
             $this->defaultCompletionHandler(...),
-            fn() => PocketCloud::getInstance()->shutdown()
+            fn() => Server::getInstance()->shutdown()
         );
     }
 
@@ -164,7 +164,7 @@ final class Console {
     }
 
     public function readLine(): void {
-        if (!PocketCloud::getInstance()->isRunning()) return;
+        if (!Server::getInstance()->isRunning()) return;
 
         $line = $this->manualConsole->readlineNonBlocking(self::READLINE_TIMEOUT_MS);
         $line = trim($line ?? "");
@@ -219,7 +219,7 @@ final class Console {
     }
 
     public function restoreControlCHandler(): void {
-        $this->manualConsole?->setControlCHandler(fn() => PocketCloud::getInstance()->shutdown());
+        $this->manualConsole?->setControlCHandler(fn() => Server::getInstance()->shutdown());
     }
 
     public function setCompletionHandler(Closure $handler): void {

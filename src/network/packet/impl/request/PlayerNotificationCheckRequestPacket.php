@@ -2,7 +2,7 @@
 
 namespace pocketcloud\cloud\network\packet\impl\request;
 
-use pocketcloud\cloud\cache\NotificationListCache;
+use pocketcloud\cloud\cache\impl\NotificationListCache;
 use pocketcloud\cloud\network\client\ServerClient;
 use pocketcloud\cloud\network\packet\impl\response\PlayerNotificationCheckResponsePacket;
 use pocketcloud\cloud\network\packet\RequestPacket;

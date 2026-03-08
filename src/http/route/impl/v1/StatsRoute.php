@@ -13,7 +13,7 @@ use pocketcloud\cloud\http\util\StatusCode;
 use pocketcloud\cloud\http\version\ApiVersion;
 use pocketcloud\cloud\player\CloudPlayerManager;
 use pocketcloud\cloud\plugin\CloudPluginManager;
-use pocketcloud\cloud\PocketCloud;
+use pocketcloud\cloud\Server;
 use pocketcloud\cloud\server\CloudServerManager;
 use pocketcloud\cloud\template\TemplateManager;
 use pocketcloud\cloud\traffic\TrafficMonitorManager;
@@ -33,7 +33,7 @@ final class StatsRoute extends ApiPath {
         $templateCount = count(TemplateManager::getInstance()->getAll());
         $serverGroupCount = count(ServerGroupManager::getInstance()->getAll());
         $pluginCount = count(CloudPluginManager::getInstance()->getAll());
-        $uptime = PocketCloud::getInstance()->getUptime();
+        $uptime = Server::getInstance()->getUptime();
         $totalAvgTraffic = TrafficMonitorManager::getInstance()->getTotalAllAverageTimeTraffic();
         $totalTraffic = TrafficMonitorManager::getInstance()->getTotalTraffic();
         return ResponseBuilder::create()

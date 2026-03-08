@@ -18,7 +18,7 @@ use pocketcloud\cloud\http\util\HttpConstants;
 use pocketcloud\cloud\http\util\RateLimiter;
 use pocketcloud\cloud\http\util\StatusCode;
 use pocketcloud\cloud\http\version\ApiVersion;
-use pocketcloud\cloud\PocketCloud;
+use pocketcloud\cloud\Server;
 use pocketcloud\cloud\util\net\Address;
 use pocketcloud\cloud\util\trait\SingletonTrait;
 use Throwable;
@@ -95,7 +95,7 @@ final class HttpServer {
                 if (!$version->isValidPath($path->getMethod(), $pathRoute)) $version->addPath($path->getMethod(), $pathRoute);
                 $this->paths[$path->getMethod()][$path->getFullPath()] = $path;
                 $this->maybeRegisterParameterizedPath($path, $path->getFullPath());
-                PocketCloud::getInstance()->addStartNotification($path->getFullPath() . " | " . $pathRoute);
+                Server::getInstance()->addStartNotification($path->getFullPath() . " | " . $pathRoute);
                 return true;
             }
         }

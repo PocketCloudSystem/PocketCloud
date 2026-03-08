@@ -2,7 +2,7 @@
 
 namespace pocketcloud\cloud\http\route\impl\v1\maintenance;
 
-use pocketcloud\cloud\cache\MaintenanceListCache;
+use pocketcloud\cloud\cache\impl\MaintenanceListCache;
 use pocketcloud\cloud\http\io\Request;
 use pocketcloud\cloud\http\io\ResponseBuilder;
 use pocketcloud\cloud\http\route\impl\v1\ApiV1JsonPath;

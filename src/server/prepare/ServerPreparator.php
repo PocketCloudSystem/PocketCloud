@@ -5,7 +5,7 @@ namespace pocketcloud\cloud\server\prepare;
 use Closure;
 use pocketcloud\cloud\config\impl\ServerSettingsConfig;
 use pocketcloud\cloud\console\log\CloudLogger;
-use pocketcloud\cloud\PocketCloud;
+use pocketcloud\cloud\Server;
 use pocketcloud\cloud\server\CloudServer;
 use pocketcloud\cloud\util\misc\Loadable;
 use pocketcloud\cloud\util\trait\SingletonTrait;
@@ -28,7 +28,7 @@ final class ServerPreparator implements Loadable {
         if ($this->isAsync()) {
             for ($i = 0; $i < $count; $i++) {
                 $thread = new ServerPrepareThread();
-                $thread->setSleeperHandlerEntry(PocketCloud::getInstance()->getSleeperHandler()->addNotifier(
+                $thread->setSleeperHandlerEntry(CloudServer::getInstance()->getSleeperHandler()->addNotifier(
                     function () use ($thread, $i): void {
                         /** @var ServerPrepareEntry $entry */
                         while (($entry = $thread->getFinishedPreparations()->shift()) !== null) {

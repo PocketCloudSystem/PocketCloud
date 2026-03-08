@@ -5,7 +5,7 @@ namespace pocketcloud\cloud\config\impl;
 use configlib\Configuration;
 use pocketcloud\cloud\console\handler\ExceptionHandler;
 use pocketcloud\cloud\console\log\level\CloudLogLevel;
-use pocketcloud\cloud\PocketCloud;
+use pocketcloud\cloud\Server;
 use pocketcloud\cloud\server\util\ServerStartMethod;
 use pocketcloud\cloud\util\trait\SingletonTrait;
 use pocketcloud\cloud\util\Utils;
@@ -113,19 +113,19 @@ final class ServerSettingsConfig extends Configuration {
                 $randomPorts = $this->serverPortRanges[$key]["random-ports"] ?? false;
 
                 if ($start <= 0 || $end <= 0) {
-                    PocketCloud::getInstance()->addStartNotification("Invalid port range §8(§b{$start}§8-§b{$end}§8) §rfor server type §8'§b" . $key . "§8'§r: §bStart §7or §bend §7can not be less or equal to §b0§r: §cResetting the entry, please review your config...", CloudLogLevel::WARN());
+                    Server::getInstance()->addStartNotification("Invalid port range §8(§b{$start}§8-§b{$end}§8) §rfor server type §8'§b" . $key . "§8'§r: §bStart §7or §bend §7can not be less or equal to §b0§r: §cResetting the entry, please review your config...", CloudLogLevel::WARN());
                     unset($this->serverPortRanges[$key]);
                     continue;
                 }
 
                 if ($start > $end) {
-                    PocketCloud::getInstance()->addStartNotification("Invalid port range §8(§b{$start}§8-§b{$end}§8) §rfor server type §8'§b" . $key . "§8'§r: §bStart §ris §chigher §rthan §bend§r: §cResetting the entry, please review your config...", CloudLogLevel::WARN());
+                    Server::getInstance()->addStartNotification("Invalid port range §8(§b{$start}§8-§b{$end}§8) §rfor server type §8'§b" . $key . "§8'§r: §bStart §ris §chigher §rthan §bend§r: §cResetting the entry, please review your config...", CloudLogLevel::WARN());
                     unset($this->serverPortRanges[$key]);
                     continue;
                 }
 
                 if (($start + 50) > $end) {
-                    PocketCloud::getInstance()->addStartNotification("Invalid port range §8(§b{$start}§8-§b{$end}§8) §rfor server type §8'§b" . $key . "§8'§r: §bEnd §rneeds to be at least §b50 ports higher §rthan §bstart§r: §cResetting the entry, please review your config...", CloudLogLevel::WARN());
+                    Server::getInstance()->addStartNotification("Invalid port range §8(§b{$start}§8-§b{$end}§8) §rfor server type §8'§b" . $key . "§8'§r: §bEnd §rneeds to be at least §b50 ports higher §rthan §bstart§r: §cResetting the entry, please review your config...", CloudLogLevel::WARN());
                     unset($this->serverPortRanges[$key]);
                 }
 
@@ -141,7 +141,7 @@ final class ServerSettingsConfig extends Configuration {
             ServerStartMethod::set(ServerStartMethod::get($this->startMethod));
 
             $this->save();
-        }, "Failed to load server settings config", fn() => PocketCloud::getInstance()->shutdown(), $defaultBinaries, $defaultStartCommands, $defaultServerTimeouts, $defaultServerPortRanges);
+        }, "Failed to load server settings config", fn() => Server::getInstance()->shutdown(), $defaultBinaries, $defaultStartCommands, $defaultServerTimeouts, $defaultServerPortRanges);
     }
 
     private function assertTemplateType(string $type): void {

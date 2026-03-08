@@ -2,7 +2,7 @@
 
 namespace pocketcloud\cloud\network\packet\impl;
 
-use pocketcloud\cloud\cache\InGameModuleCache;
+use pocketcloud\cloud\cache\impl\InGameModuleCache;
 use pocketcloud\cloud\network\client\ServerClient;
 use pocketcloud\cloud\network\packet\ClientboundPacket;
 use pocketcloud\cloud\network\packet\CloudPacket;

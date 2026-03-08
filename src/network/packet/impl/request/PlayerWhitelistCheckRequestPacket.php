@@ -2,7 +2,7 @@
 
 namespace pocketcloud\cloud\network\packet\impl\request;
 
-use pocketcloud\cloud\cache\MaintenanceListCache;
+use pocketcloud\cloud\cache\impl\MaintenanceListCache;
 use pocketcloud\cloud\network\client\ServerClient;
 use pocketcloud\cloud\network\packet\impl\response\PlayerWhitelistCheckResponsePacket;
 use pocketcloud\cloud\network\packet\RequestPacket;

@@ -2,9 +2,9 @@
 
 namespace pocketcloud\cloud\provider;
 
-use pocketcloud\cloud\cache\InGameModuleCache;
-use pocketcloud\cloud\cache\MaintenanceListCache;
-use pocketcloud\cloud\cache\NotificationListCache;
+use pocketcloud\cloud\cache\impl\InGameModuleCache;
+use pocketcloud\cloud\cache\impl\MaintenanceListCache;
+use pocketcloud\cloud\cache\impl\NotificationListCache;
 use pocketcloud\cloud\config\Config;
 use pocketcloud\cloud\group\ServerGroup;
 use pocketcloud\cloud\template\Template;

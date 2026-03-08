@@ -2,7 +2,7 @@
 
 namespace pocketcloud\cloud\console\handler;
 
-use pocketcloud\cloud\PocketCloud;
+use pocketcloud\cloud\Server;
 
 final class ShutdownHandler {
 
@@ -26,10 +26,10 @@ final class ShutdownHandler {
     }
 
     private static function handleShutdown(): void {
-        PocketCloud::getInstance()->shutdown();
+        Server::getInstance()->shutdown();
     }
 
     private static function handleCrash(): void {
-        PocketCloud::getInstance()->crash();
+        Server::getInstance()->crash();
     }
 }

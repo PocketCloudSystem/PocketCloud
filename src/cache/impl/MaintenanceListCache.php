@@ -1,10 +1,11 @@
 <?php
 
-namespace pocketcloud\cloud\cache;
+namespace pocketcloud\cloud\cache\impl;
 
+use pocketcloud\cloud\cache\Cache;
 use pocketcloud\cloud\network\packet\impl\MaintenanceListSyncPacket;
 
-final class MaintenanceListCache {
+final class MaintenanceListCache implements Cache {
 
     private static array $maintenanceList = [];
 
@@ -13,7 +14,8 @@ final class MaintenanceListCache {
         foreach ($maintenanceList as $player) self::$maintenanceList[$player] = $player;
     }
 
-    private static function syncOut(): void {
+    /** @internal  */
+    public static function syncOut(): void {
         MaintenanceListSyncPacket::create(self::getAll())->broadcastPacket();
     }
 

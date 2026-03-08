@@ -6,7 +6,7 @@ use pocketcloud\cloud\config\impl\MainConfig;
 use pocketcloud\cloud\console\handler\ExceptionHandler;
 use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\console\log\level\CloudLogLevel;
-use pocketcloud\cloud\PocketCloud;
+use pocketcloud\cloud\Server;
 use pocketcloud\cloud\update\UpdateChecker;
 use pocketcloud\cloud\util\FileUtils;
 use pocketcloud\cloud\util\net\NetUtils;
@@ -38,8 +38,8 @@ final readonly class Library {
      */
     public function download(bool $needsUpdate = false): bool {
         if ($needsUpdate && !MainConfig::getInstance()->canUpdate(UpdateChecker::TYPE_LIBRARIES)) {
-            PocketCloud::getInstance()->addStartNotification("Library §b{} §rrequires an §cUPDATE§r, but inside your §bconfig.yml§r, you have §cdisabled §8'§eexecuteUpdates§8'§r.", CloudLogLevel::WARN(), $this->name);
-            PocketCloud::getInstance()->addStartNotification("Please §are-enable §rit or update the library manually.", CloudLogLevel::WARN());
+            Server::getInstance()->addStartNotification("Library §b{} §rrequires an §cUPDATE§r, but inside your §bconfig.yml§r, you have §cdisabled §8'§eexecuteUpdates§8'§r.", CloudLogLevel::WARN(), $this->name);
+            Server::getInstance()->addStartNotification("Please §are-enable §rit or update the library manually.", CloudLogLevel::WARN());
             return false;
         }
 
@@ -71,7 +71,7 @@ final readonly class Library {
     public function load(): bool {
         if (!$this->check()) return false;
         if ($this->bridgeOnly) return false;
-        PocketCloud::getInstance()->getClassLoader()->addPrefix($this->namespacePrefix, LIBRARIES_PATH . $this->name . "/" . $this->namespaceFolder);
+        Server::getInstance()->getClassLoader()->addPrefix($this->namespacePrefix, LIBRARIES_PATH . $this->name . "/" . $this->namespaceFolder);
         return true;
     }
 

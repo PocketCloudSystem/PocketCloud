@@ -5,7 +5,7 @@ namespace pocketcloud\cloud\config\impl;
 use configlib\Configuration;
 use InvalidArgumentException;
 use pocketcloud\cloud\console\handler\ExceptionHandler;
-use pocketcloud\cloud\PocketCloud;
+use pocketcloud\cloud\Server;
 use pocketcloud\cloud\update\IUpdateChecker;
 use pocketcloud\cloud\util\trait\SingletonTrait;
 use pocketcloud\cloud\util\Utils;
@@ -104,7 +104,7 @@ final class MainConfig extends Configuration {
             }
 
             $this->save();
-        }, "Failed to load main config", fn() => PocketCloud::getInstance()->shutdown(), $defaultUpdateChecks, $defaultBStats, $defaultNetwork, $defaultHttp, $defaultMySql);
+        }, "Failed to load main config", fn() => Server::getInstance()->shutdown(), $defaultUpdateChecks, $defaultBStats, $defaultNetwork, $defaultHttp, $defaultMySql);
     }
 
     public function getGeneratedKey(): string {

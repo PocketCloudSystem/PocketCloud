@@ -8,7 +8,7 @@ use pmmp\thread\ThreadSafeArray;
 use pocketcloud\cloud\console\handler\ExceptionHandler;
 use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\console\log\logger\ThreadLogger;
-use pocketcloud\cloud\PocketCloud;
+use pocketcloud\cloud\Server;
 use pocketcloud\cloud\util\loader\IClassLoader;
 use pocketcloud\cloud\util\PathUtils;
 use ReflectionClass;
@@ -32,7 +32,7 @@ trait ThreadPartsTrait {
 
     public function setClassLoaders(?array $customAutoLoaders = null): void {
         $this->composerAutoloadPath = VENDOR_AUTOLOAD_PATH;
-        $normalClassLoader = PocketCloud::getInstance()->getClassLoader();
+        $normalClassLoader = Server::getInstance()->getClassLoader();
 
         if ($this->autoLoaders === null) $this->autoLoaders = new ThreadSafeArray();
         if ($customAutoLoaders === null) $customAutoLoaders = [$normalClassLoader];
@@ -77,7 +77,7 @@ trait ThreadPartsTrait {
     public function start(int $options = NativeThread::INHERIT_NONE): bool {
         $this->setClassLoaders();
 
-        $this->logger = new ThreadLogger($buffer = new ThreadSafeArray(), PocketCloud::getInstance()->getSleeperHandler()->addNotifier(function () use($buffer): void {
+        $this->logger = new ThreadLogger($buffer = new ThreadSafeArray(), Server::getInstance()->getSleeperHandler()->addNotifier(function () use($buffer): void {
             while (($logEntry = $buffer->shift()) !== null) {
                 CloudLogger::get()->echo($logEntry);
             }

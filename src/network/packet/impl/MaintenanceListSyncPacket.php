@@ -2,7 +2,7 @@
 
 namespace pocketcloud\cloud\network\packet\impl;
 
-use pocketcloud\cloud\cache\MaintenanceListCache;
+use pocketcloud\cloud\cache\impl\MaintenanceListCache;
 use pocketcloud\cloud\network\client\ServerClient;
 use pocketcloud\cloud\network\packet\ClientboundPacket;
 use pocketcloud\cloud\network\packet\CloudPacket;

@@ -8,7 +8,7 @@ use pocketcloud\cloud\console\log\logger\ILogger;
 use pocketcloud\cloud\console\log\output\impl\ServerConsoleOutputHandler;
 use pocketcloud\cloud\console\screen\Screen;
 use pocketcloud\cloud\console\screen\ScreenManager;
-use pocketcloud\cloud\PocketCloud;
+use pocketcloud\cloud\Server;
 use pocketcloud\cloud\server\CloudServerManager;
 use pocketcloud\cloud\server\util\ServerLogStream;
 use pocketcloud\cloud\util\TerminalUtils;
@@ -35,7 +35,7 @@ final class ServerConsoleMonitorScreen extends Screen {
                 $this->stream->startStream();
             } catch (Throwable $e) {
                 $this->printInfoMessage("§8[§c!§8] §cFailed to open log stream§8: §e{}§r, trying again in 3 seconds...", $e->getMessage());
-                $this->nextOpenStreamTry = PocketCloud::getInstance()->getTick() + (20 * 3);
+                $this->nextOpenStreamTry = Server::getInstance()->getTick() + (20 * 3);
                 $this->stream = null;
             }
         } else {
@@ -55,7 +55,7 @@ final class ServerConsoleMonitorScreen extends Screen {
                 $this->justStopped = true;
             }
         } else {
-            if ($this->stream === null && PocketCloud::getInstance()->getTick() >= $this->nextOpenStreamTry) {
+            if ($this->stream === null && Server::getInstance()->getTick() >= $this->nextOpenStreamTry) {
                 $this->justStopped = false;
                 $this->printInfoMessage("§8[§c!§8] §rThe server §b{} §rhas been §astarted§r. Starting log stream...", $this->serverName);
                 $this->openLogStream();

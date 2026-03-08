@@ -5,7 +5,7 @@ namespace pocketcloud\cloud\util;
 use InvalidArgumentException;
 use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\player\CloudPlayerManager;
-use pocketcloud\cloud\PocketCloud;
+use pocketcloud\cloud\Server;
 use pocketcloud\cloud\server\CloudServerManager;
 use pocketcloud\cloud\thread\ThreadManager;
 use pocketmine\utils\AssumptionFailedError;
@@ -219,12 +219,12 @@ final class Utils {
     public static function readCloudPerformanceStatus(): array {
         $knownThreadCount = count($threads = ThreadManager::getInstance()->getAll()) + 1; // +1 -> main thread;
         [$vmRssSize, $vmRssPeak, $vmSize, $threadCount] = array_values(ProcessUtils::getProcessStatus());
-        [$currentTPS, $avgTPS, $tickUsage] = array_values(PocketCloud::getInstance()->getTickPerformanceMetrics());
+        [$currentTPS, $avgTPS, $tickUsage] = array_values(Server::getInstance()->getTickPerformanceMetrics());
         $memoryLimit = ProcessUtils::getMemoryLimit();
         [$serverCount, $playerCount] = [count(CloudServerManager::getInstance()->getAll()), count(CloudPlayerManager::getInstance()->getAll())];
 
         return [
-            "uptime" => PocketCloud::getInstance()->getUptime(),
+            "uptime" => Server::getInstance()->getUptime(),
             "known_thread_count" => $knownThreadCount,
             "os_thread_count" => $threadCount,
             "threads" => $threads,

@@ -6,7 +6,7 @@ use Closure;
 use ErrorException;
 use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\console\log\output\OutputManager;
-use pocketcloud\cloud\PocketCloud;
+use pocketcloud\cloud\Server;
 use pocketcloud\cloud\util\ErrorUtils;
 use Throwable;
 
@@ -19,7 +19,7 @@ final class ExceptionHandler {
         self::$latestException = $throwable;
         OutputManager::reset();
         CloudLogger::get()->exception($throwable);
-        PocketCloud::getInstance()->crash();
+        Server::getInstance()->crash();
     }
 
     /**

@@ -4,7 +4,7 @@ namespace pocketcloud\cloud\scheduler;
 
 use pocketcloud\cloud\exception\TaskCancelException;
 use pocketcloud\cloud\plugin\CloudPlugin;
-use pocketcloud\cloud\PocketCloud;
+use pocketcloud\cloud\Server;
 
 final class TaskHandler {
 
@@ -20,7 +20,7 @@ final class TaskHandler {
         private readonly CloudPlugin $owner
     ) {
         $this->id = mt_rand(PHP_INT_MIN, PHP_INT_MAX);
-        $this->nextRun = PocketCloud::getInstance()->getTick() + $this->delay;
+        $this->nextRun = Server::getInstance()->getTick() + $this->delay;
     }
 
     public function cancel(): void {

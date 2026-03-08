@@ -2,7 +2,8 @@
 
 namespace pocketcloud\cloud\template;
 
-use pocketcloud\cloud\cache\MaintenanceListCache;
+use pocketcloud\cloud\cache\impl\MaintenanceListCache;
+use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\event\impl\template\TemplateCreateEvent;
 use pocketcloud\cloud\event\impl\template\TemplateEditEvent;
 use pocketcloud\cloud\event\impl\template\TemplateRemoveEvent;
@@ -11,7 +12,6 @@ use pocketcloud\cloud\network\packet\impl\TemplateSyncPacket;
 use pocketcloud\cloud\player\CloudPlayer;
 use pocketcloud\cloud\player\CloudPlayerManager;
 use pocketcloud\cloud\provider\CloudProvider;
-use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\server\CloudServerManager;
 use pocketcloud\cloud\server\prepare\ServerPreparator;
 use pocketcloud\cloud\util\FileUtils;

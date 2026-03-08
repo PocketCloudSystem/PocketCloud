@@ -2,7 +2,7 @@
 
 namespace pocketcloud\cloud\console\command\impl;
 
-use pocketcloud\cloud\cache\MaintenanceListCache;
+use pocketcloud\cloud\cache\impl\MaintenanceListCache;
 use pocketcloud\cloud\console\command\Command;
 use pocketcloud\cloud\console\command\ITabComplete;
 use pocketcloud\cloud\console\command\parameter\def\StringParameter;

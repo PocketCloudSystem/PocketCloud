@@ -2,7 +2,7 @@
 
 namespace pocketcloud\cloud\http\route\impl\v1\notification;
 
-use pocketcloud\cloud\cache\NotificationListCache;
+use pocketcloud\cloud\cache\impl\NotificationListCache;
 use pocketcloud\cloud\http\io\Request;
 use pocketcloud\cloud\http\io\ResponseBuilder;
 use pocketcloud\cloud\http\route\impl\v1\ApiV1JsonPath;

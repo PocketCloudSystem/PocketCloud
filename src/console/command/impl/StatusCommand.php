@@ -5,7 +5,7 @@ namespace pocketcloud\cloud\console\command\impl;
 use pocketcloud\cloud\console\command\Command;
 use pocketcloud\cloud\console\command\sender\ICommandSender;
 use pocketcloud\cloud\console\command\SubCommand;
-use pocketcloud\cloud\PocketCloud;
+use pocketcloud\cloud\Server;
 use pocketcloud\cloud\traffic\TrafficMonitor;
 use pocketcloud\cloud\traffic\TrafficMonitorManager;
 use pocketcloud\cloud\util\FormatUtils;
@@ -40,7 +40,7 @@ final class StatusCommand extends Command {
                     } else if (in_array($key, ["tick_usage", "cpu_usage"])) {
                         return FormatUtils::usagePercentage($key == "cpu_usage" ? ($value / ProcessUtils::getCpuCores()) : $value);
                     } else if ($key == "uptime") {
-                        return FormatUtils::uptime($value) . " §8(§c" . PocketCloud::getInstance()->getTick() . "§8)";
+                        return FormatUtils::uptime($value) . " §8(§c" . Server::getInstance()->getTick() . "§8)";
                     }
 
                     return $value;

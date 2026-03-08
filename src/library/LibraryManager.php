@@ -7,7 +7,7 @@ use pocketcloud\cloud\config\impl\MainConfig;
 use pocketcloud\cloud\config\type\ConfigTypeList;
 use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\console\log\level\CloudLogLevel;
-use pocketcloud\cloud\PocketCloud;
+use pocketcloud\cloud\Server;
 use pocketcloud\cloud\update\UpdateChecker;
 use pocketcloud\cloud\util\misc\Loadable;
 use pocketcloud\cloud\util\trait\SingletonTrait;
@@ -94,7 +94,7 @@ final class LibraryManager implements Loadable {
 
     public function checkForUpdates(): int {
         if (!MainConfig::getInstance()->canCheckForUpdates(UpdateChecker::TYPE_LIBRARIES)) {
-            PocketCloud::getInstance()->addStartNotification("Skipped updates for §b{}§8, §ras it is disabled in the config.", CloudLogLevel::DEBUG(), UpdateChecker::TYPE_LIBRARIES);
+            Server::getInstance()->addStartNotification("Skipped updates for §b{}§8, §ras it is disabled in the config.", CloudLogLevel::DEBUG(), UpdateChecker::TYPE_LIBRARIES);
             return -1;
         }
 
