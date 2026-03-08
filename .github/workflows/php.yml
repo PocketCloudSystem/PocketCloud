@@ -4,7 +4,7 @@ on:
   push:
     branches: [ "master" ]
   pull_request:
-    branches: [ "main", "v4" ]
+    branches: [ "master", "v4" ]
 
 jobs:
   php:
