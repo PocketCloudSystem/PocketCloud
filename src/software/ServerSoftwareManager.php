@@ -71,6 +71,21 @@ final class ServerSoftwareManager implements Loadable {
                 return Promise::resolved(ServerSoftwareManager::getInstance()->removeAndDownload($software));
             }
         ));
+
+        $this->register(new ServerSoftware(
+            "AquaRelay",
+            ServerSettingsConfig::getInstance()->getStartCommand(ServerSettingsConfig::TYPE_PROXY),
+            "https://github.com/AquaRelay/AquaRelay/releases/latest/download/AquaRelay.phar",
+            "AquaRelay.phar",
+            [],
+            function (ServerSoftware $software): Promise {
+                $size = NetUtils::fileSize($software->getUrl());
+                return Promise::resolved($size !== $software->getFileSize());
+            },
+            function (ServerSoftware $software): Promise {
+                return Promise::resolved(ServerSoftwareManager::getInstance()->removeAndDownload($software));
+            }
+        ));
     }
 
     public function downloadAll(): void {
