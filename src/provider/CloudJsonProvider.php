@@ -24,7 +24,7 @@ final class CloudJsonProvider extends CloudProvider {
     public function __construct() {
         $this->templatesConfig = new Config(TEMPLATES_PATH . "templates.json");
         $this->serverGroupsConfig = new Config(SERVER_GROUPS_PATH . "groups.json");
-        $this->modulesConfig = new Config(IN_GAME_PATH . "modules.json");
+        $this->modulesConfig = new Config(IN_GAME_PATH . "modules.json", defaultContent:  InGameModuleCache::getModuleStates());
         $this->notificationsList = new Config(IN_GAME_PATH . "notifications.json");
         $this->maintenanceList = new Config(IN_GAME_PATH . "maintenanceList.json");
 

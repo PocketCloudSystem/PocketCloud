@@ -95,7 +95,6 @@ final class HttpServer {
                 if (!$version->isValidPath($path->getMethod(), $pathRoute)) $version->addPath($path->getMethod(), $pathRoute);
                 $this->paths[$path->getMethod()][$path->getFullPath()] = $path;
                 $this->maybeRegisterParameterizedPath($path, $path->getFullPath());
-                PocketCloud::getInstance()->addStartNotification($path->getFullPath() . " | " . $pathRoute);
                 return true;
             }
         }

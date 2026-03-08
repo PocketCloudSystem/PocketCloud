@@ -31,9 +31,9 @@ trait CommandParameterTrait {
         return $parsedArgs;
     }
 
-    public function addParameter(CommandParameter $argument, ?int $position = null): self {
-        if ($position !== null) $this->parameters[$position] = $argument;
-        else $this->parameters[] = $argument;
+    public function addParameter(CommandParameter $parameter, ?int $position = null): self {
+        if ($position !== null) $this->parameters[$position] = $parameter;
+        else $this->parameters[] = $parameter;
         return $this;
     }
 

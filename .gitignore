@@ -1,4 +1,5 @@
 script/output/*
 script/tests/*
 script/src/*
+script/lang/*
 vendor/
