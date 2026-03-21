@@ -72,7 +72,8 @@ final class ServerSoftwareManager implements Loadable {
             }
         ));
 
-        $this->register(new ServerSoftware(
+        // Commenting this out - addition for the next upd after the v4 release
+        /**$this->register(new ServerSoftware(
             "AquaRelay",
             ServerSettingsConfig::getInstance()->getStartCommand(ServerSettingsConfig::TYPE_PROXY),
             "https://github.com/AquaRelay/AquaRelay/releases/latest/download/AquaRelay.phar",
@@ -85,7 +86,7 @@ final class ServerSoftwareManager implements Loadable {
             function (ServerSoftware $software): Promise {
                 return Promise::resolved(ServerSoftwareManager::getInstance()->removeAndDownload($software));
             }
-        ));
+        )); */
     }
 
     public function downloadAll(): void {
