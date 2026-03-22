@@ -54,7 +54,7 @@ final class MonitorScreen extends Screen {
             $this->echo("§rUptime: §b" . str_replace("§8", "§b", $uptime) . " §8(§c{$currentTick}§8) §8| §rThreads: §c" . $threadCount);
             $this->echo("§rMemory Usage: §b" . $formattedMemoryUsage . " " . $this->drawPctBars($memoryUsage, $memoryLimit, 10, $memPct) . " " . $this->formatPercentageWithColor($memPct) . $memPct . "%");
             $this->echo("§rCPU Usage: " . $this->drawPctBars($cpuUsage / ProcessUtils::getCpuCores(), 100, 10, $cpuPct) . " " . $this->formatPercentageWithColor($cpuPct) . $cpuPct . "%");
-            $this->echo("§rTPS: " . FormatUtils::tps($tps) . " §8(§rAverage: " . FormatUtils::tps($avgTps) . "§8) §8| §rTick Usage: §e" . FormatUtils::usagePercentage($tickUsage, true));
+            $this->echo("§rTPS: " . FormatUtils::tps($tps) . " §8(§rAverage: " . FormatUtils::tps($avgTps) . "§8) §8| §rTick Usage: §e" . FormatUtils::usagePercentage($tickUsage));
             $this->echo("§rPlayer Count: §b" . $playerCount . " player" . ($playerCount == 1 ? "" : "s"));
             $this->echo("§rAverage Total Traffic: §aIN §b" . FormatUtils::bytes($totalAvgAllTimeTrafficIn) . "/s §8| §cOUT §b" . FormatUtils::bytes($totalAvgAllTimeTrafficOut) . "/s");
             $this->echo("");
@@ -68,7 +68,7 @@ final class MonitorScreen extends Screen {
 
             $cards = [];
             foreach ($servers as $server) {
-                [$name, , , , , , , , $tps, $avgTps, $memoryUsage, , $memoryLimit, $cpuUsage] = array_values($server->write());
+                [$name, , , , , , , , , $tps, $avgTps, $memoryUsage, , $memoryLimit, $cpuUsage] = array_values($server->write());
 
                 $cards[] = [
                     "name" => $name,
