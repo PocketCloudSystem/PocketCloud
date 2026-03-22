@@ -2,10 +2,10 @@
 
 namespace pocketcloud\cloud\network\packet;
 
-use pocketcloud\cloud\bridge\network\packet\impl\ConsoleLogPacket;
 use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\network\packet\impl\CloudNotificationPacket;
 use pocketcloud\cloud\network\packet\impl\CloudSyncServerStoragePacket;
+use pocketcloud\cloud\network\packet\impl\ConsoleLogPacket;
 use pocketcloud\cloud\network\packet\impl\DisconnectPacket;
 use pocketcloud\cloud\network\packet\impl\KeepAlivePacket;
 use pocketcloud\cloud\network\packet\impl\LanguageSyncPacket;

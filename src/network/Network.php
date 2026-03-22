@@ -153,6 +153,7 @@ final class Network extends Thread {
         if ($buffer === null) return Promise::rejected("Buffer null");
         $promises = [];
         foreach (ServerClientCache::getInstance()->getAll() as $client) {
+            if ($client->getServer() === null) continue;
             if (in_array($client, $exclusions) || in_array($client->getServer()->getTemplate()->getTemplateType(), $exclusions)) continue;
             ($ev = new NetworkPacketPreSendEvent($packet, $client))->call();
             if ($ev->isCancelled()) {

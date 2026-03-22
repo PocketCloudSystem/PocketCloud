@@ -4,6 +4,7 @@ namespace pocketcloud\cloud\server;
 
 use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\group\ServerGroup;
+use pocketcloud\cloud\network\packet\impl\ServerSyncPacket;
 use pocketcloud\cloud\server\data\CloudServerData;
 use pocketcloud\cloud\server\util\ServerUtils;
 use pocketcloud\cloud\template\Template;
@@ -115,6 +116,7 @@ final class CloudServerManager implements Tickable {
         ServerUtils::removeId($server->getTemplate(), $server->getId());
         ServerUtils::removePort($server->getServerData()->getPort());
         $this->lastServerStopTime = microtime(true);
+        ServerSyncPacket::create($server, true)->broadcastPacket();
     }
 
     public function checkCapacity(Template $template): bool {
