@@ -17,6 +17,7 @@ final class ManualConsole {
     private bool $historyEnabled = true;
     private array $history = [];
     private int $historyIndex = 0;
+    private bool $initialDrawDone = false;
     private int $cursor = 0;
     private string $input = "";
     private bool $pressedEnter = false;
@@ -51,18 +52,23 @@ final class ManualConsole {
     }
 
     public function readlineNonBlocking(int $timeoutMs = 0): ?string {
-        if ($this->pressedEnter) $this->pressedEnter = false;
+        if ($this->pressedEnter) {
+            $this->pressedEnter = false;
+            $this->initialDrawDone = false;
+        }
+
         $this->ensureOpen();
-        $this->redraw($this->prompt);
+
+        if (!$this->initialDrawDone) {
+            $this->redraw($this->prompt);
+            $this->initialDrawDone = true;
+        }
 
         $char = $this->readChar($timeoutMs);
-
         if ($char === null) return null;
 
         if ($char !== "\t") {
-            if ($this->tabActive) {
-                $this->clearTabDisplay();
-            }
+            if ($this->tabActive) $this->clearTabDisplay();
             $this->tabActive = false;
         }
 
@@ -105,8 +111,20 @@ final class ManualConsole {
         }
 
         if ($this->typingEnabled) {
-            $this->input = mb_substr($this->input, 0, $this->cursor) . $char . mb_substr($this->input, $this->cursor);
-            $this->cursor++;
+            $batch = $char;
+            while (true) {
+                $next = $this->readChar(0);
+                if ($next === null) break;
+                if (
+                    $next === "\n" || $next === "\r" ||
+                    $next === "\033" || $next === "\177" ||
+                    $next === "\t"  || $next === "\x03"
+                ) break;
+                $batch .= $next;
+            }
+
+            $this->input = mb_substr($this->input, 0, $this->cursor) . $batch . mb_substr($this->input, $this->cursor);
+            $this->cursor += mb_strlen($batch);
             $this->redraw($this->prompt);
         }
 
