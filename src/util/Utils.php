@@ -23,7 +23,7 @@ final class Utils {
     private static ?UuidInterface $machineUniqueId = null;
 
     public static function containKeys(array $array, string|int ...$keys): bool {
-        return array_all($keys, fn(string|int $key) => isset($array[$key]));
+        return array_all($keys, fn(string|int $key) => array_key_exists($key, $array));
     }
 
     public static function hasAllKeys(array $array, array $defaultArray): bool {

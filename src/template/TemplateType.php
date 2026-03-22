@@ -33,7 +33,7 @@ final class TemplateType {
      */
     protected static function init(): void {
         self::add(new TemplateType("server", ServerSoftwareManager::getInstance()->get("PocketMine-MP"), [
-            "crashdumps", "log_archive", "players", "plugin_data", "plugins", "resource_packs",
+            "crashdumps", "log_archive", "players", "plugin_data", "resource_packs",
             "virions", "worlds", "pocketmine.yml", "banned-ips.txt", "banned-players.txt", "ops.txt",
             "plugin_list.yml", "server.log", "white-list.txt"
         ], "save-all", "server.properties", "server.log", "plugins/CloudBridge.phar", false, function (TemplateType $type): bool {
@@ -70,7 +70,7 @@ final class TemplateType {
         }));
 
         self::add(new TemplateType("proxy", ServerSoftwareManager::getInstance()->get("WaterdogPE"), [
-            "logs", "packs", "plugins", "lang.ini"
+            "logs", "packs", "lang.ini"
         ], null, "config.yml", "logs/server.log", "plugins/CloudBridge.jar", true, function (TemplateType $type): bool {
             return NetUtils::download("https://github.com/PocketCloudSystem/CloudBridge-Proxy/releases/latest/download/CloudBridge.jar", $type->getBridgeFileLocation());
         }, function (TemplateType $type): Promise {

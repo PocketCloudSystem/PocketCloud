@@ -178,6 +178,7 @@ final class PocketCloud {
         if (!$this->initSoftware()) return;
         if (!$this->checkLibraryUpdates()) return;
         if (!$this->checkBridgePlugins()) return;
+        $this->cleanLogs();
         $this->initManagers();
         $this->initServices();
         $this->registerTickables();
@@ -262,6 +263,60 @@ final class PocketCloud {
         }
 
         return true;
+    }
+
+    private function cleanLogs(): void {
+        // storage/crashes/
+        // storage/crashes/server
+        // templates/*/cloud_log_archive/
+
+        $start = microtime(true);
+        Benchmark::startTiming("clean_logs");
+
+        $this->logger->debug("Starting to clean the old log and crash files...");
+
+        $i = 0;
+        foreach (scandir(CRASHES_PATH) as $logFile) {
+            if ($logFile == "." || $logFile == "..") continue;
+            $logFile = CRASHES_PATH . $logFile;
+            if (!is_file($logFile)) continue;
+            $time = microtime(true) - filectime($logFile);
+            if ($time >= (60 * 60 * 24 * 3)) {
+                $i++;
+                @unlink($logFile);
+            }
+        }
+
+        foreach (scandir(SERVER_CRASHES_PATH) as $logFile) {
+            if ($logFile == "." || $logFile == "..") continue;
+            $logFile = SERVER_CRASHES_PATH . $logFile;
+            if (!is_file($logFile)) continue;
+            $time = microtime(true) - filectime($logFile);
+            if ($time >= (60 * 60 * 24 * 3)) {
+                $i++;
+                @unlink($logFile);
+            }
+        }
+
+        foreach (scandir(TEMPLATES_PATH) as $templateDirectory) {
+            if ($templateDirectory == "." || $templateDirectory == ".." || $templateDirectory == "global") continue;
+            $logFilesDirectory = TEMPLATES_PATH . $templateDirectory . "/cloud_log_archive/";
+            if (!is_dir($logFilesDirectory)) continue;
+            foreach (scandir($logFilesDirectory) as $logFile) {
+                if ($logFile == "." || $logFile == "..") continue;
+                $logFile = $logFilesDirectory . $logFile;
+                if (!is_file($logFile)) continue;
+                $time = microtime(true) - filectime($logFile);
+                if ($time >= (60 * 60 * 24 * 3)) {
+                    $i++;
+                    @unlink($logFile);
+                }
+            }
+        }
+
+        Benchmark::stopTiming("clean_logs");
+        $end = round(microtime(true) - $start, 3);
+        $this->addStartNotification("Cleaned & removed exactly §b{} old log §rand §bcrash file(s)§r. §8(§rTook §b{}s§8)", CloudLogLevel::SUCCESS(), $i, $end);
     }
 
     private function initManagers(): void {
