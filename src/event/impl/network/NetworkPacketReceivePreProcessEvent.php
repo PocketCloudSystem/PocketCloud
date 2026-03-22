@@ -2,19 +2,25 @@
 
 namespace pocketcloud\cloud\event\impl\network;
 
+use pocketcloud\cloud\network\Network;
+use pocketcloud\cloud\network\client\ServerClient;
 use pocketcloud\cloud\event\Cancelable;
 use pocketcloud\cloud\event\CancelableTrait;
-use pocketcloud\cloud\network\client\ServerClient;
 
 final class NetworkPacketReceivePreProcessEvent extends NetworkEvent implements Cancelable {
     use CancelableTrait;
 
     public function __construct(
-        private readonly string $buffer,
-        private readonly bool $encryption,
-        ServerClient $client
+        Network $network,
+        protected readonly ServerClient $sender,
+        protected readonly string $buffer,
+        protected readonly bool $encryption
     ) {
-        parent::__construct($client);
+        parent::__construct($network);
+    }
+
+    public function getSender(): ServerClient {
+        return $this->sender;
     }
 
     public function getBuffer(): string {

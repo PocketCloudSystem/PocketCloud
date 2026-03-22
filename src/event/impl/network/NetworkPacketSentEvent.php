@@ -3,25 +3,27 @@
 namespace pocketcloud\cloud\event\impl\network;
 
 use pocketcloud\cloud\network\Network;
-use pocketcloud\cloud\network\packet\CloudboundPacket;
+use pocketcloud\cloud\network\packet\ClientboundPacket;
 use pocketcloud\cloud\network\packet\Packet;
 use pocketcloud\cloud\network\client\ServerClient;
-use pocketcloud\cloud\event\Cancelable;
-use pocketcloud\cloud\event\CancelableTrait;
 
-class NetworkPacketReceiveEvent extends NetworkPacketEvent implements Cancelable {
-    use CancelableTrait;
+class NetworkPacketSentEvent extends NetworkPacketEvent {
 
     public function __construct(
         Network $network,
         ServerClient $sender,
-        CloudboundPacket $packet
+        ClientboundPacket $packet,
+        protected readonly bool $success
     ) {
         parent::__construct($network, $sender, $packet);
     }
 
-    /** @return CloudboundPacket */
+    /** @return ClientboundPacket */
     public function getPacket(): Packet {
         return $this->packet;
+    }
+
+    public function isSuccess(): bool {
+        return $this->success;
     }
 }

@@ -10,7 +10,8 @@ use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\event\impl\network\NetworkPacketPreSendEvent;
 use pocketcloud\cloud\event\impl\network\NetworkPacketReceiveEvent;
 use pocketcloud\cloud\event\impl\network\NetworkPacketReceivePreProcessEvent;
-use pocketcloud\cloud\event\impl\network\NetworkPacketSendEvent;
+use pocketcloud\cloud\event\impl\network\NetworkPacketSentEvent;
+use pocketcloud\cloud\event\impl\network\NetworkPacketTooLargeEvent;
 use pocketcloud\cloud\exception\PacketException;
 use pocketcloud\cloud\network\client\ServerClient;
 use pocketcloud\cloud\network\client\ServerClientCache;
@@ -67,7 +68,7 @@ final class Network extends Thread {
 
                 $client = ServerClientCache::getInstance()->getByAddress($unhandledPacket->getAddress()) ?? new ServerClient($unhandledPacket->getAddress());
 
-                ($ev = new NetworkPacketReceivePreProcessEvent($unhandledPacket->getBuffer(), $encryption = MainConfig::getInstance()->isNetworkEncryptionEnabled(), $client))->call();
+                ($ev = new NetworkPacketReceivePreProcessEvent($this, $client, $unhandledPacket->getBuffer(), $encryption = MainConfig::getInstance()->isNetworkEncryptionEnabled()))->call();
                 if ($ev->isCancelled()) return;
 
                 if (MainConfig::getInstance()->isNetworkOnlyLocal() && !$unhandledPacket->getAddress()->isLocal()) $continue = false;
@@ -80,7 +81,7 @@ final class Network extends Thread {
                                 $packet, $unhandledPacket->getAddress()
                             );
 
-                            ($ev = new NetworkPacketReceiveEvent($packet, $client))->call();
+                            ($ev = new NetworkPacketReceiveEvent($this, $client, $packet))->call();
                             if ($ev->isCancelled()) return;
                             $packet->handle($client);
 
@@ -132,18 +133,23 @@ final class Network extends Thread {
 
     public function sendPacket(ClientboundPacket $packet, ServerClient $client): bool {
         if (!$this->established) return false;
-        ($ev = new NetworkPacketPreSendEvent($packet, $client))->call();
+        ($ev = new NetworkPacketPreSendEvent($this, $client, $packet))->call();
         if ($ev->isCancelled()) return false;
         $buffer = PacketSerializer::encode($packet, MainConfig::getInstance()->isNetworkEncryptionEnabled(), $this->authenticationKey);
         if ($buffer === null) return false;
-        $success = $this->write($buffer, $client->getAddress());
+        $success = $this->write($buffer, $client->getAddress(), $bytes);
+        if ($bytes > 65507) {
+            new NetworkPacketTooLargeEvent($this, $client, $packet, $bytes, $buffer)->call();
+            return false;
+        }
+
         TrafficMonitorManager::getInstance()->callHandlers(
             TrafficMonitorManager::TRAFFIC_NETWORK,
             NetworkTrafficMonitor::parsePacketMode(NetworkTrafficMonitor::NETWORK_MODE_PACKET_OUT, $packet::class),
             $packet, $client->getAddress(), $success
         );
 
-        new NetworkPacketSendEvent($packet, $client, $success)->call();
+        new NetworkPacketSentEvent($this, $client, $packet, $success)->call();
         return $success;
     }
 
@@ -155,7 +161,7 @@ final class Network extends Thread {
         foreach (ServerClientCache::getInstance()->getAll() as $client) {
             if ($client->getServer() === null) continue;
             if (in_array($client, $exclusions) || in_array($client->getServer()->getTemplate()->getTemplateType(), $exclusions)) continue;
-            ($ev = new NetworkPacketPreSendEvent($packet, $client))->call();
+            ($ev = new NetworkPacketPreSendEvent($this, $client, $packet))->call();
             if ($ev->isCancelled()) {
                 $success = false;
             } else {
@@ -166,7 +172,7 @@ final class Network extends Thread {
                     $packet, $client->getAddress(), $success
                 );
 
-                new NetworkPacketSendEvent($packet, $client, $success)->call();
+                new NetworkPacketSentEvent($this, $client, $packet, $success)->call();
             }
 
             $promises[] = $success ? Promise::resolved() : Promise::rejected();
@@ -175,7 +181,7 @@ final class Network extends Thread {
         return Promise::all($promises);
     }
 
-    public function write(string $buffer, Address $dst): bool {
+    public function write(string $buffer, Address $dst, ?int &$bytes = null): bool {
         if (!$this->established) return false;
         $sent = socket_sendto($this->socket, $buffer, $bytes = strlen($buffer), 0, $dst->getAddress(), $dst->getPort());
         if ($sent === false) return false;

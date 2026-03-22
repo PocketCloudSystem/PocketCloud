@@ -3,6 +3,7 @@
 namespace pocketcloud\cloud\config\impl;
 
 use configlib\Configuration;
+use InvalidArgumentException;
 use pocketcloud\cloud\console\handler\ExceptionHandler;
 use pocketcloud\cloud\console\log\level\CloudLogLevel;
 use pocketcloud\cloud\PocketCloud;
@@ -145,13 +146,13 @@ final class ServerSettingsConfig extends Configuration {
     }
 
     private function assertTemplateType(string $type): void {
-        if (!in_array($type, [self::TYPE_SERVER, self::TYPE_PROXY], true)) throw new \InvalidArgumentException("Unknown template type: $type");
+        if (!in_array($type, [self::TYPE_SERVER, self::TYPE_PROXY], true)) throw new InvalidArgumentException("Unknown template type: $type");
     }
 
     private function validatePortRange(int $start, int $end): void {
-        if ($start <= 0 || $end <= 0) throw new \InvalidArgumentException("Ports must be > 0");
-        if ($start > $end) throw new \InvalidArgumentException("Start port must be <= end port");
-        if (($start + 50) > $end) throw new \InvalidArgumentException("Port range must contain at least 50 ports");
+        if ($start <= 0 || $end <= 0) throw new InvalidArgumentException("Ports must be > 0");
+        if ($start > $end) throw new InvalidArgumentException("Start port must be <= end port");
+        if (($start + 50) > $end) throw new InvalidArgumentException("Port range must contain at least 50 ports");
     }
 
     public function setStartMethod(string $startMethod): ServerSettingsConfig {
@@ -174,7 +175,7 @@ final class ServerSettingsConfig extends Configuration {
 
     public function setBinary(string $type, string $url): self {
         $this->assertTemplateType($type);
-        if ($url === "") throw new \InvalidArgumentException("Binary URL cannot be empty");
+        if ($url === "") throw new InvalidArgumentException("Binary URL cannot be empty");
         $this->binaries[$type] = $url;
         return $this;
     }
@@ -196,7 +197,7 @@ final class ServerSettingsConfig extends Configuration {
 
     public function setStartCommand(string $type, string $command): self {
         $this->assertTemplateType($type);
-        if ($command === "") throw new \InvalidArgumentException("Start command cannot be empty");
+        if ($command === "") throw new InvalidArgumentException("Start command cannot be empty");
         $this->startCommands[$type] = $command;
         return $this;
     }
@@ -222,7 +223,7 @@ final class ServerSettingsConfig extends Configuration {
 
     public function setServerTimeout(string $type, int $seconds): self {
         $this->assertTemplateType($type);
-        if ($seconds < 1) throw new \InvalidArgumentException("Timeout must be >= 1");
+        if ($seconds < 1) throw new InvalidArgumentException("Timeout must be >= 1");
         $this->serverTimeouts[$type] = $seconds;
         return $this;
     }
