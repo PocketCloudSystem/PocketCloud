@@ -51,7 +51,8 @@ final class ExceptionHandler {
     }
 
     public static function throwAll(): Closure {
-        return function (int $errno, string $error, string $file, int $line) {
+        return function (int $errno, string $error, string $file, int $line): bool {
+            if (!(error_reporting() & $errno)) return false;
             throw new ErrorException($error, 0, $errno, $file, $line);
         };
     }

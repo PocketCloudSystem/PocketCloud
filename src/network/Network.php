@@ -102,10 +102,10 @@ final class Network extends Thread {
 
     public function init(): void {
         if ($this->established) throw new LogicException("Socket has already been established");
-        $socket = @socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
+        $socket = socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
         if (!$socket) throw new RuntimeException(socket_strerror(socket_last_error()));
         $this->socket = $socket;
-        if (@socket_bind($socket, $this->address->getAddress(), $this->address->getPort())) {
+        if (socket_bind($socket, $this->address->getAddress(), $this->address->getPort())) {
             $this->established = true;
             socket_set_option($this->socket, SOL_SOCKET, SO_SNDBUF, 1024 * 1024 * 8);
             socket_set_option($this->socket, SOL_SOCKET, SO_RCVBUF, 1024 * 1024 * 8);
@@ -219,7 +219,7 @@ final class Network extends Thread {
         if (!$this->established) return;
         PocketCloud::getInstance()->getSleeperHandler()->removeNotifier($this->handlerEntry->getNotifierId());
         $this->buffer = new ThreadSafeArray();
-        @socket_close($this->socket);
+        socket_close($this->socket);
         $this->established = false;
     }
 

@@ -27,6 +27,10 @@ final class ManualConsole {
     private bool $tabActive = false;
     private bool $tabMatchesDisplayed = false;
 
+    // Fix 1: pending char buffer so the batch-reader never silently
+    // discards a \t (or other special char) it read but didn't handle
+    private ?string $pendingChar = null;
+
     public function __construct(
         private string $prompt = "",
         private ?Closure $completionCallback = null,
@@ -38,6 +42,7 @@ final class ManualConsole {
         shell_exec("stty -echo");
         shell_exec("stty raw");
         ini_set("display_errors", "0");
+        ini_set("log_errors", "0");
     }
 
     public function setHistoryEnabled(bool $enabled): void {
@@ -120,7 +125,11 @@ final class ManualConsole {
                     $next === "\n" || $next === "\r" ||
                     $next === "\033" || $next === "\177" ||
                     $next === "\t"  || $next === "\x03"
-                ) break;
+                ) {
+                    // Fix 1: stash the special char instead of discarding it
+                    $this->pendingChar = $next;
+                    break;
+                }
                 $batch .= $next;
             }
 
@@ -144,7 +153,8 @@ final class ManualConsole {
 
         if (!$this->tabActive) {
             $this->tabMatches = array_values(array_map(fn($match) => str_contains($match, " ") ? '"' . $match . '"' : $match, ($this->completionCallback)($tokens, $current)));
-            $this->tabIndex = 0;
+            // Fix 2: start at -1 so the first Tab press lands on index 0 after cycling
+            $this->tabIndex = -1;
             $this->tabActive = true;
 
             if (empty($this->tabMatches)) {
@@ -158,18 +168,17 @@ final class ManualConsole {
                 $this->input = implode(" ", $tokens) . $afterCursor;
                 $this->cursor = mb_strlen(implode(" ", $tokens));
                 $this->redraw($prompt);
+                // If only one match, we're done; no cycling needed
+                if (count($this->tabMatches) === 1) {
+                    $this->tabActive = false;
+                    return;
+                }
+                $this->displayTabMatches();
                 return;
             }
-
-            $match = $this->tabMatches[$this->tabIndex];
-            $tokens[] = $match;
-            $this->input = implode(" ", $tokens) . $afterCursor;
-            $this->cursor = mb_strlen(implode(" ", $tokens));
-            $this->redraw($prompt);
-            $this->displayTabMatches();
-            return;
         }
 
+        // Cycle to next match (first Tab lands on 0 because we started at -1)
         $this->tabIndex = ($this->tabIndex + 1) % count($this->tabMatches);
         $match = $this->tabMatches[$this->tabIndex];
         $tokens[] = $match;
@@ -190,12 +199,14 @@ final class ManualConsole {
 
         $display = [];
         foreach ($this->tabMatches as $i => $match) {
-            $display[] = $i === $this->tabIndex ? TerminalUtils::invertColors($match) : $match;
+            // tabIndex is -1 when we've only done the common-prefix expansion
+            $display[] = ($i === $this->tabIndex) ? TerminalUtils::invertColors($match) : $match;
         }
 
         TerminalUtils::write("\n\r" . implode(" ", $display));
         TerminalUtils::moveCursorUp();
-        TerminalUtils::setCursorPosition(mb_strlen($this->prompt) + $this->cursor);
+        // Fix 3: use visible length (strip ANSI) so the cursor lands correctly
+        TerminalUtils::setCursorPosition($this->visibleLength($this->prompt) + $this->cursor);
 
         $this->tabMatchesDisplayed = true;
     }
@@ -208,6 +219,12 @@ final class ManualConsole {
         TerminalUtils::moveCursorUp();
 
         $this->tabMatchesDisplayed = false;
+    }
+
+    // Fix 3: strip ANSI escape sequences before measuring string length for
+    // terminal cursor positioning — mb_strlen counts escape bytes as characters
+    private function visibleLength(string $str): int {
+        return mb_strlen(preg_replace('/\033\[[0-9;]*m/', '', $str));
     }
 
     private function tokenize(string $line): array {
@@ -253,6 +270,13 @@ final class ManualConsole {
 
     private function readChar(int $timeoutMs): ?string {
         $this->ensureOpen();
+
+        // Fix 1: drain the pending-char buffer first
+        if ($this->pendingChar !== null) {
+            $char = $this->pendingChar;
+            $this->pendingChar = null;
+            return $char;
+        }
 
         $read = [STDIN];
         $write = null;

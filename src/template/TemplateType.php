@@ -159,7 +159,7 @@ final class TemplateType {
     }
 
     public function checkBridgeForUpdate(): Promise {
-        if (!@file_exists($this->getBridgeFileLocation())) return Promise::resolved(true);
+        if (!file_exists($this->getBridgeFileLocation())) return Promise::resolved(true);
         return ($this->bridgePluginUpdateCheckClosure)($this);
     }
 
@@ -168,7 +168,7 @@ final class TemplateType {
     }
 
     public function checkBridge(): bool {
-        return @file_exists($this->getBridgeFileLocation());
+        return file_exists($this->getBridgeFileLocation());
     }
 
     public function getName(): string {

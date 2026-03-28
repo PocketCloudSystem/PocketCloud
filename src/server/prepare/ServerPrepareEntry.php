@@ -32,7 +32,7 @@ final class ServerPrepareEntry extends ThreadSafe {
     public function run(): void {
         $logFileLocation = PathUtils::join($this->serverPath, $this->relativeLogFileLocation);
         if (file_exists($logFileLocation)) {
-            if (!@is_dir($logArchivePath = PathUtils::join($this->templatePath, "cloud_log_archive"))) @mkdir($logArchivePath, 0777, true);
+            if (!is_dir($logArchivePath = PathUtils::join($this->templatePath, "cloud_log_archive"))) @mkdir($logArchivePath, 0777, true);
             $ctime = filectime($logFileLocation) ?: time();
             FileUtils::copyFile($logFileLocation, PathUtils::join($logArchivePath, date("Y-m-d_H:i:s.v_e", $ctime) . "_" . basename($logFileLocation) . ".log"));
             @unlink($logFileLocation);
@@ -55,7 +55,7 @@ final class ServerPrepareEntry extends ThreadSafe {
             $this->processAndReplacePlaceholders($filePath, iterator_to_array($replacements));
         }
 
-        if (@file_exists($logFileLocation)) {
+        if (file_exists($logFileLocation)) {
             @unlink($logFileLocation);
         }
     }

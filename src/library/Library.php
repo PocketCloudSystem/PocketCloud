@@ -43,7 +43,7 @@ final readonly class Library {
             return false;
         }
 
-        if (@is_dir($this->libPath)) FileUtils::removeDirectory($this->libPath);
+        if (is_dir($this->libPath)) FileUtils::removeDirectory($this->libPath);
         return ExceptionHandler::require(
             function (string $name, string $downloadUrl, string $libPath): bool {
                 CloudLogger::get()->info("Downloading source for library: {}...", $name);
@@ -79,12 +79,12 @@ final readonly class Library {
         return file_exists($this->libPath) &&
             is_dir($this->libPath) &&
             count(scandir($this->libPath)) > 0 &&
-            @is_dir(PathUtils::join($this->libPath, $this->namespaceFolder)) &&
-            @file_exists(PathUtils::join($this->libPath, ".size"));
+            is_dir(PathUtils::join($this->libPath, $this->namespaceFolder)) &&
+            file_exists(PathUtils::join($this->libPath, ".size"));
     }
 
     public function needsAnUpdate(): bool {
-        if (!@file_exists(PathUtils::join($this->libPath, ".size"))) return true;
+        if (!file_exists(PathUtils::join($this->libPath, ".size"))) return true;
         $lastDownloadSize = intval(file_get_contents(PathUtils::join($this->libPath, ".size")));
         $newestDownloadSize = NetUtils::fileSize($this->downloadUrl);
         return $newestDownloadSize !== $lastDownloadSize;

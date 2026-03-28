@@ -35,7 +35,7 @@ final readonly class ServerSoftware {
 
     /** @return Promise<bool> */
     public function checkForUpdate(): Promise {
-        if (!@file_exists($this->getPath())) return Promise::resolved(true);
+        if (!file_exists($this->getPath())) return Promise::resolved(true);
         return ($this->checkForUpdateClosure)($this);
     }
 

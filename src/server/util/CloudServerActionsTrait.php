@@ -180,7 +180,7 @@ trait CloudServerActionsTrait {
     public function saveAndDeleteLogFiles(): void {
         $logFileLocation = $this->getPath() . $this->getTemplate()->getTemplateType()->getRelativeLogFileLocation();
         if (file_exists($logFileLocation)) {
-            if (!@is_dir($logArchivePath = PathUtils::join($this->getTemplate()->getPath(), "cloud_log_archive"))) @mkdir($logArchivePath, 0777, true);
+            if (!is_dir($logArchivePath = PathUtils::join($this->getTemplate()->getPath(), "cloud_log_archive"))) @mkdir($logArchivePath, 0777, true);
             FileUtils::copyFile($logFileLocation, PathUtils::join($logArchivePath, date("Y-m-d_H:i:s.v_e", (int) floor($this->startTime)) . "_" . basename($logFileLocation) . ".log"));
             @unlink($logFileLocation);
         }

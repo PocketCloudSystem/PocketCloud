@@ -20,7 +20,7 @@ final class Config {
         ?ConfigType $type = null,
         private readonly array $defaultContent = []
     ) {
-        if (!@file_exists(dirname($this->path))) throw new InvalidArgumentException("The given file path doesn't exists");
+        if (!file_exists(dirname($this->path))) throw new InvalidArgumentException("The given file path doesn't exists");
         if ($type === null) $type = ConfigTypeList::detectType($this->path);
         if ($type === null) throw new InvalidConfigTypeException("No config type specified, auto-detection found none");
         $this->type = $type;
@@ -29,7 +29,7 @@ final class Config {
     }
 
     public function load(): void {
-        if (!@file_exists($this->path)) {
+        if (!file_exists($this->path)) {
             $this->content = $this->defaultContent;
             $this->changed = true;
             $this->save();

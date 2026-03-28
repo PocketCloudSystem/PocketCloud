@@ -15,19 +15,19 @@ final class FileUtils {
     public static function copyFile(string $src, string $dst): bool {
         return ExceptionHandler::attempt(
             function (string $src, string $dst): bool {
-                if (!@file_exists($src)) return false;
+                if (!file_exists($src)) return false;
                 return copy($src, $dst);
             },
             "Failed to copy " . $src . " to " . $dst,
             null,
             $src, $dst
-        );
+        ) ?? false;
     }
 
     public static function createDir(string $path): bool {
         return ExceptionHandler::attempt(
             function (string $path): bool {
-                if (@file_exists($path)) return true;
+                if (file_exists($path)) return true;
                 return mkdir($path, 0777, true);
             },
             "Failed to create directory: " . $path,
@@ -53,7 +53,7 @@ final class FileUtils {
     public static function fileGetContents(string $filePath, string $default = ""): ?string {
         return ExceptionHandler::attempt(
             function (string $filePath, mixed $default): string {
-                if (!@file_exists($filePath)) return $default;
+                if (!file_exists($filePath)) return $default;
                 return file_get_contents($filePath);
             },
             "Failed to read file: " . $filePath,
@@ -92,7 +92,7 @@ final class FileUtils {
             null,
             null,
             $src, $dst
-        );
+        ) ?? false;
     }
 
     public static function rename(string $from, string $to): bool {
@@ -103,7 +103,7 @@ final class FileUtils {
             "Failed to rename: " . $from . " to " . $to,
             null,
             $from, $to
-        );
+        ) ?? false;
     }
 
     public static function unlinkFile(string $filePath): bool {
@@ -116,10 +116,7 @@ final class FileUtils {
     public static function removeDirectory(string $directoryPath): bool {
         return ExceptionHandler::attempt(
             function (string $directoryPath): bool {
-                if (!@is_dir($directoryPath)) {
-                    return false;
-                }
-
+                if (!is_dir($directoryPath)) return false;
                 $iterator = new RecursiveIteratorIterator(
                     new RecursiveDirectoryIterator($directoryPath, FilesystemIterator::SKIP_DOTS),
                     RecursiveIteratorIterator::CHILD_FIRST
@@ -218,7 +215,7 @@ final class FileUtils {
             "Failed to emit & place yaml string into file",
             null,
             $filePath, $yamlData, $encoding, $linebreak
-        );
+        ) ?? false;
     }
 
     public static function parseYaml(string $yamlString): ?array {

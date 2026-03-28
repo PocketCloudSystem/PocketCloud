@@ -32,9 +32,9 @@ final class ServerPropertiesGenerator implements Loadable {
         if (!isset($this->defaultConfigFiles[$properties->getTemplateType()->getName()])) $this->defaultConfigFiles[$properties->getTemplateType()->getName()] = [];
         $this->defaultConfigFiles[$properties->getTemplateType()->getName()][] = $properties;
 
-        if (!@file_exists($properties->getTemplateType()->getGlobalTemplatePath())) mkdir($properties->getTemplateType()->getGlobalTemplatePath(), 0777, true);
+        if (!file_exists($properties->getTemplateType()->getGlobalTemplatePath())) mkdir($properties->getTemplateType()->getGlobalTemplatePath(), 0777, true);
 
-        if ($properties->needsRenewal($propertiesPath = $properties->getTemplateType()->getGlobalTemplatePath() . $properties->getFileName()) || !@file_exists($propertiesPath)) {
+        if ($properties->needsRenewal($propertiesPath = $properties->getTemplateType()->getGlobalTemplatePath() . $properties->getFileName()) || !file_exists($propertiesPath)) {
             CloudLogger::get()->info("§aUpdating §rserver properties/config§8: §b{}§8...", $properties->getFileName());
             $properties->renew($propertiesPath);
 
@@ -42,7 +42,7 @@ final class ServerPropertiesGenerator implements Loadable {
             foreach (array_diff(scandir(TEMPLATES_PATH), [".", "..", "global"]) as $file) {
                 $dirPath = PathUtils::join(TEMPLATES_PATH, $file) . "/";
                 $filePath = PathUtils::join($dirPath, $properties->getFileName());
-                if (@file_exists($filePath)) {
+                if (file_exists($filePath)) {
                     if ($properties->needsRenewal($filePath)) {
                         $properties->renew($filePath);
                         $i++;

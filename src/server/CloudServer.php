@@ -169,10 +169,7 @@ final class CloudServer implements Tickable, Writeable {
     }
 
     public function retrieveLogs(): ?array {
-        if (@file_exists($path = $this->getLogFilePath())) {
-            return explode("\n", file_get_contents($path));
-        }
-
+        if (file_exists($path = $this->getLogFilePath())) return explode("\n", file_get_contents($path));
         return null;
     }
 

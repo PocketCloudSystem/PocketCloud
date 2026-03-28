@@ -4,7 +4,6 @@ namespace pocketcloud\cloud\util\net;
 
 use pocketcloud\cloud\console\handler\ExceptionHandler;
 use RuntimeException;
-use Throwable;
 
 final class NetUtils {
 
@@ -12,18 +11,14 @@ final class NetUtils {
         $sock = socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
         if ($sock === false) throw new RuntimeException("Unable to create socket");
 
-        try {
-            $ok = @socket_bind($sock, $address, $port);
-            socket_close($sock);
-            return $ok === false;
-        } catch (Throwable) {
-            return true;
-        }
+        $ok = @socket_bind($sock, $address, $port);
+        socket_close($sock);
+        return $ok === false;
     }
 
     public static function download(string $url, string $fileLocation): int|false {
         return ExceptionHandler::require(function (string $url, string $fileLocation): int|false {
-            if (!@file_exists(dirname($fileLocation))) mkdir(dirname($fileLocation), 0777, true);
+            if (!file_exists(dirname($fileLocation))) mkdir(dirname($fileLocation), 0777, true);
             $tmpFile = $fileLocation . ".tmp";
             $file = fopen($tmpFile, "wb");
             if (!$file) return false;

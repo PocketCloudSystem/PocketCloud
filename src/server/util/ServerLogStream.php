@@ -13,7 +13,7 @@ final class ServerLogStream {
     public function __construct(private readonly CloudServer $server) {}
 
     public function startStream(): void {
-        if (!@file_exists($this->server->getLogFilePath())) throw new RuntimeException("Log file does not exist");
+        if (!file_exists($this->server->getLogFilePath())) throw new RuntimeException("Log file does not exist");
         $fileHandle = fopen($this->server->getLogFilePath(), "r");
         if ($fileHandle === false) throw new RuntimeException("Log file cannot be opened");
         $this->fileHandle = $fileHandle;

@@ -514,7 +514,7 @@ final class PocketCloud {
         $this->shutdown();
         echo "--- Uptime: " . round($this->getUptime(), 3) . "s - PocketCloud has crashed, waiting 60s before completely killing the process. ---" . PHP_EOL;
         sleep(60);
-        @ProcessUtils::kill(getmypid());
+        ProcessUtils::kill(getmypid());
         exit(1);
     }
 
@@ -826,7 +826,7 @@ $cloud->start();
 
 if (ThreadManager::getInstance()->stopAll() > 0) {
     CloudLogger::get()->warn("Some threads crashed while trying to stop them, force-kill of the process...");
-    @ProcessUtils::kill(getmypid());
+    ProcessUtils::kill(getmypid());
 }
 
 releaseLockFile($lockFile);
