@@ -9,7 +9,9 @@ use pocketcloud\cloud\group\ServerGroup;
 use pocketcloud\cloud\network\packet\data\NotificationType;
 use pocketcloud\cloud\network\packet\impl\PlayerSyncPacket;
 use pocketcloud\cloud\server\CloudServer;
+use pocketcloud\cloud\server\CloudServerManager;
 use pocketcloud\cloud\template\Template;
+use pocketcloud\cloud\template\TemplateType;
 use pocketcloud\cloud\util\trait\SingletonTrait;
 
 final class CloudPlayerManager {
@@ -23,6 +25,13 @@ final class CloudPlayerManager {
     }
 
     public function add(CloudPlayer $player): void {
+        $anyProxies = count(CloudServerManager::getInstance()->getAll(...TemplateType::onlyProxy())) > 0;
+        if ($anyProxies && $player->getCurrentProxy() === null) {
+            // This is used to prevent players to join via sub-servers instead of the main proxy.
+            $player->kick("Joined via sub-server instead of a proxy.", "Please do not join via sub-servers.");
+            return;
+        }
+
         if (NotificationType::PLAYER_JOINED->canLog()) CloudLogger::get()->info("Player §b{} §rhas §aconnected §rvia §b{}§r.", $player->getName(), $player->getCurrentProxyName() ?? $player->getCurrentServerName());
         $this->players[$player->getName()] = $player;
         PlayerSyncPacket::create($player, false)->broadcastPacket();
