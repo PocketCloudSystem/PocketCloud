@@ -52,10 +52,10 @@ final class ServerGroup implements Writeable {
         return $this->templates;
     }
 
-    public function write(bool $mySql = false): array {
+    public function write(): array {
         return [
             "name" => $this->name,
-            "templates" => ($mySql ? json_encode($this->templates) : $this->templates)
+            "templates" => $this->templates
         ];
     }
 

@@ -2,6 +2,8 @@
 
 namespace pocketcloud\cloud\provider;
 
+use Closure;
+use Exception;
 use pocketcloud\cloud\cache\InGameModuleCache;
 use pocketcloud\cloud\cache\MaintenanceListCache;
 use pocketcloud\cloud\config\impl\MainConfig;
@@ -12,8 +14,10 @@ use pocketcloud\cloud\migration\MigratorManager;
 use pocketcloud\cloud\PocketCloud;
 use pocketcloud\cloud\provider\database\DatabaseQueries;
 use pocketcloud\cloud\template\Template;
+use pocketcloud\cloud\util\PathUtils;
 use r3pt1s\mysql\ConnectionPool;
 use pocketcloud\cloud\util\promise\Promise;
+use r3pt1s\mysql\query\MySQLQuery;
 use Throwable;
 
 final class CloudMySqlProvider extends CloudProvider {
@@ -21,9 +25,9 @@ final class CloudMySqlProvider extends CloudProvider {
     private ?ConnectionPool $connectionPool;
 
     public function __construct() {
-        $this->connectionPool = new ConnectionPool(MainConfig::getInstance()->getMysqlSettings(), 1, PocketCloud::getInstance()->getSleeperHandler(), function (Throwable $throwable): void {
-            CloudLogger::get()->error("Something unexpected happened while executing a mysql query...");
-            CloudLogger::get()->exception($throwable);
+        $this->connectionPool = new ConnectionPool(MainConfig::getInstance()->getMysqlSettings(), 1, PocketCloud::getInstance()->getSleeperHandler(), function (MySQLQuery|null $query, Exception $exception): void {
+            CloudLogger::get()->error("Something unexpected happened while executing a mysql query... §8(§b{}§8)", $query === null ? null : PathUtils::clean($query::class));
+            CloudLogger::get()->exception($exception);
         });
 
         DatabaseQueries::createTables()->execute()->then(function (): void {
@@ -126,7 +130,9 @@ final class CloudMySqlProvider extends CloudProvider {
     public function addServerGroup(ServerGroup $serverGroup): Promise {
         $promise = new Promise();
 
-        DatabaseQueries::addServerGroup($serverGroup->write(true))->execute()
+        $data = $serverGroup->write();
+        if (is_array($data["templates"])) $data["templates"] = json_encode($data["templates"]);
+        DatabaseQueries::addServerGroup($data)->execute()
             ->then(fn() => $promise->resolve())
             ->failure(fn() => $promise->reject());
 

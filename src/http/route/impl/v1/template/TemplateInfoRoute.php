@@ -20,7 +20,7 @@ final class TemplateInfoRoute extends ApiV1JsonPath {
 
     public function onHandle(Request $request, ResponseBuilder $builder, array $requestBody): void {
         $template = TemplateManager::getInstance()->get($request->getParameter("name"));
-        $builder->body($template->write());
+        $builder->body($template->writeDetailed());
     }
 
     public function checkForBadRequest(Request $request, ResponseBuilder $response, array $body): bool {

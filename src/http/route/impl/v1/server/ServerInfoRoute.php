@@ -20,7 +20,7 @@ final class ServerInfoRoute extends ApiV1JsonPath {
 
     public function onHandle(Request $request, ResponseBuilder $builder, array $requestBody): void {
         $server = CloudServerManager::getInstance()->get($request->getParameter("name"));
-        $builder->body($server->write());
+        $builder->body($server->writeDetailed());
     }
 
     public function checkForBadRequest(Request $request, ResponseBuilder $response, array $body): bool {

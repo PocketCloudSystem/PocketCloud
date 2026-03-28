@@ -9,13 +9,14 @@ use pocketcloud\cloud\console\log\level\CloudLogLevel;
 use pocketcloud\cloud\PocketCloud;
 use pocketcloud\cloud\update\UpdateChecker;
 use pocketcloud\cloud\util\FileUtils;
+use pocketcloud\cloud\util\misc\Writeable;
 use pocketcloud\cloud\util\net\NetUtils;
 use pocketcloud\cloud\util\PathUtils;
 use pocketcloud\cloud\util\Utils;
 use ZipArchive;
 use const pocketcloud\LIBRARIES_PATH;
 
-final readonly class Library {
+final readonly class Library implements Writeable {
 
     private string $libPath;
 

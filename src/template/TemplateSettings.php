@@ -2,9 +2,10 @@
 
 namespace pocketcloud\cloud\template;
 
+use pocketcloud\cloud\util\misc\Writeable;
 use pocketcloud\cloud\util\Utils;
 
-final class TemplateSettings {
+final class TemplateSettings implements Writeable {
 
     /**
      * @param bool $lobby

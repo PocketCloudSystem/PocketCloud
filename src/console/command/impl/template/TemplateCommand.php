@@ -99,7 +99,7 @@ final class TemplateCommand extends Command implements ITabComplete {
         if (empty(TemplateManager::getInstance()->getAll(...$type))) $sender->info("§cNo templates found.");
         foreach (TemplateManager::getInstance()->getAll(...$type) as $template) {
             $sender->info(FormatUtils::implodeWithKeys(
-                $template->write(),
+                $template->writeDetailed(),
                 " §8| §r",
                 "§8: §b",
                 fn(string $key) => ucfirst($key),

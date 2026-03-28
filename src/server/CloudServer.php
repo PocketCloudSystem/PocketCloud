@@ -36,6 +36,7 @@ use pocketcloud\cloud\server\util\ServerStartMethod;
 use pocketcloud\cloud\server\util\ServerStatus;
 use pocketcloud\cloud\template\Template;
 use pocketcloud\cloud\template\TemplateManager;
+use pocketcloud\cloud\util\misc\DetailedWriteable;
 use pocketcloud\cloud\util\misc\Tickable;
 use pocketcloud\cloud\util\misc\Writeable;
 use pocketcloud\cloud\util\PathUtils;
@@ -46,7 +47,7 @@ use const pocketcloud\CLOUD_PATH;
 use const pocketcloud\STATIC_SERVERS_PATH;
 use const pocketcloud\TEMP_PATH;
 
-final class CloudServer implements Tickable, Writeable {
+final class CloudServer implements Tickable, Writeable, DetailedWriteable {
     use CloudServerActionsTrait;
 
     private int $lastCheckTime;
@@ -290,6 +291,26 @@ final class CloudServer implements Tickable, Writeable {
             "serverStatus" => $this->serverStatus?->getName(),
             "port" => $this->serverData->getPort(),
             "players" => $this->getPlayerCount(),
+            "maxPlayers" => $this->serverData->getMaxPlayers(),
+            "processId" => $this->serverData->getProcessId(),
+            "tps" => $this->serverData->getTps(),
+            "avgTps" => $this->serverData->getAvgTps(),
+            "memoryUsage" => $this->serverData->getMemoryUsage(),
+            "memoryPeak" => $this->serverData->getMemoryPeak(),
+            "memoryLimit" => $this->serverData->getMemoryLimit(),
+            "cpuUsage" => $this->serverData->getCpuUsage(),
+            "internalStorage" => $this->serverStorage->getAll()
+        ];
+    }
+
+    public function writeDetailed(): array {
+        return [
+            "name" => $this->getName(),
+            "uuid" => $this->serverUuid,
+            "id" => $this->id,
+            "template" => $this->template,
+            "serverStatus" => $this->serverStatus?->getName(),
+            "port" => $this->serverData->getPort(),
             "maxPlayers" => $this->serverData->getMaxPlayers(),
             "processId" => $this->serverData->getProcessId(),
             "tps" => $this->serverData->getTps(),

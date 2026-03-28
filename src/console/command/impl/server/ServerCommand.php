@@ -105,7 +105,7 @@ final class ServerCommand extends Command {
         $sender->info("Servers §8(§b{}§8/§b{}§8)§r:", count($servers = CloudServerManager::getInstance()->getAll($template)), $template?->getName() ?? "All");
         foreach ($servers as $server) {
             $sender->info(FormatUtils::implodeWithKeys(
-                $server->write(),
+                $server->writeDetailed(),
                 " §8| §r",
                 "§8: §b",
                 fn(string $key) => ucfirst($key),
@@ -129,7 +129,7 @@ final class ServerCommand extends Command {
         /** @var CloudServer $server */
         $server = $args["server"];
         $formatted = FormatUtils::implodeWithKeys(
-            array_merge($server->write(), ["path" => $server->getPath(), "channel" => $server->getServerClient()?->getAddress()]),
+            array_merge($server->writeDetailed(), ["path" => $server->getPath(), "channel" => $server->getServerClient()?->getAddress()]),
             "\n",
             "§8: §b",
             function (string $key): string {

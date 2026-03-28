@@ -3,8 +3,9 @@
 namespace pocketcloud\cloud\util\benchmark;
 
 use pocketcloud\cloud\util\FormatUtils;
+use pocketcloud\cloud\util\misc\Writeable;
 
-final readonly class BenchmarkResult {
+final readonly class BenchmarkResult implements Writeable {
 
     public function __construct(
         private ?string $name,

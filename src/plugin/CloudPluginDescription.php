@@ -3,9 +3,10 @@
 namespace pocketcloud\cloud\plugin;
 
 use JetBrains\PhpStorm\ArrayShape;
+use pocketcloud\cloud\util\misc\Writeable;
 use pocketcloud\cloud\util\Utils;
 
-readonly class CloudPluginDescription {
+readonly class CloudPluginDescription implements Writeable {
 
     public function __construct(
         private string $name,

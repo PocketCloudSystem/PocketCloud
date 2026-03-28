@@ -68,7 +68,7 @@ final class MonitorScreen extends Screen {
 
             $cards = [];
             foreach ($servers as $server) {
-                [$name, , , , , , , , , $tps, $avgTps, $memoryUsage, , $memoryLimit, $cpuUsage] = array_values($server->write());
+                [$name, , , , , , , , $tps, $avgTps, $memoryUsage, , $memoryLimit, $cpuUsage] = array_values($server->write());
 
                 $cards[] = [
                     "name" => $name,

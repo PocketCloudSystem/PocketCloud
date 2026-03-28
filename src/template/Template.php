@@ -7,12 +7,13 @@ use pocketcloud\cloud\group\ServerGroupManager;
 use pocketcloud\cloud\player\CloudPlayer;
 use pocketcloud\cloud\player\CloudPlayerManager;
 use pocketcloud\cloud\server\CloudServerManager;
+use pocketcloud\cloud\util\misc\DetailedWriteable;
 use pocketcloud\cloud\util\misc\Writeable;
 use pocketcloud\cloud\util\PathUtils;
 use pocketcloud\cloud\util\Utils;
 use const pocketcloud\TEMPLATES_PATH;
 
-final readonly class Template implements Writeable {
+final readonly class Template implements Writeable, DetailedWriteable {
 
     public function __construct(
         private string $name,
@@ -131,6 +132,22 @@ final readonly class Template implements Writeable {
     }
 
     public function write(): array {
+        return [
+            "name" => $this->name,
+            "lobby" => $this->isLobby(),
+            "maintenance" => $this->isMaintenance(),
+            "static" => $this->isStatic(),
+            "alwaysCopyToStaticServers" => $this->isMaintenance(),
+            "maxPlayerCount" => $this->getMaxPlayerCount(),
+            "minServerCount" => $this->getMinServerCount(),
+            "maxServerCount" => $this->getMaxServerCount(),
+            "startNewPercentage" => $this->getStartNewPercentage(),
+            "autoStart" => $this->isAutoStart(),
+            "templateType" => $this->templateType->getName()
+        ];
+    }
+
+    public function writeDetailed(): array {
         $playerCount = 0;
         $serverCount = count(CloudServerManager::getInstance()->getAll($this));
         foreach (CloudServerManager::getInstance()->getAll($this) as $server) $playerCount += $server->getPlayerCount();
