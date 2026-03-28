@@ -3,17 +3,22 @@
 namespace pocketcloud\cloud\util\net;
 
 use pocketcloud\cloud\console\handler\ExceptionHandler;
-use pocketcloud\cloud\PocketCloud;
 use RuntimeException;
+use Throwable;
 
 final class NetUtils {
 
     public static function isLocalUdpPortInUse(int $port, string $address = "0.0.0.0"): bool {
         $sock = socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
         if ($sock === false) throw new RuntimeException("Unable to create socket");
-        $ok = @socket_bind($sock, $address, $port);
-        socket_close($sock);
-        return $ok === false;
+
+        try {
+            $ok = @socket_bind($sock, $address, $port);
+            socket_close($sock);
+            return $ok === false;
+        } catch (Throwable) {
+            return true;
+        }
     }
 
     public static function download(string $url, string $fileLocation): int|false {

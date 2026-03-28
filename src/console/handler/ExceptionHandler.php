@@ -60,12 +60,12 @@ final class ExceptionHandler {
      * For recoverable operations. Logs the error and returns null, never crashes.
      */
     public static function attempt(Closure $closure, ?string $message = null, ?Closure $onExceptionClosure = null, mixed ...$params): mixed {
-        set_error_handler(self::throwAll(...));
+        set_error_handler(self::throwAll());
         try {
             return $closure(...$params);
         } catch (Throwable $e) {
             if ($message !== null) CloudLogger::get()->error($message . ": " . $e->getMessage());
-            if ($onExceptionClosure !== null) ($onExceptionClosure)($exception);
+            if ($onExceptionClosure !== null) ($onExceptionClosure)($e);
             return null;
         } finally {
             restore_error_handler();
@@ -76,12 +76,12 @@ final class ExceptionHandler {
      * For truly fatal operations. Crashes the cloud on failure.
      */
     public static function require(Closure $closure, ?string $message = null, ?Closure $onExceptionClosure = null, mixed ...$params): mixed {
-        set_error_handler(self::throwAll(...));
+        set_error_handler(self::throwAll());
         try {
             return $closure(...$params);
         } catch (Throwable $e) {
             if ($message !== null) CloudLogger::get()->error($message);
-            if ($onExceptionClosure !== null) ($onExceptionClosure)($exception);
+            if ($onExceptionClosure !== null) ($onExceptionClosure)($e);
             self::handleException($e);
             return null;
         } finally {

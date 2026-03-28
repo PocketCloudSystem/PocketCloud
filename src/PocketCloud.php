@@ -525,6 +525,10 @@ final class PocketCloud {
         ScreenManager::getInstance()->resetScreen();
 
         CloudLogger::get()->info("§cShutting down §bPocket§3Cloud§r...");
+
+        LoadableList::clear();
+        TickableList::clear();
+
         $this->running = false;
 
         if (isset($this->config)) {
