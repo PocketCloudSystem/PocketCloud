@@ -32,7 +32,7 @@ final class ExceptionHandler {
             throw new ErrorException($error, 0, $errno, $file, $line);
         }
 
-        CloudLogger::get()->warn("§e{}§c: §e{} §cin §e{} §cat line §e{}", ErrorUtils::getTypeName($errno), $error, $file, $line);
+        CloudLogger::get()->error("§e{}§c: §e{} §cin §e{} §cat line §e{}", ErrorUtils::getTypeName($errno), $error, $file, $line);
         return true;
     }
 

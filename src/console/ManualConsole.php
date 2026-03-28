@@ -37,6 +37,7 @@ final class ManualConsole {
         $this->oldSttySettings = shell_exec("stty -g");
         shell_exec("stty -echo");
         shell_exec("stty raw");
+        ini_set("display_errors", "0");
     }
 
     public function setHistoryEnabled(bool $enabled): void {

@@ -8,6 +8,7 @@ use pocketcloud\cloud\config\impl\MainConfig;
 use pocketcloud\cloud\config\impl\ServerSettingsConfig;
 use pocketcloud\cloud\console\command\CommandManager;
 use pocketcloud\cloud\console\Console;
+use pocketcloud\cloud\console\handler\ExceptionHandler;
 use pocketcloud\cloud\console\log\level\CloudLogLevel;
 use pocketcloud\cloud\console\log\logger\MainLogger;
 use pocketcloud\cloud\console\log\output\OutputManager;
@@ -173,9 +174,9 @@ final class PocketCloud {
         $this->lastTickTime = microtime(true);
 
         $this->initBootstrap();
-        if (!$this->runMigrations()) return;
         $this->initConfigs();
         if (!$this->initSoftware()) return;
+        if (!$this->runMigrations()) return;
         if (!$this->checkLibraryUpdates()) return;
         if (!$this->checkBridgePlugins()) return;
         $this->cleanLogs();
@@ -189,8 +190,11 @@ final class PocketCloud {
     }
 
     private function initBootstrap(): void {
-        CloudLogger::set($this->logger = new MainLogger(LOG_PATH, false, false));
         ($this->console = new Console())->register();
+        $this->console->install();
+        $this->console->disableTyping();
+
+        CloudLogger::set($this->logger = new MainLogger(LOG_PATH, false, false));
         ($this->screenManager = new ScreenManager())->resetScreen();
         $this->commandManager = new CommandManager();
         ($this->libraryManager = new LibraryManager())->load();
@@ -316,7 +320,7 @@ final class PocketCloud {
 
         Benchmark::stopTiming("clean_logs");
         $end = round(microtime(true) - $start, 3);
-        $this->addStartNotification("Cleaned & removed exactly §b{} old log §rand §bcrash file(s)§r. §8(§rTook §b{}s§8)", CloudLogLevel::SUCCESS(), $i, $end);
+        if ($i > 0) $this->addStartNotification("Cleaned & removed exactly §b{} old log(s) §rand §bcrash file(s)§r. §8(§rTook §b{}s§8)", CloudLogLevel::SUCCESS(), $i, $end);
     }
 
     private function initManagers(): void {
@@ -350,8 +354,6 @@ final class PocketCloud {
             CloudLogger::get()->info("§bPocket§3Cloud §rwill §astart §rin 3 seconds...");
             sleep(3);
         } else usleep(50 * 1000);
-
-        $this->console->install();
 
         if (array_any($this->serverSettingsConfig->getBinaries(), fn(string $url, string $templateType) => BinaryDownloader::downloadBinary($url, $templateType) === true)) {
             $this->addStartNotification("§8====== §cATTENTION! §8======", CloudLogLevel::WARN())
@@ -451,6 +453,8 @@ final class PocketCloud {
 
         CloudLogger::get()->success("§bCloud §rhas been §astarted§r. §8(§rTook §b" . number_format($time = (microtime(true) - $this->startTimestamp), 3) . "s§8)");
         new CloudStartedEvent($time)->call();
+
+        $this->console->enableHistory();
 
         $this->metrics->getMetrics()->startSubmitting();
     }
@@ -796,7 +800,7 @@ define("pocketcloud\SERVER_GROUPS_PATH", PathUtils::join(CLOUD_PATH, "groups") .
 define("pocketcloud\FIRST_RUN", !file_exists(STORAGE_PATH . "config.json"));
 
 foreach ([
-    STORAGE_PATH, BACKUPS_PATH, INTERNAL_PATH, CRASHES_PATH, SERVER_CRASHES_PATH, BINARIES_PATH, LIBRARIES_PATH, PLUGINS_PATH, SOFTWARE_PATH, IN_GAME_PATH, LOG_PATH,
+    STORAGE_PATH, BACKUPS_PATH, INTERNAL_PATH, CRASHES_PATH, SERVER_CRASHES_PATH, BINARIES_PATH, LIBRARIES_PATH, PLUGINS_PATH, SOFTWARE_PATH, IN_GAME_PATH,
     TEMP_PATH,
     TEMPLATES_PATH, GLOBAL_TEMPLATES_PATH,
     SERVER_GROUPS_PATH

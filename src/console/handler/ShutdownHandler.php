@@ -30,6 +30,8 @@ final class ShutdownHandler {
     }
 
     private static function handleCrash(): void {
+        $error = error_get_last();
+        if ($error !== null) ExceptionHandler::handleError($error["type"], $error["message"], $error["file"], $error["line"]);
         PocketCloud::getInstance()->crash();
     }
 }
