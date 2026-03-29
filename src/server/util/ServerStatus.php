@@ -2,9 +2,10 @@
 
 namespace pocketcloud\cloud\server\util;
 
+use pocketcloud\cloud\util\misc\Writeable;
 use pocketcloud\cloud\util\trait\EnumHelperTrait;
 
-enum ServerStatus: string {
+enum ServerStatus: string implements Writeable {
     use EnumHelperTrait;
 
     case STARTING = "§2STARTING";
@@ -26,5 +27,9 @@ enum ServerStatus: string {
         return $this === ServerStatus::ONLINE ||
             $this === ServerStatus::FULL ||
             $this === ServerStatus::IN_GAME;
+    }
+
+    public function write(): string {
+        return $this->name;
     }
 }
