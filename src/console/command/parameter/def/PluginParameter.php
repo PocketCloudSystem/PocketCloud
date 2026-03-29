@@ -15,7 +15,7 @@ readonly class PluginParameter extends CommandParameter {
     }
 
     public function onTabCompleteMatch(string $currentArg): array {
-        return array_filter(array_keys(CloudPluginManager::getInstance()->getAll()), fn(string $plugin) => str_contains(strtolower($plugin), $currentArg));
+        return array_keys(CloudPluginManager::getInstance()->getAll());
     }
 
     public function getType(): string {

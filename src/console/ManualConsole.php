@@ -27,9 +27,10 @@ final class ManualConsole {
     private bool $tabActive = false;
     private bool $tabMatchesDisplayed = false;
 
-    // Fix 1: pending char buffer so the batch-reader never silently
-    // discards a \t (or other special char) it read but didn't handle
     private ?string $pendingChar = null;
+
+    // Cached terminal width — shell_exec("tput cols") on every keypress causes input delay
+    private ?int $termWidth = null;
 
     public function __construct(
         private string $prompt = "",
@@ -55,6 +56,15 @@ final class ManualConsole {
 
     public function setVisibleTypingEnabled(bool $enabled): void {
         $this->visibleTyping = $enabled;
+    }
+
+    private function getTermWidth(): int {
+        return $this->termWidth ??= max(1, (int)(trim(shell_exec("tput cols") ?: "80")));
+    }
+
+    private function matchesLineCount(): int {
+        $raw = implode(" ", $this->tabMatches);
+        return max(1, (int)ceil($this->visibleLength($raw) / $this->getTermWidth()));
     }
 
     public function readlineNonBlocking(int $timeoutMs = 0): ?string {
@@ -126,7 +136,6 @@ final class ManualConsole {
                     $next === "\033" || $next === "\177" ||
                     $next === "\t"  || $next === "\x03"
                 ) {
-                    // Fix 1: stash the special char instead of discarding it
                     $this->pendingChar = $next;
                     break;
                 }
@@ -148,12 +157,26 @@ final class ManualConsole {
         $beforeCursor = mb_substr($this->input, 0, $this->cursor);
         $afterCursor = mb_substr($this->input, $this->cursor);
 
-        $tokens = $this->tokenize($beforeCursor);
+        $tokens = array_values($this->tokenize($beforeCursor));
         $current = array_pop($tokens) ?? "";
 
         if (!$this->tabActive) {
-            $this->tabMatches = array_values(array_map(fn($match) => str_contains($match, " ") ? '"' . $match . '"' : $match, ($this->completionCallback)($tokens, $current)));
-            // Fix 2: start at -1 so the first Tab press lands on index 0 after cycling
+            $matches = array_values(array_map(
+                fn(string $match) => str_contains($match, " ") ? '"' . $match . '"' : $match,
+                ($this->completionCallback)($tokens, $current)
+            ));
+
+            if ($current !== "") {
+                $filtered = array_values(array_filter(
+                    $matches,
+                    fn(string $m) => str_starts_with(mb_strtolower($m), mb_strtolower($current))
+                ));
+
+                $this->tabMatches = !empty($filtered) ? $filtered : $matches;
+            } else {
+                $this->tabMatches = $matches;
+            }
+
             $this->tabIndex = -1;
             $this->tabActive = true;
 
@@ -168,17 +191,18 @@ final class ManualConsole {
                 $this->input = implode(" ", $tokens) . $afterCursor;
                 $this->cursor = mb_strlen(implode(" ", $tokens));
                 $this->redraw($prompt);
-                // If only one match, we're done; no cycling needed
+
                 if (count($this->tabMatches) === 1) {
                     $this->tabActive = false;
                     return;
                 }
                 $this->displayTabMatches();
                 return;
+            } else {
+                $this->tabIndex = 0;
             }
         }
 
-        // Cycle to next match (first Tab lands on 0 because we started at -1)
         $this->tabIndex = ($this->tabIndex + 1) % count($this->tabMatches);
         $match = $this->tabMatches[$this->tabIndex];
         $tokens[] = $match;
@@ -191,21 +215,20 @@ final class ManualConsole {
     private function displayTabMatches(): void {
         if (empty($this->tabMatches)) return;
 
-        if ($this->tabMatchesDisplayed) {
-            TerminalUtils::moveCursorDown();
-            TerminalUtils::clearPrompt();
-            TerminalUtils::moveCursorUp();
-        }
+        $this->clearTabDisplay();
 
         $display = [];
         foreach ($this->tabMatches as $i => $match) {
-            // tabIndex is -1 when we've only done the common-prefix expansion
             $display[] = ($i === $this->tabIndex) ? TerminalUtils::invertColors($match) : $match;
         }
 
         TerminalUtils::write("\n\r" . implode(" ", $display));
-        TerminalUtils::moveCursorUp();
-        // Fix 3: use visible length (strip ANSI) so the cursor lands correctly
+
+        $linesUsed = $this->matchesLineCount();
+        for ($i = 0; $i < $linesUsed; $i++) {
+            TerminalUtils::moveCursorUp();
+        }
+
         TerminalUtils::setCursorPosition($this->visibleLength($this->prompt) + $this->cursor);
 
         $this->tabMatchesDisplayed = true;
@@ -214,15 +237,18 @@ final class ManualConsole {
     private function clearTabDisplay(): void {
         if (!$this->tabMatchesDisplayed) return;
 
-        TerminalUtils::moveCursorDown();
-        TerminalUtils::clearPrompt();
-        TerminalUtils::moveCursorUp();
+        $linesUsed = $this->matchesLineCount();
+        for ($i = 0; $i < $linesUsed; $i++) {
+            TerminalUtils::moveCursorDown();
+            TerminalUtils::clearPrompt();
+        }
+        for ($i = 0; $i < $linesUsed; $i++) {
+            TerminalUtils::moveCursorUp();
+        }
 
         $this->tabMatchesDisplayed = false;
     }
 
-    // Fix 3: strip ANSI escape sequences before measuring string length for
-    // terminal cursor positioning — mb_strlen counts escape bytes as characters
     private function visibleLength(string $str): int {
         return mb_strlen(preg_replace('/\033\[[0-9;]*m/', '', $str));
     }
@@ -271,7 +297,6 @@ final class ManualConsole {
     private function readChar(int $timeoutMs): ?string {
         $this->ensureOpen();
 
-        // Fix 1: drain the pending-char buffer first
         if ($this->pendingChar !== null) {
             $char = $this->pendingChar;
             $this->pendingChar = null;
@@ -347,24 +372,32 @@ final class ManualConsole {
     }
 
     private function redraw(string $prompt): void {
-        TerminalUtils::clearPrompt();
-        TerminalUtils::write($prompt . ($this->visibleTyping ? $this->input : ""));
-        $back = mb_strlen($this->visibleTyping ? $this->input : "") - $this->cursor;
-        if ($back > 0) TerminalUtils::moveCursorLeft($back);
+        $display = $this->visibleTyping ? $this->input : "";
+        $back = mb_strlen($display) - $this->cursor;
+        $out = "\r\033[2K" . $prompt . $display;
+        if ($back > 0) $out .= "\033[{$back}D";
+        TerminalUtils::write($out);
     }
 
     public function println(string $message): void {
         TerminalUtils::clearPrompt();
-        if ($this->tabMatchesDisplayed) {
-            TerminalUtils::moveCursorDown();
-            TerminalUtils::clearPrompt();
-            TerminalUtils::moveCursorUp();
+        $wasDisplayed = $this->tabMatchesDisplayed;
+        if ($wasDisplayed) {
+            $linesUsed = $this->matchesLineCount();
+            for ($i = 0; $i < $linesUsed; $i++) {
+                TerminalUtils::moveCursorDown();
+                TerminalUtils::clearPrompt();
+            }
+            for ($i = 0; $i < $linesUsed; $i++) {
+                TerminalUtils::moveCursorUp();
+            }
+            $this->tabMatchesDisplayed = false;
         }
 
         TerminalUtils::write($message . PHP_EOL);
         $this->redraw($this->prompt);
 
-        if ($this->tabMatchesDisplayed) {
+        if ($wasDisplayed) {
             $this->displayTabMatches();
         }
     }
@@ -372,28 +405,30 @@ final class ManualConsole {
     public function dump(mixed ...$vars): void {
         ob_start();
         var_dump(...$vars);
-        $out = ob_get_clean();
-        $out = str_replace("\t", "    ", $out);
+        $out = str_replace("\t", "    ", ob_get_clean());
 
-        if ($this->tabMatchesDisplayed) {
+        $wasDisplayed = $this->tabMatchesDisplayed;
+        if ($wasDisplayed) {
             TerminalUtils::clearPrompt();
-            TerminalUtils::moveCursorDown();
-            TerminalUtils::clearPrompt();
-            TerminalUtils::moveCursorUp();
-
-            foreach (explode(PHP_EOL, $out) as $line) {
-                TerminalUtils::write($line . PHP_EOL);
-            }
-        } else {
-            foreach (explode(PHP_EOL, $out) as $line) {
+            $linesUsed = $this->matchesLineCount();
+            for ($i = 0; $i < $linesUsed; $i++) {
+                TerminalUtils::moveCursorDown();
                 TerminalUtils::clearPrompt();
-                TerminalUtils::write($line . PHP_EOL);
             }
+            for ($i = 0; $i < $linesUsed; $i++) {
+                TerminalUtils::moveCursorUp();
+            }
+            $this->tabMatchesDisplayed = false;
+        }
+
+        foreach (explode(PHP_EOL, $out) as $line) {
+            TerminalUtils::clearPrompt();
+            TerminalUtils::write($line . PHP_EOL);
         }
 
         $this->redraw($this->prompt);
 
-        if ($this->tabMatchesDisplayed) {
+        if ($wasDisplayed) {
             $this->displayTabMatches();
         }
     }

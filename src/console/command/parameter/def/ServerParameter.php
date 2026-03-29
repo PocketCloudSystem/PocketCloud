@@ -15,7 +15,7 @@ readonly class ServerParameter extends CommandParameter {
     }
 
     public function onTabCompleteMatch(string $currentArg): array {
-        return array_filter(array_keys(CloudServerManager::getInstance()->getAll()), fn(string $server) => str_contains(strtolower($server), $currentArg));
+        return array_keys(CloudServerManager::getInstance()->getAll());
     }
 
     public function getType(): string {

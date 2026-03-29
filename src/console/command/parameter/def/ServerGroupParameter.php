@@ -15,7 +15,7 @@ readonly class ServerGroupParameter extends CommandParameter {
     }
 
     public function onTabCompleteMatch(string $currentArg): array {
-        return array_filter(array_keys(ServerGroupManager::getInstance()->getAll()), fn(string $group) => str_contains(strtolower($group), $currentArg));
+        return array_keys(ServerGroupManager::getInstance()->getAll());
     }
 
     public function getType(): string {

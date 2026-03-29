@@ -15,7 +15,7 @@ readonly class PlayerParameter extends CommandParameter {
     }
 
     public function onTabCompleteMatch(string $currentArg): array {
-        return array_filter(array_keys(CloudPlayerManager::getInstance()->getAll()), fn(string $player) => str_contains(strtolower($player), $currentArg));
+        return array_keys(CloudPlayerManager::getInstance()->getAll());
     }
 
     public function getType(): string {

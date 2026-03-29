@@ -15,7 +15,7 @@ readonly class TemplateParameter extends CommandParameter {
     }
 
     public function onTabCompleteMatch(string $currentArg): array {
-        return array_filter(array_keys(TemplateManager::getInstance()->getAll()), fn(string $template) => str_contains(strtolower($template), $currentArg));
+        return array_keys(TemplateManager::getInstance()->getAll());
     }
 
     public function getType(): string {
