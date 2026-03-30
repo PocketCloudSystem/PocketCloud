@@ -274,7 +274,7 @@ final class MainConfig extends Configuration {
         return $this->network["encryption"];
     }
 
-    public function getNetworkPacketSizeLimit(): bool {
+    public function getNetworkPacketSizeLimit(): int {
         return $this->network["packet_size_limit"];
     }
 

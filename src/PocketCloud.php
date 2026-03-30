@@ -215,11 +215,11 @@ final class PocketCloud {
     }
 
     private function initConfigs(): void {
+        $this->startNotificationQueue = Queue::fromType([]);
         $this->config = new MainConfig();
         $this->serverSettingsConfig = new ServerSettingsConfig();
         $this->logSettingsConfig = new LogSettingsConfig();
         $this->sleeperHandler = new SleeperHandler();
-        $this->startNotificationQueue = Queue::fromType([]);
     }
 
     private function initSoftware(): bool {
