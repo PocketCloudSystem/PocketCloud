@@ -11,7 +11,6 @@ use pocketcloud\cloud\event\impl\network\NetworkPacketPreSendEvent;
 use pocketcloud\cloud\event\impl\network\NetworkPacketReceiveEvent;
 use pocketcloud\cloud\event\impl\network\NetworkPacketReceivePreProcessEvent;
 use pocketcloud\cloud\event\impl\network\NetworkPacketSentEvent;
-use pocketcloud\cloud\event\impl\network\NetworkPacketTooLargeEvent;
 use pocketcloud\cloud\exception\PacketException;
 use pocketcloud\cloud\network\client\ServerClient;
 use pocketcloud\cloud\network\client\ServerClientCache;
@@ -39,14 +38,18 @@ final class Network extends Thread {
     use SingletonTrait;
 
     private ThreadSafeArray $buffer;
+    private ThreadSafeArray $sendBuffer;
+    private ThreadSafeArray $disconnectBuffer;
     private SleeperHandlerEntry $handlerEntry;
-    private Socket $socket;
+    private Socket $serverSocket;
     private bool $established = false;
     private string $authenticationKey;
 
     public function __construct(private readonly Address $address) {
         self::setInstance($this);
         $this->buffer = new ThreadSafeArray();
+        $this->sendBuffer = new ThreadSafeArray();
+        $this->disconnectBuffer = new ThreadSafeArray();
         $this->authenticationKey = Utils::generateString(mt_rand(32, 64));
 
         PacketPool::init();
@@ -97,18 +100,31 @@ final class Network extends Thread {
                     }
                 } else CloudLogger::get()->debug("Received an external packet from §b{}§r, ignoring...", $unhandledPacket->getAddress())->debug("Packet buffer: " . $unhandledPacket->getBuffer());
             }
+
+            while (($disconnectData = $this->disconnectBuffer->shift()) !== null) {
+                if (!$this->established) return;
+                [$address, $port] = $disconnectData;
+                $addr = Address::create($address, $port);
+                $client = ServerClientCache::getInstance()->getByAddress($addr);
+                if ($client !== null) {
+                    CloudLogger::get()->debug("TCP client §b{}§r disconnected.", $addr);
+                }
+            }
         });
     }
 
     public function init(): void {
         if ($this->established) throw new LogicException("Socket has already been established");
-        $socket = socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
+        $socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
         if (!$socket) throw new RuntimeException(socket_strerror(socket_last_error()));
-        $this->socket = $socket;
+        $this->serverSocket = $socket;
+        socket_set_option($socket, SOL_SOCKET, SO_REUSEADDR, 1);
+        socket_set_option($socket, SOL_TCP, TCP_NODELAY, 1);
         if (socket_bind($socket, $this->address->getAddress(), $this->address->getPort())) {
+            if (!socket_listen($socket)) {
+                throw new RuntimeException(socket_strerror(socket_last_error()));
+            }
             $this->established = true;
-            socket_set_option($this->socket, SOL_SOCKET, SO_SNDBUF, 1024 * 1024 * 8);
-            socket_set_option($this->socket, SOL_SOCKET, SO_RCVBUF, 1024 * 1024 * 8);
         } else throw new RuntimeException(socket_strerror(socket_last_error()));
 
         CloudLogger::get()->success("§bNetwork connection §rhas been §aestablished §ron §b{}§r.", $this->address);
@@ -117,18 +133,86 @@ final class Network extends Thread {
 
     protected function onRun(): void {
         $notifier = $this->handlerEntry->createNotifier();
+        /** @var array<Socket> $clientSockets  address_string => Socket */
+        $clientSockets = [];
+        /** @var array<string> $clientBuffers  address_string => raw bytes awaiting framing */
+        $clientBuffers = [];
+
         while ($this->established && $this->isAlive()) {
-            $read = [$this->socket];
+            while (($item = $this->sendBuffer->shift()) !== null) {
+                [$addrStr, $buffer] = $item;
+                if (isset($clientSockets[$addrStr])) {
+                    $this->tcpWrite($clientSockets[$addrStr], $buffer);
+                }
+            }
+
+            $read = [$this->serverSocket, ...array_values($clientSockets)];
             $write = $except = [];
 
-            if (socket_select($read, $write, $except, 0, 50 * 1000) > 0) {
-                if ($this->read($bytes, $buffer, $address, $port)) {
-                    if (!$this->isAlive() || !$this->established) break;
-                    $this->buffer[] = ThreadSafeArray::fromArray([$address, $port, $buffer, $bytes]);
+            if (socket_select($read, $write, $except, 0, 50 * 1000) < 1) continue;
+
+            if (in_array($this->serverSocket, $read, true)) {
+                $clientSocket = @socket_accept($this->serverSocket);
+                if ($clientSocket !== false && $clientSocket !== null) {
+                    socket_getpeername($clientSocket, $peerAddr, $peerPort);
+                    $addrStr = $peerAddr . ":" . $peerPort;
+                    $clientSockets[$addrStr] = $clientSocket;
+                    $clientBuffers[$addrStr] = "";
+                    CloudLogger::get()->debug("New TCP connection from §b{}§r.", $addrStr);
+                }
+            }
+
+            foreach ($clientSockets as $addrStr => $clientSocket) {
+                if (!in_array($clientSocket, $read, true)) continue;
+
+                $chunk = "";
+                $result = socket_recv($clientSocket, $chunk, 65535, 0);
+
+                if ($result === 0 || $result === false) {
+                    [$addr, $port] = explode(":", $addrStr, 2);
+                    $this->disconnectBuffer[] = ThreadSafeArray::fromArray([$addr, (int) $port]);
+                    socket_close($clientSocket);
+                    unset($clientSockets[$addrStr], $clientBuffers[$addrStr]);
+                    $notifier->wakeupSleeper();
+                    continue;
+                }
+
+                $clientBuffers[$addrStr] .= $chunk;
+
+                // Parse length-prefixed frames: [4-byte big-endian uint][payload]
+                while (strlen($clientBuffers[$addrStr]) >= 4) {
+                    $length = unpack("N", substr($clientBuffers[$addrStr], 0, 4))[1];
+                    if (strlen($clientBuffers[$addrStr]) < 4 + $length) break;
+
+                    $buffer = substr($clientBuffers[$addrStr], 4, $length);
+                    $clientBuffers[$addrStr] = substr($clientBuffers[$addrStr], 4 + $length);
+
+                    [$addr, $port] = explode(":", $addrStr, 2);
+                    $this->buffer[] = ThreadSafeArray::fromArray([$addr, (int) $port, $buffer, $length]);
                     $notifier->wakeupSleeper();
                 }
             }
         }
+
+        foreach ($clientSockets as $sock) {
+            socket_close($sock);
+        }
+    }
+
+    /**
+     * Write a length-prefixed frame to a connected TCP socket.
+     * Loops until all bytes are flushed to handle partial writes.
+     */
+    private function tcpWrite(Socket $socket, string $buffer): bool {
+        $framed = pack("N", strlen($buffer)) . $buffer;
+        $total = strlen($framed);
+        $sent = 0;
+        while ($sent < $total) {
+            $result = socket_write($socket, substr($framed, $sent), $total - $sent);
+            if ($result === false) return false;
+            $sent += $result;
+        }
+        return true;
     }
 
     public function sendPacket(ClientboundPacket $packet, ServerClient $client): bool {
@@ -137,11 +221,7 @@ final class Network extends Thread {
         if ($ev->isCancelled()) return false;
         $buffer = PacketSerializer::encode($packet, MainConfig::getInstance()->isNetworkEncryptionEnabled(), $this->authenticationKey);
         if ($buffer === null) return false;
-        $success = $this->write($buffer, $client->getAddress(), $bytes);
-        if ($bytes > 65507) {
-            new NetworkPacketTooLargeEvent($this, $client, $packet, $bytes, $buffer)->call();
-            return false;
-        }
+        $success = $this->write($buffer, $client->getAddress());
 
         TrafficMonitorManager::getInstance()->callHandlers(
             TrafficMonitorManager::TRAFFIC_NETWORK,
@@ -181,50 +261,44 @@ final class Network extends Thread {
         return Promise::all($promises);
     }
 
+    /**
+     * Enqueue a packet buffer for the background thread to send via TCP.
+     * Traffic counters are updated here; actual socket I/O happens in onRun().
+     */
     public function write(string $buffer, Address $dst, ?int &$bytes = null): bool {
         if (!$this->established) return false;
-        $sent = socket_sendto($this->socket, $buffer, $bytes = strlen($buffer), 0, $dst->getAddress(), $dst->getPort());
-        if ($sent === false) return false;
+        $bytes = strlen($buffer);
+        $this->sendBuffer[] = ThreadSafeArray::fromArray([$dst->toString(), $buffer]);
 
-        TrafficMonitorManager::getInstance()->pushBytes(TrafficMonitorManager::TRAFFIC_NETWORK, $sent, TrafficMonitor::REGULAR_MODE_OUT);
+        TrafficMonitorManager::getInstance()->pushBytes(TrafficMonitorManager::TRAFFIC_NETWORK, $bytes, TrafficMonitor::REGULAR_MODE_OUT);
         TrafficMonitorManager::getInstance()->callHandlers(
             TrafficMonitorManager::TRAFFIC_NETWORK,
             TrafficMonitor::REGULAR_MODE_OUT,
-            $buffer,
-            $sent,
-            $dst
+            $buffer, $bytes, $dst
         );
 
-        return $sent === $bytes;
-    }
-
-    public function read(?int &$bytes, ?string &$buffer, ?string &$address, ?int &$port): bool {
-        if (!$this->established) return false;
-        $result = socket_recvfrom($this->socket, $buffer, 65535, 0, $address, $port);
-        if ($result === false) {
-            $bytes = 0;
-            return false;
-        }
-
-        $bytes = $result;
         return true;
     }
 
     public function quit(): void {
         parent::quit();
         $this->buffer = new ThreadSafeArray();
+        $this->sendBuffer = new ThreadSafeArray();
+        $this->disconnectBuffer = new ThreadSafeArray();
     }
 
     public function close(): void {
         if (!$this->established) return;
         PocketCloud::getInstance()->getSleeperHandler()->removeNotifier($this->handlerEntry->getNotifierId());
         $this->buffer = new ThreadSafeArray();
-        socket_close($this->socket);
+        $this->sendBuffer = new ThreadSafeArray();
+        $this->disconnectBuffer = new ThreadSafeArray();
+        socket_close($this->serverSocket);
         $this->established = false;
     }
 
     public function getSocket(): Socket {
-        return $this->socket;
+        return $this->serverSocket;
     }
 
     public function isEstablished(): bool {
