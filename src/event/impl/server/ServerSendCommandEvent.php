@@ -11,7 +11,7 @@ class ServerSendCommandEvent extends ServerEvent implements Cancelable {
 
     public function __construct(
         CloudServer $server,
-        private readonly string $commandLine
+        protected readonly string $commandLine
     ) {
         parent::__construct($server);
     }

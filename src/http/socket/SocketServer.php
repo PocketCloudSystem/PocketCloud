@@ -75,7 +75,6 @@ final class SocketServer extends Thread {
             $write = null;
             $except = null;
             if (@socket_select($read, $write, $except, 0, 50 * 1000) > 0) {
-                if (!$this->isAlive() || $this->socket === null) break;
                 foreach ($read as $key => $sock) {
                     if ($sock === $this->socket) {
                         $this->acceptNewConnection();

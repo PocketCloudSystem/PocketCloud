@@ -56,7 +56,8 @@ final class WaterdogConfig implements ServerProperties {
             "%language%" => "eng",
             "%cloud_path%" => CLOUD_PATH,
             "%timeout%" => $server->getTemplate()->getTemplateType()->getServerTimeout(),
-            "%auth_key%" => Network::getInstance()->getAuthenticationKey()
+            "%auth_key%" => Network::getInstance()->getAuthenticationKey(),
+            "%packet_size_limit%" => Network::getInstance()->getPacketSizeLimit()
         ];
     }
 
@@ -115,7 +116,8 @@ final class WaterdogConfig implements ServerProperties {
             "cloud-language" => "%language%",
             "cloud-path" => "%cloud_path%",
             "server-timeout" => "%timeout%",
-            "auth-key" => "%auth_key%"
+            "auth-key" => "%auth_key%",
+            "packet-size-limit" => "%packet_size_limit%"
         ];
     }
 

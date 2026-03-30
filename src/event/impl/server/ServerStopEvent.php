@@ -8,7 +8,7 @@ class ServerStopEvent extends ServerEvent {
 
     public function __construct(
         CloudServer $server,
-        private readonly bool $force
+        protected readonly bool $force
     ) {
         parent::__construct($server);
     }

@@ -2,6 +2,7 @@
 
 namespace pocketcloud\cloud\console\handler;
 
+use ErrorException;
 use pocketcloud\cloud\PocketCloud;
 
 final class ShutdownHandler {
@@ -34,6 +35,9 @@ final class ShutdownHandler {
         PocketCloud::getInstance()->shutdown();
     }
 
+    /**
+     * @throws ErrorException
+     */
     private static function handleCrash(): void {
         if (self::$handling) return;
         self::$handling = true;

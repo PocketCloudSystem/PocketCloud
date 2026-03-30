@@ -18,7 +18,6 @@ use pocketcloud\cloud\http\util\HttpConstants;
 use pocketcloud\cloud\http\util\RateLimiter;
 use pocketcloud\cloud\http\util\StatusCode;
 use pocketcloud\cloud\http\version\ApiVersion;
-use pocketcloud\cloud\PocketCloud;
 use pocketcloud\cloud\util\net\Address;
 use pocketcloud\cloud\util\trait\SingletonTrait;
 use Throwable;

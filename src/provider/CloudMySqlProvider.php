@@ -2,7 +2,6 @@
 
 namespace pocketcloud\cloud\provider;
 
-use Closure;
 use Exception;
 use pocketcloud\cloud\cache\InGameModuleCache;
 use pocketcloud\cloud\cache\MaintenanceListCache;
@@ -18,7 +17,6 @@ use pocketcloud\cloud\util\PathUtils;
 use r3pt1s\mysql\ConnectionPool;
 use pocketcloud\cloud\util\promise\Promise;
 use r3pt1s\mysql\query\MySQLQuery;
-use Throwable;
 
 final class CloudMySqlProvider extends CloudProvider {
 

@@ -5,10 +5,7 @@ namespace pocketcloud\cloud\http\route\impl\v1\notification;
 use pocketcloud\cloud\http\io\Request;
 use pocketcloud\cloud\http\io\ResponseBuilder;
 use pocketcloud\cloud\http\route\impl\v1\ApiV1JsonPath;
-use pocketcloud\cloud\http\route\util\ApiJsonPath;
-use pocketcloud\cloud\http\socket\auth\NoAuthRequiredAuthentication;
 use pocketcloud\cloud\http\util\HttpConstants;
-use pocketcloud\cloud\http\version\ApiVersion;
 use pocketcloud\cloud\provider\CloudProvider;
 
 final class NotificationsEnableRoute extends ApiV1JsonPath {

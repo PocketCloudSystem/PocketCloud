@@ -50,7 +50,7 @@ final class MainConfig extends Configuration {
         "address" => "127.0.0.1",
         "port" => 3656,
         "encryption" => true,
-        "only-local" => true
+        "packet_size_limit" => 1024 * 1024 * 10
     ];
 
     private array $httpServer = [
@@ -244,8 +244,9 @@ final class MainConfig extends Configuration {
         return $this;
     }
 
-    public function setNetworkOnlyLocal(bool $value): MainConfig {
-        $this->network["only-local"] = $value;
+    public function setNetworkPacketSizeLimit(int $bytes): MainConfig {
+        if ($bytes < 1024) throw new InvalidArgumentException("Invalid network packet size, must be greater or equals to 1024 bytes");
+        $this->network["packet_size_limit"] = $bytes;
         return $this;
     }
 
@@ -254,7 +255,7 @@ final class MainConfig extends Configuration {
             "address" => "string",
             "port" => "int",
             "encryption" => "bool",
-            "only-local" => "bool"
+            "packet_size_limit" => "int"
         ]);
 
         $this->network = $network;
@@ -273,8 +274,8 @@ final class MainConfig extends Configuration {
         return $this->network["encryption"];
     }
 
-    public function isNetworkOnlyLocal(): bool {
-        return $this->network["only-local"];
+    public function getNetworkPacketSizeLimit(): bool {
+        return $this->network["packet_size_limit"];
     }
 
     public function getNetwork(): array {

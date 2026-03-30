@@ -9,7 +9,7 @@ class PlayerConnectEvent extends PlayerEvent {
 
     public function __construct(
         CloudPlayer $player,
-        private readonly CloudServer $server
+        protected readonly CloudServer $server
     ) {
         parent::__construct($player);
     }

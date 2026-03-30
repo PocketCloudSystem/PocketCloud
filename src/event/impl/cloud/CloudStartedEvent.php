@@ -6,7 +6,7 @@ use pocketcloud\cloud\event\Event;
 
 class CloudStartedEvent extends Event {
 
-    public function __construct(private readonly float $time) {}
+    public function __construct(protected readonly float $time) {}
 
     public function getTime(): float {
         return $this->time;

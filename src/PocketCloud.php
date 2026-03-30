@@ -2,13 +2,13 @@
 
 namespace pocketcloud\cloud;
 
+use JsonException;
 use Phar;
 use pocketcloud\cloud\config\impl\LogSettingsConfig;
 use pocketcloud\cloud\config\impl\MainConfig;
 use pocketcloud\cloud\config\impl\ServerSettingsConfig;
 use pocketcloud\cloud\console\command\CommandManager;
 use pocketcloud\cloud\console\Console;
-use pocketcloud\cloud\console\handler\ExceptionHandler;
 use pocketcloud\cloud\console\log\level\CloudLogLevel;
 use pocketcloud\cloud\console\log\logger\MainLogger;
 use pocketcloud\cloud\console\log\output\OutputManager;
@@ -348,12 +348,6 @@ final class PocketCloud {
         $this->metrics = new CloudMetrics($this->cloudUniqueId, $this->config);
 
         $this->updateChecker->checkForUpdates();
-        CloudProvider::select();
-
-        if ($this->config->isStartUpDelay()) {
-            CloudLogger::get()->info("§bPocket§3Cloud §rwill §astart §rin 3 seconds...");
-            sleep(3);
-        } else usleep(50 * 1000);
 
         if (array_any($this->serverSettingsConfig->getBinaries(), fn(string $url, string $templateType) => BinaryDownloader::downloadBinary($url, $templateType) === true)) {
             $this->addStartNotification("§8====== §cATTENTION! §8======", CloudLogLevel::WARN())
@@ -362,6 +356,13 @@ final class PocketCloud {
                 ->addStartNotification("If they are, please download (& extract) them manually.", CloudLogLevel::WARN())
                 ->addStartNotification("Thank you.", CloudLogLevel::WARN());
         }
+
+        CloudProvider::select();
+
+        if ($this->config->isStartUpDelay()) {
+            CloudLogger::get()->info("§bPocket§3Cloud §rwill §astart §rin 3 seconds...");
+            sleep(3);
+        } else usleep(50 * 1000);
     }
 
     private function registerHttpPaths(HttpServer $server): void {
@@ -496,17 +497,22 @@ final class PocketCloud {
             if (isset($this->logSettingsConfig)) {
                 $webhook = LogSettingsConfig::getInstance()->getWebhook();
                 if ($webhook instanceof Webhook) {
-                    $webhook->createMessage(false)
-                        ->setUsername("PocketCloud Notifications")
-                        ->setAvatarUrl("https://avatars.githubusercontent.com/u/97796660?s=400&u=a65bced92fb37ce5bafc5f1eff9e2845fe66a9cb&v=4")
-                        ->addEmbed(Embed::create()
-                            ->setTitle("Notification | Cloud Crashed")
-                            ->setDescription("`The cloud crashed while creating a crash dump.`")
-                            ->setColor(0xFF0000)
-                            ->addField("**Message**", "> " . $e->getMessage())
-                            ->setTimestamp(time())
-                        )
-                        ->send();
+                    try {
+                        $webhook->createMessage(false)
+                            ->setUsername("PocketCloud Notifications")
+                            ->setAvatarUrl("https://avatars.githubusercontent.com/u/97796660?s=400&u=a65bced92fb37ce5bafc5f1eff9e2845fe66a9cb&v=4")
+                            ->addEmbed(Embed::create()
+                                ->setTitle("Notification | Cloud Crashed")
+                                ->setDescription("`The cloud crashed while creating a crash dump.`")
+                                ->setColor(0xFF0000)
+                                ->addField("**Message**", "> " . $e->getMessage())
+                                ->setTimestamp(time())
+                            )
+                            ->send();
+                    } catch (JsonException $e) {
+                        CloudLogger::get()->error("Failed to submit discord webhook notification!");
+                        CloudLogger::get()->exception($e);
+                    }
                 }
             }
         }

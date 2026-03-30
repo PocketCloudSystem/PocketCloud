@@ -4,22 +4,24 @@ namespace pocketcloud\cloud\event\impl\network;
 
 use pocketcloud\cloud\network\Network;
 use pocketcloud\cloud\network\packet\ClientboundPacket;
-use pocketcloud\cloud\network\packet\Packet;
 use pocketcloud\cloud\network\client\ServerClient;
 
-class NetworkPacketSentEvent extends NetworkPacketEvent {
+class NetworkPacketSentEvent extends NetworkEvent {
 
     public function __construct(
         Network $network,
-        ServerClient $sender,
-        ClientboundPacket $packet,
+        protected readonly ServerClient $receiver,
+        protected readonly ClientboundPacket $packet,
         protected readonly bool $success
     ) {
-        parent::__construct($network, $sender, $packet);
+        parent::__construct($network);
     }
 
-    /** @return ClientboundPacket */
-    public function getPacket(): Packet {
+    public function getReceiver(): ServerClient {
+        return $this->receiver;
+    }
+
+    public function getPacket(): ClientboundPacket {
         return $this->packet;
     }
 

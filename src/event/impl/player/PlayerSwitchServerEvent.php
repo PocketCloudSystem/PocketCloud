@@ -9,8 +9,8 @@ class PlayerSwitchServerEvent extends PlayerEvent {
 
     public function __construct(
         CloudPlayer $player,
-        private readonly ?CloudServer $oldServer,
-        private readonly CloudServer $newServer
+        protected readonly ?CloudServer $oldServer,
+        protected readonly CloudServer $newServer
     ) {
         parent::__construct($player);
     }

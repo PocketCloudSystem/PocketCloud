@@ -9,8 +9,8 @@ class PlayerDisconnectEvent extends PlayerEvent {
 
     public function __construct(
         CloudPlayer $player,
-        private readonly ?CloudServer $server,
-        private readonly string $serverName
+        protected readonly ?CloudServer $server,
+        protected readonly string $serverName
     ) {
         parent::__construct($player);
     }

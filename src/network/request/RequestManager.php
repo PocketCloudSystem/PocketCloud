@@ -2,7 +2,6 @@
 
 namespace pocketcloud\cloud\network\request;
 
-use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\network\client\ServerClient;
 use pocketcloud\cloud\network\Network;
 use pocketcloud\cloud\network\packet\RequestClientPacket;

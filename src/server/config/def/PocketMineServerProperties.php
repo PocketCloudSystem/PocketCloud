@@ -58,7 +58,8 @@ final class PocketMineServerProperties implements ServerProperties {
             "%cloud_path%" => CLOUD_PATH,
             "%timeout%" => $server->getTemplate()->getTemplateType()->getServerTimeout(),
             "%auth_key%" => Network::getInstance()->getAuthenticationKey(),
-            "%server_ip%" => count(ServerClientCache::getInstance()->getAll(...TemplateType::onlyProxy())) > 0 ? "127.0.0.1" : "0.0.0.0"
+            "%server_ip%" => count(ServerClientCache::getInstance()->getAll(...TemplateType::onlyProxy())) > 0 ? "127.0.0.1" : "0.0.0.0",
+            "%packet_size_limit%" => Network::getInstance()->getPacketSizeLimit()
         ];
     }
 
@@ -95,7 +96,8 @@ final class PocketMineServerProperties implements ServerProperties {
             "cloud-language" => "%language%",
             "cloud-path" => "%cloud_path%",
             "server-timeout" => "%timeout%",
-            "auth-key" => "%auth_key%"
+            "auth-key" => "%auth_key%",
+            "packet-size-limit" => "%packet_size_limit%"
         ];
     }
 

@@ -11,6 +11,7 @@ use pocketcloud\cloud\event\impl\network\NetworkPacketPreSendEvent;
 use pocketcloud\cloud\event\impl\network\NetworkPacketReceiveEvent;
 use pocketcloud\cloud\event\impl\network\NetworkPacketReceivePreProcessEvent;
 use pocketcloud\cloud\event\impl\network\NetworkPacketSentEvent;
+use pocketcloud\cloud\event\impl\network\NetworkPacketTooLargeEvent;
 use pocketcloud\cloud\exception\PacketException;
 use pocketcloud\cloud\network\client\ServerClient;
 use pocketcloud\cloud\network\client\ServerClientCache;
@@ -37,6 +38,7 @@ use Socket;
 final class Network extends Thread {
     use SingletonTrait;
 
+    private int $packetSizeLimit;
     private ThreadSafeArray $buffer;
     private ThreadSafeArray $sendBuffer;
     private ThreadSafeArray $disconnectBuffer;
@@ -47,6 +49,7 @@ final class Network extends Thread {
 
     public function __construct(private readonly Address $address) {
         self::setInstance($this);
+        $this->packetSizeLimit = MainConfig::getInstance()->getNetworkPacketSizeLimit();
         $this->buffer = new ThreadSafeArray();
         $this->sendBuffer = new ThreadSafeArray();
         $this->disconnectBuffer = new ThreadSafeArray();
@@ -60,7 +63,6 @@ final class Network extends Thread {
                 if (!$this->established) return;
                 [$address, $port, $buffer, $bytes] = $unhandledPacketData;
                 $unhandledPacket = new UnhandledPacket($buffer, Address::create($address, $port), $bytes);
-                $continue = true;
 
                 TrafficMonitorManager::getInstance()->pushBytes(TrafficMonitorManager::TRAFFIC_NETWORK, $bytes = $unhandledPacket->getBytes(), TrafficMonitor::REGULAR_MODE_IN);
                 TrafficMonitorManager::getInstance()->callHandlers(
@@ -74,31 +76,28 @@ final class Network extends Thread {
                 ($ev = new NetworkPacketReceivePreProcessEvent($this, $client, $unhandledPacket->getBuffer(), $encryption = MainConfig::getInstance()->isNetworkEncryptionEnabled()))->call();
                 if ($ev->isCancelled()) return;
 
-                if (MainConfig::getInstance()->isNetworkOnlyLocal() && !$unhandledPacket->getAddress()->isLocal()) $continue = false;
-                if ($continue) {
-                    try {
-                        if (($packet = $unhandledPacket->buildCloudPacket($encryption, $this->authenticationKey)) !== null) {
-                            TrafficMonitorManager::getInstance()->callHandlers(
-                                TrafficMonitorManager::TRAFFIC_NETWORK,
-                                NetworkTrafficMonitor::parsePacketMode(NetworkTrafficMonitor::NETWORK_MODE_PACKET_IN, $packet::class),
-                                $packet, $unhandledPacket->getAddress()
-                            );
+                try {
+                    if (($packet = $unhandledPacket->buildCloudPacket($encryption, $this->authenticationKey)) !== null) {
+                        TrafficMonitorManager::getInstance()->callHandlers(
+                            TrafficMonitorManager::TRAFFIC_NETWORK,
+                            NetworkTrafficMonitor::parsePacketMode(NetworkTrafficMonitor::NETWORK_MODE_PACKET_IN, $packet::class),
+                            $packet, $unhandledPacket->getAddress()
+                        );
 
-                            ($ev = new NetworkPacketReceiveEvent($this, $client, $packet))->call();
-                            if ($ev->isCancelled()) return;
-                            $packet->handle($client);
+                        ($ev = new NetworkPacketReceiveEvent($this, $client, $packet))->call();
+                        if ($ev->isCancelled()) return;
+                        $packet->handle($client);
 
-                            if ($packet instanceof ResponseClientPacket) {
-                                RequestManager::getInstance()->resolve($packet);
-                                RequestManager::getInstance()->remove($packet->getRequestId());
-                            }
-                        } else CloudLogger::get()->debug("Received an unknown packet from §b{}§r, ignoring...", $unhandledPacket->getAddress())->debug("Packet buffer: " . $unhandledPacket->getBuffer());
-                    } catch (PacketException|JsonException $e) {
-                        CloudLogger::get()->warn("§cFailed to decode packet from §b{}§8: §e{}", $client->getAddress(), $e->getMessage())
-                            ->debug($unhandledPacket->getBuffer());
-                        CloudLogger::get()->exception($e);
-                    }
-                } else CloudLogger::get()->debug("Received an external packet from §b{}§r, ignoring...", $unhandledPacket->getAddress())->debug("Packet buffer: " . $unhandledPacket->getBuffer());
+                        if ($packet instanceof ResponseClientPacket) {
+                            RequestManager::getInstance()->resolve($packet);
+                            RequestManager::getInstance()->remove($packet->getRequestId());
+                        }
+                    } else CloudLogger::get()->debug("Received an unknown packet from §b{}§r, ignoring...", $unhandledPacket->getAddress())->debug("Packet buffer: " . $unhandledPacket->getBuffer());
+                } catch (PacketException|JsonException $e) {
+                    CloudLogger::get()->warn("§cFailed to decode packet from §b{}§8: §e{}", $client->getAddress(), $e->getMessage())
+                        ->debug($unhandledPacket->getBuffer());
+                    CloudLogger::get()->exception($e);
+                }
             }
 
             while (($disconnectData = $this->disconnectBuffer->shift()) !== null) {
@@ -182,7 +181,18 @@ final class Network extends Thread {
                 // Parse length-prefixed frames: [4-byte big-endian uint][payload]
                 while (strlen($clientBuffers[$addrStr]) >= 4) {
                     $length = unpack("N", substr($clientBuffers[$addrStr], 0, 4))[1];
-                    if (strlen($clientBuffers[$addrStr]) < 4 + $length) break;
+                    if ($length > $this->packetSizeLimit || $length < 0) {
+                        CloudLogger::get()->debug("Client §b$addrStr §rsent a packet exceeding the limit ($length bytes). Discarding...");
+
+                        [$addr, $port] = explode(":", $addrStr, 2);
+                        $this->disconnectBuffer[] = ThreadSafeArray::fromArray([$addr, (int) $port]);
+                        @socket_close($clientSocket);
+                        unset($clientSockets[$addrStr], $clientBuffers[$addrStr]);
+                        $notifier->wakeupSleeper();
+                        continue 2;
+                    }
+
+                    if (strlen($clientBuffers[$addrStr]) < (4 + $length)) break;
 
                     $buffer = substr($clientBuffers[$addrStr], 4, $length);
                     $clientBuffers[$addrStr] = substr($clientBuffers[$addrStr], 4 + $length);
@@ -212,6 +222,7 @@ final class Network extends Thread {
             if ($result === false) return false;
             $sent += $result;
         }
+
         return true;
     }
 
@@ -221,6 +232,11 @@ final class Network extends Thread {
         if ($ev->isCancelled()) return false;
         $buffer = PacketSerializer::encode($packet, MainConfig::getInstance()->isNetworkEncryptionEnabled(), $this->authenticationKey);
         if ($buffer === null) return false;
+        if (($size = strlen($buffer)) > $this->packetSizeLimit) {
+            new NetworkPacketTooLargeEvent($this, $client, $packet, $size, $buffer)->call();
+            return false;
+        }
+
         $success = $this->write($buffer, $client->getAddress());
 
         TrafficMonitorManager::getInstance()->callHandlers(
@@ -299,6 +315,10 @@ final class Network extends Thread {
 
     public function getSocket(): Socket {
         return $this->serverSocket;
+    }
+
+    public function getPacketSizeLimit(): int {
+        return $this->packetSizeLimit;
     }
 
     public function isEstablished(): bool {

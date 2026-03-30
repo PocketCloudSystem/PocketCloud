@@ -2,7 +2,6 @@
 
 namespace pocketcloud\cloud\http\route\util;
 
-use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\http\io\Request;
 use pocketcloud\cloud\http\io\Response;
 use pocketcloud\cloud\http\io\ResponseBuilder;

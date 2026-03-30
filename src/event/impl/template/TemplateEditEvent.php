@@ -8,14 +8,14 @@ class TemplateEditEvent extends TemplateEvent {
 
     public function __construct(
         Template $template,
-        private readonly ?bool $lobby,
-        private readonly ?bool $maintenance,
-        private readonly ?bool $static,
-        private readonly ?int $maxPlayerCount,
-        private readonly ?int $minServerCount,
-        private readonly ?int $maxServerCount,
-        private readonly ?float $startNewPercentage,
-        private readonly ?bool $autoStart
+        protected readonly ?bool $lobby,
+        protected readonly ?bool $maintenance,
+        protected readonly ?bool $static,
+        protected readonly ?int $maxPlayerCount,
+        protected readonly ?int $minServerCount,
+        protected readonly ?int $maxServerCount,
+        protected readonly ?float $startNewPercentage,
+        protected readonly ?bool $autoStart
     ) {
         parent::__construct($template);
     }

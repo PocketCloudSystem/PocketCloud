@@ -8,7 +8,7 @@ class ServerGroupEditEvent extends ServerGroupEvent {
 
     public function __construct(
         ServerGroup $serverGroup,
-        private readonly array $newTemplates
+        protected readonly array $newTemplates
     ) {
         parent::__construct($serverGroup);
     }

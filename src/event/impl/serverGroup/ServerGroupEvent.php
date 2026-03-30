@@ -7,7 +7,7 @@ use pocketcloud\cloud\group\ServerGroup;
 
 abstract class ServerGroupEvent extends Event {
 
-    public function __construct(private readonly ServerGroup $serverGroup) {}
+    public function __construct(protected readonly ServerGroup $serverGroup) {}
 
     public function getServerGroup(): ServerGroup {
         return $this->serverGroup;

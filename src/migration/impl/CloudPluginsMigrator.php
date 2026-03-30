@@ -3,7 +3,6 @@
 namespace pocketcloud\cloud\migration\impl;
 
 use pocketcloud\cloud\migration\IMigrator;
-use pocketcloud\cloud\template\TemplateType;
 use pocketcloud\cloud\util\FileUtils;
 use pocketcloud\cloud\util\PathUtils;
 use const pocketcloud\BACKUPS_PATH;

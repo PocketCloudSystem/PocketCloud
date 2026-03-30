@@ -7,7 +7,7 @@ use pocketcloud\cloud\player\CloudPlayer;
 
 abstract class PlayerEvent extends Event {
 
-    public function __construct(private readonly CloudPlayer $player) {}
+    public function __construct(protected readonly CloudPlayer $player) {}
 
     public function getPlayer(): CloudPlayer {
         return $this->player;

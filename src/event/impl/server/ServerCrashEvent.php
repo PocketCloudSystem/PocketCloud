@@ -8,7 +8,7 @@ class ServerCrashEvent extends ServerEvent {
 
     public function __construct(
         CloudServer $server,
-        private readonly array $data
+        protected readonly array $data
     ) {
         parent::__construct($server);
     }

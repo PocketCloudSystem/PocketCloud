@@ -96,12 +96,6 @@ final class ConfigSetup extends Setup {
                 ->canSkipped(true)
                 ->possibleAnswers("yes", "no")
                 ->default(MainConfig::getInstance()->isNetworkEncryptionEnabled() ? "Yes" : "No", MainConfig::getInstance()->isNetworkEncryptionEnabled())
-                ->build(),
-            QuestionBuilder::builder("networkOnlyLocal", "Should network connections be limited to local only?")
-                ->parser(fn(string $input) => strtolower($input) == "yes")
-                ->canSkipped(true)
-                ->possibleAnswers("yes", "no")
-                ->default(MainConfig::getInstance()->isNetworkOnlyLocal() ? "Yes" : "No", MainConfig::getInstance()->isNetworkOnlyLocal())
                 ->build()
         ];
     }
@@ -122,8 +116,7 @@ final class ConfigSetup extends Setup {
             "network" => [
                 "address" => $results["networkAddress"],
                 "port" => $results["networkPort"],
-                "encryption" => $results["networkEncryption"],
-                "only-local" => $results["networkOnlyLocal"]
+                "encryption" => $results["networkEncryption"]
             ]
         ];
 

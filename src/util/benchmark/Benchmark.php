@@ -3,7 +3,6 @@
 namespace pocketcloud\cloud\util\benchmark;
 
 use Closure;
-use pocketcloud\cloud\console\log\CloudLogger;
 use RuntimeException;
 
 final class Benchmark {

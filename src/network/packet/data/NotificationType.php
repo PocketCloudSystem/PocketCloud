@@ -2,6 +2,7 @@
 
 namespace pocketcloud\cloud\network\packet\data;
 
+use JsonException;
 use pocketcloud\cloud\config\impl\LogSettingsConfig;
 use pocketcloud\cloud\config\impl\MainConfig;
 use pocketcloud\cloud\console\log\CloudLogger;
@@ -40,12 +41,19 @@ enum NotificationType implements Writeable {
             $message = $this->craftDiscordMessage($args, $extraArgs);
             $webhook = LogSettingsConfig::getInstance()->getWebhook();
             if ($message instanceof Message && $webhook instanceof Webhook) {
-                $message->sendWithDiffWebhook($webhook)
-                    ->failure(function (array $res): void {
-                        [$response, $code] = $res;
-                        $response = ($response === false ? "An error occurred inside cURL" : ($response instanceof Throwable ? $response->getMessage() : $response));
-                        CloudLogger::get()->error("§cFailed to spread notification to discord, responded with code §e{}§8: §e{}", $code, $response);
-                    });
+                try {
+                    $message->sendWithDiffWebhook($webhook)
+                        ->failure(function (array $res): void {
+                            [$response, $code] = $res;
+                            $response = ($response === false ? "An error occurred inside cURL" : ($response
+                            instanceof
+                            Throwable ? $response->getMessage() : $response));
+                            CloudLogger::get()->error("§cFailed to spread notification to discord, responded with code §e{}§8: §e{}", $code, $response);
+                        });
+                } catch (JsonException $e) {
+                    CloudLogger::get()->warn("Failed to sent notification of type §b{}§8, §runexpected error occurred...", $this->name);
+                    CloudLogger::get()->exception($e);
+                }
             }
         }
 

@@ -6,7 +6,6 @@ use pocketcloud\cloud\http\io\Request;
 use pocketcloud\cloud\http\io\ResponseBuilder;
 use pocketcloud\cloud\http\route\impl\v1\ApiV1JsonPath;
 use pocketcloud\cloud\http\util\HttpConstants;
-use pocketcloud\cloud\template\Template;
 use pocketcloud\cloud\template\TemplateManager;
 
 final class RemoveTemplateRoute extends ApiV1JsonPath {
