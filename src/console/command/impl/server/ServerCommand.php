@@ -21,6 +21,7 @@ use pocketcloud\cloud\server\CloudServerManager;
 use pocketcloud\cloud\server\util\ServerStatus;
 use pocketcloud\cloud\util\FileUtils;
 use pocketcloud\cloud\util\FormatUtils;
+use pocketcloud\cloud\util\Utils;
 
 final class ServerCommand extends Command {
 
@@ -105,7 +106,7 @@ final class ServerCommand extends Command {
         $sender->info("Servers §8(§b{}§8/§b{}§8)§r:", count($servers = CloudServerManager::getInstance()->getAll($template)), $template?->getName() ?? "All");
         foreach ($servers as $server) {
             $sender->info(FormatUtils::implodeWithKeys(
-                $server->writeDetailed(),
+                Utils::removeKeys($server->writeDetailed(), "maxPlayers"),
                 " §8| §r",
                 "§8: §b",
                 fn(string $key) => ucfirst($key),
@@ -114,6 +115,8 @@ final class ServerCommand extends Command {
                         return ServerStatus::fromName($value)?->getDisplay() ?? $value;
                     } else if ($key == "template") {
                         return $server->getTemplateName() . ($server->getTemplate()?->getParentServerGroup() !== null ? " §8(§e" . $server->getTemplate()->getParentServerGroup()->getName() . "§8)" : "");
+                    } else if ($key == "players") {
+                        return "§b" . $server->getPlayerCount() . "§8/§b" . $server->getServerData()->getMaxPlayers();
                     }
 
                     return $value;
@@ -129,7 +132,7 @@ final class ServerCommand extends Command {
         /** @var CloudServer $server */
         $server = $args["server"];
         $formatted = FormatUtils::implodeWithKeys(
-            array_merge($server->writeDetailed(), ["path" => $server->getPath(), "channel" => $server->getServerClient()?->getAddress()]),
+            array_merge(Utils::removeKeys($server->writeDetailed(), "maxPlayers"), ["path" => $server->getPath(), "channel" => $server->getServerClient()?->getAddress()]),
             "\n",
             "§8: §b",
             function (string $key): string {
@@ -153,6 +156,8 @@ final class ServerCommand extends Command {
                     return FormatUtils::usagePercentage($value);
                 } else if ($key == "serverStatus") {
                     return $server->getServerStatus()?->getDisplay() ?? "Not Applied";
+                } else if ($key == "players") {
+                    return "§b" . $server->getPlayerCount() . "§8/§b" . $server->getServerData()->getMaxPlayers();
                 }
 
                 return $value;

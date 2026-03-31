@@ -57,6 +57,14 @@ final class Utils {
         return $array;
     }
 
+    public static function removeKeys(array $array, mixed ...$keys): array {
+        foreach ($keys as $key) {
+            if (isset($array[$key])) unset($array[$key]);
+        }
+
+        return $array;
+    }
+
     public static function generateString(int $length = 5, bool $uppercase = true, bool $lowercase = false, bool $numbers = true, bool $specialCharacters = false): string {
         $pool = "";
         if ($uppercase) $pool .= "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
