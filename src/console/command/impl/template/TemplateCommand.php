@@ -3,6 +3,7 @@
 namespace pocketcloud\cloud\console\command\impl\template;
 
 use pocketcloud\cloud\console\command\Command;
+use pocketcloud\cloud\console\command\flag\CommandFlag;
 use pocketcloud\cloud\console\command\ITabComplete;
 use pocketcloud\cloud\console\command\parameter\def\StringEnumParameter;
 use pocketcloud\cloud\console\command\parameter\def\StringParameter;
@@ -26,7 +27,7 @@ final class TemplateCommand extends Command implements ITabComplete {
 
         $this->registerSubCommand(SubCommand::fromClosure("create", $this->handleCreateSub(...), ["create"])
             ->addParameter(new StringParameter("name", true))
-            ->addParameter(new StringParameter("templateType", true)));
+            ->addParameter(new TemplateTypeParameter("templateType", true)));
 
         $this->registerSubCommand(SubCommand::fromClosure("edit", $this->handleEditSub(...), ["edit"])
             ->addParameter(new TemplateParameter("template", false))
@@ -34,7 +35,8 @@ final class TemplateCommand extends Command implements ITabComplete {
             ->addParameter(new StringParameter("value", false)));
 
         $this->registerSubCommand(SubCommand::fromClosure("remove", $this->handleRemoveSub(...), ["remove"])
-            ->addParameter(new TemplateParameter("template", false)));
+            ->addParameter(new TemplateParameter("template", false))
+            ->addFlags(CommandFlag::short("y"), CommandFlag::long("yes")));
 
         $this->registerSubCommand(SubCommand::fromClosure("list", $this->handleListSub(...))
             ->addParameter(new TemplateTypeParameter("type", true)));
@@ -43,11 +45,11 @@ final class TemplateCommand extends Command implements ITabComplete {
             ->addParameter(new TemplateParameter("template", false)));
     }
 
-    public function run(ICommandSender $sender, string $label, array $args, ?SubCommand $subCommand = null): bool {
+    public function run(ICommandSender $sender, string $label, array $args, ?SubCommand $subCommand, array $flags): bool {
         return true;
     }
 
-    private function handleCreateSub(ICommandSender $sender, string $label, array $args): bool {
+    private function handleCreateSub(ICommandSender $sender, string $label, array $args, array $flags): bool {
         if (count($args) == 0) {
             TemplateCreationSetup::new()->startSetup();
             return true;
@@ -66,7 +68,7 @@ final class TemplateCommand extends Command implements ITabComplete {
         return true;
     }
 
-    private function handleEditSub(ICommandSender $sender, string $label, array $args): bool {
+    private function handleEditSub(ICommandSender $sender, string $label, array $args, array $flags): bool {
         $template = $args["template"];
         $key = TemplateHelper::convert($args["key"]);
         $value = $args["value"];
@@ -89,16 +91,17 @@ final class TemplateCommand extends Command implements ITabComplete {
         return true;
     }
 
-    private function handleRemoveSub(ICommandSender $sender, string $label, array $args): bool {
+    private function handleRemoveSub(ICommandSender $sender, string $label, array $args, array $flags): bool {
         $template = $args["template"];
-        $this->waitForConfirmation($sender, "§bAre you sure that you want to §cremove §bthe template §c" . $template->getName() . "§b?", ["yes", "y", "true", "t"])
+        if (($flags["y"] ?? false) || ($flags["yes"] ?? false)) TemplateManager::getInstance()->remove($template);
+        else $this->waitForConfirmation($sender, "§bAre you sure that you want to §cremove §bthe template §c" . $template->getName() . "§b?", ["yes", "y", "true", "t"])
             ->then(function (bool $confirmed) use ($sender, $template) {
                 if ($confirmed) TemplateManager::getInstance()->remove($template);
             });
         return true;
     }
 
-    public function handleListSub(ICommandSender $sender, string $label, array $args): bool {
+    public function handleListSub(ICommandSender $sender, string $label, array $args, array $flags): bool {
         $type = $args["type"] ?? TemplateType::getAll();
         if (empty(TemplateManager::getInstance()->getAll(...$type))) $sender->info("§cNo templates found.");
         foreach (TemplateManager::getInstance()->getAll(...$type) as $template) {
@@ -124,7 +127,7 @@ final class TemplateCommand extends Command implements ITabComplete {
         return true;
     }
 
-    public function handleInfoSub(ICommandSender $sender, string $label, array $args): bool {
+    public function handleInfoSub(ICommandSender $sender, string $label, array $args, array $flags): bool {
         /** @var Template $template */
         $template = $args["template"];
         $sender->info("Information about §b{}§8:", $template->getName());

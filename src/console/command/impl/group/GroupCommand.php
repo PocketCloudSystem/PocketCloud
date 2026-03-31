@@ -34,11 +34,11 @@ final class GroupCommand extends Command {
         $this->registerSubCommand(SubCommand::fromClosure("list", $this->handleListSub(...)));
     }
 
-    public function run(ICommandSender $sender, string $label, array $args, ?SubCommand $subCommand = null): bool {
+    public function run(ICommandSender $sender, string $label, array $args, ?SubCommand $subCommand, array $flags): bool {
         return true;
     }
 
-    private function handleCreateSub(ICommandSender $sender, string $label, array $args): bool {
+    private function handleCreateSub(ICommandSender $sender, string $label, array $args, array $flags): bool {
         $name = $args["name"];
         if (ServerGroupManager::getInstance()->check($name)) {
             $sender->warn("A server group with that name already exists.");
@@ -57,12 +57,12 @@ final class GroupCommand extends Command {
         return true;
     }
 
-    private function handleRemoveSub(ICommandSender $sender, string $label, array $args): bool {
+    private function handleRemoveSub(ICommandSender $sender, string $label, array $args, array $flags): bool {
         ServerGroupManager::getInstance()->remove($args["group"]);
         return true;
     }
 
-    private function handleAddTemplateSub(ICommandSender $sender, string $label, array $args): bool {
+    private function handleAddTemplateSub(ICommandSender $sender, string $label, array $args, array $flags): bool {
         /** @var ServerGroup $group */
         $group = $args["group"];
         $templates = explode(" ", $args["templates"]);
@@ -78,7 +78,7 @@ final class GroupCommand extends Command {
         return true;
     }
 
-    private function handleRemoveTemplateSub(ICommandSender $sender, string $label, array $args): bool {
+    private function handleRemoveTemplateSub(ICommandSender $sender, string $label, array $args, array $flags): bool {
         /** @var ServerGroup $group */
         $group = $args["group"];
         $templates = explode(" ", $args["templates"]);
@@ -94,7 +94,7 @@ final class GroupCommand extends Command {
         return true;
     }
 
-    private function handleListSub(ICommandSender $sender, string $label, array $args): bool {
+    private function handleListSub(ICommandSender $sender, string $label, array $args, array $flags): bool {
         $sender->info("ServerGroups §8(§b" . count($groups = ServerGroupManager::getInstance()->getAll()) . "§8)§r:");
         if (empty($groups)) $sender->info("§cNo server groups found.");
         foreach ($groups as $group) {

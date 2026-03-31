@@ -18,7 +18,7 @@ final class HelpCommand extends Command {
         ));
     }
 
-    public function run(ICommandSender $sender, string $label, array $args, ?SubCommand $subCommand = null): bool {
+    public function run(ICommandSender $sender, string $label, array $args, ?SubCommand $subCommand, array $flags): bool {
         $originCommand = $args["command"] ?? null;
         $commands = $originCommand === null ? CommandManager::getInstance()->getAll() : [$originCommand];
 
@@ -27,7 +27,7 @@ final class HelpCommand extends Command {
             $extraPrint = count($usages) > 1;
             $sender->info("§b" . $command->getName() .
                 " §8- §r" . $command->getDescription() .
-                ($extraPrint || $originCommand === null ? "" : " §8- §r" . current($usages)) .
+                (($extraPrint || $originCommand === null) ? "" : " §8- §r" . current($usages)) .
                 " §8- §r[§c" . (empty($command->getAliases()) ? "" : implode("§8, §c", $command->getAliases())) . "§r]"
             );
 

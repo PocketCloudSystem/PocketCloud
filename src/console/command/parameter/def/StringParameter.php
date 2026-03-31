@@ -9,7 +9,7 @@ readonly class StringParameter extends CommandParameter {
     public function __construct(
         string $name,
         bool $optional,
-        private bool $multiString = false
+        protected bool $multiString = false
     ) {
         parent::__construct($name, $optional);
     }

@@ -64,18 +64,18 @@ final class ServerCommand extends Command {
             ->addParameter(new ServerParameter("server", false)));
     }
 
-    public function run(ICommandSender $sender, string $label, array $args, ?SubCommand $subCommand = null): bool {
+    public function run(ICommandSender $sender, string $label, array $args, ?SubCommand $subCommand, array $flags): bool {
         return true;
     }
 
-    private function handleStartSub(ICommandSender $sender, string $label, array $args): bool {
+    private function handleStartSub(ICommandSender $sender, string $label, array $args, array $flags): bool {
         $template = $args["template"];
         $amount = $args["amount"] ?? 1;
         CloudServerManager::getInstance()->start($template, $amount);
         return true;
     }
 
-    private function handleStopSub(ICommandSender $sender, string $label, array $args): bool {
+    private function handleStopSub(ICommandSender $sender, string $label, array $args, array $flags): bool {
         $server = $args["server"];
         $forcefully = $args["forcefully"] ?? false;
 
@@ -84,7 +84,7 @@ final class ServerCommand extends Command {
         return true;
     }
 
-    private function handleSendSub(ICommandSender $sender, string $label, array $args): bool {
+    private function handleSendSub(ICommandSender $sender, string $label, array $args, array $flags): bool {
         /** @var CloudServer $server */
         $server = $args["server"];
         $commandLine = $args["commandLine"];
@@ -100,7 +100,7 @@ final class ServerCommand extends Command {
         return true;
     }
 
-    private function handleListSub(ICommandSender $sender, string $label, array $args): bool {
+    private function handleListSub(ICommandSender $sender, string $label, array $args, array $flags): bool {
         $template = $args["template"] ?? null;
         if (empty(CloudServerManager::getInstance()->getAll($template))) $sender->info("§cNo servers running.");
         $sender->info("Servers §8(§b{}§8/§b{}§8)§r:", count($servers = CloudServerManager::getInstance()->getAll($template)), $template?->getName() ?? "All");
@@ -128,7 +128,7 @@ final class ServerCommand extends Command {
         return true;
     }
 
-    private function handleInfoSub(ICommandSender $sender, string $label, array $args): bool {
+    private function handleInfoSub(ICommandSender $sender, string $label, array $args, array $flags): bool {
         /** @var CloudServer $server */
         $server = $args["server"];
         $formatted = FormatUtils::implodeWithKeys(
@@ -172,7 +172,7 @@ final class ServerCommand extends Command {
         return true;
     }
 
-    private function handleSaveSub(ICommandSender $sender, string $label, array $args): bool {
+    private function handleSaveSub(ICommandSender $sender, string $label, array $args, array $flags): bool {
         /** @var CloudServer $server */
         $server = $args["server"];
         $sender->info("Saving §b{}§r...", $server->getName());
@@ -182,7 +182,7 @@ final class ServerCommand extends Command {
         return true;
     }
 
-    private function handleScreenSub(ICommandSender $sender, string $label, array $args): bool {
+    private function handleScreenSub(ICommandSender $sender, string $label, array $args, array $flags): bool {
         /** @var CloudServer $server */
         $server = $args["server"];
         ScreenManager::getInstance()->setCurrentScreen(new ServerConsoleMonitorScreen($server->getName()));

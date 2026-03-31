@@ -17,7 +17,7 @@ readonly class IntegerParameter extends CommandParameter {
     public function __construct(
         string $name,
         bool $optional,
-        private ?Closure $integerProcessClosure = null,
+        protected ?Closure $integerProcessClosure = null,
         ?string $customErrorMessage = null
     ) {
         parent::__construct($name, $optional, $customErrorMessage);

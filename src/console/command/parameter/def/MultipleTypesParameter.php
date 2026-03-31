@@ -15,7 +15,7 @@ readonly class MultipleTypesParameter extends CommandParameter {
      */
     public function __construct(
         string $name,
-        private array $allowedTypes,
+        protected array $allowedTypes,
         bool $optional,
         ?string $customErrorMessage = null
     ) {

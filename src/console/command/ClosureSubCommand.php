@@ -9,7 +9,7 @@ final class ClosureSubCommand extends SubCommand {
 
     /**
      * @param string $name
-     * @param Closure(ICommandSender $sender, string $label, array $args): bool|null $executeHandler
+     * @param Closure(ICommandSender $sender, string $label, array $args, array $flags): bool|null $executeHandler
      * @param array $standaloneAliases
      * @param string|null $usage
      */
@@ -22,8 +22,8 @@ final class ClosureSubCommand extends SubCommand {
         parent::__construct($name, $standaloneAliases, $usage);
     }
 
-    public function run(ICommandSender $sender, string $label, array $args): bool {
+    public function run(ICommandSender $sender, string $label, array $args, array $flags): bool {
         if ($this->executeHandler === null) return true;
-        return ($this->executeHandler)($sender, $label, $args);
+        return ($this->executeHandler)($sender, $label, $args, $flags);
     }
 }

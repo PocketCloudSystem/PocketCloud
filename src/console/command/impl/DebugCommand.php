@@ -14,7 +14,7 @@ final class DebugCommand extends Command {
         parent::__construct("debug", "Enable or disable the debug mode", ["deb"]);
     }
 
-    public function run(ICommandSender $sender, string $label, array $args, ?SubCommand $subCommand = null): bool {
+    public function run(ICommandSender $sender, string $label, array $args, ?SubCommand $subCommand, array $flags): bool {
         if (LogSettingsConfig::getInstance()->isDebugMode()) {
             $sender->success("The §edebug mode §rhas been §cdisabled§r!");
             LogSettingsConfig::getInstance()->setDebugMode(false);

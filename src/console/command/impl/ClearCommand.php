@@ -14,7 +14,7 @@ final class ClearCommand extends Command {
         parent::__construct("clear", "Clears the console", ["cls", "purge"]);
     }
 
-    public function run(ICommandSender $sender, string $label, array $args, ?SubCommand $subCommand = null): bool {
+    public function run(ICommandSender $sender, string $label, array $args, ?SubCommand $subCommand, array $flags): bool {
         LogMessagesCache::clear();
         TerminalUtils::clearConsole();
         return true;

@@ -24,11 +24,11 @@ final class MaintenanceCommand extends Command implements ITabComplete {
         $this->registerSubCommand(SubCommand::fromClosure("list", $this->handleListSub(...)));
     }
 
-    public function run(ICommandSender $sender, string $label, array $args, ?SubCommand $subCommand = null): bool {
+    public function run(ICommandSender $sender, string $label, array $args, ?SubCommand $subCommand, array $flags): bool {
         return true;
     }
 
-    public function handleAddSub(ICommandSender $sender, string $label, array $args): bool {
+    public function handleAddSub(ICommandSender $sender, string $label, array $args, array $flags): bool {
         $player = $args["player"];
         if (!MaintenanceListCache::is($player)) {
             $sender->success("Successfully §aadded §rthe player to the maintenance list!");
@@ -37,7 +37,7 @@ final class MaintenanceCommand extends Command implements ITabComplete {
         return true;
     }
 
-    public function handleRemoveSub(ICommandSender $sender, string $label, array $args): bool {
+    public function handleRemoveSub(ICommandSender $sender, string $label, array $args, array $flags): bool {
         $player = $args["player"];
         if (MaintenanceListCache::is($player)) {
             $sender->success("Successfully §cremoved §rthe player from the maintenance list!");
@@ -46,7 +46,7 @@ final class MaintenanceCommand extends Command implements ITabComplete {
         return true;
     }
 
-    public function handleListSub(ICommandSender $sender, string $label, array $args): bool {
+    public function handleListSub(ICommandSender $sender, string $label, array $args, array $flags): bool {
         $list = MaintenanceListCache::getAll();
         $sender->info("Players: §8(§b" . count($list) . "§8)");
         if (empty($list)) $sender->info("§cNo players on the maintenance list");

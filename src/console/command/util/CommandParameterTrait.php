@@ -37,6 +37,11 @@ trait CommandParameterTrait {
         return $this;
     }
 
+    public function addParameters(CommandParameter... $parameters): self {
+        foreach ($parameters as $parameter) $this->addParameter($parameter);
+        return $this;
+    }
+
     public function getRequiredParameterCount(): int {
         return count(array_filter($this->parameters, fn(CommandParameter $argument) => !$argument->isOptional()));
     }

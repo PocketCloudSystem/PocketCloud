@@ -14,7 +14,7 @@ final class MonitorCommand extends Command {
         parent::__construct("monitor", "Monitor the cloud's and the servers' performance stats");
     }
 
-    public function run(ICommandSender $sender, string $label, array $args, ?SubCommand $subCommand = null): bool {
+    public function run(ICommandSender $sender, string $label, array $args, ?SubCommand $subCommand, array $flags): bool {
         ScreenManager::getInstance()->setCurrentScreen(new MonitorScreen());
         return true;
     }

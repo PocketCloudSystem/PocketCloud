@@ -7,14 +7,14 @@ use pocketcloud\cloud\console\command\parameter\exception\ArgumentParseException
 
 readonly class StringEnumParameter extends CommandParameter {
 
-    private array $allowedStrings;
+    protected array $allowedStrings;
 
     public function __construct(
         string $name,
         array $allowedStrings,
-        private bool $caseSensitive,
+        protected bool $caseSensitive,
         bool $optional,
-        private ?string $typeName = null,
+        protected ?string $typeName = null,
         ?string $customErrorMessage = null
     ) {
         parent::__construct($name, $optional, $customErrorMessage);

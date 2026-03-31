@@ -200,6 +200,13 @@ final class ManualConsole {
                 return;
             } else {
                 $this->tabIndex = 0;
+                $match = $this->tabMatches[0];
+                $tokens[] = $match;
+                $this->input = implode(" ", $tokens) . $afterCursor;
+                $this->cursor = mb_strlen(implode(" ", $tokens));
+                $this->redraw($prompt);
+                $this->displayTabMatches();
+                return;
             }
         }
 

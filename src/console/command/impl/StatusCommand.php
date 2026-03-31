@@ -18,7 +18,7 @@ final class StatusCommand extends Command {
         parent::__construct("status", "Read the cloud's performance");
     }
 
-    public function run(ICommandSender $sender, string $label, array $args, ?SubCommand $subCommand = null): bool {
+    public function run(ICommandSender $sender, string $label, array $args, ?SubCommand $subCommand, array $flags): bool {
         foreach (explode(
             "\n",
             FormatUtils::implodeWithKeys(

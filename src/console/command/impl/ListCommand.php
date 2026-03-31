@@ -18,7 +18,7 @@ final class ListCommand extends Command {
         $this->addParameter(new StringEnumParameter("listing", ["plugins", "servers", "templates", "groups", "players"], false, true));
     }
 
-    public function run(ICommandSender $sender, string $label, array $args, ?SubCommand $subCommand = null): bool {
+    public function run(ICommandSender $sender, string $label, array $args, ?SubCommand $subCommand, array $flags): bool {
         $listing = $args["listing"] ?? self::DEFAULT_LISTING;
         switch (strtolower($listing)) {
             case "plugins": {

@@ -26,11 +26,11 @@ final class PluginCommand extends Command {
         $this->registerSubCommand(SubCommand::fromClosure("list", $this->handleListSub(...)));
     }
 
-    public function run(ICommandSender $sender, string $label, array $args, ?SubCommand $subCommand = null): bool {
+    public function run(ICommandSender $sender, string $label, array $args, ?SubCommand $subCommand, array $flags): bool {
         return true;
     }
 
-    public function handleEnableSub(ICommandSender $sender, string $label, array $args): bool {
+    public function handleEnableSub(ICommandSender $sender, string $label, array $args, array $flags): bool {
         /** @var CloudPlugin $plugin */
         $plugin = $args["plugin"];
         if ($plugin->isEnabled()) {
@@ -42,7 +42,7 @@ final class PluginCommand extends Command {
         return true;
     }
 
-    public function handleDisableSub(ICommandSender $sender, string $label, array $args): bool {
+    public function handleDisableSub(ICommandSender $sender, string $label, array $args, array $flags): bool {
         /** @var CloudPlugin $plugin */
         $plugin = $args["plugin"];
         if ($plugin->isDisabled()) {
@@ -54,7 +54,7 @@ final class PluginCommand extends Command {
         return true;
     }
 
-    public function handleInfoSub(ICommandSender $sender, string $label, array $args): bool {
+    public function handleInfoSub(ICommandSender $sender, string $label, array $args, array $flags): bool {
         /** @var CloudPlugin $plugin */
         $plugin = $args["plugin"];
 
@@ -67,7 +67,7 @@ final class PluginCommand extends Command {
         return true;
     }
 
-    public function handleListSub(ICommandSender $sender, string $label, array $args): bool {
+    public function handleListSub(ICommandSender $sender, string $label, array $args, array $flags): bool {
         $sender->info("Plugins §8(§b{}§8):", count($plugins = CloudPluginManager::getInstance()->getAll()));
         if (empty($plugins)) $sender->info("§cNo plugins found.");
         $pluginMessageParts = [];

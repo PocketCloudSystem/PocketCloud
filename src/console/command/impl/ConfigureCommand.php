@@ -13,7 +13,7 @@ final class ConfigureCommand extends Command {
         parent::__construct("configure", "Reconfigure the config", ["conf", "reconf", "reconfigure"]);
     }
 
-    public function run(ICommandSender $sender, string $label, array $args, ?SubCommand $subCommand = null): bool {
+    public function run(ICommandSender $sender, string $label, array $args, ?SubCommand $subCommand, array $flags): bool {
         ConfigSetup::new()->startSetup();
         return true;
     }

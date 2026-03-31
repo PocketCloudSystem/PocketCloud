@@ -39,11 +39,11 @@ final class PlayerCommand extends Command {
         $this->registerSubCommand(SubCommand::fromClosure("list", $this->handleListSub(...)));
     }
 
-    public function run(ICommandSender $sender, string $label, array $args, ?SubCommand $subCommand = null): bool {
+    public function run(ICommandSender $sender, string $label, array $args, ?SubCommand $subCommand, array $flags): bool {
         return true;
     }
 
-    public function handleKickSub(ICommandSender $sender, string $label, array $args): bool {
+    public function handleKickSub(ICommandSender $sender, string $label, array $args, array $flags): bool {
         /** @var CloudPlayer $player */
         $player = $args["player"];
         $reason = $args["reason"] ?? "";
@@ -52,7 +52,7 @@ final class PlayerCommand extends Command {
         return true;
     }
 
-    public function handleTextSub(ICommandSender $sender, string $label, array $args): bool {
+    public function handleTextSub(ICommandSender $sender, string $label, array $args, array $flags): bool {
         /** @var CloudPlayer $player */
         $player = $args["player"];
         $type = TextType::fromName($args["type"]);
@@ -62,7 +62,7 @@ final class PlayerCommand extends Command {
         return true;
     }
 
-    public function handleTransferSub(ICommandSender $sender, string $label, array $args): bool {
+    public function handleTransferSub(ICommandSender $sender, string $label, array $args, array $flags): bool {
         /** @var CloudPlayer $player */
         $player = $args["player"];
         /** @var CloudServer $server */
@@ -72,7 +72,7 @@ final class PlayerCommand extends Command {
         return true;
     }
 
-    public function handleInfoSub(ICommandSender $sender, string $label, array $args): bool {
+    public function handleInfoSub(ICommandSender $sender, string $label, array $args, array $flags): bool {
         /** @var CloudPlayer $player */
         $player = $args["player"];
         $sender->info("Player Info about §b{}§8:", $player->getName());
@@ -83,7 +83,7 @@ final class PlayerCommand extends Command {
         return true;
     }
 
-    public function handleListSub(ICommandSender $sender, string $label, array $args): bool {
+    public function handleListSub(ICommandSender $sender, string $label, array $args, array $flags): bool {
         $sender->info("Players §8(§b{}§8):", count($players = CloudPlayerManager::getInstance()->getAll()));
         if (empty($players)) $sender->info("§cNo players online.");
         foreach ($players as $player) {

@@ -7,9 +7,9 @@ use pocketcloud\cloud\console\command\parameter\exception\ArgumentParseException
 abstract readonly class CommandParameter {
 
     public function __construct(
-        private string $name,
-        private bool $optional,
-        private ?string $customErrorMessage = null
+        protected string $name,
+        protected bool $optional,
+        protected ?string $customErrorMessage = null
     ) {}
 
     /** @throws ArgumentParseException */

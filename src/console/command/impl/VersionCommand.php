@@ -13,7 +13,7 @@ final class VersionCommand extends Command {
         parent::__construct("version", "Version information of the current cloud build", ["v", "ver"]);
     }
 
-    public function run(ICommandSender $sender, string $label, array $args, ?SubCommand $subCommand = null): bool {
+    public function run(ICommandSender $sender, string $label, array $args, ?SubCommand $subCommand, array $flags): bool {
         $sender->info("§7Version: §b{}", VersionInfo::VERSION);
         $sender->info("§7Developers: §b{}", implode("§8, §b", VersionInfo::DEVELOPERS));
         $sender->info("§7Beta: §a{}", VersionInfo::BETA ? "§cYES" : "§aNO");

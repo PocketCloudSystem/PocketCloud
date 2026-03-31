@@ -3,11 +3,13 @@
 namespace pocketcloud\cloud\console\command;
 
 use Closure;
+use pocketcloud\cloud\console\command\flag\CommandFlag;
 use pocketcloud\cloud\console\command\sender\ICommandSender;
+use pocketcloud\cloud\console\command\util\CommandFlagTrait;
 use pocketcloud\cloud\console\command\util\CommandParameterTrait;
 
 abstract class SubCommand {
-    use CommandParameterTrait;
+    use CommandParameterTrait, CommandFlagTrait;
 
     private ?Command $parent = null;
 
@@ -17,7 +19,7 @@ abstract class SubCommand {
         private readonly ?string $usage = null
     ) {}
 
-    abstract public function run(ICommandSender $sender, string $label, array $args): bool;
+    abstract public function run(ICommandSender $sender, string $label, array $args, array $flags): bool;
 
     private function buildUsageMessage(): string {
         $usage = ($this->parent?->getName() ?? "<parent command>") . " " . $this->getName();
@@ -25,6 +27,19 @@ abstract class SubCommand {
             $usage .= $parameter->isOptional() ?
                 " [" . $parameter->getName() . ": " . $parameter->getType() . "]" :
                 " <" . $parameter->getName() . ": " . $parameter->getType() . ">";
+        }
+
+        if (count($this->parent?->getFlags() ?? []) > 0) {
+            /** @var CommandFlag $flag */
+            foreach ($this->parent?->getFlags() ?? [] as $flag) {
+                if ($flag->isGlobal()) {
+                    $usage .= " " . $flag->buildUsage();
+                }
+            }
+        }
+
+        foreach ($this->flags as $flag) {
+            $usage .= " " . $flag->buildUsage();
         }
 
         return $usage;
@@ -56,7 +71,7 @@ abstract class SubCommand {
 
     /**
      * @param string $name
-     * @param Closure(ICommandSender $sender, string $label, array $args): bool $executeHandler
+     * @param Closure(ICommandSender $sender, string $label, array $args, array $flags): bool $executeHandler
      * @param array|null $standaloneAliases
      * @param string|null $usage
      * @return ClosureSubCommand
