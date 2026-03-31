@@ -165,12 +165,12 @@ final class Network extends Thread {
                 if (!in_array($clientSocket, $read, true)) continue;
 
                 $chunk = "";
-                $result = socket_recv($clientSocket, $chunk, 65535, 0);
+                $result = @socket_recv($clientSocket, $chunk, 65535, 0);
 
                 if ($result === 0 || $result === false) {
                     [$addr, $port] = explode(":", $addrStr, 2);
                     $this->disconnectBuffer[] = ThreadSafeArray::fromArray([$addr, (int) $port]);
-                    socket_close($clientSocket);
+                    @socket_close($clientSocket);
                     unset($clientSockets[$addrStr], $clientBuffers[$addrStr]);
                     $notifier->wakeupSleeper();
                     continue;
