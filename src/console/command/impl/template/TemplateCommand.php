@@ -17,6 +17,7 @@ use pocketcloud\cloud\template\TemplateManager;
 use pocketcloud\cloud\template\TemplateSettings;
 use pocketcloud\cloud\template\TemplateType;
 use pocketcloud\cloud\util\FormatUtils;
+use pocketcloud\cloud\util\Utils;
 
 final class TemplateCommand extends Command implements ITabComplete {
 
@@ -37,6 +38,9 @@ final class TemplateCommand extends Command implements ITabComplete {
 
         $this->registerSubCommand(SubCommand::fromClosure("list", $this->handleListSub(...))
             ->addParameter(new TemplateTypeParameter("type", true)));
+
+        $this->registerSubCommand(SubCommand::fromClosure("info", $this->handleInfoSub(...))
+            ->addParameter(new TemplateParameter("template", false)));
     }
 
     public function run(ICommandSender $sender, string $label, array $args, ?SubCommand $subCommand = null): bool {
@@ -99,17 +103,15 @@ final class TemplateCommand extends Command implements ITabComplete {
         if (empty(TemplateManager::getInstance()->getAll(...$type))) $sender->info("§cNo templates found.");
         foreach (TemplateManager::getInstance()->getAll(...$type) as $template) {
             $sender->info(FormatUtils::implodeWithKeys(
-                $template->writeDetailed(),
+                Utils::removeKeys($template->writeDetailed(), "statis", "alwaysCopyToStaticServers", "maxPlayerCount", "minServerCount", "maxServerCount", "startNewPercentage"),
                 " §8| §r",
                 "§8: §b",
                 fn(string $key) => ucfirst($key),
                 function (string $key, mixed $value) use($template): mixed {
-                    if (in_array($key, ["lobby", "maintenance", "static", "alwaysCopyToStaticServers", "autoStart"])) {
+                    if (in_array($key, ["lobby", "maintenance", "autoStart"])) {
                         return $value === true ? "§aYes" : "§cNo";
                     } else if ($key == "name") {
                         return $value . ($template->getParentServerGroup() !== null ? " §8(§b" . $template->getParentServerGroup()->getName() . "§8)" : "");
-                    } else if ($key == "startNewPercentage") {
-                        return $value . "%";
                     } else if ($key == "templateType") {
                         return strtoupper($value);
                     }
@@ -117,6 +119,29 @@ final class TemplateCommand extends Command implements ITabComplete {
                     return $value;
                 }
             ));
+        }
+
+        return true;
+    }
+
+    public function handleInfoSub(ICommandSender $sender, string $label, array $args): bool {
+        /** @var Template $template */
+        $template = $args["template"];
+        $sender->info("Information about §b{}§8:", $template->getName());
+        foreach ($template->writeDetailed() as $key => $value) {
+            $displayedKey = ucfirst($key);
+
+            if (in_array($key, ["lobby", "maintenance", "static", "alwaysCopyToStaticServers", "autoStart"])) {
+                $value = $value === true ? "§aYes" : "§cNo";
+            } else if ($key == "name") {
+                $value = $value . ($template->getParentServerGroup() !== null ? " §8(§b" . $template->getParentServerGroup()->getName() . "§8)" : "");
+            } else if ($key == "startNewPercentage") {
+                $value = $value . "%";
+            } else if ($key == "templateType") {
+                $value = strtoupper($value);
+            }
+
+            $sender->info($displayedKey . "§8: §b" . $value);
         }
 
         return true;
