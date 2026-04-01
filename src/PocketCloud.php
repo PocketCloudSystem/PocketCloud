@@ -416,7 +416,8 @@ final class PocketCloud {
     private function registerTickables(): void {
         TickableList::add(
             $this->requestManager, $this->trafficMonitorManager, $this->serverManager, $this->commandManager, $this->metrics,
-            $this->asyncPool, $this->serverClientCache, $this->templateManager, $this->screenManager
+            $this->asyncPool, $this->serverClientCache, $this->templateManager, $this->screenManager,
+            $this->pluginManager
         );
 
         LoadableList::add(
