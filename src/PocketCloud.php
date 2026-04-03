@@ -239,6 +239,7 @@ final class PocketCloud {
         CloudLogger::get()->info("Checking for library updates...");
         if ($this->libraryManager->checkForUpdates() > 0) {
             CloudLogger::get()->info("One or more libraries have been updated, please restart the cloud.");
+            sleep(3);
             $this->shutdown();
             return false;
         }

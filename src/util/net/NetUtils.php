@@ -3,6 +3,7 @@
 namespace pocketcloud\cloud\util\net;
 
 use pocketcloud\cloud\console\handler\ExceptionHandler;
+use pocketcloud\cloud\console\log\CloudLogger;
 use RuntimeException;
 
 final class NetUtils {
@@ -12,8 +13,16 @@ final class NetUtils {
         if ($sock === false) throw new RuntimeException("Unable to create socket");
 
         $ok = @socket_bind($sock, $address, $port);
+
+        if ($ok === false) {
+            $errno = socket_last_error($sock);
+            socket_close($sock);
+            CloudLogger::get()->info("ErrAddrInUse for $port?: {}", $errno === SOCKET_EADDRINUSE ? "Y" : "N");
+            return $errno === SOCKET_EADDRINUSE;
+        }
+
         socket_close($sock);
-        return $ok === false;
+        return false;
     }
 
     public static function download(string $url, string $fileLocation): int|false {

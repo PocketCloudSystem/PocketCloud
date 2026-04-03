@@ -148,12 +148,12 @@ final class Network extends Thread {
             $read = [$this->serverSocket, ...array_values($clientSockets)];
             $write = $except = [];
 
-            if (socket_select($read, $write, $except, 0, 50 * 1000) < 1) continue;
+            if (@socket_select($read, $write, $except, 0, 50 * 1000) < 1) continue;
 
             if (in_array($this->serverSocket, $read, true)) {
                 $clientSocket = @socket_accept($this->serverSocket);
                 if ($clientSocket !== false && $clientSocket !== null) {
-                    socket_getpeername($clientSocket, $peerAddr, $peerPort);
+                    @socket_getpeername($clientSocket, $peerAddr, $peerPort);
                     $addrStr = $peerAddr . ":" . $peerPort;
                     $clientSockets[$addrStr] = $clientSocket;
                     $clientBuffers[$addrStr] = "";

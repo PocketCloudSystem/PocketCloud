@@ -50,18 +50,20 @@ final class ServerUtils {
     public static function getFreePort(TemplateType $type): int {
         [$start, $end, $randomPorts] = array_values($type->getServerPortRange());
         $currentPort = $start;
-        $port = 0;
-        $tries = 0;
-        while ($tries < 30) {
-            $tries++;
+        $found = false;
+
+        for ($tries = 0; $tries < 30; $tries++) {
             $port = !$randomPorts ? $currentPort++ : mt_rand($start, $end);
             $portV6 = $port + 1;
             if (
                 !isset(self::$usedPorts[$port]) && !isset(self::$usedPorts[$portV6]) &&
                 !NetUtils::isLocalUdpPortInUse($port) && !NetUtils::isLocalUdpPortInUse($portV6)
-            ) break;
+            ) {
+                $found = true;
+                break;
+            }
         }
 
-        return $tries >= 30 ? 0 : $port;
+        return $found ? $port : 0;
     }
 }
