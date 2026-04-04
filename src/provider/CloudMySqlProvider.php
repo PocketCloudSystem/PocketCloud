@@ -5,6 +5,7 @@ namespace pocketcloud\cloud\provider;
 use Exception;
 use pocketcloud\cloud\cache\InGameModuleCache;
 use pocketcloud\cloud\cache\MaintenanceListCache;
+use pocketcloud\cloud\cache\NotificationListCache;
 use pocketcloud\cloud\config\impl\MainConfig;
 use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\group\ServerGroup;
@@ -24,7 +25,7 @@ final class CloudMySqlProvider extends CloudProvider {
 
     public function __construct() {
         $this->connectionPool = new ConnectionPool(MainConfig::getInstance()->getMysqlSettings(), 1, PocketCloud::getInstance()->getSleeperHandler(), function (MySQLQuery|null $query, Exception $exception): void {
-            CloudLogger::get()->error("Something unexpected happened while executing a mysql query... §8(§b{}§8)", $query === null ? null : PathUtils::clean($query::class));
+            CloudLogger::get()->error("Something unexpected happened while executing a mysql query... §8(§b{}§8)", $query === null ? "Unknown" : PathUtils::clean($query::class));
             CloudLogger::get()->exception($exception);
         });
 
@@ -37,10 +38,14 @@ final class CloudMySqlProvider extends CloudProvider {
         });
 
         foreach (InGameModuleCache::getAll() as $value) {
-            $this->getModuleState($value)->then(fn(bool $v) => InGameModuleCache::setModuleState($value, $v));
+            $this->getModuleState($value)->then(function (?bool $v) use($value): void {
+                if ($v === null) DatabaseQueries::insertModuleState($value, $v = false);
+                InGameModuleCache::setModuleState($value, $v);
+            });
         }
 
         $this->getWhitelist()->then(fn(array $list) => MaintenanceListCache::sync($list));
+        $this->getNotificationList()->then(fn(array $list) => NotificationListCache::sync($list));
     }
 
     public function addTemplate(Template $template): Promise {
@@ -213,9 +218,15 @@ final class CloudMySqlProvider extends CloudProvider {
         $promise = new Promise();
 
         InGameModuleCache::setModuleState($module, $enabled);
-        DatabaseQueries::setModuleState($module, $enabled)->execute()
-            ->then(fn() => $promise->resolve())
-            ->failure(fn() => $promise->reject());
+        DatabaseQueries::checkModuleState($module)->execute()
+            ->then(fn(bool $has) => $has ?
+                DatabaseQueries::setModuleState($module, $enabled)->execute()
+                    ->then(fn() => $promise->resolve())
+                    ->failure(fn() => $promise->reject()) :
+                DatabaseQueries::insertModuleState($module, $enabled)->execute()
+                    ->then(fn() => $promise->resolve())
+                    ->failure(fn() => $promise->reject())
+            );
 
         return $promise;
     }
@@ -224,7 +235,7 @@ final class CloudMySqlProvider extends CloudProvider {
         $promise = new Promise();
 
         DatabaseQueries::getModuleState($module)
-            ->execute()->then(fn(array $result) => $promise->resolve($result["enabled"] == 1))
+            ->execute()->then(fn(?array $result) => $promise->resolve(is_array($result) ? $result["enabled"] == 1 : null))
             ->failure(fn() => $promise->reject());
 
         return $promise;

@@ -125,7 +125,7 @@ trait ThreadPartsTrait {
 
     abstract protected function onRun(): void;
 
-    public function handleException(Throwable $exception): void {
+    protected function handleException(Throwable $exception): void {
         $this->synchronized(function () use ($exception): void {
             $this->logger->exception($exception);
             $this->exitStatus = ThreadExitStatus::EXCEPTION;
@@ -133,10 +133,10 @@ trait ThreadPartsTrait {
         });
     }
 
-    public function handleShutdown(): void {
+    protected function handleShutdown(): void {
         $this->synchronized(function(): void {
             $error = error_get_last();
-            if ($error !== null && $this->exitStatus !== ThreadExitStatus::EXCEPTION) {
+            if ($error !== null && $this->exitStatus !== ThreadExitStatus::EXCEPTION && in_array($error["type"], [E_ERROR, E_CORE_ERROR, E_COMPILE_ERROR, E_PARSE])) {
                 $this->exitStatus = ThreadExitStatus::FATAL_ERROR;
                 $this->exitMessage = $error["message"] . " in {$error["file"]}:{$error["line"]}";
 

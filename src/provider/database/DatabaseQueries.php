@@ -20,7 +20,9 @@ use r3pt1s\mysql\query\QueryBuilder;
  * @method static QueryBuilder getServerGroup(string $name)
  * @method static QueryBuilder checkServerGroup(string $name)
  * @method static QueryBuilder getServerGroups()
+ * @method static QueryBuilder insertModuleState(string $module, bool $enabled)
  * @method static QueryBuilder setModuleState(string $module, bool $enabled)
+ * @method static QueryBuilder checkModuleState(string $module)
  * @method static QueryBuilder getModuleState(string $module)
  * @method static QueryBuilder enablePlayerNotifications(string $player)
  * @method static QueryBuilder disablePlayerNotifications(string $player)
@@ -130,9 +132,19 @@ final class DatabaseQueries {
                 ->select(["name", "templates"], "*");
         });
 
+        self::register("insertModuleState", function (string $module, bool $enabled): QueryBuilder {
+            return QueryBuilder::table(DatabaseTables::MODULES)
+                ->insert(["module" => $module, "enabled" => $enabled]);
+        });
+
         self::register("setModuleState", function (string $module, bool $enabled): QueryBuilder {
             return QueryBuilder::table(DatabaseTables::MODULES)
                 ->update(["enabled" => $enabled], ["module" => $module]);
+        });
+
+        self::register("checkModuleState", function (string $module): QueryBuilder {
+            return QueryBuilder::table(DatabaseTables::MODULES)
+                ->has(["module" => $module]);
         });
 
         self::register("getModuleState", function (string $module): QueryBuilder {

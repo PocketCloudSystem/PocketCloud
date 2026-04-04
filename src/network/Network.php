@@ -205,7 +205,7 @@ final class Network extends Thread {
         }
 
         foreach ($clientSockets as $sock) {
-            socket_close($sock);
+            @socket_close($sock);
         }
     }
 
@@ -218,7 +218,7 @@ final class Network extends Thread {
         $total = strlen($framed);
         $sent = 0;
         while ($sent < $total) {
-            $result = socket_write($socket, substr($framed, $sent), $total - $sent);
+            $result = @socket_write($socket, substr($framed, $sent), $total - $sent);
             if ($result === false) return false;
             $sent += $result;
         }

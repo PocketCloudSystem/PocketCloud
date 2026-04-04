@@ -3,7 +3,6 @@
 namespace pocketcloud\cloud\util\net;
 
 use pocketcloud\cloud\console\handler\ExceptionHandler;
-use pocketcloud\cloud\console\log\CloudLogger;
 use RuntimeException;
 
 final class NetUtils {
@@ -17,7 +16,6 @@ final class NetUtils {
         if ($ok === false) {
             $errno = socket_last_error($sock);
             socket_close($sock);
-            CloudLogger::get()->info("ErrAddrInUse for $port?: {}", $errno === SOCKET_EADDRINUSE ? "Y" : "N");
             return $errno === SOCKET_EADDRINUSE;
         }
 

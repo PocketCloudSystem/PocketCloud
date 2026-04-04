@@ -4,6 +4,7 @@ namespace pocketcloud\cloud\migration\impl;
 
 use pocketcloud\cloud\migration\IMigrator;
 use pocketcloud\cloud\provider\CloudProvider;
+use pocketcloud\cloud\provider\database\DatabaseQueries;
 use pocketcloud\cloud\util\FileUtils;
 use pocketcloud\cloud\util\PathUtils;
 use r3pt1s\mysql\ConnectionPool;
@@ -34,6 +35,7 @@ final class JsonModulesToMySqlMigrator implements IMigrator {
         $available = 0;
         $successful = 0;
         foreach ($jsonContent as $key => $enabled) {
+            $available++;
             CloudProvider::current()->setModuleState($key, $enabled)
                 ->then(function () use(&$successful): void {
                     $successful++;
