@@ -1654,10 +1654,7 @@ Custom routes are created by extending one of the base route classes.
 Extend `ApiV1JsonPath` for any route under `/v1/` that sends and receives JSON.
 
 ```php
-use pocketcloud\cloud\http\io\Request;
-use pocketcloud\cloud\http\io\ResponseBuilder;
-use pocketcloud\cloud\http\route\impl\v1\ApiV1JsonPath;
-use pocketcloud\cloud\http\util\HttpConstants;
+use pocketcloud\cloud\http\server\io\Request;use pocketcloud\cloud\http\server\io\ResponseBuilder;use pocketcloud\cloud\http\server\route\impl\v1\ApiV1JsonPath;use pocketcloud\cloud\http\server\util\HttpConstants;
 
 final class GetServerRoute extends ApiV1JsonPath {
 
@@ -1718,9 +1715,7 @@ If the incoming body does not match this structure, the server automatically ret
 Extend `RegularPath` for routes that live outside the `/v1/` namespace:
 
 ```php
-use pocketcloud\cloud\http\route\RegularPath;
-use pocketcloud\cloud\http\socket\auth\NoAuthRequiredAuthentication;
-use pocketcloud\cloud\http\util\HttpConstants;
+use pocketcloud\cloud\http\server\route\RegularPath;use pocketcloud\cloud\http\server\socket\auth\NoAuthRequiredAuthentication;use pocketcloud\cloud\http\server\util\HttpConstants;
 
 final class StatusRoute extends RegularPath {
 

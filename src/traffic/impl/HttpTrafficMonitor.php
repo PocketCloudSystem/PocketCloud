@@ -3,8 +3,8 @@
 namespace pocketcloud\cloud\traffic\impl;
 
 use Closure;
-use pocketcloud\cloud\http\io\Request;
-use pocketcloud\cloud\http\io\Response;
+use pocketcloud\cloud\http\server\io\Request;
+use pocketcloud\cloud\http\server\io\Response;
 use pocketcloud\cloud\traffic\TrafficMonitor;
 use pocketcloud\cloud\traffic\TrafficMonitorManager;
 use pocketcloud\cloud\util\net\Address;

@@ -4,6 +4,7 @@ namespace pocketcloud\cloud\network\packet\util;
 
 use JsonException;
 use pocketcloud\cloud\console\handler\ExceptionHandler;
+use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\exception\PacketException;
 use pocketcloud\cloud\network\packet\ClientboundPacket;
 use pocketcloud\cloud\network\packet\CloudboundPacket;
@@ -16,7 +17,13 @@ final class PacketSerializer {
             $packet->encode($buffer = new PacketData());
             $buffer->write($authenticationKey);
             $stringBuffer = json_encode($buffer, JSON_THROW_ON_ERROR);
-            if ($encryptionEnabled) $stringBuffer = zlib_encode($stringBuffer, ZLIB_ENCODING_DEFLATE, 3);
+            if ($encryptionEnabled) {
+                $size = strlen($stringBuffer);
+                if ($size > 10_000_000) { // z.B. 10MB threshold
+                    CloudLogger::get()->warn("Huge packet before zlib: {} bytes, packet={}", $size, $packet->getName());
+                }
+                $stringBuffer = zlib_encode($stringBuffer, ZLIB_ENCODING_DEFLATE, 3);
+            }
             return $stringBuffer;
         }, "Failed to encode packet: " . $packet->getName(), null, $packet, $encryptionEnabled, $authenticationKey);
     }

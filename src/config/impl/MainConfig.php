@@ -71,6 +71,10 @@ final class MainConfig extends Configuration {
         ]
     ];
 
+    private array $httpClient = [
+        "thread-count" => 1
+    ];
+
     private array $mysqlSettings = [
         "address" => "127.0.0.1",
         "port" => 3306,
@@ -88,15 +92,17 @@ final class MainConfig extends Configuration {
         $defaultBStats = $this->bStats;
         $defaultNetwork = $this->network;
         $defaultHttp = $this->httpServer;
+        $defaultHttpClient = $this->httpClient;
         $defaultMySql = $this->mysqlSettings;
 
-        ExceptionHandler::require(function (array $defaultUpdateChecks, array $defaultBStats, array $defaultNetwork, array $defaultHttp, array $defaultMySql): void {
+        ExceptionHandler::require(function (array $defaultUpdateChecks, array $defaultBStats, array $defaultNetwork, array $defaultHttp, array $defaultHttpClient, array $defaultMySql): void {
             $this->load();
 
             Utils::fillMissingKeys($this->individualUpdateChecks, $defaultUpdateChecks);
             Utils::fillMissingKeys($this->bStats, $defaultBStats);
             Utils::fillMissingKeys($this->network, $defaultNetwork);
             Utils::fillMissingKeys($this->httpServer, $defaultHttp);
+            Utils::fillMissingKeys($this->httpClient, $defaultHttpClient);
             Utils::fillMissingKeys($this->mysqlSettings, $defaultMySql);
 
             if (!in_array(strtolower($this->provider), ["mysql", "json"])) {
@@ -104,7 +110,7 @@ final class MainConfig extends Configuration {
             }
 
             $this->save();
-        }, "Failed to load main config", fn() => PocketCloud::getInstance()->shutdown(), $defaultUpdateChecks, $defaultBStats, $defaultNetwork, $defaultHttp, $defaultMySql);
+        }, "Failed to load main config", fn() => PocketCloud::getInstance()->shutdown(), $defaultUpdateChecks, $defaultBStats, $defaultNetwork, $defaultHttp, $defaultHttpClient, $defaultMySql);
     }
 
     public function getGeneratedKey(): string {
@@ -420,6 +426,29 @@ final class MainConfig extends Configuration {
 
     public function getHttpServer(): array {
         return $this->httpServer;
+    }
+
+    public function setHttpClientThreadCount(int $threadCount): MainConfig {
+        if ($threadCount < 0) $threadCount = 0;
+        $this->httpClient["thread-count"] = $threadCount;
+        return $this;
+    }
+
+    public function setHttpClient(array $httpClient): MainConfig {
+        Utils::validateArraySignature($httpClient, [
+            "thread-count" => "int"
+        ]);
+
+        $this->httpClient = $httpClient;
+        return $this;
+    }
+
+    public function getHttpClientThreadCount(): int {
+        return $this->httpClient["thread-count"];
+    }
+
+    public function getHttpClient(): array {
+        return $this->httpClient;
     }
 
     public function setMysqlAddress(string $address): MainConfig {

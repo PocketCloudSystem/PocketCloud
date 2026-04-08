@@ -9,6 +9,7 @@ use pocketcloud\cloud\config\impl\MainConfig;
 use pocketcloud\cloud\config\impl\ServerSettingsConfig;
 use pocketcloud\cloud\console\command\CommandManager;
 use pocketcloud\cloud\console\Console;
+use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\console\log\level\CloudLogLevel;
 use pocketcloud\cloud\console\log\logger\MainLogger;
 use pocketcloud\cloud\console\log\output\OutputManager;
@@ -16,49 +17,51 @@ use pocketcloud\cloud\console\screen\ScreenManager;
 use pocketcloud\cloud\crash\CrashDump;
 use pocketcloud\cloud\event\impl\cloud\CloudStartedEvent;
 use pocketcloud\cloud\group\ServerGroupManager;
-use pocketcloud\cloud\http\HttpServer;
-use pocketcloud\cloud\http\HttpServerBuilder;
-use pocketcloud\cloud\http\route\impl\HealthRoute;
-use pocketcloud\cloud\http\route\impl\v1\group\AddTemplatesToGroupRoute;
-use pocketcloud\cloud\http\route\impl\v1\group\CreateGroupRoute;
-use pocketcloud\cloud\http\route\impl\v1\group\GroupInfoRoute;
-use pocketcloud\cloud\http\route\impl\v1\group\ListGroupsRoute;
-use pocketcloud\cloud\http\route\impl\v1\group\RemoveGroupRoute;
-use pocketcloud\cloud\http\route\impl\v1\group\RemoveTemplatesFromGroupRoute;
-use pocketcloud\cloud\http\route\impl\v1\maintenance\ListMaintenanceRoute;
-use pocketcloud\cloud\http\route\impl\v1\maintenance\MaintenanceAddRoute;
-use pocketcloud\cloud\http\route\impl\v1\maintenance\MaintenanceRemoveRoute;
-use pocketcloud\cloud\http\route\impl\v1\notification\ListNotificationsRoute;
-use pocketcloud\cloud\http\route\impl\v1\notification\NotificationsDisableRoute;
-use pocketcloud\cloud\http\route\impl\v1\notification\NotificationsEnableRoute;
-use pocketcloud\cloud\http\route\impl\v1\player\KickPlayerRoute;
-use pocketcloud\cloud\http\route\impl\v1\player\ListPlayerRoute;
-use pocketcloud\cloud\http\route\impl\v1\player\PlayerInfoRoute;
-use pocketcloud\cloud\http\route\impl\v1\player\TextPlayerRoute;
-use pocketcloud\cloud\http\route\impl\v1\player\TransferPlayerRoute;
-use pocketcloud\cloud\http\route\impl\v1\plugin\DisableAllPluginsRoute;
-use pocketcloud\cloud\http\route\impl\v1\plugin\DisablePluginRoute;
-use pocketcloud\cloud\http\route\impl\v1\plugin\EnableAllPluginsRoute;
-use pocketcloud\cloud\http\route\impl\v1\plugin\EnablePluginRoute;
-use pocketcloud\cloud\http\route\impl\v1\plugin\ListPluginsRoute;
-use pocketcloud\cloud\http\route\impl\v1\plugin\PluginInfoRoute;
-use pocketcloud\cloud\http\route\impl\v1\server\ListServersRoute;
-use pocketcloud\cloud\http\route\impl\v1\server\ServerInfoRoute;
-use pocketcloud\cloud\http\route\impl\v1\server\ServerLogsRoute;
-use pocketcloud\cloud\http\route\impl\v1\server\ServerSaveRoute;
-use pocketcloud\cloud\http\route\impl\v1\server\ServerSendCommandRoute;
-use pocketcloud\cloud\http\route\impl\v1\server\ServerStartRoute;
-use pocketcloud\cloud\http\route\impl\v1\server\ServerStopAllRoute;
-use pocketcloud\cloud\http\route\impl\v1\server\ServerStopRoute;
-use pocketcloud\cloud\http\route\impl\v1\StatsRoute;
-use pocketcloud\cloud\http\route\impl\v1\template\CreateTemplateRoute;
-use pocketcloud\cloud\http\route\impl\v1\template\EditTemplateRoute;
-use pocketcloud\cloud\http\route\impl\v1\template\ListTemplatesRoute;
-use pocketcloud\cloud\http\route\impl\v1\template\RemoveTemplateRoute;
-use pocketcloud\cloud\http\route\impl\v1\template\TemplateInfoRoute;
-use pocketcloud\cloud\http\socket\auth\DefaultAuthentication;
-use pocketcloud\cloud\http\version\ApiVersion;
+use pocketcloud\cloud\http\client\HttpClientManager;
+use pocketcloud\cloud\http\server\HttpServer;
+use pocketcloud\cloud\http\server\HttpServerBuilder;
+use pocketcloud\cloud\http\server\route\impl\HealthRoute;
+use pocketcloud\cloud\http\server\route\impl\v1\group\AddTemplatesToGroupRoute;
+use pocketcloud\cloud\http\server\route\impl\v1\group\CreateGroupRoute;
+use pocketcloud\cloud\http\server\route\impl\v1\group\GroupInfoRoute;
+use pocketcloud\cloud\http\server\route\impl\v1\group\ListGroupsRoute;
+use pocketcloud\cloud\http\server\route\impl\v1\group\RemoveGroupRoute;
+use pocketcloud\cloud\http\server\route\impl\v1\group\RemoveTemplatesFromGroupRoute;
+use pocketcloud\cloud\http\server\route\impl\v1\maintenance\ListMaintenanceRoute;
+use pocketcloud\cloud\http\server\route\impl\v1\maintenance\MaintenanceAddRoute;
+use pocketcloud\cloud\http\server\route\impl\v1\maintenance\MaintenanceRemoveRoute;
+use pocketcloud\cloud\http\server\route\impl\v1\notification\ListNotificationsRoute;
+use pocketcloud\cloud\http\server\route\impl\v1\notification\NotificationsDisableRoute;
+use pocketcloud\cloud\http\server\route\impl\v1\notification\NotificationsEnableRoute;
+use pocketcloud\cloud\http\server\route\impl\v1\player\KickPlayerRoute;
+use pocketcloud\cloud\http\server\route\impl\v1\player\ListPlayerRoute;
+use pocketcloud\cloud\http\server\route\impl\v1\player\PlayerInfoRoute;
+use pocketcloud\cloud\http\server\route\impl\v1\player\TextPlayerRoute;
+use pocketcloud\cloud\http\server\route\impl\v1\player\TransferPlayerRoute;
+use pocketcloud\cloud\http\server\route\impl\v1\plugin\DisableAllPluginsRoute;
+use pocketcloud\cloud\http\server\route\impl\v1\plugin\DisablePluginRoute;
+use pocketcloud\cloud\http\server\route\impl\v1\plugin\EnableAllPluginsRoute;
+use pocketcloud\cloud\http\server\route\impl\v1\plugin\EnablePluginRoute;
+use pocketcloud\cloud\http\server\route\impl\v1\plugin\ListPluginsRoute;
+use pocketcloud\cloud\http\server\route\impl\v1\plugin\PluginInfoRoute;
+use pocketcloud\cloud\http\server\route\impl\v1\server\ListServersRoute;
+use pocketcloud\cloud\http\server\route\impl\v1\server\ServerInfoRoute;
+use pocketcloud\cloud\http\server\route\impl\v1\server\ServerLogsRoute;
+use pocketcloud\cloud\http\server\route\impl\v1\server\ServerSaveRoute;
+use pocketcloud\cloud\http\server\route\impl\v1\server\ServerSendCommandRoute;
+use pocketcloud\cloud\http\server\route\impl\v1\server\ServerStartRoute;
+use pocketcloud\cloud\http\server\route\impl\v1\server\ServerStopAllRoute;
+use pocketcloud\cloud\http\server\route\impl\v1\server\ServerStopRoute;
+use pocketcloud\cloud\http\server\route\impl\v1\StatsRoute;
+use pocketcloud\cloud\http\server\route\impl\v1\template\CreateTemplateRoute;
+use pocketcloud\cloud\http\server\route\impl\v1\template\EditTemplateRoute;
+use pocketcloud\cloud\http\server\route\impl\v1\template\ListTemplatesRoute;
+use pocketcloud\cloud\http\server\route\impl\v1\template\RemoveTemplateRoute;
+use pocketcloud\cloud\http\server\route\impl\v1\template\TemplateInfoRoute;
+use pocketcloud\cloud\http\server\socket\auth\DefaultAuthentication;
+use pocketcloud\cloud\http\server\version\ApiVersion;
 use pocketcloud\cloud\language\Language;
+use pocketcloud\cloud\library\LibraryManager;
 use pocketcloud\cloud\migration\MigratorManager;
 use pocketcloud\cloud\network\client\ServerClientCache;
 use pocketcloud\cloud\network\Network;
@@ -80,11 +83,9 @@ use pocketcloud\cloud\util\benchmark\Benchmark;
 use pocketcloud\cloud\util\benchmark\BenchmarkTimingsSummary;
 use pocketcloud\cloud\util\bStats\CloudMetrics;
 use pocketcloud\cloud\util\FileUtils;
-use pocketcloud\cloud\util\misc\Queue;
-use pocketcloud\cloud\library\LibraryManager;
-use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\util\loader\ClassLoader;
 use pocketcloud\cloud\util\misc\LoadableList;
+use pocketcloud\cloud\util\misc\Queue;
 use pocketcloud\cloud\util\misc\TickableList;
 use pocketcloud\cloud\util\net\Address;
 use pocketcloud\cloud\util\PathUtils;
@@ -148,6 +149,7 @@ final class PocketCloud {
     private ThreadManager $threadManager;
     private Network $network;
     private HttpServer $httpServer;
+    private HttpClientManager $httpClientManager;
     private AsyncPool $asyncPool;
     private ServerPreparator $serverPreparator;
     private RequestManager $requestManager;
@@ -344,6 +346,8 @@ final class PocketCloud {
         $this->httpServer = HttpServerBuilder::buildFromConfig();
         $this->httpServer->registerVersion(new ApiVersion(ApiVersion::V1, new DefaultAuthentication()));
         $this->registerHttpPaths($this->httpServer);
+
+        $this->httpClientManager = HttpClientManager::buildFromConfig();
 
         $this->cloudUniqueId = Utils::getMachineUniqueId($this->network->getAddress()->getAddress() . $this->network->getAddress()->getPort());
         $this->metrics = new CloudMetrics($this->cloudUniqueId, $this->config);
@@ -557,6 +561,7 @@ final class PocketCloud {
         if (isset($this->serverManager)) $this->serverManager->stopAll(true);
         if (isset($this->network)) $this->network->close();
         if (isset($this->httpServer)) $this->httpServer->stop();
+        if (isset($this->httpClientManager)) $this->httpClientManager->shutdown();
         if (isset($this->serverPreparator)) $this->serverPreparator->stop();
         if (isset($this->console)) $this->console->remove();
     }
@@ -718,6 +723,10 @@ final class PocketCloud {
 
     public function getHttpServer(): HttpServer {
         return $this->httpServer;
+    }
+
+    public function getHttpClientManager(): HttpClientManager {
+        return $this->httpClientManager;
     }
 
     public function getAsyncPool(): AsyncPool {
