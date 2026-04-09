@@ -4,7 +4,6 @@ namespace pocketcloud\cloud\migration\impl;
 
 use pocketcloud\cloud\migration\IMigrator;
 use pocketcloud\cloud\provider\CloudProvider;
-use pocketcloud\cloud\provider\database\DatabaseQueries;
 use pocketcloud\cloud\util\FileUtils;
 use pocketcloud\cloud\util\PathUtils;
 use r3pt1s\mysql\ConnectionPool;

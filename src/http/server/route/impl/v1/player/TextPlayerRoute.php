@@ -5,7 +5,7 @@ namespace pocketcloud\cloud\http\server\route\impl\v1\player;
 use pocketcloud\cloud\http\server\io\Request;
 use pocketcloud\cloud\http\server\io\ResponseBuilder;
 use pocketcloud\cloud\http\server\route\impl\v1\ApiV1JsonPath;
-use pocketcloud\cloud\http\server\util\HttpConstants;
+use pocketcloud\cloud\http\util\RequestMethod;
 use pocketcloud\cloud\network\packet\data\TextType;
 use pocketcloud\cloud\player\CloudPlayerManager;
 
@@ -19,8 +19,8 @@ final class TextPlayerRoute extends ApiV1JsonPath {
     public function __construct() {
         parent::__construct(
             "/players/{name}/text",
-            HttpConstants::POST,
-            2**10,
+            RequestMethod::POST,
+            2 ** 10,
             ["type" => "string", "message" => "string"]
         );
     }

@@ -4,16 +4,11 @@ namespace pocketcloud\cloud\http\server\io;
 
 use pmmp\thread\ThreadSafeArray;
 use pocketcloud\cloud\http\server\HttpServer;
+use pocketcloud\cloud\http\util\RequestMethod;
 
 final class ResponseCache {
 
     private static ?ThreadSafeArray $cache = null;
-
-    private static function initCache(): void {
-        if (self::$cache === null) {
-            self::$cache = new ThreadSafeArray();
-        }
-    }
 
     public static function tick(): void {
         self::initCache();
@@ -21,14 +16,12 @@ final class ResponseCache {
         $cachingTime = HttpServer::getInstance()->getCachingTimeInSeconds();
         $now = time();
 
-        self::$cache->synchronized(function() use ($now, $cachingTime) {
+        self::$cache->synchronized(function () use ($now, $cachingTime): void {
             $keysToRemove = [];
-
-            foreach (self::$cache as $pathString => $data) {
-                [, $time] = $data;
-
+            foreach (self::$cache as $key => $data) {
+                [, $time] = (array)$data;
                 if ($now >= ($time + $cachingTime)) {
-                    $keysToRemove[] = $pathString;
+                    $keysToRemove[] = $key;
                 }
             }
 
@@ -38,42 +31,47 @@ final class ResponseCache {
         });
     }
 
+    private static function initCache(): void {
+        if (self::$cache === null) {
+            self::$cache = new ThreadSafeArray();
+        }
+    }
+
     public static function cache(Request $request, Response $response): void {
         if (!HttpServer::getInstance()->isEnableResponseCaching()) return;
+        if ($request->getMethod() !== RequestMethod::GET) return;
 
         self::initCache();
+        $cacheKey = self::buildKey($request);
 
-        $path = $request->getPath();
-        $queries = $request->getQueries(true);
-
-        $apiVersion = $path->getApiVersion() ?? "no-version";
-        $fullPath = $path->getFullPath() . (count($queries) == 0 ? "" : "?" . http_build_query($queries));
-        $cacheKey = $apiVersion . ":" . $path->getMethod() . ":" . $fullPath;
-
-        self::$cache->synchronized(function() use ($cacheKey, $response) {
+        self::$cache->synchronized(function () use ($cacheKey, $response): void {
             self::$cache[$cacheKey] = ThreadSafeArray::fromArray([$response, time()]);
         });
     }
 
+    private static function buildKey(Request $request): string {
+        $path = $request->getPath();
+        $queries = $request->getQueries(true);
+        $apiVersion = $path->getApiVersion() ?? "no-version";
+        $fullPath = $path->getFullPath() . (count($queries) === 0 ? "" : "?" . http_build_query($queries));
+        return $apiVersion . ":" . $path->getMethod()->name . ":" . $fullPath;
+    }
+
     public static function check(Request $request): ?Response {
         if (!HttpServer::getInstance()->isEnableResponseCaching()) return null;
+        if ($request->getMethod() != RequestMethod::GET) return null;
 
         self::initCache();
 
-        $path = $request->getPath();
-        $queries = $request->getQueries(true);
+        $cacheKey = self::buildKey($request);
+        $cachingTime = HttpServer::getInstance()->getCachingTimeInSeconds();
 
-        $apiVersion = $path->getApiVersion() ?? "no-version";
-        $fullPath = $path->getFullPath() . (count($queries) == 0 ? "" : "?" . http_build_query($queries));
-        $cacheKey = $apiVersion . ":" . $path->getMethod() . ":" . $fullPath;
-
-        return self::$cache->synchronized(function() use ($cacheKey, $fullPath, $request) {
+        return self::$cache->synchronized(function () use ($cacheKey, $cachingTime): ?Response {
             if (!isset(self::$cache[$cacheKey])) return null;
 
-            $entry = (array) self::$cache[$cacheKey];
-            [$response, $time] = $entry;
+            [$response, $time] = (array)self::$cache[$cacheKey];
 
-            if (time() >= ($time + HttpServer::getInstance()->getCachingTimeInSeconds())) {
+            if (time() >= ($time + $cachingTime)) {
                 unset(self::$cache[$cacheKey]);
                 return null;
             }

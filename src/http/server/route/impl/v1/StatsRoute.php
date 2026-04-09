@@ -8,9 +8,9 @@ use pocketcloud\cloud\http\server\io\Response;
 use pocketcloud\cloud\http\server\io\ResponseBuilder;
 use pocketcloud\cloud\http\server\route\ApiPath;
 use pocketcloud\cloud\http\server\socket\auth\NoAuthRequiredAuthentication;
-use pocketcloud\cloud\http\server\util\HttpConstants;
 use pocketcloud\cloud\http\server\util\StatusCode;
 use pocketcloud\cloud\http\server\version\ApiVersion;
+use pocketcloud\cloud\http\util\RequestMethod;
 use pocketcloud\cloud\player\CloudPlayerManager;
 use pocketcloud\cloud\plugin\CloudPluginManager;
 use pocketcloud\cloud\PocketCloud;
@@ -22,7 +22,7 @@ use pocketcloud\cloud\util\VersionInfo;
 final class StatsRoute extends ApiPath {
 
     public function __construct() {
-        parent::__construct("/stats", ApiVersion::V1, HttpConstants::GET, new NoAuthRequiredAuthentication());
+        parent::__construct("/stats", ApiVersion::V1, RequestMethod::GET, new NoAuthRequiredAuthentication());
     }
 
     public function handle(Request $request): Response {

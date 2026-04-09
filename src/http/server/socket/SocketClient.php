@@ -13,7 +13,8 @@ use Socket;
 
 final class SocketClient extends ThreadSafe {
 
-    private const int WRITE_TIMEOUT_SECONDS = 30;
+    /** Maximum time (nanoseconds) to spend writing a single response: 10 s */
+    private const int WRITE_TIMEOUT_NS = 10_000_000_000;
 
     public function __construct(
         private readonly Address $address,
@@ -29,10 +30,10 @@ final class SocketClient extends ThreadSafe {
         $httpResponse = $response->buildResponseString();
         $total = strlen($httpResponse);
         $written = 0;
-        $startTime = time();
+        $startNs = hrtime(true);
 
         while ($written < $total) {
-            if (time() - $startTime > self::WRITE_TIMEOUT_SECONDS) {
+            if ((hrtime(true) - $startNs) >= self::WRITE_TIMEOUT_NS) {
                 $this->close();
                 return;
             }
@@ -61,16 +62,14 @@ final class SocketClient extends ThreadSafe {
             HttpTrafficMonitor::HTTP_MODE_RESPONSE_OUT,
             $request, $response, $this->address
         );
-
-        $this->close();
-    }
-
-    public function read(int $len): false|string {
-        return socket_read($this->socket, $len);
     }
 
     public function close(): void {
         if ($this->socket !== null) @socket_close($this->socket);
+    }
+
+    public function read(int $len): false|string {
+        return socket_read($this->socket, $len);
     }
 
     public function getAddress(): Address {

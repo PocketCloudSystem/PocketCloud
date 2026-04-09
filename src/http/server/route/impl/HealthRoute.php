@@ -7,13 +7,13 @@ use pocketcloud\cloud\http\server\io\Response;
 use pocketcloud\cloud\http\server\io\ResponseBuilder;
 use pocketcloud\cloud\http\server\route\RegularPath;
 use pocketcloud\cloud\http\server\socket\auth\NoAuthRequiredAuthentication;
-use pocketcloud\cloud\http\server\util\HttpConstants;
 use pocketcloud\cloud\http\server\util\StatusCode;
+use pocketcloud\cloud\http\util\RequestMethod;
 
 final class HealthRoute extends RegularPath {
 
     public function __construct() {
-        parent::__construct("/health", HttpConstants::GET, new NoAuthRequiredAuthentication());
+        parent::__construct("/health", RequestMethod::GET, new NoAuthRequiredAuthentication());
     }
 
     public function handle(Request $request): Response {

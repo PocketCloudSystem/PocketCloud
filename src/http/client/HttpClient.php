@@ -6,10 +6,10 @@ use Closure;
 use InvalidArgumentException;
 use pocketcloud\cloud\http\client\io\ClientRequestContext;
 use pocketcloud\cloud\http\client\io\ClientResponse;
-use pocketcloud\cloud\util\net\Address;
-use pocketcloud\cloud\http\client\util\RequestMethod;
 use pocketcloud\cloud\http\client\util\RestAction;
-use pocketcloud\cloud\http\client\util\StatusCode;
+use pocketcloud\cloud\http\util\RequestMethod;
+use pocketcloud\cloud\http\util\StatusCode;
+use pocketcloud\cloud\util\net\Address;
 use RuntimeException;
 
 final class HttpClient {

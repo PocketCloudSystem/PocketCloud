@@ -7,12 +7,13 @@ use pocketcloud\cloud\http\server\io\Response;
 use pocketcloud\cloud\http\server\io\ResponseBuilder;
 use pocketcloud\cloud\http\server\socket\auth\Authentication;
 use pocketcloud\cloud\http\server\util\StatusCode;
+use pocketcloud\cloud\http\util\RequestMethod;
 
 abstract class RegularPath implements Path {
 
     public function __construct(
         private readonly string $path,
-        private readonly string $requestMethod,
+        private readonly RequestMethod $requestMethod,
         private readonly Authentication $authentication
     ) {}
 
@@ -26,15 +27,15 @@ abstract class RegularPath implements Path {
         return null;
     }
 
-    public function getPath(): string {
-        return $this->path;
-    }
-
     public function getFullPath(): string {
         return "/" . trim($this->getPath(), "/");
     }
 
-    public function getMethod(): string {
+    public function getPath(): string {
+        return $this->path;
+    }
+
+    public function getMethod(): RequestMethod {
         return $this->requestMethod;
     }
 

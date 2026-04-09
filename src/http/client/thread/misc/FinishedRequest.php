@@ -5,8 +5,8 @@ namespace pocketcloud\cloud\http\client\thread\misc;
 use pmmp\thread\ThreadSafe;
 use pmmp\thread\ThreadSafeArray;
 use pocketcloud\cloud\http\client\io\ClientResponse;
-use pocketcloud\cloud\http\client\util\RequestMethod;
-use pocketcloud\cloud\http\client\util\StatusCode;
+use pocketcloud\cloud\http\util\RequestMethod;
+use pocketcloud\cloud\http\util\StatusCode;
 
 final class FinishedRequest extends ThreadSafe {
 

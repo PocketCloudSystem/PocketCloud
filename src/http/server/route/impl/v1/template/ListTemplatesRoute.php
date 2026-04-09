@@ -5,7 +5,7 @@ namespace pocketcloud\cloud\http\server\route\impl\v1\template;
 use pocketcloud\cloud\http\server\io\Request;
 use pocketcloud\cloud\http\server\io\ResponseBuilder;
 use pocketcloud\cloud\http\server\route\impl\v1\ApiV1JsonPath;
-use pocketcloud\cloud\http\server\util\HttpConstants;
+use pocketcloud\cloud\http\util\RequestMethod;
 use pocketcloud\cloud\template\Template;
 use pocketcloud\cloud\template\TemplateManager;
 use pocketcloud\cloud\template\TemplateType;
@@ -15,7 +15,7 @@ final class ListTemplatesRoute extends ApiV1JsonPath {
     public function __construct() {
         parent::__construct(
             "/templates",
-            HttpConstants::GET,
+            RequestMethod::GET,
             0
         );
     }
@@ -23,7 +23,9 @@ final class ListTemplatesRoute extends ApiV1JsonPath {
     public function onHandle(Request $request, ResponseBuilder $builder, array $requestBody): void {
         $templateType = $request->hasQuery("type") ? TemplateType::get($request->getQuery("type")) : TemplateType::getAll();
         if ($templateType instanceof TemplateType) $templateType = [$templateType];
-        $templates = array_map(fn(Template $template) => ["name" => $template->getName(), "player_count" => $template->getPlayerCount(), "maintenance" => $template->isMaintenance()], TemplateManager::getInstance()->getAll(...($templateType ?? [])));
+        $templates = array_map(fn(Template $template) => ["name" => $template->getName(), "player_count" => $template->getPlayerCount(), "maintenance" => $template->isMaintenance()], TemplateManager::getInstance()->getAll(...($templateType
+            ??
+            [])));
         $builder->body($templates);
     }
 

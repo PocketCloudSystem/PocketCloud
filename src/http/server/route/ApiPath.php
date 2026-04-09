@@ -7,13 +7,14 @@ use pocketcloud\cloud\http\server\io\Response;
 use pocketcloud\cloud\http\server\io\ResponseBuilder;
 use pocketcloud\cloud\http\server\socket\auth\Authentication;
 use pocketcloud\cloud\http\server\util\StatusCode;
+use pocketcloud\cloud\http\util\RequestMethod;
 
 abstract class ApiPath implements Path {
 
     public function __construct(
         private readonly string $path,
         private readonly string $version,
-        private readonly string $requestMethod,
+        private readonly RequestMethod $requestMethod,
         private readonly Authentication $authentication
     ) {}
 
@@ -21,10 +22,6 @@ abstract class ApiPath implements Path {
         return ResponseBuilder::create()
             ->code(StatusCode::FORBIDDEN)
             ->build();
-    }
-
-    public function getPath(): string {
-        return $this->path;
     }
 
     public function getFullPath(): string {
@@ -35,7 +32,11 @@ abstract class ApiPath implements Path {
         return $this->version;
     }
 
-    public function getMethod(): string {
+    public function getPath(): string {
+        return $this->path;
+    }
+
+    public function getMethod(): RequestMethod {
         return $this->requestMethod;
     }
 

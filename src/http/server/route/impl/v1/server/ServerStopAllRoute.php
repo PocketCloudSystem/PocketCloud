@@ -5,7 +5,7 @@ namespace pocketcloud\cloud\http\server\route\impl\v1\server;
 use pocketcloud\cloud\http\server\io\Request;
 use pocketcloud\cloud\http\server\io\ResponseBuilder;
 use pocketcloud\cloud\http\server\route\impl\v1\ApiV1JsonPath;
-use pocketcloud\cloud\http\server\util\HttpConstants;
+use pocketcloud\cloud\http\util\RequestMethod;
 use pocketcloud\cloud\server\CloudServer;
 use pocketcloud\cloud\server\CloudServerManager;
 
@@ -18,7 +18,7 @@ final class ServerStopAllRoute extends ApiV1JsonPath {
     public function __construct() {
         parent::__construct(
             "/servers/stopAll",
-            HttpConstants::POST,
+            RequestMethod::POST,
             32,
             ["force" => "boolean"]
         );

@@ -6,7 +6,7 @@ use pocketcloud\cloud\group\ServerGroupManager;
 use pocketcloud\cloud\http\server\io\Request;
 use pocketcloud\cloud\http\server\io\ResponseBuilder;
 use pocketcloud\cloud\http\server\route\impl\v1\ApiV1JsonPath;
-use pocketcloud\cloud\http\server\util\HttpConstants;
+use pocketcloud\cloud\http\util\RequestMethod;
 use pocketcloud\cloud\provider\CloudProvider;
 use pocketcloud\cloud\template\TemplateManager;
 
@@ -19,8 +19,8 @@ final class AddTemplatesToGroupRoute extends ApiV1JsonPath {
     public function __construct() {
         parent::__construct(
             "/groups/{name}/templates",
-            HttpConstants::POST,
-            2**9,
+            RequestMethod::POST,
+            2 ** 9,
             ["templates" => "array"]
         );
     }

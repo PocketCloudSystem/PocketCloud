@@ -5,8 +5,8 @@ namespace pocketcloud\cloud\http\server\route\impl\v1\server;
 use pocketcloud\cloud\http\server\io\Request;
 use pocketcloud\cloud\http\server\io\ResponseBuilder;
 use pocketcloud\cloud\http\server\route\impl\v1\ApiV1JsonPath;
-use pocketcloud\cloud\http\server\util\HttpConstants;
 use pocketcloud\cloud\http\server\util\StatusCode;
+use pocketcloud\cloud\http\util\RequestMethod;
 use pocketcloud\cloud\server\CloudServerManager;
 use pocketcloud\cloud\template\TemplateManager;
 
@@ -20,8 +20,8 @@ final class ServerStartRoute extends ApiV1JsonPath {
     public function __construct() {
         parent::__construct(
             "/servers/start",
-            HttpConstants::POST,
-            2**8,
+            RequestMethod::POST,
+            2 ** 8,
             ["template" => "string", "count" => "integer"]
         );
     }
@@ -36,7 +36,9 @@ final class ServerStartRoute extends ApiV1JsonPath {
         }
 
         $startedServers = CloudServerManager::getInstance()->start($template, $count);
-        $builder->body(["message" => "Attempted to start " . $count . " server(s).", "started_servers" => $startedServers]);
+        $builder->body(["message" => "Attempted to start " .
+            $count .
+            " server(s).", "started_servers" => $startedServers]);
     }
 
     public function checkForBadRequest(Request $request, ResponseBuilder $response, array $body): bool {

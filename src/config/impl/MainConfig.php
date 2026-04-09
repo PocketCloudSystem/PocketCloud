@@ -58,7 +58,6 @@ final class MainConfig extends Configuration {
         "address" => "127.0.0.1",
         "port" => 8000,
         "auth-key" => "123",
-        "only-local" => true,
         "rate-limit" => [
             "enabled" => false,
             "timeout_in_seconds" => 120,
@@ -310,11 +309,6 @@ final class MainConfig extends Configuration {
         return $this;
     }
 
-    public function setHttpServerOnlyLocal(bool $value): MainConfig {
-        $this->httpServer["only-local"] = $value;
-        return $this;
-    }
-
     public function setHttpRateLimitEnabled(bool $enabled): MainConfig {
         $this->httpServer["rate-limit"]["enabled"] = $enabled;
         return $this;
@@ -355,7 +349,6 @@ final class MainConfig extends Configuration {
             "address" => "string",
             "port" => "int",
             "auth-key" => "string",
-            "only-local" => "bool",
             "rate-limit" => [
                 "enabled" => "bool",
                 "timeout_in_seconds" => "int",
@@ -386,10 +379,6 @@ final class MainConfig extends Configuration {
 
     public function getHttpServerAuthKey(): string {
         return $this->httpServer["auth-key"];
-    }
-
-    public function isHttpServerOnlyLocal(): bool {
-        return $this->httpServer["only-local"];
     }
 
     public function getHttpRateLimitConfiguration(): array {

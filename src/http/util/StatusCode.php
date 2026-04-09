@@ -1,6 +1,6 @@
 <?php
 
-namespace pocketcloud\cloud\http\client\util;
+namespace pocketcloud\cloud\http\util;
 
 enum StatusCode: int {
 

@@ -3,6 +3,7 @@
 namespace pocketcloud\cloud\traffic;
 
 use LogicException;
+use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\traffic\impl\HttpTrafficMonitor;
 use pocketcloud\cloud\traffic\impl\NetworkTrafficMonitor;
 use pocketcloud\cloud\util\misc\Tickable;
@@ -92,7 +93,10 @@ final class TrafficMonitorManager implements Tickable {
     }
 
     public function pushBytes(string $type, int $bytes, string $mode): void {
-        if (!isset($this->allTimeTraffic[$type]) || !isset($this->allTimeTraffic[$type][$mode])) return;
+        if (!isset($this->allTimeTraffic[$type]) || !isset($this->allTimeTraffic[$type][$mode])) {
+            CloudLogger::get()->info("not working for $type");
+            return;
+        }
         $this->allTimeTraffic[$type][$mode] += $bytes;
         $this->byteHistory[$type . "_" . $mode][] = [microtime(true), $bytes];
         foreach (($this->trafficMonitors[$type] ?? []) as $monitor) {

@@ -5,7 +5,7 @@ namespace pocketcloud\cloud\http\server\route\impl\v1\player;
 use pocketcloud\cloud\http\server\io\Request;
 use pocketcloud\cloud\http\server\io\ResponseBuilder;
 use pocketcloud\cloud\http\server\route\impl\v1\ApiV1JsonPath;
-use pocketcloud\cloud\http\server\util\HttpConstants;
+use pocketcloud\cloud\http\util\RequestMethod;
 use pocketcloud\cloud\player\CloudPlayerManager;
 use pocketcloud\cloud\server\CloudServerManager;
 
@@ -18,7 +18,7 @@ final class TransferPlayerRoute extends ApiV1JsonPath {
     public function __construct() {
         parent::__construct(
             "/players/{name}/transfer",
-            HttpConstants::POST,
+            RequestMethod::POST,
             64,
             ["server" => "string"]
         );

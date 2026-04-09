@@ -6,6 +6,7 @@ use pocketcloud\cloud\http\server\io\Request;
 use pocketcloud\cloud\http\server\io\Response;
 use pocketcloud\cloud\http\server\io\ResponseBuilder;
 use pocketcloud\cloud\http\server\socket\auth\Authentication;
+use pocketcloud\cloud\http\util\RequestMethod;
 
 interface Path {
 
@@ -23,7 +24,7 @@ interface Path {
 
     public function getFullPath(): string;
 
-    public function getMethod(): string;
+    public function getMethod(): RequestMethod;
 
     public function getAuthentication(): Authentication;
 }

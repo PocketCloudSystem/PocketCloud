@@ -2,8 +2,8 @@
 
 namespace pocketcloud\cloud\http\client\io;
 
-use pocketcloud\cloud\http\client\util\RequestMethod;
-use pocketcloud\cloud\http\client\util\StatusCode;
+use pocketcloud\cloud\http\util\RequestMethod;
+use pocketcloud\cloud\http\util\StatusCode;
 use Throwable;
 
 final readonly class ClientResponse {

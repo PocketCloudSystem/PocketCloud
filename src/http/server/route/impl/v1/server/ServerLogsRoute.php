@@ -5,8 +5,8 @@ namespace pocketcloud\cloud\http\server\route\impl\v1\server;
 use pocketcloud\cloud\http\server\io\Request;
 use pocketcloud\cloud\http\server\io\ResponseBuilder;
 use pocketcloud\cloud\http\server\route\impl\v1\ApiV1JsonPath;
-use pocketcloud\cloud\http\server\util\HttpConstants;
 use pocketcloud\cloud\http\server\util\StatusCode;
+use pocketcloud\cloud\http\util\RequestMethod;
 use pocketcloud\cloud\server\CloudServerManager;
 
 final class ServerLogsRoute extends ApiV1JsonPath {
@@ -14,7 +14,7 @@ final class ServerLogsRoute extends ApiV1JsonPath {
     public function __construct() {
         parent::__construct(
             "/servers/{name}/logs",
-            HttpConstants::GET,
+            RequestMethod::GET,
             0
         );
     }

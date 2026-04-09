@@ -9,6 +9,7 @@ use pmmp\thread\ThreadSafe;
 use pmmp\thread\ThreadSafeArray;
 use pocketcloud\cloud\http\client\io\ClientRequestContext;
 use pocketcloud\cloud\http\client\util\MultipartBody;
+use pocketcloud\cloud\http\util\HttpUtils;
 use RuntimeException;
 
 final class PendingRequest extends ThreadSafe {
@@ -75,7 +76,7 @@ final class PendingRequest extends ThreadSafe {
             $opts[CURLOPT_CUSTOMREQUEST] = $this->method;
         }
 
-        $opts[CURLOPT_HTTPHEADER] = self::encodeHeaders((array) $this->headers);
+        $opts[CURLOPT_HTTPHEADER] = HttpUtils::encodeHeaders((array) $this->headers);
         curl_setopt_array($curlHandle, $opts);
     }
 
@@ -160,16 +161,5 @@ final class PendingRequest extends ThreadSafe {
             $context->timeout(),
             $context->retries()
         );
-    }
-
-    public static function encodeHeaders(array $headers): array {
-        $tmp = [];
-        foreach ($headers as $k => $v) {
-            $k = str_replace(["\r", "\n", ":"], "", $k);
-            $v = str_replace(["\r", "\n"], "", $v);
-            $tmp[] = "$k: $v";
-        }
-
-        return $tmp;
     }
 }

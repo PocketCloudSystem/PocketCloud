@@ -10,12 +10,6 @@ final class RateLimiter {
     public const int DEFAULT_TIMEOUT = 120;
     public const int DEFAULT_MAX_REQUESTS = 10;
     public const int DEFAULT_TIME_FRAME = 10;
-
-
-    public static function configure(bool $enabled, int $timeout, int $maxRequests, int $timeFrame): self {
-        return new self($enabled, $timeout, $maxRequests, $timeFrame);
-    }
-
     private array $requests = [];
     private array $rateLimits = [];
 
@@ -30,13 +24,8 @@ final class RateLimiter {
         if ($this->timeFrame < 0) $this->timeFrame = self::DEFAULT_TIME_FRAME;
     }
 
-    public function rateLimit(Address $address, ?int $timeout = null): int {
-        if (!$this->enabled) return -1;
-        $timeout = $timeout ?? $this->timeout;
-        if ($timeout < 0) $timeout = self::DEFAULT_TIMEOUT;
-        $this->rateLimits[$address->getAddress()] = time() + $timeout;
-        CloudLogger::get()->info("Rate limited §b{} §rfor §b{}§rs", $address, $timeout);
-        return $this->rateLimits[$address->getAddress()];
+    public static function configure(bool $enabled, int $timeout, int $maxRequests, int $timeFrame): self {
+        return new self($enabled, $timeout, $maxRequests, $timeFrame);
     }
 
     /**
@@ -51,7 +40,8 @@ final class RateLimiter {
             return false;
         }
 
-        if (!isset($this->requests[$address->getAddress()]) || $this->requests[$address->getAddress()]["timestamp"] <= time())
+        if (!isset($this->requests[$address->getAddress()]) ||
+            $this->requests[$address->getAddress()]["timestamp"] <= time())
             $this->requests[$address->getAddress()] = [
                 "count" => 0,
                 "timestamp" => time() + $this->timeFrame
@@ -73,6 +63,15 @@ final class RateLimiter {
         }
 
         return false;
+    }
+
+    public function rateLimit(Address $address, ?int $timeout = null): int {
+        if (!$this->enabled) return -1;
+        $timeout = $timeout ?? $this->timeout;
+        if ($timeout < 0) $timeout = self::DEFAULT_TIMEOUT;
+        $this->rateLimits[$address->getAddress()] = time() + $timeout;
+        CloudLogger::get()->info("Rate limited §b{} §rfor §b{}§rs", $address, $timeout);
+        return $this->rateLimits[$address->getAddress()];
     }
 
     public function isEnabled(): bool {

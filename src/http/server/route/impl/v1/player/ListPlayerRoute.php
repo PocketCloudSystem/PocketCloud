@@ -6,7 +6,7 @@ use pocketcloud\cloud\group\ServerGroupManager;
 use pocketcloud\cloud\http\server\io\Request;
 use pocketcloud\cloud\http\server\io\ResponseBuilder;
 use pocketcloud\cloud\http\server\route\impl\v1\ApiV1JsonPath;
-use pocketcloud\cloud\http\server\util\HttpConstants;
+use pocketcloud\cloud\http\util\RequestMethod;
 use pocketcloud\cloud\player\CloudPlayerManager;
 use pocketcloud\cloud\server\CloudServerManager;
 use pocketcloud\cloud\template\TemplateManager;
@@ -16,7 +16,7 @@ final class ListPlayerRoute extends ApiV1JsonPath {
     public function __construct() {
         parent::__construct(
             "/players",
-            HttpConstants::GET,
+            RequestMethod::GET,
             0
         );
     }
@@ -29,7 +29,8 @@ final class ListPlayerRoute extends ApiV1JsonPath {
         if ($server !== null) $availableFilters[] = CloudServerManager::getInstance()->get($server);
         if ($template !== null) $availableFilters[] = TemplateManager::getInstance()->get($template);
         if ($group !== null) $availableFilters[] = ServerGroupManager::getInstance()->get($group);
-        $availableFilter = array_values(array_slice(array_filter($availableFilters, fn(mixed $v) => $v !== null), 0, 1));
+        $availableFilter = array_values(array_slice(array_filter($availableFilters, fn(mixed $v) => $v !==
+            null), 0, 1));
 
         $playerList = [];
         foreach (CloudPlayerManager::getInstance()->getAll($availableFilter[0] ?? null) as $player) {

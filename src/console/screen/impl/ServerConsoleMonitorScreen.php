@@ -16,7 +16,6 @@ use Throwable;
 
 final class ServerConsoleMonitorScreen extends Screen {
 
-    private ?ServerConsoleOutputHandler $outputHandler = null;
     private ?ILogger $logger = null;
     private ?ServerLogStream $stream = null;
 
@@ -73,8 +72,8 @@ final class ServerConsoleMonitorScreen extends Screen {
 
         $this->setPrompt("§c" . TerminalUtils::getCurrentUser() . "§8@§b" . $this->serverName. " §7» §r");
 
-        $this->setOutputHandler($this->outputHandler = new ServerConsoleOutputHandler());
-        $this->outputHandler->addAuthorizedLogger($this->logger);
+        $this->setOutputHandler($outputHandler = new ServerConsoleOutputHandler());
+        $outputHandler->addAuthorizedLogger($this->logger);
 
         $this->openLogStream();
     }

@@ -58,8 +58,10 @@ final class Network extends Thread {
         PacketPool::init();
 
         $this->handlerEntry = PocketCloud::getInstance()->getSleeperHandler()->addNotifier(function (): void {
+            $processed = 0;
             /** @var UnhandledPacket $unhandledPacket */
-            while (($unhandledPacketData = $this->buffer->shift()) !== null) {
+            while ($processed < 50 && ($unhandledPacketData = $this->buffer->shift()) !== null) {
+                $processed++;
                 if (!$this->established) return;
                 [$address, $port, $buffer, $bytes] = $unhandledPacketData;
                 $unhandledPacket = new UnhandledPacket($buffer, Address::create($address, $port), $bytes);
@@ -161,6 +163,7 @@ final class Network extends Thread {
                 }
             }
 
+            $wakeNeeded = false;
             foreach ($clientSockets as $addrStr => $clientSocket) {
                 if (!in_array($clientSocket, $read, true)) continue;
 
@@ -199,9 +202,11 @@ final class Network extends Thread {
 
                     [$addr, $port] = explode(":", $addrStr, 2);
                     $this->buffer[] = ThreadSafeArray::fromArray([$addr, (int) $port, $buffer, $length]);
-                    $notifier->wakeupSleeper();
+                    $wakeNeeded = true;
                 }
             }
+
+            if ($wakeNeeded) $notifier->wakeupSleeper();
         }
 
         foreach ($clientSockets as $sock) {

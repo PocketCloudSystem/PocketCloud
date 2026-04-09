@@ -196,8 +196,6 @@ final class ManualConsole {
                     $this->tabActive = false;
                     return;
                 }
-                $this->displayTabMatches();
-                return;
             } else {
                 $this->tabIndex = 0;
                 $match = $this->tabMatches[0];
@@ -205,9 +203,10 @@ final class ManualConsole {
                 $this->input = implode(" ", $tokens) . $afterCursor;
                 $this->cursor = mb_strlen(implode(" ", $tokens));
                 $this->redraw($prompt);
-                $this->displayTabMatches();
-                return;
             }
+
+            $this->displayTabMatches();
+            return;
         }
 
         $this->tabIndex = ($this->tabIndex + 1) % count($this->tabMatches);

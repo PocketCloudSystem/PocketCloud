@@ -52,8 +52,8 @@ final class MonitorScreen extends Screen {
             $formattedMemoryUsage = FormatUtils::bytes($memoryUsage);
 
             $this->echo("§rUptime: §b" . str_replace("§8", "§b", $uptime) . " §8(§c{$currentTick}§8) §8| §rThreads: §c" . $threadCount);
-            $this->echo("§rMemory Usage: §b" . $formattedMemoryUsage . " " . $this->drawPctBars($memoryUsage, $memoryLimit, 10, $memPct) . " " . $this->formatPercentageWithColor($memPct) . $memPct . "%");
-            $this->echo("§rCPU Usage: " . $this->drawPctBars($cpuUsage / ProcessUtils::getCpuCores(), 100, 10, $cpuPct) . " " . $this->formatPercentageWithColor($cpuPct) . $cpuPct . "%");
+            $this->echo("§rMemory Usage: §b" . $formattedMemoryUsage . " " . $this->drawPctBars($memoryUsage, $memoryLimit, $memPct) . " " . $this->formatPercentageWithColor($memPct) . $memPct . "%");
+            $this->echo("§rCPU Usage: " . $this->drawPctBars($cpuUsage / ProcessUtils::getCpuCores(), 100, $cpuPct) . " " . $this->formatPercentageWithColor($cpuPct) . $cpuPct . "%");
             $this->echo("§rTPS: " . FormatUtils::tps($tps) . " §8(§rAverage: " . FormatUtils::tps($avgTps) . "§8) §8| §rTick Usage: §e" . FormatUtils::usagePercentage($tickUsage));
             $this->echo("§rPlayer Count: §b" . $playerCount . " player" . ($playerCount == 1 ? "" : "s"));
             $this->echo("§rAverage Total Traffic: §aIN §b" . FormatUtils::bytes($totalAvgAllTimeTrafficIn) . "/s §8| §cOUT §b" . FormatUtils::bytes($totalAvgAllTimeTrafficOut) . "/s");
@@ -145,19 +145,19 @@ final class MonitorScreen extends Screen {
         }
     }
 
-    private function drawPctBars(float $value, float $max, int $barsCount, ?float &$pct = null, ?float &$leftOverPct = null): string {
+    private function drawPctBars(float $value, float $max, ?float &$pct = null): string {
         $pct = min(100, round($max > 0 ? ($value * 100 / $max) : 100));
         $leftOverPct = 100 - $pct;
-        $occupiedBarsCount = floor(($pct / $barsCount) / 10);
-        $freeBarsCount = floor(abs(($leftOverPct - $pct) / $barsCount));
+        $occupiedBarsCount = floor(($pct / 10) / 10);
+        $freeBarsCount = floor(abs(($leftOverPct - $pct) / 10));
         return "§8[§c" . str_repeat("|", $occupiedBarsCount) . "§a" . str_repeat("=", $freeBarsCount) . "§r§8]";
     }
 
-    private function formatPercentageWithColor(float $percentage, bool $lowerBetter = true): string {
+    private function formatPercentageWithColor(float $percentage): string {
         return match (true) {
-            $percentage < 60 => ($lowerBetter ? "§a" : "§c"),
+            $percentage < 60 => "§a",
             $percentage < 85 => "§e",
-            default => ($lowerBetter ? "§c" : "§a")
+            default => "§c"
         };
     }
 

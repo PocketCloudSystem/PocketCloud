@@ -5,7 +5,7 @@ namespace pocketcloud\cloud\http\server\route\impl\v1\maintenance;
 use pocketcloud\cloud\http\server\io\Request;
 use pocketcloud\cloud\http\server\io\ResponseBuilder;
 use pocketcloud\cloud\http\server\route\impl\v1\ApiV1JsonPath;
-use pocketcloud\cloud\http\server\util\HttpConstants;
+use pocketcloud\cloud\http\util\RequestMethod;
 use pocketcloud\cloud\provider\CloudProvider;
 
 final class MaintenanceAddRoute extends ApiV1JsonPath {
@@ -13,7 +13,7 @@ final class MaintenanceAddRoute extends ApiV1JsonPath {
     public function __construct() {
         parent::__construct(
             "/maintenance",
-            HttpConstants::POST,
+            RequestMethod::POST,
             32,
             ["player" => "string"]
         );

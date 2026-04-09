@@ -3,13 +3,14 @@
 namespace pocketcloud\cloud\http\server\io;
 
 use pocketcloud\cloud\http\server\route\Path;
+use pocketcloud\cloud\http\util\RequestMethod;
 use pocketcloud\cloud\util\net\Address;
 
 final readonly class Request {
 
     public function __construct(
         private Address $address,
-        private string $method,
+        private RequestMethod $method,
         private Path $path,
         private array $queries,
         private array $headers,
@@ -45,7 +46,7 @@ final readonly class Request {
         return $this->address;
     }
 
-    public function getMethod(): string {
+    public function getMethod(): RequestMethod {
         return $this->method;
     }
 

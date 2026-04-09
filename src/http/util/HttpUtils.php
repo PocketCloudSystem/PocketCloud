@@ -1,9 +1,11 @@
 <?php
 
-namespace pocketcloud\cloud\http\server\util;
+namespace pocketcloud\cloud\http\util;
 
 use pocketcloud\cloud\http\server\HttpServer;
 use pocketcloud\cloud\http\server\io\Request;
+use pocketcloud\cloud\http\server\util\HttpConstants;
+use pocketcloud\cloud\http\server\util\StatusCode;
 use pocketcloud\cloud\util\net\Address;
 
 final class HttpUtils {
@@ -20,13 +22,12 @@ final class HttpUtils {
 
         [$method, $fullPath, $protocol] = $parts;
 
-        if (!in_array($method, HttpConstants::SUPPORTED_REQUEST_METHODS, true)) return StatusCode::METHOD_NOT_ALLOWED;
+        if (($method = RequestMethod::fromName($method)) === null) return StatusCode::METHOD_NOT_ALLOWED;
         if (!preg_match("/^HTTP\/1\.[01]$/", $protocol)) return StatusCode::HTTP_VERSION_NOT_SUPPORTED;
 
         $fullPath = "/" . trim($fullPath, "/");
 
-        if (str_contains($fullPath, "\0") ||
-            str_contains($fullPath, "..")) {
+        if (str_contains($fullPath, "\0") || str_contains($fullPath, "..")) {
             return StatusCode::BAD_REQUEST;
         }
 
@@ -73,7 +74,7 @@ final class HttpUtils {
 
         $body = rtrim($body, "\r\n");
         if (isset($headers["Content-Length"])) {
-            $contentLength = (int) $headers["Content-Length"];
+            $contentLength = (int)$headers["Content-Length"];
             if ($contentLength > HttpConstants::MAX_REQUEST_SIZE) {
                 return StatusCode::PAYLOAD_TOO_LARGE;
             }

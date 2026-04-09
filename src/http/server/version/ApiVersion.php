@@ -23,10 +23,6 @@ class ApiVersion {
         $this->paths[$method][] = "/" . trim($path, "/");
     }
 
-    public function getVersion(): string {
-        return $this->version;
-    }
-
     public function getAuthentication(): Authentication {
         return $this->authentication;
     }
@@ -34,6 +30,10 @@ class ApiVersion {
     public function isValidPath(string $method, string $path): bool {
         $path = "/" . trim(str_replace($this->getVersion() . "/", "", $path), "/");
         return in_array($path, $this->paths[$method] ?? []);
+    }
+
+    public function getVersion(): string {
+        return $this->version;
     }
 
     public function getPaths(): array {

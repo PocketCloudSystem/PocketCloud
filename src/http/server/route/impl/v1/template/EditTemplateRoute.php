@@ -5,7 +5,7 @@ namespace pocketcloud\cloud\http\server\route\impl\v1\template;
 use pocketcloud\cloud\http\server\io\Request;
 use pocketcloud\cloud\http\server\io\ResponseBuilder;
 use pocketcloud\cloud\http\server\route\impl\v1\ApiV1JsonPath;
-use pocketcloud\cloud\http\server\util\HttpConstants;
+use pocketcloud\cloud\http\util\RequestMethod;
 use pocketcloud\cloud\template\TemplateHelper;
 use pocketcloud\cloud\template\TemplateManager;
 
@@ -27,8 +27,8 @@ final class EditTemplateRoute extends ApiV1JsonPath {
     public function __construct() {
         parent::__construct(
             "/templates/{name}",
-            HttpConstants::PATCH,
-            2**9
+            RequestMethod::PATCH,
+            2 ** 9
         );
     }
 
@@ -69,7 +69,8 @@ final class EditTemplateRoute extends ApiV1JsonPath {
             }
 
             if (!TemplateHelper::checkRawValue($body[$key], $key, $expectedValue)) {
-                $response->body(["message" => "Invalid value for key: $key, expected: $expectedValue, got " . gettype($body[$key])]);
+                $response->body(["message" => "Invalid value for key: $key, expected: $expectedValue, got " .
+                    gettype($body[$key])]);
                 return true;
             }
         }

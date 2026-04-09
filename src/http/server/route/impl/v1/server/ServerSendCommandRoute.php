@@ -5,7 +5,7 @@ namespace pocketcloud\cloud\http\server\route\impl\v1\server;
 use pocketcloud\cloud\http\server\io\Request;
 use pocketcloud\cloud\http\server\io\ResponseBuilder;
 use pocketcloud\cloud\http\server\route\impl\v1\ApiV1JsonPath;
-use pocketcloud\cloud\http\server\util\HttpConstants;
+use pocketcloud\cloud\http\util\RequestMethod;
 use pocketcloud\cloud\server\CloudServerManager;
 
 final class ServerSendCommandRoute extends ApiV1JsonPath {
@@ -17,8 +17,8 @@ final class ServerSendCommandRoute extends ApiV1JsonPath {
     public function __construct() {
         parent::__construct(
             "/servers/{name}/execute",
-            HttpConstants::POST,
-            2**8,
+            RequestMethod::POST,
+            2 ** 8,
             ["command" => "string"]
         );
     }

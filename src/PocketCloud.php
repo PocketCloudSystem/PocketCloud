@@ -478,7 +478,7 @@ final class PocketCloud {
                 $webhook = LogSettingsConfig::getInstance()->getWebhook();
                 if ($webhook instanceof Webhook) {
                     $trace = substr($crashDump->hasTrace() ? $crashDump->stringifyTrace()  : "No trace available", 0, 1000);
-                    $webhook->createMessage(false)
+                    $webhook->createMessage()
                         ->setUsername("PocketCloud Notifications | " . MainConfig::getInstance()->getCloudName())
                         ->setAvatarUrl("https://avatars.githubusercontent.com/u/97796660?s=400&u=a65bced92fb37ce5bafc5f1eff9e2845fe66a9cb&v=4")
                         ->addEmbed(Embed::create()
@@ -504,14 +504,18 @@ final class PocketCloud {
                 $webhook = LogSettingsConfig::getInstance()->getWebhook();
                 if ($webhook instanceof Webhook) {
                     try {
-                        $webhook->createMessage(false)
+                        $trace = substr($e->getTraceAsString(), 0, 1000);
+                        $webhook->createMessage()
                             ->setUsername("PocketCloud Notifications")
                             ->setAvatarUrl("https://avatars.githubusercontent.com/u/97796660?s=400&u=a65bced92fb37ce5bafc5f1eff9e2845fe66a9cb&v=4")
                             ->addEmbed(Embed::create()
                                 ->setTitle("Notification | Cloud Crashed")
                                 ->setDescription("`The cloud crashed while creating a crash dump.`")
                                 ->setColor(0xFF0000)
+                                ->addField("**Error Code**", "> " . $e->getCode(), true)
+                                ->addField("**File**", "> " . $e->getFile() . " (L: " . $e->getLine() . ")", true)
                                 ->addField("**Message**", "> " . $e->getMessage())
+                                ->addField("**Trace**", "```php\n" . $trace . "\n```")
                                 ->setTimestamp(time())
                             )
                             ->send();

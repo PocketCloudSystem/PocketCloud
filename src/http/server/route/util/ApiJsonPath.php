@@ -8,6 +8,7 @@ use pocketcloud\cloud\http\server\io\ResponseBuilder;
 use pocketcloud\cloud\http\server\route\ApiPath;
 use pocketcloud\cloud\http\server\socket\auth\Authentication;
 use pocketcloud\cloud\http\server\util\StatusCode;
+use pocketcloud\cloud\http\util\RequestMethod;
 use pocketcloud\cloud\util\PathUtils;
 use pocketcloud\cloud\util\Utils;
 use Throwable;
@@ -24,16 +25,16 @@ abstract class ApiJsonPath extends ApiPath {
     /**
      * @param string $path
      * @param string $version
-     * @param string $requestMethod
+     * @param RequestMethod $requestMethod
      * @param int $maxPayloadLength
      * @param array $requiredBodyStructure
-     * @see Utils::validateArraySignature()
      * @param Authentication $authentication
+     * @see Utils::validateArraySignature()
      */
     public function __construct(
         string $path,
         string $version,
-        string $requestMethod,
+        RequestMethod $requestMethod,
         private int $maxPayloadLength,
         private readonly array $requiredBodyStructure,
         Authentication $authentication
@@ -43,7 +44,9 @@ abstract class ApiJsonPath extends ApiPath {
     }
 
     final public function handle(Request $request): Response {
-        $this->onHandle($request, $resBuilder = ResponseBuilder::create()->code(StatusCode::OK), $this->requestBody ?? []);
+        $this->onHandle($request, $resBuilder = ResponseBuilder::create()->code(StatusCode::OK), $this->requestBody
+            ??
+            []);
         $this->requestBody = null;
         return $resBuilder->build();
     }

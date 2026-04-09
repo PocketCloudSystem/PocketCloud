@@ -6,14 +6,14 @@ use pocketcloud\cloud\group\ServerGroupManager;
 use pocketcloud\cloud\http\server\io\Request;
 use pocketcloud\cloud\http\server\io\ResponseBuilder;
 use pocketcloud\cloud\http\server\route\impl\v1\ApiV1JsonPath;
-use pocketcloud\cloud\http\server\util\HttpConstants;
+use pocketcloud\cloud\http\util\RequestMethod;
 
 final class RemoveGroupRoute extends ApiV1JsonPath {
 
     public function __construct() {
         parent::__construct(
             "/groups/{name}",
-            HttpConstants::DELETE,
+            RequestMethod::DELETE,
             0
         );
     }

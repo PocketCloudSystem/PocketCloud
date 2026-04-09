@@ -4,12 +4,12 @@ namespace pocketcloud\cloud\http\server\io;
 
 use pmmp\thread\ThreadSafe;
 use pmmp\thread\ThreadSafeArray;
-use pocketcloud\cloud\http\server\util\HttpUtils;
 use pocketcloud\cloud\http\server\util\StatusCode;
+use pocketcloud\cloud\http\util\HttpUtils;
 
 final class Response extends ThreadSafe {
 
-	public function __construct(
+    public function __construct(
         private readonly int $statusCode,
         private readonly string $body,
         private readonly ?string $customMessage,
@@ -18,7 +18,7 @@ final class Response extends ThreadSafe {
 
     public function buildResponseString(): string {
         $httpResponse = "HTTP/1.1 " . $this->statusCode . " " . StatusCode::toString($this->statusCode) . "\r\n";
-        $httpResponse .=  implode("\r\n", HttpUtils::encodeHeaders((array) $this->headers)) . "\r\n";
+        $httpResponse .= implode("\r\n", HttpUtils::encodeHeaders((array)$this->headers)) . "\r\n";
         $httpResponse .= "\r\n";
         $httpResponse .= $this->body;
         return $httpResponse;
@@ -33,7 +33,7 @@ final class Response extends ThreadSafe {
     }
 
     public function getHeaders(): array {
-        return (array) $this->headers;
+        return (array)$this->headers;
     }
 
     public function getStatusCode(): int {

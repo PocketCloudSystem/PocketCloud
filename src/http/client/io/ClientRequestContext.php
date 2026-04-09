@@ -4,10 +4,10 @@ namespace pocketcloud\cloud\http\client\io;
 
 use CurlHandle;
 use InvalidArgumentException;
-use pocketcloud\cloud\http\client\thread\misc\PendingRequest;
 use pocketcloud\cloud\http\client\util\MultipartBody;
-use pocketcloud\cloud\http\client\util\RequestMethod;
-use pocketcloud\cloud\http\client\util\StatusCode;
+use pocketcloud\cloud\http\util\HttpUtils;
+use pocketcloud\cloud\http\util\RequestMethod;
+use pocketcloud\cloud\http\util\StatusCode;
 use RuntimeException;
 use Throwable;
 
@@ -80,7 +80,7 @@ final class ClientRequestContext {
             $opts[CURLOPT_CUSTOMREQUEST] = $this->method->name;
         }
 
-        $opts[CURLOPT_HTTPHEADER] = PendingRequest::encodeHeaders($this->headers);
+        $opts[CURLOPT_HTTPHEADER] = HttpUtils::encodeHeaders($this->headers);
         curl_setopt_array($this->curlHandle, $opts);
         return $this->curlHandle;
     }
