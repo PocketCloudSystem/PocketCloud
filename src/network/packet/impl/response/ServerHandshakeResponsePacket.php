@@ -14,6 +14,10 @@ final class ServerHandshakeResponsePacket extends ResponsePacket {
         $packetData->writeAll($this->verifyStatus);
     }
 
+    public function getVerifyStatus(): ?VerifyStatus {
+        return $this->verifyStatus;
+    }
+
     public static function create(VerifyStatus $verifyStatus): self {
         return new self($verifyStatus);
     }

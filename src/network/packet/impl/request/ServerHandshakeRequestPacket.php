@@ -3,6 +3,8 @@
 namespace pocketcloud\cloud\network\packet\impl\request;
 
 use pocketcloud\cloud\console\log\CloudLogger;
+use pocketcloud\cloud\event\impl\server\ServerPostVerificationEvent;
+use pocketcloud\cloud\event\impl\server\ServerVerifyEvent;
 use pocketcloud\cloud\network\client\ServerClient;
 use pocketcloud\cloud\network\client\ServerClientCache;
 use pocketcloud\cloud\network\packet\data\VerifyStatus;
@@ -23,6 +25,12 @@ final class ServerHandshakeRequestPacket extends RequestPacket {
 
     public function handle(ServerClient $client): void {
         if (($server = CloudServerManager::getInstance()->get($this->serverName)) !== null && ServerClientCache::getInstance()->getServer($client) === null) {
+            ($ev = new ServerVerifyEvent($server))->call();
+            if ($ev->isCancelled()) {
+                CloudLogger::get()->warn("Denied server handshake request from §b{} §8(§b{}§8)", $this->serverName, $client->getAddress());
+                return;
+            }
+
             ServerClientCache::getInstance()->add($server, $client);
             CloudLogger::get()->success("The server §b{} §rhas §aconnected §rto the cloud. §8(§rTook §b{}§rs§8)", $server->getName(), round(microtime(true) - $server->getStartTime(), 3));
             $server->getServerData()->setMaxPlayers($this->maxPlayers);
@@ -30,6 +38,7 @@ final class ServerHandshakeRequestPacket extends RequestPacket {
             $server->setVerifyStatus(VerifyStatus::VERIFIED);
             $server->addToProxies();
             $server->sync();
+            new ServerPostVerificationEvent($server)->call();
             $this->sendResponse(new ServerHandshakeResponsePacket(VerifyStatus::VERIFIED), $client);
             ServerSyncPacket::create($server, false)->broadcastPacket()->failure(fn(?string $reason) => CloudLogger::get()->warn("Failed to broadcast server creation, reason: §b{}", $reason ?? "None"));
             $server->setServerStatus(ServerStatus::ONLINE);
@@ -41,6 +50,18 @@ final class ServerHandshakeRequestPacket extends RequestPacket {
 
     public function decodePayload(PacketData $packetData): void {
         $packetData->readAll($this->serverName, $this->processId, $this->maxPlayers);
+    }
+
+    public function getServerName(): string {
+        return $this->serverName;
+    }
+
+    public function getProcessId(): int {
+        return $this->processId;
+    }
+
+    public function getMaxPlayers(): int {
+        return $this->maxPlayers;
     }
 
     public static function create(string $serverName, int $processId, int $maxPlayers): self {
