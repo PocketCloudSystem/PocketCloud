@@ -2,6 +2,7 @@
 
 namespace pocketcloud\cloud\scheduler;
 
+use Closure;
 use pocketcloud\cloud\plugin\CloudPlugin;
 use pocketcloud\cloud\util\misc\Tickable;
 
@@ -12,21 +13,22 @@ final class TaskScheduler implements Tickable {
 
     public function __construct(private readonly CloudPlugin $owner) {}
 
-    private function scheduleTask(Task $task, int $delay, int $period, bool $repeat): void {
+    private function scheduleTask(Closure|Task $task, int $delay, int $period, bool $repeat): void {
+        $task = $task instanceof Task ? $task : new ClosureTask($task);
         $taskHandler = new TaskHandler($task, $delay, $period, $repeat, $this->owner);
         $task->setTaskHandler($taskHandler);
         $this->tasks[$taskHandler->getId()] = $taskHandler;
     }
 
-    public function scheduleDelayedTask(Task $task, int $delay): void {
+    public function scheduleDelayedTask(Closure|Task $task, int $delay): void {
         $this->scheduleTask($task, $delay, -1, false);
     }
 
-    public function scheduleRepeatingTask(Task $task, int $period): void {
+    public function scheduleRepeatingTask(Closure|Task $task, int $period): void {
         $this->scheduleTask($task, -1, $period, true);
     }
 
-    public function scheduleDelayedRepeatingTask(Task $task, int $delay, int $period): void {
+    public function scheduleDelayedRepeatingTask(Closure|Task $task, int $delay, int $period): void {
         $this->scheduleTask($task, $delay, $period, true);
     }
 
