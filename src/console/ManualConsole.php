@@ -115,22 +115,43 @@ final class ManualConsole {
             return null;
         }
 
+        // Fix: Backspace-Batching — alle aufeinanderfolgenden Backspaces auf einmal verarbeiten
         if ($char === "\177") {
-            if ($this->cursor > 0) {
-                $before = mb_substr($this->input, 0, $this->cursor - 1);
+            $deleteCount = 1;
+            while (true) {
+                $next = $this->readChar(0);
+                if ($next === null) break;
+                if ($next === "\177") {
+                    $deleteCount++;
+                } else {
+                    $this->pendingChar = $next;
+                    break;
+                }
+            }
+            $deleteCount = min($deleteCount, $this->cursor);
+            if ($deleteCount > 0) {
+                $before = mb_substr($this->input, 0, $this->cursor - $deleteCount);
                 $after = mb_substr($this->input, $this->cursor);
                 $this->input = $before . $after;
-                $this->cursor--;
+                $this->cursor -= $deleteCount;
                 $this->redraw($this->prompt);
             }
             return null;
         }
 
         if ($this->typingEnabled) {
+            // Fix: Paste-Timing — kurz warten wenn Buffer leer, damit Terminal alle Zeichen liefern kann
             $batch = $char;
+            $nullStreak = 0;
             while (true) {
                 $next = $this->readChar(0);
-                if ($next === null) break;
+                if ($next === null) {
+                    $nullStreak++;
+                    if ($nullStreak >= 3) break;
+                    usleep(5000); // 5ms warten ob noch mehr kommt
+                    continue;
+                }
+                $nullStreak = 0;
                 if (
                     $next === "\n" || $next === "\r" ||
                     $next === "\033" || $next === "\177" ||
@@ -342,6 +363,7 @@ final class ManualConsole {
         return implode("", $bytes);
     }
 
+    // Fix: redraw bei Links/Rechts hinzugefügt
     private function handleEscapeSequence(string $seq, string $prompt): void {
         $this->ensureOpen();
         switch ($seq) {
@@ -350,7 +372,6 @@ final class ManualConsole {
                     $this->historyIndex--;
                     $this->input = $this->history[$this->historyIndex];
                 }
-
                 $this->cursor = mb_strlen($this->input);
                 $this->redraw($prompt);
                 break;
@@ -364,15 +385,16 @@ final class ManualConsole {
                         $this->historyIndex = count($this->history);
                     }
                 }
-
                 $this->cursor = mb_strlen($this->input);
                 $this->redraw($prompt);
                 break;
             case "[C": // Right
                 if ($this->cursor < mb_strlen($this->input)) $this->cursor++;
+                $this->redraw($prompt);
                 break;
             case "[D": // Left
                 if ($this->cursor > 0) $this->cursor--;
+                $this->redraw($prompt);
                 break;
         }
     }
