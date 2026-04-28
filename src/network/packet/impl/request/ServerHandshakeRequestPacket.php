@@ -13,6 +13,7 @@ use pocketcloud\cloud\network\packet\impl\ServerSyncPacket;
 use pocketcloud\cloud\network\packet\RequestPacket;
 use pocketcloud\cloud\network\packet\util\PacketData;
 use pocketcloud\cloud\server\CloudServerManager;
+use pocketcloud\cloud\server\util\ServerStartSnapshot;
 use pocketcloud\cloud\server\util\ServerStatus;
 
 final class ServerHandshakeRequestPacket extends RequestPacket {
@@ -31,6 +32,20 @@ final class ServerHandshakeRequestPacket extends RequestPacket {
                 return;
             }
 
+            $post = ServerStartSnapshot::capture();
+            $pre = $server->getPreStartSnapshot();
+            $elapsed = round($post->capturedAt - $pre->capturedAt, 2);
+
+            CloudLogger::get()->debug(
+                "§b{}§r started in §a{}s§r | TPS: §e{}§r→§e{}§r | TickUsage: §e{}%§r→§e{}%§r | CPU: §e{}%§r→§e{}%§r | RAM: §e{}MB§r→§e{}MB",
+                $server->getName(), $elapsed,
+                round($pre->avgTps, 1), round($post->avgTps, 1),
+                round($pre->tickUsage, 1), round($post->tickUsage, 1),
+                round($pre->cpuUsage, 1), round($post->cpuUsage, 1),
+                round($pre->memoryUsage), round($post->memoryUsage)
+            );
+
+            $server->setPostStartSnapshot($post);
             ServerClientCache::getInstance()->add($server, $client);
             CloudLogger::get()->success("The server §b{} §rhas §aconnected §rto the cloud. §8(§rTook §b{}§rs§8)", $server->getName(), round(microtime(true) - $server->getStartTime(), 3));
             $server->getServerData()->setMaxPlayers($this->maxPlayers);

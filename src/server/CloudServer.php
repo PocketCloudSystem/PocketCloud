@@ -14,6 +14,7 @@ use pocketcloud\cloud\network\packet\CloudPacket;
 use pocketcloud\cloud\network\packet\data\NotificationType;
 use pocketcloud\cloud\network\packet\data\ServerDisconnectReason;
 use pocketcloud\cloud\network\packet\data\VerifyStatus;
+use pocketcloud\cloud\network\packet\impl\BulkSyncPacket;
 use pocketcloud\cloud\network\packet\impl\DisconnectPacket;
 use pocketcloud\cloud\network\packet\impl\LanguageSyncPacket;
 use pocketcloud\cloud\network\packet\impl\LibrarySyncPacket;
@@ -26,6 +27,7 @@ use pocketcloud\cloud\network\packet\impl\ServerSyncPacket;
 use pocketcloud\cloud\network\packet\impl\TemplateSyncPacket;
 use pocketcloud\cloud\player\CloudPlayer;
 use pocketcloud\cloud\player\CloudPlayerManager;
+use pocketcloud\cloud\PocketCloud;
 use pocketcloud\cloud\server\data\CloudServerData;
 use pocketcloud\cloud\server\data\CloudServerStorage;
 use pocketcloud\cloud\server\prepare\ServerPreparator;
@@ -33,6 +35,7 @@ use pocketcloud\cloud\server\prepare\ServerPrepareEntry;
 use pocketcloud\cloud\server\util\CloudServerActionsTrait;
 use pocketcloud\cloud\server\util\ServerLogStream;
 use pocketcloud\cloud\server\util\ServerStartMethod;
+use pocketcloud\cloud\server\util\ServerStartSnapshot;
 use pocketcloud\cloud\server\util\ServerStatus;
 use pocketcloud\cloud\template\Template;
 use pocketcloud\cloud\template\TemplateManager;
@@ -58,6 +61,9 @@ final class CloudServer implements Tickable, Writeable, DetailedWriteable {
     private VerifyStatus $verifyStatus;
     private CloudServerStorage $serverStorage;
 
+    private ?ServerStartSnapshot $preStartSnapshot = null;
+    private ?ServerStartSnapshot $postStartSnapshot = null;
+
     public function __construct(
         private readonly int $id,
         private readonly string $serverUuid,
@@ -68,7 +74,7 @@ final class CloudServer implements Tickable, Writeable, DetailedWriteable {
     ) {
         $this->verifyStatus = VerifyStatus::NOT_APPLIED;
         $this->serverStorage = new CloudServerStorage($this, $serverStorage);
-        $this->serverStatus = $serverStatus;
+        $this->serverStatus = $serverStatus ?? ServerStatus::PENDING;
     }
 
     public function tick(int $currentTick): void {
@@ -105,6 +111,7 @@ final class CloudServer implements Tickable, Writeable, DetailedWriteable {
         NotificationType::SERVER_STARTING->notify(["server" => $this->getName()]);
 
         ServerStartMethod::current()?->startServer($this)->then(function (?int $tmpPid): void {
+            $this->preStartSnapshot = ServerStartSnapshot::capture();
             $this->startTime = microtime(true);
             $this->serverData->setTempProcessId($tmpPid);
         })->failure(function (): void {
@@ -136,17 +143,13 @@ final class CloudServer implements Tickable, Writeable, DetailedWriteable {
     public function sync(): void {
         $packets = [
             LanguageSyncPacket::fromLanguage(), LibrarySyncPacket::fromLibraries(),
-            ModuleSyncPacket::fromModuleCache(), MaintenanceListSyncPacket::fromMaintenanceListCache(), NotificationListSyncPacket::fromNotificationListCache()
+            ModuleSyncPacket::fromModuleCache(), MaintenanceListSyncPacket::fromMaintenanceListCache(), NotificationListSyncPacket::fromNotificationListCache(),
+            BulkSyncPacket::generate()
         ];
 
-        foreach (TemplateManager::getInstance()->getAll() as $template) $packets[] = TemplateSyncPacket::create($template, false);
         foreach (CloudServerManager::getInstance()->getAll() as $server) {
-            if ($server->getServerStatus() === null) continue;
-            $packets[] = ServerSyncPacket::create($server, false);
             if ($this->getTemplate()->getTemplateType()->isProxy() && $server->getTemplate()->getTemplateType()->isServer()) $packets[] = ProxyRegisterServerPacket::create($server->getName(), $server->getServerData()->getPort());
         }
-
-        foreach (CloudPlayerManager::getInstance()->getAll() as $player) $packets[] = PlayerSyncPacket::create($player, false);
 
         foreach ($packets as $packet) $this->sendPacket($packet);
     }
@@ -174,6 +177,10 @@ final class CloudServer implements Tickable, Writeable, DetailedWriteable {
         return null;
     }
 
+    public function setPostStartSnapshot(?ServerStartSnapshot $postStartSnapshot): void {
+        $this->postStartSnapshot = $postStartSnapshot;
+    }
+
     public function setServerStatus(ServerStatus $serverStatus): void {
         $this->serverStatus = $serverStatus;
         ServerSyncPacket::create($this, false)->broadcastPacket();
@@ -192,11 +199,22 @@ final class CloudServer implements Tickable, Writeable, DetailedWriteable {
     }
 
     public function checkAlive(): bool {
-        $timeout = $this->getTemplate()->getTemplateType()->getServerTimeout();
-        if ((microtime(true) - $this->startTime) < $timeout) return true;
+        $baseTimeout = $this->getTemplate()->getTemplateType()->getServerTimeout();
+        $cloudTps = PocketCloud::getInstance()->getCurrentTPS();
+        $loadFactor = max(1.0, 20.0 / max(1.0, $cloudTps));
+        $effectiveTimeout = (int) ($baseTimeout * $loadFactor);
+        if ((microtime(true) - $this->startTime) < $effectiveTimeout) return true;
         if (!isset($this->lastCheckTime)) return false;
-        if ((time() - $this->lastCheckTime) < $timeout) return true;
+        if ((time() - $this->lastCheckTime) < $effectiveTimeout) return true;
         return false;
+    }
+
+    public function getPreStartSnapshot(): ?ServerStartSnapshot {
+        return $this->preStartSnapshot;
+    }
+
+    public function getPostStartSnapshot(): ?ServerStartSnapshot {
+        return $this->postStartSnapshot;
     }
 
     public function getServerClient(): ?ServerClient {

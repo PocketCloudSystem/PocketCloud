@@ -58,10 +58,8 @@ final class Network extends Thread {
         PacketPool::init();
 
         $this->handlerEntry = PocketCloud::getInstance()->getSleeperHandler()->addNotifier(function (): void {
-            $processed = 0;
-            /** @var UnhandledPacket $unhandledPacket */
-            while ($processed < 50 && ($unhandledPacketData = $this->buffer->shift()) !== null) {
-                $processed++;
+            $deadline = microtime(true) + 0.010;
+            while (microtime(true) < $deadline && ($unhandledPacketData = $this->buffer->shift()) !== null) {
                 if (!$this->established) return;
                 [$address, $port, $buffer, $bytes] = $unhandledPacketData;
                 $unhandledPacket = new UnhandledPacket($buffer, Address::create($address, $port), $bytes);

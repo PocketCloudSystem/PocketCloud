@@ -8,6 +8,7 @@ use pocketcloud\cloud\util\trait\EnumHelperTrait;
 enum ServerStatus: string implements Writeable {
     use EnumHelperTrait;
 
+    case PENDING = "§gPENDING";
     case STARTING = "§2STARTING";
     case ONLINE = "§aONLINE";
     case FULL = "§eFULL";
