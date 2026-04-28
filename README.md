@@ -1,4 +1,4 @@
-# PocketCloud [V4 - WIP]
+# PocketCloud [V4]
 
 A powerful **cloud infrastructure system** designed for **PocketMine-MP** servers with full **proxy support**.
 PocketCloud allows you to dynamically manage multiple Minecraft Bedrock servers, proxies, and services from a centralized system.
