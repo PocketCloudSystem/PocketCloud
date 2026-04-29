@@ -42,6 +42,12 @@ trait CloudServerActionsTrait {
         foreach ($crashData["trace"] as $message) CloudLogger::get()->error("§c" . $message);
     }
 
+    public function handleStartSuccess(?int $tmpPid): void {
+        $this->preStartSnapshot = ServerStartSnapshot::capture();
+        $this->startTime = microtime(true);
+        $this->serverData->setTempProcessId($tmpPid);
+    }
+
     /**
      * @param string $commandLine
      * @return Promise<ServerCommandExecutionResult>
@@ -71,16 +77,21 @@ trait CloudServerActionsTrait {
         }
     }
 
-    public function handleFailedStart(): void {
+    public function handleFailedStart(bool $processFailure = false): void {
         if ($this->getServerStatus() !== ServerStatus::STARTING) return;
         $this->setServerStatus(ServerStatus::OFFLINE);
-        $this->remove();
-        $this->killProcess();
+        if (!$processFailure) $this->killProcess();
         new ServerStartFailedEvent($this)->call();
 
-        if (!$this->checkForCrash()) CloudLogger::get()->warn("Failed to start the server §b{}§r, deleting data...", $this->getName());
-        NotificationType::SERVER_START_FAILED->notify(["server" => $this->getName()]);
+        if ($processFailure) {
+            CloudLogger::get()->warn("Failed to start server §b{}§8, §rcould not create the process...", $this);
+            NotificationType::SERVER_START_FAILED->notify(["server" => $this->getName(), "reason" => "Failed to create process"]);
+        } else {
+            if (!$this->checkForCrash()) CloudLogger::get()->warn("Failed to start the server §b{}§r, deleting data...", $this->getName());
+            NotificationType::SERVER_START_FAILED->notify(["server" => $this->getName()]);
+        }
 
+        $this->remove();
         $this->deleteTmpDir();
     }
 

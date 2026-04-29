@@ -55,7 +55,6 @@ final class ServerHandshakeRequestPacket extends RequestPacket {
             $server->sync();
             new ServerPostVerificationEvent($server)->call();
             $this->sendResponse(new ServerHandshakeResponsePacket(VerifyStatus::VERIFIED), $client);
-            ServerSyncPacket::create($server, false)->broadcastPacket()->failure(fn(?string $reason) => CloudLogger::get()->warn("Failed to broadcast server creation, reason: §b{}", $reason ?? "None"));
             $server->setServerStatus(ServerStatus::ONLINE);
         } else {
             CloudLogger::get()->warn("Denied server handshake request from §b{} §8(§b{}§8)§r, duplicate server...", $this->serverName, $client->getAddress());

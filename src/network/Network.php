@@ -27,6 +27,7 @@ use pocketcloud\cloud\thread\Thread;
 use pocketcloud\cloud\traffic\impl\NetworkTrafficMonitor;
 use pocketcloud\cloud\traffic\TrafficMonitor;
 use pocketcloud\cloud\traffic\TrafficMonitorManager;
+use pocketcloud\cloud\util\benchmark\Benchmark;
 use pocketcloud\cloud\util\net\Address;
 use pocketcloud\cloud\util\promise\Promise;
 use pocketcloud\cloud\util\trait\SingletonTrait;
@@ -61,6 +62,7 @@ final class Network extends Thread {
             $deadline = microtime(true) + 0.010;
             while (microtime(true) < $deadline && ($unhandledPacketData = $this->buffer->shift()) !== null) {
                 if (!$this->established) return;
+                Benchmark::startTiming("packet_receive_handling");
                 [$address, $port, $buffer, $bytes] = $unhandledPacketData;
                 $unhandledPacket = new UnhandledPacket($buffer, Address::create($address, $port), $bytes);
 
@@ -98,6 +100,8 @@ final class Network extends Thread {
                         ->debug($unhandledPacket->getBuffer());
                     CloudLogger::get()->exception($e);
                 }
+
+                Benchmark::stopTiming("packet_receive_handling");
             }
 
             while (($disconnectData = $this->disconnectBuffer->shift()) !== null) {
@@ -138,10 +142,19 @@ final class Network extends Thread {
         $clientBuffers = [];
 
         while ($this->established && $this->isAlive()) {
-            while (($item = $this->sendBuffer->shift()) !== null) {
-                [$addrStr, $buffer] = $item;
-                if (isset($clientSockets[$addrStr])) {
-                    $this->tcpWrite($clientSockets[$addrStr], $buffer);
+            while (($sendData = $this->sendBuffer->shift()) !== null) {
+                if ($sendData[0] === "__broadcast__") {
+                    [, $buffer, $targets] = $sendData;
+                    foreach ($targets as $addressStr) {
+                        if (isset($clientSockets[$addressStr])) {
+                            $this->tcpWrite($clientSockets[$addressStr], $buffer);
+                        }
+                    }
+                } else {
+                    [$addressStr, $buffer] = $sendData;
+                    if (isset($clientSockets[$addressStr])) {
+                        $this->tcpWrite($clientSockets[$addressStr], $buffer);
+                    }
                 }
             }
 
@@ -233,9 +246,15 @@ final class Network extends Thread {
         if (!$this->established) return false;
         ($ev = new NetworkPacketPreSendEvent($this, $client, $packet))->call();
         if ($ev->isCancelled()) return false;
+        Benchmark::startTiming("packet_send_handling");
         $buffer = PacketSerializer::encode($packet, MainConfig::getInstance()->isNetworkEncryptionEnabled(), $this->authenticationKey);
-        if ($buffer === null) return false;
+        if ($buffer === null) {
+            Benchmark::stopTiming("packet_send_handling");
+            return false;
+        }
+
         if (($size = strlen($buffer)) > $this->packetSizeLimit) {
+            Benchmark::stopTiming("packet_send_handling");
             new NetworkPacketTooLargeEvent($this, $client, $packet, $size, $buffer)->call();
             return false;
         }
@@ -249,34 +268,43 @@ final class Network extends Thread {
         );
 
         new NetworkPacketSentEvent($this, $client, $packet, $success)->call();
+        Benchmark::stopTiming("packet_send_handling");
         return $success;
     }
 
     public function broadcastPacket(ClientboundPacket $packet, ServerClient|TemplateType ...$exclusions): Promise {
         if (!$this->established) return Promise::all([]);
+        Benchmark::startTiming("packet_broadcast_send_handling");
+
         $buffer = PacketSerializer::encode($packet, MainConfig::getInstance()->isNetworkEncryptionEnabled(), $this->authenticationKey);
-        if ($buffer === null) return Promise::rejected("Buffer null");
+        if ($buffer === null) {
+            Benchmark::stopTiming("packet_broadcast_send_handling");
+            return Promise::rejected("Buffer null");
+        }
+
+        $targets = [];
         $promises = [];
         foreach (ServerClientCache::getInstance()->getAll() as $client) {
             if ($client->getServer() === null) continue;
             if (in_array($client, $exclusions) || in_array($client->getServer()->getTemplate()->getTemplateType(), $exclusions)) continue;
+
             ($ev = new NetworkPacketPreSendEvent($this, $client, $packet))->call();
             if ($ev->isCancelled()) {
-                $success = false;
-            } else {
-                $success = $this->write($buffer, $client->getAddress());
-                TrafficMonitorManager::getInstance()->callHandlers(
-                    TrafficMonitorManager::TRAFFIC_NETWORK,
-                    NetworkTrafficMonitor::parsePacketMode(NetworkTrafficMonitor::NETWORK_MODE_PACKET_OUT, $packet::class),
-                    $packet, $client->getAddress(), $success
-                );
-
-                new NetworkPacketSentEvent($this, $client, $packet, $success)->call();
+                $promises[] = Promise::rejected();
+                continue;
             }
 
-            $promises[] = $success ? Promise::resolved() : Promise::rejected();
+            $targets[] = $client->getAddress()->toString();
+            $promises[] = Promise::resolved();
         }
 
+        if (!empty($targets)) {
+            $this->sendBuffer[] = ThreadSafeArray::fromArray(['__broadcast__', $buffer, $targets]);
+            $totalBytes = strlen($buffer) * count($targets);
+            TrafficMonitorManager::getInstance()->pushBytes(TrafficMonitorManager::TRAFFIC_NETWORK, $totalBytes, TrafficMonitor::REGULAR_MODE_OUT);
+        }
+
+        Benchmark::stopTiming("packet_broadcast_send_handling");
         return Promise::all($promises);
     }
 

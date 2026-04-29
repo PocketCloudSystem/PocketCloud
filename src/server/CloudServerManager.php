@@ -6,6 +6,8 @@ use pocketcloud\cloud\console\log\CloudLogger;
 use pocketcloud\cloud\group\ServerGroup;
 use pocketcloud\cloud\network\packet\impl\ServerSyncPacket;
 use pocketcloud\cloud\server\data\CloudServerData;
+use pocketcloud\cloud\server\util\ServerStartMethod;
+use pocketcloud\cloud\server\util\ServerStatus;
 use pocketcloud\cloud\server\util\ServerUtils;
 use pocketcloud\cloud\template\Template;
 use pocketcloud\cloud\template\TemplateType;
@@ -19,6 +21,9 @@ use Throwable;
 
 final class CloudServerManager implements Tickable {
     use SingletonTrait;
+
+    private const int MULTI_START_THRESHOLD = 5;
+    private const int MULTI_START_BATCH_SIZE = 10;
 
     /** @var array<CloudServer> */
     private array $servers = [];
@@ -149,8 +154,31 @@ final class CloudServerManager implements Tickable {
 
         Benchmark::startTiming("check_server_start_queue");
         if ($currentTick >= $this->nextServerStartTime && !$this->serverStartQueue->isEmpty()) {
+            $method = ServerStartMethod::current();
+            $queueSize = $this->serverStartQueue->count();
+
+            if ($method->supportsMultiStart() && $queueSize >= self::MULTI_START_THRESHOLD) {
+                /** @var array<CloudServer> $batch */
+                $batch = [];
+                $limit = min($queueSize, self::MULTI_START_BATCH_SIZE);
+                for ($i = 0; $i < $limit; $i++) {
+                    $batch[] = $this->serverStartQueue->next();
+                }
+
+                foreach ($batch as $server) {
+                    $server->start(false);
+                }
+
+                if ($method->multiStartServer($batch)) {
+                    foreach ($batch as $server) $server->handleStartSuccess(null);
+                } else {
+                    foreach ($batch as $server) $server->handleFailedStart(true);
+                }
+            } else {
+                $this->serverStartQueue->next()->start();
+            }
+
             $this->nextServerStartTime = $currentTick + 10;
-            $this->serverStartQueue->next()->start();
         }
 
         Benchmark::stopTiming("check_server_start_queue");

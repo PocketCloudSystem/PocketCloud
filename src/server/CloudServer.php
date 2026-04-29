@@ -21,10 +21,8 @@ use pocketcloud\cloud\network\packet\impl\LibrarySyncPacket;
 use pocketcloud\cloud\network\packet\impl\MaintenanceListSyncPacket;
 use pocketcloud\cloud\network\packet\impl\ModuleSyncPacket;
 use pocketcloud\cloud\network\packet\impl\NotificationListSyncPacket;
-use pocketcloud\cloud\network\packet\impl\PlayerSyncPacket;
 use pocketcloud\cloud\network\packet\impl\ProxyRegisterServerPacket;
 use pocketcloud\cloud\network\packet\impl\ServerSyncPacket;
-use pocketcloud\cloud\network\packet\impl\TemplateSyncPacket;
 use pocketcloud\cloud\player\CloudPlayer;
 use pocketcloud\cloud\player\CloudPlayerManager;
 use pocketcloud\cloud\PocketCloud;
@@ -80,6 +78,11 @@ final class CloudServer implements Tickable, Writeable, DetailedWriteable {
     public function tick(int $currentTick): void {
         if ($this->startTime === null) return;
         if ($this->serverStatus === ServerStatus::STARTING) {
+            if ($this->serverData->getProcessId() === null && ServerStartMethod::current()->hasPidLookup()) {
+                $pid = ServerStartMethod::current()->lookupPid($this);
+                if ($pid !== null) $this->serverData->setTempProcessId($pid);
+            }
+
             if (($this->startTime + $this->getTemplate()->getTemplateType()->getServerTimeout()) < microtime(true)) {
                 $this->handleFailedStart();
             }
@@ -104,22 +107,15 @@ final class CloudServer implements Tickable, Writeable, DetailedWriteable {
         return $promise;
     }
 
-    public function start(): void {
+    public function start(bool $actuallyStart = true): void {
         $this->setServerStatus(ServerStatus::STARTING);
         new ServerStartEvent($this)->call();
         CloudLogger::get()->info("§aStarting §b{}§r...", $this);
         NotificationType::SERVER_STARTING->notify(["server" => $this->getName()]);
 
-        ServerStartMethod::current()?->startServer($this)->then(function (?int $tmpPid): void {
-            $this->preStartSnapshot = ServerStartSnapshot::capture();
-            $this->startTime = microtime(true);
-            $this->serverData->setTempProcessId($tmpPid);
-        })->failure(function (): void {
-            CloudLogger::get()->warn("Failed to start server §b{}§8, §rcould not create the process...", $this);
-            NotificationType::SERVER_START_FAILED->notify(["server" => $this->getName(), "reason" => "Failed to create process"]);
-            $this->remove();
-            $this->deleteTmpDir();
-        });
+        if ($actuallyStart) ServerStartMethod::current()?->startServer($this)
+            ->then(fn(?int $tmpPid) => $this->handleStartSuccess($tmpPid))
+            ->failure(fn() => $this->handleFailedStart(true));
     }
 
     public function stop(bool $force = false): void {
@@ -203,10 +199,8 @@ final class CloudServer implements Tickable, Writeable, DetailedWriteable {
         $cloudTps = PocketCloud::getInstance()->getCurrentTPS();
         $loadFactor = max(1.0, 20.0 / max(1.0, $cloudTps));
         $effectiveTimeout = (int) ($baseTimeout * $loadFactor);
-        if ((microtime(true) - $this->startTime) < $effectiveTimeout) return true;
-        if (!isset($this->lastCheckTime)) return false;
-        if ((time() - $this->lastCheckTime) < $effectiveTimeout) return true;
-        return false;
+        if (!isset($this->lastCheckTime)) return (time() - $this->startTime) < $effectiveTimeout;
+        return (time() - $this->lastCheckTime) < $effectiveTimeout;
     }
 
     public function getPreStartSnapshot(): ?ServerStartSnapshot {

@@ -58,6 +58,9 @@ trait ThreadPartsTrait {
         ));
 
         define("pocketcloud\STORAGE_PATH", PathUtils::join(CLOUD_PATH, "storage") . "/");
+        define("pocketcloud\TIMINGS_PATH", PathUtils::join(STORAGE_PATH, "timings") . "/");
+        define("pocketcloud\BACKUPS_PATH", PathUtils::join(STORAGE_PATH, "backups") . "/");
+        define("pocketcloud\INTERNAL_PATH", PathUtils::join(STORAGE_PATH, "internal") . "/");
         define("pocketcloud\CRASHES_PATH", PathUtils::join(STORAGE_PATH, "crashes") . "/");
         define("pocketcloud\SERVER_CRASHES_PATH", PathUtils::join(CRASHES_PATH, "servers") . "/");
         define("pocketcloud\BINARIES_PATH", PathUtils::join(STORAGE_PATH, "binaries") . "/");
