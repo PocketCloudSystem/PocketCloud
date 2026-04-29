@@ -7,6 +7,9 @@ final class ProcessUtils {
     private static array $cycleSnapshots = [];
     private static array $latestResults = [];
 
+    private static ?array $lastSysCpuStat = null;
+    private static ?float $lastSysCpuResult = null;
+
     private static ?int $clockTicks = null;
     private static ?int $cpuCores = null;
 
@@ -16,6 +19,10 @@ final class ProcessUtils {
         if ($snapshot !== null) {
             self::$cycleSnapshots[$actualPid] = $snapshot;
         }
+    }
+
+    public static function startSystemCpuRetrieveCycle(): void {
+        self::$lastSysCpuStat = self::getSystemCpuSnapshot() ?? null;
     }
 
     public static function stopCpuRetrieveCycle(?int $pid = null): void {
@@ -28,15 +35,72 @@ final class ProcessUtils {
         self::$latestResults[$actualPid] = $usage;
     }
 
+    public static function stopSystemCpuRetrieveCycle(): void {
+        if (self::$lastSysCpuStat === null) return;
+        if (!file_exists("/proc/stat")) return;
+        ["total" => $total, "idle" => $idle] = self::getSystemCpuSnapshot();
+        ["total" => $beforeTotal, "idle" => $beforeIdle] = self::$lastSysCpuStat;
+        $totalDiff = $total - $beforeTotal;
+        $idleDiff = $idle - $beforeIdle;
+        if ($totalDiff <= 0) return;
+        self::$lastSysCpuResult = 100 * (1 - ($idleDiff / $totalDiff));
+    }
+
     public static function restartCpuRetrieveCycle(?int $pid = null): void {
         $actualPid = $pid ?? getmypid();
         self::stopCpuRetrieveCycle($actualPid);
         self::startCpuRetrieveCycle($actualPid);
     }
 
+    public static function restartSystemCpuRetrieveCycle(): void {
+        self::stopSystemCpuRetrieveCycle();
+        self::startSystemCpuRetrieveCycle();
+    }
+
     public static function getCpuUsage(?int $pid = null): float {
         $actualPid = $pid ?? getmypid();
         return self::$latestResults[$actualPid] ?? 0.0;
+    }
+
+    public static function getSystemCpuUsage(): float {
+        return self::$lastSysCpuResult ?? 0.0;
+    }
+
+    public static function getSystemMemoryStatus(): ?array {
+        $handle = @fopen("/proc/meminfo", "r");
+        if (!$handle) return null;
+
+        $stats = ["total" => 0, "free" => 0, "available" => 0, "cached" => 0];
+        $map = ["MemTotal" => "total", "MemFree" => "free", "MemAvailable" => "available", "Cached" => "cached"];
+        $found = 0;
+
+        while (($line = fgets($handle)) !== false && $found < count($map)) {
+            if (preg_match("/^(\w+):\s+(\d+)/", $line, $m) && isset($map[$m[1]])) {
+                $stats[$map[$m[1]]] = (int) $m[2] * 1024;
+                $found++;
+            }
+        }
+
+        fclose($handle);
+        $stats["used"] = $stats["total"] - $stats["available"];
+        return $stats;
+    }
+
+    public static function getSystemCpuSnapshot(): ?array {
+        if (!file_exists("/proc/stat")) return null;
+        $handle = @fopen("/proc/stat", "r");
+        if (!$handle) return null;
+        $line = fgets($handle);
+        fclose($handle);
+
+        if (!preg_match("/^cpu\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/", $line, $m)) return null;
+        $values = array_map("intval", $m);
+        $total = $values[1] + $values[2] + $values[3] + $values[4] + $values[5] + $values[6] + $values[7];
+        $idle = $values[4] + $values[5];
+        return [
+            "total" => $total,
+            "idle" => $idle
+        ];
     }
 
     public static function getCpuSnapshot(?int $pid = null): ?array {
@@ -119,7 +183,7 @@ final class ProcessUtils {
             "G" => $value * 1024 * 1024 * 1024,
             "M" => $value * 1024 * 1024,
             "K" => $value * 1024,
-            default => (int)$memoryLimit,
+            default => (int) $memoryLimit,
         };
     }
 

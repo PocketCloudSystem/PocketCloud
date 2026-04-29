@@ -23,6 +23,22 @@ final class Benchmark {
         return new BenchmarkResult($name, $iterations, array_sum($times) / count($times), min($times), max($times));
     }
 
+    public static function writeTimings(string $path, bool $override = false): bool {
+        if (!is_dir(dirname($path))) return false;
+        if (file_exists($path)) {
+            if (!$override) return false;
+            unlink($path);
+        }
+        $file = fopen($path, "w");
+        /** @var BenchmarkTimingsSummary $summary */
+        foreach (self::getSummary() as $summary) {
+            fwrite($file, $summary->format() . PHP_EOL);
+        }
+
+        fclose($file);
+        return true;
+    }
+
     public static function startTiming(string $name): BenchmarkTiming {
         self::$timings[$name] = ($timing = new BenchmarkTiming($name));
         $timing->startTiming();

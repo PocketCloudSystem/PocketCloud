@@ -6,6 +6,8 @@ use pocketcloud\cloud\console\command\Command;
 use pocketcloud\cloud\console\command\sender\ICommandSender;
 use pocketcloud\cloud\console\command\SubCommand;
 use pocketcloud\cloud\PocketCloud;
+use pocketcloud\cloud\thread\Thread;
+use pocketcloud\cloud\thread\Worker;
 use pocketcloud\cloud\traffic\TrafficMonitor;
 use pocketcloud\cloud\traffic\TrafficMonitorManager;
 use pocketcloud\cloud\util\FormatUtils;
@@ -19,36 +21,38 @@ final class StatusCommand extends Command {
     }
 
     public function run(ICommandSender $sender, string $label, array $args, ?SubCommand $subCommand, array $flags): bool {
-        foreach (explode(
-            "\n",
-            FormatUtils::implodeWithKeys(
-                Utils::readCloudPerformanceStatus(),
-                "\n",
-                "§8: §b",
-                fn(string $key) => trim(implode(" ", array_map(fn(string $key) => ucfirst($key), explode(" ", str_replace(["vm_size", "_", "vm", "rss"], ["virtual_memory_reserved_size", " ", "", "memory usage"], $key))))),
-                function (string $key, mixed $value): mixed {
-                    if (in_array($key, [
-                        "vm_rss", "vm_size", "vm_rss_peak", "memory_limit"
-                    ])) {
-                        return FormatUtils::bytes(intval($value));
-                    } else if (in_array($key, [
-                        "current_tps", "average_tps"
-                    ])) {
-                        return FormatUtils::tps($value);
-                    } else if (is_array($value) && $key == "threads") {
-                        return "§c" . implode("§8, §c", array_map(fn(object $obj) => $obj::class, $value));
-                    } else if (in_array($key, ["tick_usage", "cpu_usage"])) {
-                        return FormatUtils::usagePercentage($key == "cpu_usage" ? ($value / ProcessUtils::getCpuCores()) : $value);
-                    } else if ($key == "uptime") {
-                        return FormatUtils::uptime($value) . " §8(§c" . PocketCloud::getInstance()->getTick() . "§8)";
-                    }
+        [
+            $uptime, $threadCount, $osThreadCount, $threads,
+            $memoryUsage, $memoryPeak, $virtualReservedMemory, $memoryLimit,
+            $cloudCpuUsage,
+            $tps, $avgTps, $tickUsage,
+            $serverCount, $playerCount
+        ] = array_values(Utils::readCloudPerformanceStatus());
+        $systemCpuUsage = ProcessUtils::getSystemCpuUsage();
+        [$systemMemoryTotal, , $systemMemoryAvailable, , $systemMemoryUsed] = array_values(ProcessUtils::getSystemMemoryStatus());
 
-                    return $value;
-                }
-            )
-        ) as $line) {
-            $sender->success($line);
-        }
+        $this->section($sender, "Cloud", [
+            "Uptime§8: §b" . FormatUtils::uptime($uptime) . " §8(§c" . PocketCloud::getInstance()->getTick() . "§8)",
+            "TPS§8: §b" . FormatUtils::tps($tps) . " §8(§rAvg.: §b" . FormatUtils::tps($avgTps) . "§8)",
+            "Tick Usage§8: §b" . FormatUtils::usagePercentage($tickUsage),
+            "Servers§8: §b" . $serverCount . " §8(§b" . $playerCount . " players§8)",
+            "Memory Usage§8: §b" . FormatUtils::bytes($memoryUsage) . " §8(§rPeak: §b" . FormatUtils::bytes($memoryPeak) . "§8)",
+            "Virtual Memory Size§8: §b" . FormatUtils::bytes($virtualReservedMemory),
+            "Memory Limit§8: §b" . FormatUtils::bytes($memoryLimit),
+            "CPU Usage§8: §b" . FormatUtils::usagePercentage($cloudCpuUsage / ProcessUtils::getCpuCores())
+        ]);
+
+        $this->section($sender, "Threads", [
+            "Thread Count§8: §b" . $threadCount . " §8(§rActual Threads: §b" . $osThreadCount . "§8)",
+            "Threads§8: §c" . implode("§8, §c", array_map(fn(Thread|Worker $thread) => $thread::class, $threads))
+        ]);
+
+        $this->section($sender, "System", [
+            "CPU Usage§8: §b" . FormatUtils::usagePercentage($systemCpuUsage),
+            "Memory Usage§8: §b" . FormatUtils::bytes($systemMemoryUsed, $systemMemoryTotal),
+            "Available Memory§8: §b" . FormatUtils::bytes($systemMemoryAvailable, $systemMemoryTotal, $percentage, true),
+            "Total Memory§8: §b" . FormatUtils::bytes($systemMemoryTotal)
+        ]);
 
         $allTimeTrafficMessages = [];
         foreach (TrafficMonitorManager::getInstance()->getAllTimeTraffic() as $trafficType => $traffic) {
@@ -57,10 +61,15 @@ final class StatusCommand extends Command {
             $allTimeTrafficMessages[] = ucfirst($trafficType) . " All-Time-Traffic: §a" . $bytesIn . " §8(§aIN§8) §8/ §c" . $bytesOut . " §8(§cOUT§8)";
         }
 
-        foreach ($allTimeTrafficMessages as $message) {
-            $sender->success($message);
-        }
+        $this->section($sender, "Traffic", $allTimeTrafficMessages);
 
         return true;
+    }
+
+    private function section(ICommandSender $sender, string $name, array $lines): void {
+        $sender->info("§8==== §c$name");
+        foreach ($lines as $line) {
+            $sender->info("§8|§r " . $line);
+        }
     }
 }

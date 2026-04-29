@@ -41,7 +41,7 @@ final class FormatUtils {
         return "§c" . $tps . $suffix;
     }
 
-    public static function bytes(int $bytes, ?int $maxBytes = null, ?float &$percent = null): string {
+    public static function bytes(int $bytes, ?int $maxBytes = null, ?float &$percent = null, bool $higherPctBetter = false): string {
         if ($bytes < 0) return "§c???";
 
         $units = ["B", "KB", "MB", "GB", "TB", "PB", "EB"];
@@ -54,11 +54,11 @@ final class FormatUtils {
 
         $percent = ($bytes / $maxBytes) * 100;
         if ($percent < 60) {
-            $color = "§a";
+            $color = !$higherPctBetter ? "§a" : "§c";
         } else if ($percent < 85) {
             $color = "§e";
         } else {
-            $color = "§c";
+            $color = $higherPctBetter ? "§a" : "§c";
         }
 
         return sprintf("§b%s §8(%s%.1f%%§8)§r", $formatted, $color, $percent);

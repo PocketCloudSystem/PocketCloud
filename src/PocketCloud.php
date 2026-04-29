@@ -117,6 +117,7 @@ use const pocketcloud\SOFTWARE_PATH;
 use const pocketcloud\STORAGE_PATH;
 use const pocketcloud\TEMP_PATH;
 use const pocketcloud\TEMPLATES_PATH;
+use const pocketcloud\TIMINGS_PATH;
 
 final class PocketCloud {
 
@@ -550,15 +551,7 @@ final class PocketCloud {
         if (isset($this->config)) {
             if ($this->config->isWriteTimingsOnShutdown()) {
                 CloudLogger::get()->info("Writing timings... §8(§b{}§8)", $timingsPath = STORAGE_PATH . "latest_timings.txt");
-
-                @unlink($timingsPath);
-                $file = fopen($timingsPath, "w");
-                /** @var BenchmarkTimingsSummary $summary */
-                foreach (Benchmark::getSummary() as $summary) {
-                    fwrite($file, $summary->format() . PHP_EOL);
-                }
-
-                fclose($file);
+                Benchmark::writeTimings($timingsPath, true);
             }
         }
 
@@ -574,6 +567,7 @@ final class PocketCloud {
     public function tick(): void {
         $this->nextTick = microtime(true);
         ProcessUtils::startCpuRetrieveCycle();
+        ProcessUtils::startSystemCpuRetrieveCycle();
         while ($this->running) {
             $tickStart = microtime(true);
             if (($tickStart - $this->nextTick) < -0.025) {
@@ -589,7 +583,10 @@ final class PocketCloud {
 
             $tickWorkEnd = microtime(true);
             $this->console->readLine();
-            if (($this->tick % 40) == 0) ProcessUtils::restartCpuRetrieveCycle();
+            if (($this->tick % 40) == 0) {
+                ProcessUtils::restartCpuRetrieveCycle();
+                ProcessUtils::restartSystemCpuRetrieveCycle();
+            }
 
             if (($this->nextTick - $tickStart) < -1) {
                 $this->nextTick = $tickStart;
@@ -808,6 +805,7 @@ define("pocketcloud\CLOUD_PATH", (IS_PHAR ?
 ));
 
 define("pocketcloud\STORAGE_PATH", PathUtils::join(CLOUD_PATH, "storage") . "/");
+define("pocketcloud\TIMINGS_PATH", PathUtils::join(STORAGE_PATH, "timings") . "/");
 define("pocketcloud\BACKUPS_PATH", PathUtils::join(STORAGE_PATH, "backups") . "/");
 define("pocketcloud\INTERNAL_PATH", PathUtils::join(STORAGE_PATH, "internal") . "/");
 define("pocketcloud\CRASHES_PATH", PathUtils::join(STORAGE_PATH, "crashes") . "/");
@@ -826,7 +824,7 @@ define("pocketcloud\SERVER_GROUPS_PATH", PathUtils::join(CLOUD_PATH, "groups") .
 define("pocketcloud\FIRST_RUN", !file_exists(STORAGE_PATH . "config.json"));
 
 foreach ([
-    STORAGE_PATH, BACKUPS_PATH, INTERNAL_PATH, CRASHES_PATH, SERVER_CRASHES_PATH, BINARIES_PATH, LIBRARIES_PATH, PLUGINS_PATH, SOFTWARE_PATH, IN_GAME_PATH,
+    STORAGE_PATH, TIMINGS_PATH, BACKUPS_PATH, INTERNAL_PATH, CRASHES_PATH, SERVER_CRASHES_PATH, BINARIES_PATH, LIBRARIES_PATH, PLUGINS_PATH, SOFTWARE_PATH, IN_GAME_PATH,
     TEMP_PATH,
     TEMPLATES_PATH, GLOBAL_TEMPLATES_PATH,
     SERVER_GROUPS_PATH
