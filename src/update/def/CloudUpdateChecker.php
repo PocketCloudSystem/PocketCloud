@@ -12,7 +12,7 @@ use pocketcloud\cloud\util\VersionInfo;
 
 final class CloudUpdateChecker implements IUpdateChecker {
 
-    public function needsUpdate(): Promise {
+    public function needsUpdate(bool $force = false): Promise {
         $promise = new Promise();
         AsyncExecutor::execute(function(): false|string|array|null {
             try {

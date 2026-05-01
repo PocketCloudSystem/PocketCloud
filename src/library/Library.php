@@ -37,8 +37,8 @@ final readonly class Library implements Writeable {
      * @return bool
      * @internal
      */
-    public function download(bool $needsUpdate = false): bool {
-        if ($needsUpdate && !MainConfig::getInstance()->canUpdate(UpdateChecker::TYPE_LIBRARIES)) {
+    public function download(bool $needsUpdate = false, bool $force = false): bool {
+        if ($needsUpdate && !MainConfig::getInstance()->canUpdate(UpdateChecker::TYPE_LIBRARIES) && !$force) {
             PocketCloud::getInstance()->addStartNotification("Library §b{} §rrequires an §cUPDATE§r, but inside your §bconfig.yml§r, you have §cdisabled §8'§eexecuteUpdates§8'§r.", CloudLogLevel::WARN(), $this->name);
             PocketCloud::getInstance()->addStartNotification("Please §are-enable §rit or update the library manually.", CloudLogLevel::WARN());
             return false;

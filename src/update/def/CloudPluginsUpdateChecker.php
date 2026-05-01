@@ -14,14 +14,14 @@ use RuntimeException;
 
 final class CloudPluginsUpdateChecker implements IUpdateChecker {
 
-    public function needsUpdate(): Promise {
+    public function needsUpdate(bool $force = false): Promise {
         $promise = new Promise();
 
         $i = 0;
         $result = [];
         $amount = count($all = TemplateType::getAll());
         foreach ($all as $type) {
-            $type->checkBridgeForUpdate()->then(function (bool $needsUpdate) use ($promise, &$i, &$result, $type, $amount): void {
+            $type->checkBridgeForUpdate()->then(function (bool $needsUpdate) use ($promise, &$i, &$result, $type, $amount, $force): void {
                 $i++;
                 if ($needsUpdate) {
                     if (!MainConfig::getInstance()->canUpdate($this)) PocketCloud::getInstance()->addStartNotification("Your version of plugin §b{} §ris outdated. Please update it manually.", CloudLogLevel::WARN(), $type->getRelativeBridgeFileLocation());

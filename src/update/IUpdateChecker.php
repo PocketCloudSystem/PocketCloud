@@ -9,7 +9,7 @@ interface IUpdateChecker {
     /**
      * @return Promise<array{needsUpdate: bool, extraData: mixed}>
      */
-    public function needsUpdate(): Promise;
+    public function needsUpdate(bool $force = false): Promise;
 
     /**
      * @return Promise<bool>

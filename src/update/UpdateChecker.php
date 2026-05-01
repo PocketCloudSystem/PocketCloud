@@ -30,21 +30,22 @@ final class UpdateChecker {
     }
 
     public function register(IUpdateChecker $updateChecker): void {
-        $this->updateCheckers[] = $updateChecker;
+        $this->updateCheckers[$updateChecker::class] = $updateChecker;
     }
 
-    public function checkForUpdates(): void {
+    public function checkForUpdates(bool $force = false, ?array $specificUpdateCheckers = null): void {
+        $specificUpdateCheckers = $specificUpdateCheckers === null ? $this->updateCheckers : array_map(fn(string $v) => $this->updateCheckers[$v], array_filter($specificUpdateCheckers, fn(mixed $v) => is_string($v) && isset($this->updateCheckers[$v])));
         CloudLogger::get()->info("Checking for general updates...");
-        foreach ($this->updateCheckers as $updateChecker) {
-            if (!MainConfig::getInstance()->canCheckForUpdates($updateChecker->id())) {
+        foreach ($specificUpdateCheckers as $updateChecker) {
+            if (!MainConfig::getInstance()->canCheckForUpdates($updateChecker->id()) && !$force) {
                 PocketCloud::getInstance()->addStartNotification("Skipped updates for §b{}§8, §ras it is disabled in the config.", CloudLogLevel::DEBUG(), $updateChecker->id());
                 continue;
             }
 
-            $updateChecker->needsUpdate()->then(function (array $result) use ($updateChecker): void {
+            $updateChecker->needsUpdate($force)->then(function (array $result) use ($updateChecker, $force): void {
                 [$needsUpdate] = ($result = array_values($result));
                 if (!$needsUpdate) return;
-                if (!MainConfig::getInstance()->canUpdate($updateChecker->id())) {
+                if (!MainConfig::getInstance()->canUpdate($updateChecker->id()) && !$force) {
                     CloudLogger::get()->debug("Skipping execution of updates for {}, as it is disabled in the config", $updateChecker::class);
                     return;
                 }

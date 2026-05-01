@@ -643,10 +643,9 @@ final class PocketCloud {
     public function addStartNotification(string $logMessage, ?CloudLogLevel $logLevel = null, mixed... $params): self {
         if ($this->tick > 0) {
             if (($logLevel === CloudLogLevel::DEBUG() && $this->logSettingsConfig->isDebugMode()) || ($logLevel !== null && $logLevel !== CloudLogLevel::DEBUG())) {
-                CloudLogger::get()->log($logLevel, $logMessage, $params);
+                CloudLogger::get()->log($logLevel, $logMessage, ...$params);
             }
-        }
-        else $this->startNotificationQueue->add([$logLevel ?? CloudLogLevel::INFO(), $logMessage, $params]);
+        } else $this->startNotificationQueue->add([$logLevel ?? CloudLogLevel::INFO(), $logMessage, $params]);
         return $this;
     }
 
