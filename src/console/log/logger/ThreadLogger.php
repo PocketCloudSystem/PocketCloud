@@ -28,10 +28,12 @@ class ThreadLogger extends ThreadSafe implements ILogger {
     ) {}
 
     protected function addLogToBuffer(string $formattedMessage): void {
-        $this->buffer->synchronized(function (string $formattedMessage): void {
-            $this->buffer[] = $formattedMessage;
-            $this->entry->createNotifier()->wakeupSleeper();
-        }, $formattedMessage);
+        try {
+            $this->buffer->synchronized(function (string $formattedMessage): void {
+                $this->buffer[] = $formattedMessage;
+                $this->entry->createNotifier()->wakeupSleeper();
+            }, $formattedMessage);
+        } catch (Throwable) {}
     }
 
     public function info(string $message, string ...$params): self {

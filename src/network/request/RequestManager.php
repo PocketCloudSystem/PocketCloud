@@ -2,6 +2,7 @@
 
 namespace pocketcloud\cloud\network\request;
 
+use pocketcloud\cloud\exception\PacketException;
 use pocketcloud\cloud\network\client\ServerClient;
 use pocketcloud\cloud\network\Network;
 use pocketcloud\cloud\network\packet\RequestClientPacket;
@@ -9,6 +10,7 @@ use pocketcloud\cloud\network\packet\RequestPacketFailureReason;
 use pocketcloud\cloud\network\packet\ResponseClientPacket;
 use pocketcloud\cloud\util\misc\Tickable;
 use pocketcloud\cloud\util\trait\SingletonTrait;
+use Throwable;
 
 final class RequestManager implements Tickable {
     use SingletonTrait;
@@ -24,9 +26,14 @@ final class RequestManager implements Tickable {
      * @internal
      * @see RequestClientPacket
      */
-    public function send(RequestClientPacket $packet, ServerClient $client): RequestClientPacket|false {
+    public function send(RequestClientPacket $packet, ServerClient $client): RequestClientPacket {
+        if (isset($this->requests[$packet->getRequestId()])) return $this->requests[$packet->getRequestId()];
         $packet->prepare();
-        if (!Network::getInstance()->sendPacket($packet, $client)) return false;
+        try {
+            Network::getInstance()->sendPacket($packet, $client);
+        } catch (Throwable $e) {
+            throw new PacketException($e->getMessage(), $e->getCode(), $e);
+        }
         $this->requests[$packet->getRequestId()] = $packet;
         return $packet;
     }

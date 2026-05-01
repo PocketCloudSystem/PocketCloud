@@ -8,6 +8,7 @@ use LogicException;
 use pocketcloud\cloud\server\CloudServer;
 use pocketcloud\cloud\util\benchmark\Benchmark;
 use pocketcloud\cloud\util\PathUtils;
+use pocketcloud\cloud\util\ProcessUtils;
 use pocketcloud\cloud\util\promise\Promise;
 use pocketcloud\cloud\util\TerminalUtils;
 use pocketcloud\cloud\util\trait\RegistryTrait;
@@ -63,9 +64,9 @@ final class ServerStartMethod {
             },
             function (CloudServer $server): ?int {
                 $screenName = $server->getName() . "-" . $server->getServerUuid();
-                $pidOutput = shell_exec("screen -ls | grep -F " . escapeshellarg($screenName) . " | awk -F '.' '{print \$1}' | head -n1");
+                $pidOutput = ProcessUtils::executeWithTimeout("screen -ls | grep -F " . escapeshellarg($screenName) . " | awk -F '.' '{print \$1}' | head -n1", 0.5);
                 if (!is_string($pidOutput) || ($screenPid = (int) trim($pidOutput)) <= 0) return null;
-                $childOutput = shell_exec("pgrep -P " . $screenPid . " | head -n1");
+                $childOutput = ProcessUtils::executeWithTimeout("pgrep -P " . $screenPid . " | head -n1", 0.5);
                 if (is_string($childOutput) && ($childPid = (int) trim($childOutput)) > 0) return $childPid;
                 return null;
             }
@@ -104,7 +105,7 @@ final class ServerStartMethod {
             },
             function (CloudServer $server): ?int {
                 $paneName = $server->getName() . "-" . $server->getServerUuid();
-                $output = shell_exec("tmux list-panes -t " . escapeshellarg($paneName) . " -F '#{pane_pid}' 2>/dev/null | head -n1");
+                $output = ProcessUtils::executeWithTimeout("tmux list-panes -t " . escapeshellarg($paneName) . " -F '#{pane_pid}' 2>/dev/null | head -n1", 0.5);
                 if (is_string($output) && ($pid = (int) trim($output)) > 0) return $pid;
                 return null;
             },

@@ -26,19 +26,8 @@ use Throwable;
 
 final class SocketServer extends Thread {
 
-    /**
-     * How many requests the main thread processes per sleeper tick.
-     * handleRequest() runs on the main thread and blocks PocketMine's entire
-     * tick loop. Keep this low enough that one batch does not consume more than
-     * ~10ms of tick budget. Tune downward if ticks still lag.
-     */
-    private const MAX_REQUESTS_PER_TICK = 20;
-
-    /**
-     * socket_select() timeout in microseconds.
-     * 500µs keeps the response-write loop responsive without spinning at 100%.
-     */
-    private const SELECT_TIMEOUT_US = 500;
+    private const int MAX_REQUESTS_PER_TICK = 20;
+    private const int SELECT_TIMEOUT_US = 500;
 
     private ?Socket $socket = null;
 
@@ -48,31 +37,12 @@ final class SocketServer extends Thread {
     private ThreadSafeArray $clientBuffers;
     /** @var ThreadSafeArray<int, Socket> */
     private ThreadSafeArray $pendingClose;
-    /**
-     * Main thread pushes PendingResponse here after handling a request.
-     * Worker thread drains this, writes the response to the socket, then closes it.
-     * @var ThreadSafeArray<int, PendingResponse>
-     */
+    /** @var ThreadSafeArray<int, PendingResponse> */
     private ThreadSafeArray $responseQueue;
-
-    /**
-     * True while the main thread's notifier callback is executing.
-     * The worker checks this before calling wakeupSleeper() — if the main thread
-     * is already busy, the new buffer item will be picked up by the current or
-     * next batch, or via needsReWake if the cap is hit.
-     * @var ThreadSafeArray<int, bool>
-     */
+    /** @var ThreadSafeArray<int, bool> */
     private ThreadSafeArray $mainThreadBusy;
-
-    /**
-     * Set by the notifier callback when it exits after hitting MAX_REQUESTS_PER_TICK
-     * with items still in the buffer. The worker sees this on its next iteration
-     * and calls wakeupSleeper() so the remainder is processed.
-     * We cannot call wakeupSleeper() from inside the callback — it is not re-entrant.
-     * @var ThreadSafeArray<int, bool>
-     */
+    /** @var ThreadSafeArray<int, bool> */
     private ThreadSafeArray $needsReWake;
-
     private SleeperHandlerEntry $entry;
 
     public function __construct(
@@ -130,19 +100,12 @@ final class SocketServer extends Thread {
 
             $this->mainThreadBusy[0] = false;
 
-            // If we hit the cap and items remain, ask the worker to re-wake us.
-            // We cannot call wakeupSleeper() here directly — the notifier is not re-entrant.
             if ($processed === self::MAX_REQUESTS_PER_TICK && $this->buffer->count() > 0) {
                 $this->needsReWake[0] = true;
             }
         });
     }
 
-    /**
-     * Builds and returns the response for a raw HTTP request buffer.
-     * Must only be called from the main thread (uses cloud singletons).
-     * @return array{Response, ?Request}
-     */
     public function handleRequest(Address $address, string $buffer): array {
         $request = HttpUtils::parseHttpRequest($address, $buffer);
         if ($request instanceof StatusCode) {
@@ -221,16 +184,11 @@ final class SocketServer extends Thread {
         $notifier = $this->entry->createNotifier();
 
         while ($this->socket !== null && $this->isAlive()) {
-
-            // Re-wake the main thread if the previous batch hit the cap.
-            // This is the only safe place to call wakeupSleeper() for continuations
-            // since the notifier callback itself is not re-entrant.
             if ($this->needsReWake[0] ?? false) {
                 $this->needsReWake[0] = false;
                 $notifier->wakeupSleeper();
             }
 
-            // Drain sockets queued for closing.
             while (($sock = $this->pendingClose->shift()) !== null) {
                 try {
                     socket_close($sock);
@@ -239,8 +197,6 @@ final class SocketServer extends Thread {
                 }
             }
 
-            // Write all pending responses before doing more socket I/O so
-            // clients receive their replies as quickly as possible.
             while (($pending = $this->responseQueue->shift()) !== null) {
                 $clientId = $pending->getClientId();
                 $sock = $this->clients[$clientId] ?? null;
@@ -251,9 +207,6 @@ final class SocketServer extends Thread {
                 }
             }
 
-            // Snapshot counts once — each ->count() acquires the ThreadSafeArray
-            // mutex. Calling it per-socket inside the foreach below causes N
-            // mutex acquisitions per select() iteration under load.
             $clientCount = $this->clients->count();
             $bufferCount = $this->buffer->count();
 
@@ -308,10 +261,6 @@ final class SocketServer extends Thread {
                     }
                 }
 
-                // Wake the main thread whenever we added something to the buffer
-                // AND the main thread is not already inside its notifier callback.
-                // If it is busy, the new item will either be caught by the current
-                // batch (if under the cap) or by needsReWake (if the cap was hit).
                 if ($addedToBuffer && !($this->mainThreadBusy[0] ?? false)) {
                     $notifier->wakeupSleeper();
                 }
@@ -322,15 +271,6 @@ final class SocketServer extends Thread {
         }
     }
 
-    /**
-     * Writes a response string to a socket.
-     * Switches to blocking mode with a tight send timeout so the write
-     * completes without busy-waiting. The socket is always closed afterward
-     * via pendingClose so non-blocking mode does not need to be restored.
-     * Do NOT call $this->buffer->count() here — that acquires the shared mutex
-     * while the main thread is actively shifting from the same array, causing
-     * lock contention on every response write under load.
-     */
     private function writeResponse(Socket $socket, string $data): void {
         socket_set_block($socket);
         socket_set_option($socket, SOL_SOCKET, SO_SNDTIMEO, ["sec" => 0, "usec" => 200000]);
@@ -339,7 +279,7 @@ final class SocketServer extends Thread {
         $written = 0;
         while ($written < $total) {
             $result = @socket_write($socket, substr($data, $written), $total - $written);
-            if ($result === false) break;
+            if ($result === false || $result === 0) break;
             $written += $result;
         }
     }

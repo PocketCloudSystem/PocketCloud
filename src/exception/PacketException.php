@@ -2,6 +2,4 @@
 
 namespace pocketcloud\cloud\exception;
 
-use Exception;
-
-final class PacketException extends Exception {}
+class PacketException extends NetworkException {}

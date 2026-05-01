@@ -130,7 +130,9 @@ trait ThreadPartsTrait {
 
     protected function handleException(Throwable $exception): void {
         $this->synchronized(function () use ($exception): void {
-            $this->logger->exception($exception);
+            try {
+                $this->logger?->exception($exception);
+            } catch (Throwable) {}
             $this->exitStatus = ThreadExitStatus::EXCEPTION;
             $this->exitMessage = $exception->getMessage();
         });
@@ -143,7 +145,9 @@ trait ThreadPartsTrait {
                 $this->exitStatus = ThreadExitStatus::FATAL_ERROR;
                 $this->exitMessage = $error["message"] . " in {$error["file"]}:{$error["line"]}";
 
-                $this->logger->error("Fatal error in thread: {}", $this->exitMessage);
+                try {
+                    $this->logger?->error("Fatal error in thread: {}", $this->exitMessage);
+                } catch (Throwable) {}
             }
         });
     }

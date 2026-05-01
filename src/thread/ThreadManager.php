@@ -35,8 +35,10 @@ final class ThreadManager extends ThreadSafe {
             if (isset($this->threads[$id])) {
                 $thread = $this->threads[$id];
                 try {
-                    if ($thread->isAlive()) {
+                    if ($thread->isAlive() || ($thread->isStarted() && !$thread->isJoined())) {
                         $thread->quit();
+                    } else {
+                        $this->remove($thread);
                     }
                 } catch (Throwable $exception) {
                     CloudLogger::get()->error("Error while stopping thread: {}", $thread->getThreadName());

@@ -4,6 +4,7 @@ namespace pocketcloud\cloud\network;
 
 use JsonException;
 use LogicException;
+use pmmp\thread\ConnectionException;
 use pmmp\thread\ThreadSafeArray;
 use pocketcloud\cloud\config\impl\MainConfig;
 use pocketcloud\cloud\console\log\CloudLogger;
@@ -35,6 +36,7 @@ use pocketcloud\cloud\util\Utils;
 use pocketmine\snooze\SleeperHandlerEntry;
 use RuntimeException;
 use Socket;
+use Throwable;
 
 final class Network extends Thread {
     use SingletonTrait;
@@ -59,59 +61,68 @@ final class Network extends Thread {
         PacketPool::init();
 
         $this->handlerEntry = PocketCloud::getInstance()->getSleeperHandler()->addNotifier(function (): void {
-            $deadline = microtime(true) + 0.010;
-            while (microtime(true) < $deadline && ($unhandledPacketData = $this->buffer->shift()) !== null) {
-                if (!$this->established) return;
-                Benchmark::startTiming("packet_receive_handling");
-                [$address, $port, $buffer, $bytes] = $unhandledPacketData;
-                $unhandledPacket = new UnhandledPacket($buffer, Address::create($address, $port), $bytes);
+            try {
+                $deadline = microtime(true) + 0.010;
+                while (microtime(true) < $deadline && ($unhandledPacketData = $this->buffer->shift()) !== null) {
+                    if (!$this->established) return;
+                    Benchmark::startTiming("packet_receive_handling");
+                    [$address, $port, $buffer, $bytes] = $unhandledPacketData;
+                    $unhandledPacket = new UnhandledPacket($buffer, Address::create($address, $port), $bytes);
 
-                TrafficMonitorManager::getInstance()->pushBytes(TrafficMonitorManager::TRAFFIC_NETWORK, $bytes = $unhandledPacket->getBytes(), TrafficMonitor::REGULAR_MODE_IN);
-                TrafficMonitorManager::getInstance()->callHandlers(
-                    TrafficMonitorManager::TRAFFIC_NETWORK,
-                    TrafficMonitor::REGULAR_MODE_IN,
-                    $unhandledPacket->getBuffer(), $bytes, $unhandledPacket->getAddress()
-                );
+                    TrafficMonitorManager::getInstance()->pushBytes(TrafficMonitorManager::TRAFFIC_NETWORK, $bytes = $unhandledPacket->getBytes(), TrafficMonitor::REGULAR_MODE_IN);
+                    TrafficMonitorManager::getInstance()->callHandlers(
+                        TrafficMonitorManager::TRAFFIC_NETWORK,
+                        TrafficMonitor::REGULAR_MODE_IN,
+                        $unhandledPacket->getBuffer(), $bytes, $unhandledPacket->getAddress()
+                    );
 
-                $client = ServerClientCache::getInstance()->getByAddress($unhandledPacket->getAddress()) ?? new ServerClient($unhandledPacket->getAddress());
+                    $client = ServerClientCache::getInstance()->getByAddress($unhandledPacket->getAddress()) ?? new ServerClient($unhandledPacket->getAddress());
 
-                ($ev = new NetworkPacketReceivePreProcessEvent($this, $client, $unhandledPacket->getBuffer(), $encryption = MainConfig::getInstance()->isNetworkEncryptionEnabled()))->call();
-                if ($ev->isCancelled()) return;
+                    ($ev = new NetworkPacketReceivePreProcessEvent($this, $client, $unhandledPacket->getBuffer(), $encryption = MainConfig::getInstance()->isNetworkEncryptionEnabled()))->call();
+                    if ($ev->isCancelled()) return;
 
-                try {
-                    if (($packet = $unhandledPacket->buildCloudPacket($encryption, $this->authenticationKey)) !== null) {
-                        TrafficMonitorManager::getInstance()->callHandlers(
-                            TrafficMonitorManager::TRAFFIC_NETWORK,
-                            NetworkTrafficMonitor::parsePacketMode(NetworkTrafficMonitor::NETWORK_MODE_PACKET_IN, $packet::class),
-                            $packet, $unhandledPacket->getAddress()
-                        );
+                    try {
+                        if (($packet = $unhandledPacket->buildCloudPacket($encryption, $this->authenticationKey)) !== null) {
+                            TrafficMonitorManager::getInstance()->callHandlers(
+                                TrafficMonitorManager::TRAFFIC_NETWORK,
+                                NetworkTrafficMonitor::parsePacketMode(NetworkTrafficMonitor::NETWORK_MODE_PACKET_IN, $packet::class),
+                                $packet, $unhandledPacket->getAddress()
+                            );
 
-                        ($ev = new NetworkPacketReceiveEvent($this, $client, $packet))->call();
-                        if ($ev->isCancelled()) return;
-                        $packet->handle($client);
+                            ($ev = new NetworkPacketReceiveEvent($this, $client, $packet))->call();
+                            if ($ev->isCancelled()) return;
+                            $packet->handle($client);
 
-                        if ($packet instanceof ResponseClientPacket) {
-                            RequestManager::getInstance()->resolve($packet);
-                            RequestManager::getInstance()->remove($packet->getRequestId());
-                        }
-                    } else CloudLogger::get()->debug("Received an unknown packet from §b{}§r, ignoring...", $unhandledPacket->getAddress())->debug("Packet buffer: " . $unhandledPacket->getBuffer());
-                } catch (PacketException|JsonException $e) {
-                    CloudLogger::get()->warn("§cFailed to decode packet from §b{}§8: §e{}", $client->getAddress(), $e->getMessage())
-                        ->debug($unhandledPacket->getBuffer());
-                    CloudLogger::get()->exception($e);
+                            if ($packet instanceof ResponseClientPacket) {
+                                RequestManager::getInstance()->resolve($packet);
+                                RequestManager::getInstance()->remove($packet->getRequestId());
+                            }
+                        } else CloudLogger::get()->debug("Received an unknown packet from §b{}§r, ignoring...", $unhandledPacket->getAddress())->debug("Packet buffer: " . $unhandledPacket->getBuffer());
+                    } catch (PacketException|JsonException $e) {
+                        CloudLogger::get()->warn("§cFailed to decode packet from §b{}§8: §e{}", $client->getAddress(), $e->getMessage())
+                            ->debug($unhandledPacket->getBuffer());
+                        CloudLogger::get()->exception($e);
+                    }
+
+                    Benchmark::stopTiming("packet_receive_handling");
                 }
 
-                Benchmark::stopTiming("packet_receive_handling");
-            }
-
-            while (($disconnectData = $this->disconnectBuffer->shift()) !== null) {
-                if (!$this->established) return;
-                [$address, $port] = $disconnectData;
-                $addr = Address::create($address, $port);
-                $client = ServerClientCache::getInstance()->getByAddress($addr);
-                if ($client !== null) {
-                    CloudLogger::get()->debug("TCP client §b{}§r disconnected.", $addr);
+                while (($disconnectData = $this->disconnectBuffer->shift()) !== null) {
+                    if (!$this->established) return;
+                    [$address, $port] = $disconnectData;
+                    $addr = Address::create($address, $port);
+                    $client = ServerClientCache::getInstance()->getByAddress($addr);
+                    if ($client !== null) {
+                        CloudLogger::get()->debug("TCP client §b{}§r disconnected.", $addr);
+                        $client->getServer()?->handleDisconnect();
+                    }
                 }
+
+            } catch (ConnectionException $e) {
+                $this->established = false;
+                CloudLogger::get()->exception($e);
+            } catch (Throwable $e) {
+                CloudLogger::get()->exception($e);
             }
         });
     }
@@ -136,88 +147,103 @@ final class Network extends Thread {
 
     protected function onRun(): void {
         $notifier = $this->handlerEntry->createNotifier();
+        $receiveBuffer = $this->buffer;
+        $sendBuffer = $this->sendBuffer;
+        $disconnectBuffer = $this->disconnectBuffer;
+        $serverSocket = $this->serverSocket;
         /** @var array<Socket> $clientSockets  address_string => Socket */
         $clientSockets = [];
         /** @var array<string> $clientBuffers  address_string => raw bytes awaiting framing */
         $clientBuffers = [];
 
-        while ($this->established && $this->isAlive()) {
-            while (($sendData = $this->sendBuffer->shift()) !== null) {
-                if ($sendData[0] === "__broadcast__") {
-                    [, $buffer, $targets] = $sendData;
-                    foreach ($targets as $addressStr) {
+
+        while (true) {
+            try {
+                if (!$this->established || !$this->isAlive()) break;
+                while (($sendData = $sendBuffer->shift()) !== null) {
+                    if ($sendData[0] === "__broadcast__") {
+                        [, $buffer, $targets] = $sendData;
+                        foreach ($targets as $addressStr) {
+                            if (isset($clientSockets[$addressStr])) {
+                                $this->tcpWrite($clientSockets[$addressStr], $buffer);
+                            }
+                        }
+                    } else {
+                        [$addressStr, $buffer] = $sendData;
                         if (isset($clientSockets[$addressStr])) {
                             $this->tcpWrite($clientSockets[$addressStr], $buffer);
                         }
                     }
-                } else {
-                    [$addressStr, $buffer] = $sendData;
-                    if (isset($clientSockets[$addressStr])) {
-                        $this->tcpWrite($clientSockets[$addressStr], $buffer);
+                }
+
+                $read = [$serverSocket, ...array_values($clientSockets)];
+                $write = $except = [];
+
+                if (@socket_select($read, $write, $except, 0, 50 * 1000) < 1) continue;
+
+                if (in_array($serverSocket, $read, true)) {
+                    $clientSocket = @socket_accept($serverSocket);
+                    if ($clientSocket !== false && $clientSocket !== null) {
+                        @socket_getpeername($clientSocket, $peerAddr, $peerPort);
+                        $addrStr = $peerAddr . ":" . $peerPort;
+                        @socket_set_option($clientSocket, SOL_SOCKET, SO_SNDTIMEO, ["sec" => 0, "usec" => 200000]);
+                        $clientSockets[$addrStr] = $clientSocket;
+                        $clientBuffers[$addrStr] = "";
+                        CloudLogger::get()->debug("New TCP connection from §b{}§r.", $addrStr);
                     }
                 }
-            }
 
-            $read = [$this->serverSocket, ...array_values($clientSockets)];
-            $write = $except = [];
+                $wakeNeeded = false;
+                foreach ($clientSockets as $addrStr => $clientSocket) {
+                    if (!in_array($clientSocket, $read, true)) continue;
 
-            if (@socket_select($read, $write, $except, 0, 50 * 1000) < 1) continue;
+                    $chunk = "";
+                    $result = @socket_recv($clientSocket, $chunk, 65535, 0);
 
-            if (in_array($this->serverSocket, $read, true)) {
-                $clientSocket = @socket_accept($this->serverSocket);
-                if ($clientSocket !== false && $clientSocket !== null) {
-                    @socket_getpeername($clientSocket, $peerAddr, $peerPort);
-                    $addrStr = $peerAddr . ":" . $peerPort;
-                    $clientSockets[$addrStr] = $clientSocket;
-                    $clientBuffers[$addrStr] = "";
-                    CloudLogger::get()->debug("New TCP connection from §b{}§r.", $addrStr);
-                }
-            }
-
-            $wakeNeeded = false;
-            foreach ($clientSockets as $addrStr => $clientSocket) {
-                if (!in_array($clientSocket, $read, true)) continue;
-
-                $chunk = "";
-                $result = @socket_recv($clientSocket, $chunk, 65535, 0);
-
-                if ($result === 0 || $result === false) {
-                    [$addr, $port] = explode(":", $addrStr, 2);
-                    $this->disconnectBuffer[] = ThreadSafeArray::fromArray([$addr, (int) $port]);
-                    @socket_close($clientSocket);
-                    unset($clientSockets[$addrStr], $clientBuffers[$addrStr]);
-                    $notifier->wakeupSleeper();
-                    continue;
-                }
-
-                $clientBuffers[$addrStr] .= $chunk;
-
-                // Parse length-prefixed frames: [4-byte big-endian uint][payload]
-                while (strlen($clientBuffers[$addrStr]) >= 4) {
-                    $length = unpack("N", substr($clientBuffers[$addrStr], 0, 4))[1];
-                    if ($length > $this->packetSizeLimit || $length < 0) {
-                        CloudLogger::get()->debug("Client §b$addrStr §rsent a packet exceeding the limit ($length bytes). Discarding...");
-
+                    if ($result === 0 || $result === false) {
                         [$addr, $port] = explode(":", $addrStr, 2);
-                        $this->disconnectBuffer[] = ThreadSafeArray::fromArray([$addr, (int) $port]);
+                        $disconnectBuffer[] = ThreadSafeArray::fromArray([$addr, (int) $port]);
                         @socket_close($clientSocket);
                         unset($clientSockets[$addrStr], $clientBuffers[$addrStr]);
                         $notifier->wakeupSleeper();
-                        continue 2;
+                        continue;
                     }
 
-                    if (strlen($clientBuffers[$addrStr]) < (4 + $length)) break;
+                    $clientBuffers[$addrStr] .= $chunk;
 
-                    $buffer = substr($clientBuffers[$addrStr], 4, $length);
-                    $clientBuffers[$addrStr] = substr($clientBuffers[$addrStr], 4 + $length);
+                    // Parse length-prefixed frames: [4-byte big-endian uint][payload]
+                    while (strlen($clientBuffers[$addrStr]) >= 4) {
+                        $length = unpack("N", substr($clientBuffers[$addrStr], 0, 4))[1];
+                        if ($length > $this->packetSizeLimit || $length < 0) {
+                            CloudLogger::get()->debug("Client §b$addrStr §rsent a packet exceeding the limit ($length bytes). Discarding...");
 
-                    [$addr, $port] = explode(":", $addrStr, 2);
-                    $this->buffer[] = ThreadSafeArray::fromArray([$addr, (int) $port, $buffer, $length]);
-                    $wakeNeeded = true;
+                            [$addr, $port] = explode(":", $addrStr, 2);
+                            $disconnectBuffer[] = ThreadSafeArray::fromArray([$addr, (int) $port]);
+                            @socket_close($clientSocket);
+                            unset($clientSockets[$addrStr], $clientBuffers[$addrStr]);
+                            $notifier->wakeupSleeper();
+                            continue 2;
+                        }
+
+                        if (strlen($clientBuffers[$addrStr]) < (4 + $length)) break;
+
+                        $buffer = substr($clientBuffers[$addrStr], 4, $length);
+                        $clientBuffers[$addrStr] = substr($clientBuffers[$addrStr], 4 + $length);
+
+                        [$addr, $port] = explode(":", $addrStr, 2);
+                        $receiveBuffer[] = ThreadSafeArray::fromArray([$addr, (int) $port, $buffer, $length]);
+                        $wakeNeeded = true;
+                    }
                 }
-            }
 
-            if ($wakeNeeded) $notifier->wakeupSleeper();
+                if ($wakeNeeded) $notifier->wakeupSleeper();
+            } catch (ConnectionException $e) {
+                $this->established = false;
+                $this->logThreadException($e);
+                break;
+            } catch (Throwable $e) {
+                $this->logThreadException($e);
+            }
         }
 
         foreach ($clientSockets as $sock) {
@@ -225,21 +251,23 @@ final class Network extends Thread {
         }
     }
 
-    /**
-     * Write a length-prefixed frame to a connected TCP socket.
-     * Loops until all bytes are flushed to handle partial writes.
-     */
     private function tcpWrite(Socket $socket, string $buffer): bool {
         $framed = pack("N", strlen($buffer)) . $buffer;
         $total = strlen($framed);
         $sent = 0;
         while ($sent < $total) {
             $result = @socket_write($socket, substr($framed, $sent), $total - $sent);
-            if ($result === false) return false;
+            if ($result === false || $result === 0) return false;
             $sent += $result;
         }
 
         return true;
+    }
+
+    private function logThreadException(Throwable $e): void {
+        try {
+            $this->logger?->exception($e);
+        } catch (Throwable) {}
     }
 
     public function sendPacket(ClientboundPacket $packet, ServerClient $client): bool {
@@ -299,7 +327,7 @@ final class Network extends Thread {
         }
 
         if (!empty($targets)) {
-            $this->sendBuffer[] = ThreadSafeArray::fromArray(['__broadcast__', $buffer, $targets]);
+            $this->sendBuffer[] = ThreadSafeArray::fromArray(['__broadcast__', $buffer, ThreadSafeArray::fromArray($targets)]);
             $totalBytes = strlen($buffer) * count($targets);
             TrafficMonitorManager::getInstance()->pushBytes(TrafficMonitorManager::TRAFFIC_NETWORK, $totalBytes, TrafficMonitor::REGULAR_MODE_OUT);
         }
@@ -308,10 +336,6 @@ final class Network extends Thread {
         return Promise::all($promises);
     }
 
-    /**
-     * Enqueue a packet buffer for the background thread to send via TCP.
-     * Traffic counters are updated here; actual socket I/O happens in onRun().
-     */
     public function write(string $buffer, Address $dst, ?int &$bytes = null): bool {
         if (!$this->established) return false;
         $bytes = strlen($buffer);
@@ -327,21 +351,15 @@ final class Network extends Thread {
         return true;
     }
 
-    public function quit(): void {
-        parent::quit();
-        $this->buffer = new ThreadSafeArray();
-        $this->sendBuffer = new ThreadSafeArray();
-        $this->disconnectBuffer = new ThreadSafeArray();
-    }
-
     public function close(): void {
-        if (!$this->established) return;
-        PocketCloud::getInstance()->getSleeperHandler()->removeNotifier($this->handlerEntry->getNotifierId());
-        $this->buffer = new ThreadSafeArray();
-        $this->sendBuffer = new ThreadSafeArray();
-        $this->disconnectBuffer = new ThreadSafeArray();
-        socket_close($this->serverSocket);
-        $this->established = false;
+        if ($this->established) {
+            $this->established = false;
+            PocketCloud::getInstance()->getSleeperHandler()->removeNotifier($this->handlerEntry->getNotifierId());
+            @socket_shutdown($this->serverSocket);
+            @socket_close($this->serverSocket);
+        }
+
+        if ($this->isStarted() && !$this->isJoined()) $this->quit();
     }
 
     public function getSocket(): Socket {

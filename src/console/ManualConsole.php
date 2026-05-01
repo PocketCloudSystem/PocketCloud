@@ -9,6 +9,8 @@ use RuntimeException;
 /** @author ChatGPT + Gemini + Claude (thanks Gs) */
 final class ManualConsole {
 
+    private const int UTF8_CONTINUATION_TIMEOUT_MS = 5;
+
     private bool $closed = false;
     private string $oldSttySettings;
 
@@ -335,7 +337,8 @@ final class ManualConsole {
         $except = null;
         $tv_usec = ($timeoutMs % 1000) * 1000;
 
-        if (stream_select($read, $write, $except, 0, $tv_usec) <= 0) return null;
+        $selected = @stream_select($read, $write, $except, 0, $tv_usec);
+        if ($selected === false || $selected <= 0) return null;
 
         $char = fread(STDIN, 1);
         if ($char === false || $char === "") return null;
@@ -355,12 +358,26 @@ final class ManualConsole {
         }
 
         for ($i = 1; $i < $length; $i++) {
-            $next = fread(STDIN, 1);
-            if ($next === false) return null;
+            $next = $this->readRawByte(self::UTF8_CONTINUATION_TIMEOUT_MS);
+            if ($next === null) return null;
             $bytes[] = $next;
         }
 
         return implode("", $bytes);
+    }
+
+    private function readRawByte(int $timeoutMs): ?string {
+        $read = [STDIN];
+        $write = null;
+        $except = null;
+        $tv_usec = ($timeoutMs % 1000) * 1000;
+
+        $selected = @stream_select($read, $write, $except, 0, $tv_usec);
+        if ($selected === false || $selected <= 0) return null;
+
+        $char = fread(STDIN, 1);
+        if ($char === false || $char === "") return null;
+        return $char;
     }
 
     // Fix: redraw bei Links/Rechts hinzugefügt
@@ -466,6 +483,7 @@ final class ManualConsole {
     }
 
     public function close(): void {
+        if ($this->closed) return;
         $this->ensureOpen();
         shell_exec("stty " . $this->oldSttySettings);
         $this->closed = true;
@@ -477,6 +495,7 @@ final class ManualConsole {
     }
 
     public function __destruct() {
+        if ($this->closed) return;
         shell_exec("stty " . $this->oldSttySettings);
     }
 

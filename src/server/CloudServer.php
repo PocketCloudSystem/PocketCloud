@@ -23,6 +23,7 @@ use pocketcloud\cloud\network\packet\impl\ModuleSyncPacket;
 use pocketcloud\cloud\network\packet\impl\NotificationListSyncPacket;
 use pocketcloud\cloud\network\packet\impl\ProxyRegisterServerPacket;
 use pocketcloud\cloud\network\packet\impl\ServerSyncPacket;
+use pocketcloud\cloud\network\Network;
 use pocketcloud\cloud\player\CloudPlayer;
 use pocketcloud\cloud\player\CloudPlayerManager;
 use pocketcloud\cloud\PocketCloud;
@@ -62,6 +63,9 @@ final class CloudServer implements Tickable, Writeable, DetailedWriteable {
     private ?ServerStartSnapshot $preStartSnapshot = null;
     private ?ServerStartSnapshot $postStartSnapshot = null;
 
+    private bool $pidLookupDone = false;
+    private float $lastPidLookupTime = 0.0;
+
     public function __construct(
         private readonly int $id,
         private readonly string $serverUuid,
@@ -78,9 +82,18 @@ final class CloudServer implements Tickable, Writeable, DetailedWriteable {
     public function tick(int $currentTick): void {
         if ($this->startTime === null) return;
         if ($this->serverStatus === ServerStatus::STARTING) {
-            if ($this->serverData->getProcessId() === null && ServerStartMethod::current()->hasPidLookup()) {
+            if (
+                !$this->pidLookupDone &&
+                $this->serverData->getProcessId() === null &&
+                ServerStartMethod::current()->hasPidLookup() &&
+                (microtime(true) - $this->lastPidLookupTime) >= 1.0
+            ) {
+                $this->lastPidLookupTime = microtime(true);
                 $pid = ServerStartMethod::current()->lookupPid($this);
-                if ($pid !== null) $this->serverData->setTempProcessId($pid);
+                if ($pid !== null) {
+                    $this->serverData->setTempProcessId($pid);
+                    $this->pidLookupDone = true;
+                }
             }
 
             if (($this->startTime + $this->getTemplate()->getTemplateType()->getServerTimeout()) < microtime(true)) {
@@ -195,6 +208,7 @@ final class CloudServer implements Tickable, Writeable, DetailedWriteable {
     }
 
     public function checkAlive(): bool {
+        if (!Network::getInstance()->isEstablished()) return false;
         $baseTimeout = $this->getTemplate()->getTemplateType()->getServerTimeout();
         $cloudTps = PocketCloud::getInstance()->getCurrentTPS();
         $loadFactor = max(1.0, 20.0 / max(1.0, $cloudTps));

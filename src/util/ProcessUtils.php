@@ -196,4 +196,46 @@ final class ProcessUtils {
             exec("kill -9 $pid > /dev/null 2>&1");
         }
     }
+
+    public static function executeWithTimeout(string $command, float $timeoutSeconds = 1.0): ?string {
+        $process = proc_open($command, [
+            0 => ["pipe", "r"],
+            1 => ["pipe", "w"],
+            2 => ["pipe", "w"]
+        ], $pipes);
+
+        if (!is_resource($process)) return null;
+
+        fclose($pipes[0]);
+        stream_set_blocking($pipes[1], false);
+        stream_set_blocking($pipes[2], false);
+
+        $output = "";
+        $deadline = microtime(true) + max(0.01, $timeoutSeconds);
+
+        try {
+            while (true) {
+                $output .= stream_get_contents($pipes[1]) ?: "";
+                stream_get_contents($pipes[2]);
+
+                $status = proc_get_status($process);
+                if (!$status["running"]) break;
+
+                if (microtime(true) >= $deadline) {
+                    proc_terminate($process, 9);
+                    return null;
+                }
+
+                usleep(10 * 1000);
+            }
+
+            return $output;
+        } finally {
+            foreach ($pipes as $pipe) {
+                if (is_resource($pipe)) fclose($pipe);
+            }
+
+            proc_close($process);
+        }
+    }
 }

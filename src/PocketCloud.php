@@ -76,6 +76,8 @@ use pocketcloud\cloud\server\prepare\ServerPreparator;
 use pocketcloud\cloud\software\ServerSoftwareManager;
 use pocketcloud\cloud\template\TemplateManager;
 use pocketcloud\cloud\template\TemplateType;
+use pocketcloud\cloud\thread\MainThreadHeartbeat;
+use pocketcloud\cloud\thread\MainThreadWatchdog;
 use pocketcloud\cloud\thread\ThreadManager;
 use pocketcloud\cloud\traffic\TrafficMonitorManager;
 use pocketcloud\cloud\update\UpdateChecker;
@@ -162,6 +164,8 @@ final class PocketCloud {
     private TrafficMonitorManager $trafficMonitorManager;
     private CloudPluginManager $pluginManager;
     private UpdateChecker $updateChecker;
+    private MainThreadHeartbeat $mainThreadHeartbeat;
+    private MainThreadWatchdog $mainThreadWatchdog;
 
     private UuidInterface $cloudUniqueId;
     private CloudMetrics $metrics;
@@ -329,6 +333,9 @@ final class PocketCloud {
 
     private function initManagers(): void {
         $this->threadManager = new ThreadManager();
+        $this->mainThreadHeartbeat = new MainThreadHeartbeat();
+        $this->mainThreadWatchdog = new MainThreadWatchdog($this->mainThreadHeartbeat);
+        $this->mainThreadWatchdog->start();
         $this->asyncPool = new AsyncPool();
         $this->serverPreparator = new ServerPreparator();
         $this->requestManager = new RequestManager();
@@ -520,7 +527,7 @@ final class PocketCloud {
                                 ->setTimestamp(time())
                             )
                             ->send();
-                    } catch (JsonException $e) {
+                    } catch (Throwable $e) {
                         CloudLogger::get()->error("Failed to submit discord webhook notification!");
                         CloudLogger::get()->exception($e);
                     }
@@ -561,6 +568,8 @@ final class PocketCloud {
         if (isset($this->httpServer)) $this->httpServer->stop();
         if (isset($this->httpClientManager)) $this->httpClientManager->shutdown();
         if (isset($this->serverPreparator)) $this->serverPreparator->stop();
+        if (isset($this->mainThreadHeartbeat)) $this->mainThreadHeartbeat->stop();
+        if (isset($this->mainThreadWatchdog) && $this->mainThreadWatchdog->isAlive()) $this->mainThreadWatchdog->quit();
         if (isset($this->console)) $this->console->remove();
     }
 
@@ -571,19 +580,23 @@ final class PocketCloud {
         while ($this->running) {
             $tickStart = microtime(true);
             if (($tickStart - $this->nextTick) < -0.025) {
+                $this->beatMainThread("sleep");
                 $this->sleeperHandler->sleepUntil($this->nextTick);
                 continue;
             }
 
             Benchmark::startTiming("full_cloud_tick");
             $this->tick++;
+            $this->beatMainThread("tickables");
             TickableList::tickAll($this->tick);
 
             Benchmark::stopTiming("full_cloud_tick");
 
             $tickWorkEnd = microtime(true);
+            $this->beatMainThread("console");
             $this->console->readLine();
             if (($this->tick % 40) == 0) {
+                $this->beatMainThread("cpu_metrics");
                 ProcessUtils::restartCpuRetrieveCycle();
                 ProcessUtils::restartSystemCpuRetrieveCycle();
             }
@@ -596,7 +609,14 @@ final class PocketCloud {
 
             $this->updatePerformanceMetrics($tickStart, $tickWorkEnd);
 
+            $this->beatMainThread("sleep");
             $this->sleeperHandler->sleepUntil($this->nextTick);
+        }
+    }
+
+    public function beatMainThread(string $stage): void {
+        if (isset($this->mainThreadHeartbeat)) {
+            $this->mainThreadHeartbeat->beat($this->tick, $stage);
         }
     }
 
