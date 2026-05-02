@@ -32,7 +32,7 @@ final class MainThreadWatchdog extends Thread {
                 $this->writeFreezeReport($snapshot, $stalledFor);
             }
 
-            usleep((int) (self::CHECK_INTERVAL_SECONDS * 1_000_000));
+            usleep(intval(self::CHECK_INTERVAL_SECONDS * 1_000_000));
         }
     }
 

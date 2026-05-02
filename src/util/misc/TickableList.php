@@ -3,7 +3,6 @@
 namespace pocketcloud\cloud\util\misc;
 
 use pocketcloud\cloud\console\log\CloudLogger;
-use pocketcloud\cloud\PocketCloud;
 use pocketcloud\cloud\util\benchmark\Benchmark;
 
 final class TickableList {
@@ -29,7 +28,6 @@ final class TickableList {
         foreach (self::$tickableList as $instance) {
             $class = $instance::class;
             $start = microtime(true);
-            PocketCloud::getInstance()?->beatMainThread("tickable:" . $class);
             Benchmark::startTiming($class);
             $instance->tick($currentTick);
             Benchmark::stopTiming($class);

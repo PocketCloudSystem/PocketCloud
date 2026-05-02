@@ -123,12 +123,17 @@ use const pocketcloud\TIMINGS_PATH;
 
 final class PocketCloud {
 
+    private const float MAX_MAIN_THREAD_SLEEP_SECONDS = 0.05;
+    private const float SLEEP_DRIFT_WARNING_THRESHOLD_SECONDS = 1.0;
+    private const float SLEEP_DRIFT_WARNING_INTERVAL_SECONDS = 10.0;
+
     private static ?self $instance = null;
 
     private bool $running = false;
     private int $tick = 0;
     private float $nextTick = 0;
     private float $startTimestamp = 0;
+    private float $lastSleepDriftWarning = 0;
 
     private array $tickTimes = [];
     private float $tickTimesSum = 0.0;
@@ -580,8 +585,7 @@ final class PocketCloud {
         while ($this->running) {
             $tickStart = microtime(true);
             if (($tickStart - $this->nextTick) < -0.025) {
-                $this->beatMainThread("sleep");
-                $this->sleeperHandler->sleepUntil($this->nextTick);
+                $this->sleepUntilNextTick();
                 continue;
             }
 
@@ -609,9 +613,33 @@ final class PocketCloud {
 
             $this->updatePerformanceMetrics($tickStart, $tickWorkEnd);
 
-            $this->beatMainThread("sleep");
-            $this->sleeperHandler->sleepUntil($this->nextTick);
+            $this->sleepUntilNextTick();
         }
+    }
+
+    private function sleepUntilNextTick(): void {
+        $now = microtime(true);
+        $delay = $this->nextTick - $now;
+        if ($delay <= 0) return;
+
+        if ($delay > self::MAX_MAIN_THREAD_SLEEP_SECONDS) {
+            if (
+                $delay >= self::SLEEP_DRIFT_WARNING_THRESHOLD_SECONDS &&
+                ($now - $this->lastSleepDriftWarning) >= self::SLEEP_DRIFT_WARNING_INTERVAL_SECONDS
+            ) {
+                $this->lastSleepDriftWarning = $now;
+                CloudLogger::get()->warn(
+                    "Main thread sleep drift detected: next tick was §e{}ms §rin the future, capping sleep.",
+                    number_format($delay * 1000, 2)
+                );
+            }
+
+            $this->nextTick = $now + self::MAX_MAIN_THREAD_SLEEP_SECONDS;
+            $delay = self::MAX_MAIN_THREAD_SLEEP_SECONDS;
+        }
+
+        $this->beatMainThread("sleep: " . number_format($delay * 1000, 2) . "ms");
+        $this->sleeperHandler->sleepUntil($this->nextTick);
     }
 
     public function beatMainThread(string $stage): void {
