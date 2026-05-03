@@ -4,11 +4,15 @@ namespace pocketcloud\cloud\network\client;
 
 use Closure;
 use pocketcloud\cloud\console\log\CloudLogger;
+use pocketcloud\cloud\network\Network;
+use pocketcloud\cloud\network\packet\impl\KeepAlivePacket;
+use pocketcloud\cloud\PocketCloud;
 use pocketcloud\cloud\server\CloudServer;
 use pocketcloud\cloud\server\CloudServerManager;
 use pocketcloud\cloud\template\TemplateType;
 use pocketcloud\cloud\util\misc\Tickable;
 use pocketcloud\cloud\util\net\Address;
+use pocketcloud\cloud\util\ProcessUtils;
 use pocketcloud\cloud\util\trait\SingletonTrait;
 
 final class ServerClientCache implements Tickable {
@@ -61,17 +65,29 @@ final class ServerClientCache implements Tickable {
     }
 
     public function tick(int $currentTick): void {
+        if ($currentTick % 30 == 0) {
+            [$memoryUsage, $peakMemoryUsage] = array_values(ProcessUtils::getProcessStatus());
+            Network::getInstance()->broadcastPacket(KeepAlivePacket::create(
+                PocketCloud::getInstance()->getCurrentTPS(),
+                PocketCloud::getInstance()->getAverageTPS(),
+                $memoryUsage,
+                $peakMemoryUsage,
+                ProcessUtils::getMemoryLimit(),
+                ProcessUtils::getCpuUsage()
+            ));
+        }
+
         foreach ($this->clients as $client) {
+            $toRemove = [];
             foreach ($client->getDelayedPackets() as $i => $data) {
-                $packet = $data[0];
-                $tick = $data[1];
-                if ($tick <= $currentTick) {
-                    $sendClosure = $data[2] ?? null;
-                    $success = $client->sendPacket($packet);
-                    if ($sendClosure !== null) ($sendClosure)($client, $packet, $success);
-                    $client->unsetDelayedPacket($i);
+                if ($data[1] <= $currentTick) {
+                    $success = $client->sendPacket($data[0]);
+                    if (($data[2] ?? null) !== null) ($data[2])($client, $data[0], $success);
+                    $toRemove[] = $i;
                 }
             }
+
+            foreach ($toRemove as $i) $client->unsetDelayedPacket($i);
         }
     }
 

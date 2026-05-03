@@ -7,8 +7,6 @@ use pocketcloud\cloud\network\packet\ClientboundPacket;
 use pocketcloud\cloud\network\packet\CloudboundPacket;
 use pocketcloud\cloud\network\packet\CloudPacket;
 use pocketcloud\cloud\network\packet\util\PacketData;
-use pocketcloud\cloud\PocketCloud;
-use pocketcloud\cloud\util\ProcessUtils;
 
 final class KeepAlivePacket extends CloudPacket implements ClientboundPacket, CloudboundPacket {
 
@@ -25,16 +23,6 @@ final class KeepAlivePacket extends CloudPacket implements ClientboundPacket, Cl
         if (($server = $client->getServer()) !== null) {
             $server->setLastCheckTime(time());
             $server->getServerData()->setPerformanceStats($this->tps, $this->avgTps, $this->memoryUsage, $this->memoryPeak, $this->memoryLimit, $this->cpuUsage);
-
-            [$memoryUsage, $peakMemoryUsage] = array_values(ProcessUtils::getProcessStatus());
-            $server->sendDelayedPacket(KeepAlivePacket::create(
-                PocketCloud::getInstance()->getCurrentTPS(),
-                PocketCloud::getInstance()->getAverageTPS(),
-                $memoryUsage,
-                $peakMemoryUsage,
-                ProcessUtils::getMemoryLimit(),
-                ProcessUtils::getCpuUsage()
-            ), 20);
         }
     }
 
