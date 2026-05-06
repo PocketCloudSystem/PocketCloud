@@ -169,7 +169,6 @@ final class Network extends Thread {
             try {
                 if (!$this->established || !$this->isAlive()) break;
                 while (($sendData = $sendBuffer->shift()) !== null) {
-                    file_put_contents("/home/Cloud/storage/send_data_buffer.log", date("H:i:s") . " → sendBuffer shift: " . ($sendData[0] ?? "null") . "\n", FILE_APPEND);
                     if ($sendData[0] === "__broadcast__") {
                         $buffer = $sendData[1];
                         $targets = array_slice(iterator_to_array($sendData), 2);
