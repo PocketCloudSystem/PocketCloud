@@ -555,10 +555,74 @@ final class PocketCloud {
 
         CloudLogger::get()->info("§cShutting down §bPocket§3Cloud§r...");
 
+        CloudLogger::get()->info("Clearing tickable list...");
         LoadableList::clear();
         TickableList::clear();
 
         $this->running = false;
+
+        if (isset($this->pluginManager)) {
+            $this->beatMainThread("shutdown: disabling plugins");
+            Benchmark::startTiming("shutdown_plugins_disable");
+            CloudLogger::get()->info("Disabling plugins...");
+            $this->pluginManager->disableAll();
+            Benchmark::stopTiming("shutdown_plugins_disable");
+        }
+
+        if (isset($this->serverManager)) {
+            $this->beatMainThread("shutdown: stopping servers");
+            Benchmark::startTiming("shutdown_stopping_servers");
+            CloudLogger::get()->info("Stopping servers...");
+            $this->serverManager->stopAll(true);
+            Benchmark::stopTiming("shutdown_stopping_servers");
+        }
+
+        if (isset($this->network)) {
+            $this->beatMainThread("shutdown: stopping network");
+            Benchmark::startTiming("shutdown_closing_network_thread");
+            CloudLogger::get()->info("Closing network thread...");
+            $this->network->close();
+            Benchmark::stopTiming("shutdown_closing_network_thread");
+        }
+
+        if (isset($this->httpServer)) {
+            $this->beatMainThread("shutdown: stopping http server");
+            Benchmark::startTiming("shutdown_closing_http_thread");
+            CloudLogger::get()->info("Stopping HTTP service...");
+            $this->httpServer->stop();
+            Benchmark::stopTiming("shutdown_closing_http_thread");
+        }
+
+        if (isset($this->httpClientManager)) {
+            $this->beatMainThread("shutdown: stopping http client");
+            Benchmark::startTiming("shutdown_closing_http_client");
+            CloudLogger::get()->info("Shutting down HTTP client...");
+            $this->httpClientManager->shutdown();
+            Benchmark::stopTiming("shutdown_closing_http_client");
+        }
+
+        if (isset($this->serverPreparator)) {
+            $this->beatMainThread("shutdown: stopping server preparator");
+            Benchmark::startTiming("shutdown_closing_server_preparator");
+            CloudLogger::get()->info("Stopping server preparator...");
+            $this->serverPreparator->stop();
+            Benchmark::stopTiming("shutdown_closing_server_preparator");
+        }
+
+        if (isset($this->mainThreadHeartbeat)) {
+            $this->beatMainThread("shutdown: stopping mainthread beat");
+            Benchmark::startTiming("shutdown_stopping_main_thread");
+            CloudLogger::get()->info("Stopping mainthread heartbeat...");
+            $this->mainThreadHeartbeat->stop();
+            Benchmark::startTiming("shutdown_stopping_main_thread");
+        }
+
+        if (isset($this->mainThreadWatchdog) && $this->mainThreadWatchdog->isAlive()) {
+            Benchmark::startTiming("shutdown_stopping_watchdog");
+            CloudLogger::get()->info("Stopping mainthread watchdog...");
+            $this->mainThreadWatchdog->quit();
+            Benchmark::stopTiming("shutdown_stopping_watchdog");
+        }
 
         if (isset($this->config)) {
             if ($this->config->isWriteTimingsOnShutdown()) {
@@ -567,15 +631,10 @@ final class PocketCloud {
             }
         }
 
-        if (isset($this->pluginManager)) $this->pluginManager->disableAll();
-        if (isset($this->serverManager)) $this->serverManager->stopAll(true);
-        if (isset($this->network)) $this->network->close();
-        if (isset($this->httpServer)) $this->httpServer->stop();
-        if (isset($this->httpClientManager)) $this->httpClientManager->shutdown();
-        if (isset($this->serverPreparator)) $this->serverPreparator->stop();
-        if (isset($this->mainThreadHeartbeat)) $this->mainThreadHeartbeat->stop();
-        if (isset($this->mainThreadWatchdog) && $this->mainThreadWatchdog->isAlive()) $this->mainThreadWatchdog->quit();
-        if (isset($this->console)) $this->console->remove();
+        if (isset($this->console)) {
+            CloudLogger::get()->info("Unregister console...");
+            $this->console->remove();
+        }
     }
 
     public function tick(): void {

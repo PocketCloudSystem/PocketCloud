@@ -11,14 +11,24 @@ final readonly class BenchmarkTimingsSummary {
         private int $count,
         private float $avg,
         private float $min,
-        private float $max
+        private float $max,
+        private int $lastTick
     ) {}
 
-    public function format(int $precision = 3): string {
-        return sprintf(
-            "Name: %s | Count: %s | Avg: %s | Min: %s | Max: %s",
+    public function format(int $precision = 3, bool $colorful = false): string {
+        return $colorful ? sprintf(
+            "Name: §b%s §8| §rCount: §b%s §8| §rLast: §btick %s §8| §rAvg: §b%s §8| §rMin: §b%s §8| §rMax: §b%s",
             $this->name ?? "N/A",
             $this->count,
+            $this->lastTick,
+            FormatUtils::milliseconds($this->avg, $precision),
+            FormatUtils::milliseconds($this->min, $precision),
+            FormatUtils::milliseconds($this->max, $precision),
+        ) : sprintf(
+            "Name: %s | Count: %s | Last: tick %s | Avg: %s | Min: %s | Max: %s",
+            $this->name ?? "N/A",
+            $this->count,
+            $this->lastTick,
             FormatUtils::milliseconds($this->avg, $precision),
             FormatUtils::milliseconds($this->min, $precision),
             FormatUtils::milliseconds($this->max, $precision),

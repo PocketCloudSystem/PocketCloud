@@ -52,6 +52,7 @@ final class CloudConsoleColor {
         self::register(new CloudConsoleColor("pink", "§d", "\x1b[38;5;207m"));
         self::register(new CloudConsoleColor("yellow", "§e", "\x1b[38;5;227m"));
         self::register(new CloudConsoleColor("orange", "§6", "\x1b[38;5;214m"));
+        self::register(new CloudConsoleColor("gold", "§g", "\x1b[38;5;220m"));
 
         self::register(new CloudConsoleColor("highlight", "§l", "\033[7m"));
         self::register(new CloudConsoleColor("underlined", "§n", "\x1b[4m"));

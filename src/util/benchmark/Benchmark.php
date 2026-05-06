@@ -3,6 +3,7 @@
 namespace pocketcloud\cloud\util\benchmark;
 
 use Closure;
+use pocketcloud\cloud\PocketCloud;
 use RuntimeException;
 
 final class Benchmark {
@@ -40,7 +41,7 @@ final class Benchmark {
     }
 
     public static function startTiming(string $name): BenchmarkTiming {
-        self::$timings[$name] = ($timing = new BenchmarkTiming($name));
+        self::$timings[$name] = ($timing = new BenchmarkTiming($name, PocketCloud::getInstance()->getTick()));
         $timing->startTiming();
         return $timing;
     }
@@ -55,7 +56,8 @@ final class Benchmark {
                 "count" => 0,
                 "sum" => 0,
                 "min" => PHP_FLOAT_MAX,
-                "max" => 0
+                "max" => 0,
+                "last" => 0
             ];
         }
 
@@ -63,18 +65,26 @@ final class Benchmark {
         self::$timingsSummary[$name]["sum"] += $timing->getDuration();
         self::$timingsSummary[$name]["min"] = min($timing->getDuration(), self::$timingsSummary[$name]["min"]);
         self::$timingsSummary[$name]["max"] = max($timing->getDuration(), self::$timingsSummary[$name]["max"]);
+        self::$timingsSummary[$name]["last"] = $timing->getCurrentTick();
 
         return $timing;
     }
 
-    public static function getSummary(?string $name = null): array|BenchmarkTimingsSummary|null {
+    /**
+     * @param string|null $name
+     * @param Closure(BenchmarkTimingsSummary $a, BenchmarkTimingsSummary $b): int|null $sortFn
+     * @return array|BenchmarkTimingsSummary|null
+     */
+    public static function getSummary(?string $name = null, ?Closure $sortFn = null): array|BenchmarkTimingsSummary|null {
         $summary = [];
         $keys = $name !== null ? [$name] : array_keys(self::$timingsSummary);
 
         foreach ($keys as $key) {
-            [$count, $sum, $min, $max] = array_values(self::$timingsSummary[$key]);
-            $summary[$key] = new BenchmarkTimingsSummary($key, $count, $sum / $count, $min, $max);
+            [$count, $sum, $min, $max, $last] = array_values(self::$timingsSummary[$key]);
+            $summary[$key] = new BenchmarkTimingsSummary($key, $count, $sum / $count, $min, $max, $last);
         }
+
+        if ($sortFn !== null && $name === null) usort($summary, $sortFn);
 
         return $name !== null ? ($summary[$name] ?? null) : $summary;
     }

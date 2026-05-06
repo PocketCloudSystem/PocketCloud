@@ -7,7 +7,7 @@ use pocketcloud\cloud\util\benchmark\Benchmark;
 
 final class TickableList {
 
-    private const float SLOW_TICKABLE_THRESHOLD_SECONDS = 0.25;
+    private const float SLOW_TICKABLE_THRESHOLD_SECONDS = 0.05;
     private const float SLOW_TICKABLE_LOG_INTERVAL_SECONDS = 5.0;
 
     /** @var array<Tickable> */
@@ -26,18 +26,16 @@ final class TickableList {
 
     public static function tickAll(int $currentTick): void {
         foreach (self::$tickableList as $instance) {
-            $class = $instance::class;
-            $start = microtime(true);
-            Benchmark::startTiming($class);
+            Benchmark::startTiming($class = $instance::class);
             $instance->tick($currentTick);
-            Benchmark::stopTiming($class);
+            $e = Benchmark::stopTiming($class);
 
-            $duration = microtime(true) - $start;
+            $duration = $e->getDuration() / 1_000;
             if ($duration >= self::SLOW_TICKABLE_THRESHOLD_SECONDS) {
                 $lastLog = self::$lastSlowTickableLog[$class] ?? 0.0;
-                if (($start - $lastLog) >= self::SLOW_TICKABLE_LOG_INTERVAL_SECONDS) {
-                    self::$lastSlowTickableLog[$class] = $start;
-                    CloudLogger::get()->warn("Slow cloud tickable Â§b{} Â§rtook Â§e{}ms Â§ron tick Â§b{}Â§r.", $class, number_format($duration * 1000, 2), (string) $currentTick);
+                if ((($e->getStartInMs() / 1_000) - $lastLog) >= self::SLOW_TICKABLE_LOG_INTERVAL_SECONDS) {
+                    self::$lastSlowTickableLog[$class] = $e->getStartInMs() / 1_000;
+                    CloudLogger::get()->warn("Slow cloud tickable §b{} §rtook §e{}ms §ron tick §b{}§r.", $class, number_format($duration * 1000, 2), (string) $currentTick);
                 }
             }
         }

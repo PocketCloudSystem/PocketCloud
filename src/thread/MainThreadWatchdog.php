@@ -7,7 +7,6 @@ use const pocketcloud\STORAGE_PATH;
 
 final class MainThreadWatchdog extends Thread {
 
-    private const float CHECK_INTERVAL_SECONDS = 0.5;
     private const float FREEZE_THRESHOLD_SECONDS = 3.0;
     private const float REPORT_INTERVAL_SECONDS = 10.0;
 
@@ -32,7 +31,7 @@ final class MainThreadWatchdog extends Thread {
                 $this->writeFreezeReport($snapshot, $stalledFor);
             }
 
-            usleep(intval(self::CHECK_INTERVAL_SECONDS * 1_000_000));
+            usleep(50000);
         }
     }
 
@@ -47,7 +46,7 @@ final class MainThreadWatchdog extends Thread {
         );
 
         try {
-            echo $line . "\n";
+            echo "\n\r" . $line . "\n";
             file_put_contents(STORAGE_PATH . "watchdog.log", $line, FILE_APPEND | LOCK_EX);
         } catch (Throwable) {}
     }

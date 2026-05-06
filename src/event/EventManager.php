@@ -43,6 +43,11 @@ final class EventManager {
         $this->handlers = [];
     }
 
+    /**
+     * @param Event $event
+     * @return void
+     * @internal
+     */
     public function call(Event $event): void {
         foreach ($this->handlers as $pluginHandler) {
             foreach (($pluginHandler[$event::class] ?? []) as $handler) {

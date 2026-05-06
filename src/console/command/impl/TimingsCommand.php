@@ -27,8 +27,8 @@ final class TimingsCommand extends Command {
             } else $sender->warn("Failed to paste timings.");
         } else if ($subCommand?->getName() == "dump") {
             /** @var BenchmarkTimingsSummary $summary */
-            foreach (Benchmark::getSummary() as $summary) {
-                $sender->info($summary->format());
+            foreach (Benchmark::getSummary(sortFn: fn(BenchmarkTimingsSummary $a, BenchmarkTimingsSummary $b) => $b->getMax() <=> $a->getMax()) as $summary) {
+                $sender->info($summary->format(colorful: true));
             }
         }
         return true;

@@ -27,10 +27,7 @@ final class ServerClient {
 
     /** @internal */
     public function unsetDelayedPacket(int $index): void {
-        if (isset($this->delayedPackets[$index])) {
-            unset($this->delayedPackets[$index]);
-            $this->delayedPackets = array_values($this->delayedPackets);
-        }
+        if (isset($this->delayedPackets[$index])) unset($this->delayedPackets[$index]);
     }
 
     /**

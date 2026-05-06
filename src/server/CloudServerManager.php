@@ -129,6 +129,7 @@ final class CloudServerManager implements Tickable {
     }
 
     private function addToStartQueue(CloudServer $server): void {
+        CloudLogger::get()->debug("Done preparing server: §b{}", $server->getName());
         $this->serverStartQueue->add($server);
     }
 

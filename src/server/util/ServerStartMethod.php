@@ -39,9 +39,8 @@ final class ServerStartMethod {
                 $command = "cd " . escapeshellarg($workingDirectory) .
                     " && screen -dmS " . escapeshellarg($screenName) .
                     " bash -lc " . escapeshellarg("exec " . $startCommand);
-                exec($command, $output, $returnVar);
-                if ($returnVar !== 0) return Promise::rejected();
-                return Promise::resolved();
+                if (is_string(ProcessUtils::executeWithTimeout($command, 5))) return Promise::resolved();
+                return Promise::rejected();
             },
             fn(): bool => TerminalUtils::checkCommand("screen"),
             function (array $servers): bool {
@@ -58,9 +57,8 @@ final class ServerStartMethod {
                         " bash -lc " . escapeshellarg("exec " . $startCommand);
                 }
 
-                exec(implode(" ; ", $commands), $output, $returnVar);
-                if ($returnVar !== 0) return false;
-                return true;
+                if (is_string(ProcessUtils::executeWithTimeout(implode(" ; ", $commands), 5))) return true;
+                return false;
             },
             function (CloudServer $server): ?int {
                 $screenName = $server->getName() . "-" . $server->getServerUuid();
@@ -80,9 +78,8 @@ final class ServerStartMethod {
                 $command = "cd " . escapeshellarg($workingDirectory) .
                     " && tmux new-session -d -s " . escapeshellarg($paneName) .
                     " bash -lc " . escapeshellarg("exec " . $startCommand);
-                exec($command, $output, $returnVar);
-                if ($returnVar !== 0) return Promise::rejected();
-                return Promise::resolved();
+                if (is_string(ProcessUtils::executeWithTimeout($command, 5))) return Promise::resolved();
+                return Promise::rejected();
             },
             fn(): bool => TerminalUtils::checkCommand("tmux"),
             function (array $servers): bool {
@@ -99,9 +96,8 @@ final class ServerStartMethod {
                         " bash -lc " . escapeshellarg("exec " . $startCommand);
                 }
 
-                exec(implode(" ; ", $commands), $output, $returnVar);
-                if ($returnVar !== 0) return false;
-                return true;
+                if (is_string(ProcessUtils::executeWithTimeout(implode(" ; ", $commands), 5))) return true;
+                return false;
             },
             function (CloudServer $server): ?int {
                 $paneName = $server->getName() . "-" . $server->getServerUuid();

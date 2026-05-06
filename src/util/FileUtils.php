@@ -62,11 +62,12 @@ final class FileUtils {
         );
     }
 
-    public static function copyDirectory(string $src, string $dst): bool {
+    public static function copyDirectory(string $src, string $dst, array $exclusions = []): bool {
         $src = PathUtils::normalize($src);
         $dst = PathUtils::normalize($dst);
+        $exclusions = array_flip($exclusions);
         return ExceptionHandler::attempt(
-            function (string $src, string $dst): bool {
+            function (string $src, string $dst, array $exclusions): bool {
                 if (!is_dir($src)) throw new InvalidArgumentException("Source directory does not exist: $src");
 
                 if (!is_dir($dst) && !mkdir($dst, 0777, true)) throw new RuntimeException("Cannot create destination directory: $dst");
@@ -77,6 +78,7 @@ final class FileUtils {
 
                 /** @var SplFileInfo $item */
                 foreach ($iterator as $item) {
+                    if (isset($exclusions[$item->getFilename()])) continue;
                     $relativePath = substr($item->getPathname(), strlen($src) + 1);
                     $dstPath = PathUtils::join($dst, $relativePath);
 
@@ -91,7 +93,7 @@ final class FileUtils {
             },
             null,
             null,
-            $src, $dst
+            $src, $dst, $exclusions
         ) ?? false;
     }
 
