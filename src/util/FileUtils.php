@@ -63,35 +63,43 @@ final class FileUtils {
     }
 
     public static function copyDirectory(string $src, string $dst, array $exclusions = []): bool {
-        $src = PathUtils::normalize($src);
+        $src = rtrim(PathUtils::normalize($src), DIRECTORY_SEPARATOR);
         $dst = PathUtils::normalize($dst);
-        $exclusions = array_flip($exclusions);
         return ExceptionHandler::attempt(
             function (string $src, string $dst, array $exclusions): bool {
                 if (!is_dir($src)) throw new InvalidArgumentException("Source directory does not exist: $src");
-
                 if (!is_dir($dst) && !mkdir($dst, 0777, true)) throw new RuntimeException("Cannot create destination directory: $dst");
                 $iterator = new RecursiveIteratorIterator(
                     new RecursiveDirectoryIterator($src, FilesystemIterator::SKIP_DOTS),
                     RecursiveIteratorIterator::SELF_FIRST
                 );
 
-                /** @var SplFileInfo $item */
                 foreach ($iterator as $item) {
-                    if (isset($exclusions[$item->getFilename()])) continue;
                     $relativePath = substr($item->getPathname(), strlen($src) + 1);
+                    foreach ($exclusions as $exclude) {
+                        if (str_contains($exclude, DIRECTORY_SEPARATOR)) {
+                            if (str_starts_with($relativePath, $exclude)) continue 2;
+                        } else {
+                            if ($item->getFilename() === $exclude) continue 2;
+                        }
+                    }
+
                     $dstPath = PathUtils::join($dst, $relativePath);
 
                     if ($item->isDir()) {
-                       if (!is_dir($dstPath)) mkdir($dstPath, 0755, true);
+                        if (!is_dir($dstPath) && !mkdir($dstPath, 0755, true)) {
+                            throw new RuntimeException("Failed to create directory: $dstPath");
+                        }
                     } else {
-                        copy($item->getPathname(), $dstPath);
+                        if (!copy($item->getPathname(), $dstPath)) {
+                            throw new RuntimeException("Failed to copy: {$item->getPathname()}");
+                        }
                     }
                 }
 
                 return true;
             },
-            null,
+            "Failed to copy: " . $src . " to " . $dst,
             null,
             $src, $dst, $exclusions
         ) ?? false;

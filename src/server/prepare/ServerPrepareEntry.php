@@ -40,18 +40,18 @@ final class ServerPrepareEntry extends ThreadSafe {
 
         if (file_exists($this->serverPath) && !$this->static) FileUtils::removeDirectory($this->serverPath);
 
-        FileUtils::copyDirectory(PathUtils::join(GLOBAL_TEMPLATES_PATH, strtolower($this->templateType)) . "/", $this->serverPath, ["cloud_log_archive"]);
+        FileUtils::copyDirectory(PathUtils::join(GLOBAL_TEMPLATES_PATH, strtolower($this->templateType)) . "/", $this->serverPath);
 
         $copyFromSources = $this->alwaysCopyToStaticServers || !$this->static;
         if ($copyFromSources) {
-            if ($this->group !== null) FileUtils::copyDirectory(PathUtils::join(SERVER_GROUPS_PATH, $this->group) . "/", $this->serverPath, ["cloud_log_archive"]);
-            FileUtils::copyDirectory($this->templatePath, $this->serverPath, ["cloud_log_archive"]);
+            if ($this->group !== null) FileUtils::copyDirectory(PathUtils::join(SERVER_GROUPS_PATH, $this->group) . "/", $this->serverPath);
+            FileUtils::copyDirectory($this->templatePath, $this->serverPath, ["cloud_log_archive/"]);
         }
 
         foreach ($this->propertiesData as $properties) {
             [$fileName, $replacements] = $properties;
             $filePath = $this->serverPath . $fileName;
-            if (!$copyFromSources) FileUtils::copyFile(PathUtils::join(GLOBAL_TEMPLATES_PATH, strtolower($this->templateType), $fileName), $filePath, ["cloud_log_archive"]);
+            if (!$copyFromSources) FileUtils::copyFile(PathUtils::join(GLOBAL_TEMPLATES_PATH, strtolower($this->templateType), $fileName), $filePath);
             $this->processAndReplacePlaceholders($filePath, iterator_to_array($replacements));
         }
 
