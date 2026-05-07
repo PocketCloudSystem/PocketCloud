@@ -2,4 +2,5 @@ script/output/*
 script/tests/*
 script/src/*
 vendor/
-.idea
+.idea/
+target/
