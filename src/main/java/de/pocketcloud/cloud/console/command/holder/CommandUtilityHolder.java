@@ -38,16 +38,12 @@ public class CommandUtilityHolder {
         return Collections.unmodifiableCollection(flags.values());
     }
 
-    public ScanResult scanAndCleanFlags(List<String> args, boolean mergeGlobalAndRegularFlags)
-            throws FlagParseException {
-
+    public ScanResult scanAndCleanFlags(List<String> args, boolean mergeGlobalAndRegularFlags) throws FlagParseException {
         if (flags.isEmpty()) return ScanResult.empty();
-
         Map<String, Object> globalFlags = new LinkedHashMap<>();
         Map<String, Object> regularFlags = new LinkedHashMap<>();
 
         Iterator<String> it = args.iterator();
-
         while (it.hasNext()) {
 
             String arg = it.next();

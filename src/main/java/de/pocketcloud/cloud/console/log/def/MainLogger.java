@@ -31,6 +31,7 @@ public class MainLogger implements ILogger {
                 logFile = new BufferedWriter(new FileWriter(cloudLogPath, true));
             } catch (IOException e) {
                 exception(e);
+                logFile = null;
             }
         }
     }
@@ -55,6 +56,12 @@ public class MainLogger implements ILogger {
         }
 
         return this;
+    }
+
+    @Override
+    public ILogger exception(String message, Throwable throwable, Object... params) {
+        error(message, params);
+        return exception(throwable);
     }
 
     @Override

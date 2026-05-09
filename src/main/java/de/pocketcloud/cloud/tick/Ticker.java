@@ -1,0 +1,86 @@
+package de.pocketcloud.cloud.tick;
+
+import de.pocketcloud.cloud.PocketCloud;
+import de.pocketcloud.cloud.console.log.CloudLogger;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.locks.LockSupport;
+
+public final class Ticker {
+
+    public static final long TICK_RATE_MS = 50;
+    public static final long MAX_SLEEP_MS = 100;
+    public static final long DRIFT_WARNING_THRESHOLD_MS = 200;
+    public static final long DRIFT_WARNING_INTERVAL_MS = 5_000;
+
+    private final Map<String, Tickable> tickableList = new HashMap<>();
+
+    private final Runnable tickerCallback;
+    private long tickCounter = 0;
+    private long nextTick = 0;
+    private long lastSleepDriftWarning = 0;
+
+    public Ticker(Runnable tickerCallback) {
+        this.tickerCallback = tickerCallback;
+    }
+
+    public Ticker register(Tickable tickable) {
+        if (tickableList.containsKey(tickable.getClass().getSimpleName())) throw new IllegalArgumentException("Tickable already exists");
+        tickableList.put(tickable.getClass().getSimpleName(), tickable);
+        return this;
+    }
+
+    public Ticker unregister(Class<Tickable> tickable) {
+        tickableList.remove(tickable.getSimpleName());
+        return this;
+    }
+
+    public Ticker unregister(Tickable tickable) {
+        tickableList.remove(tickable.getClass().getSimpleName());
+        return this;
+    }
+
+    public void tick() {
+        this.nextTick = System.currentTimeMillis();
+        while (PocketCloud.getInstance().running()) {
+            long tickStart = System.currentTimeMillis();
+            if ((tickStart - this.nextTick) < -25) {
+                sleepUntilNextTick();
+                continue;
+            }
+
+            this.tickCounter++;
+
+            tickerCallback.run();
+            for (Tickable tickable : tickableList.values()) {
+                tickable.tick(tickCounter);
+            }
+
+            if ((this.nextTick - tickStart) < -1000) {
+                this.nextTick = tickStart;
+            } else {
+                this.nextTick += TICK_RATE_MS;
+            }
+
+            sleepUntilNextTick();
+        }
+    }
+
+    private void sleepUntilNextTick() {
+        long now = System.currentTimeMillis();
+        long delay = this.nextTick - now;
+        if (delay <= 0) return;
+
+        if (delay > MAX_SLEEP_MS) {
+            if (delay >= DRIFT_WARNING_THRESHOLD_MS && (now - lastSleepDriftWarning) >= DRIFT_WARNING_INTERVAL_MS) {
+                lastSleepDriftWarning = now;
+                CloudLogger.get().warn("Main thread sleep drift detected: next tick was §e{}ms §rin the future, capping sleep.", delay);
+            }
+            this.nextTick = now + MAX_SLEEP_MS;
+            delay = MAX_SLEEP_MS;
+        }
+
+        LockSupport.parkNanos(delay * 1_000_000L);
+    }
+}

@@ -1,8 +1,10 @@
 package de.pocketcloud.cloud;
 
 import de.pocketcloud.cloud.console.CloudConsole;
+import de.pocketcloud.cloud.console.CloudShutdownHook;
 import de.pocketcloud.cloud.console.command.CommandManager;
 import de.pocketcloud.cloud.console.log.CloudLogger;
+import de.pocketcloud.cloud.tick.Ticker;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
@@ -21,6 +23,9 @@ public final class PocketCloud {
     private static PocketCloud instance = null;
 
     private boolean running = false;
+    private boolean hasStopped = false;
+
+    private final Ticker ticker;
 
     private final CloudConsole console;
     private final CommandManager commandManager;
@@ -29,14 +34,32 @@ public final class PocketCloud {
         instance = this;
         running = true;
 
+        Thread.setDefaultUncaughtExceptionHandler((_, throwable) -> CloudLogger.get().exception(throwable));
+
+        CloudLogger.set(CloudLogger.tmp("storage/cloud.log"));
+
         console = new CloudConsole();
         console.install();
         console.start();
 
-        CloudLogger.get().info("PocketCloud started");
-
         commandManager = new CommandManager();
 
-        Runtime.getRuntime().addShutdownHook(new Thread(console::uninstall));
+        ticker = new Ticker(console::pollCommands);
+
+        CloudLogger.get().info("PocketCloud started");
+        Runtime.getRuntime().addShutdownHook(new CloudShutdownHook());
+
+        ticker.tick();
+    }
+
+    public void shutdown() {
+        if (!running || hasStopped) return;
+        CloudLogger.get().info("Shutting down...");
+
+        this.hasStopped = true;
+        this.running = false;
+
+        CloudLogger.get().success("Done");
+        this.console.uninstall();
     }
 }
