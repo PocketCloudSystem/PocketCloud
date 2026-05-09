@@ -4,6 +4,7 @@ import de.pocketcloud.cloud.console.CloudConsole;
 import de.pocketcloud.cloud.console.CloudShutdownHook;
 import de.pocketcloud.cloud.console.command.CommandManager;
 import de.pocketcloud.cloud.console.log.CloudLogger;
+import de.pocketcloud.cloud.network.NettyServer;
 import de.pocketcloud.cloud.tick.Ticker;
 import lombok.Getter;
 import lombok.experimental.Accessors;
@@ -22,13 +23,14 @@ public final class PocketCloud {
     @Accessors(fluent = false)
     private static PocketCloud instance = null;
 
-    private boolean running = false;
+    private boolean running;
     private boolean hasStopped = false;
 
     private final Ticker ticker;
 
     private final CloudConsole console;
     private final CommandManager commandManager;
+    private final NettyServer network;
 
     public PocketCloud() throws IOException {
         instance = this;
@@ -43,8 +45,10 @@ public final class PocketCloud {
         console.start();
 
         commandManager = new CommandManager();
-
+        network = new NettyServer();
         ticker = new Ticker(console::pollCommands);
+
+        network.start();
 
         CloudLogger.get().info("PocketCloud started");
         Runtime.getRuntime().addShutdownHook(new CloudShutdownHook());
@@ -56,10 +60,12 @@ public final class PocketCloud {
         if (!running || hasStopped) return;
         CloudLogger.get().info("Shutting down...");
 
-        this.hasStopped = true;
-        this.running = false;
+        hasStopped = true;
+        running = false;
+
+        network.close();
 
         CloudLogger.get().success("Done");
-        this.console.uninstall();
+        console.uninstall();
     }
 }
