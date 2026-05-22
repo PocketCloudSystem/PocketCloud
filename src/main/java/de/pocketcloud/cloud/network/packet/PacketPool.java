@@ -1,29 +1,21 @@
 package de.pocketcloud.cloud.network.packet;
 
 import de.pocketcloud.cloud.network.packet.impl.TestPacket;
+import lombok.Getter;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
 public final class PacketPool {
+
     private static PacketPool instance;
     
     private final Map<String, Supplier<CloudPacket>> packets = new HashMap<>();
     
-    private PacketPool() {
+    public PacketPool() {
+        instance = this;
         init();
-    }
-    
-    public static void initialize() {
-        instance = new PacketPool();
-    }
-    
-    public static PacketPool getInstance() {
-        if (instance == null) {
-            initialize();
-        }
-        return instance;
     }
     
     private void init() {
@@ -42,5 +34,10 @@ public final class PacketPool {
 
     public Map<String, Supplier<CloudPacket>> getAll() {
         return new HashMap<>(packets);
+    }
+
+    public static PacketPool getInstance() {
+        if (instance == null) instance = new PacketPool();
+        return instance;
     }
 }

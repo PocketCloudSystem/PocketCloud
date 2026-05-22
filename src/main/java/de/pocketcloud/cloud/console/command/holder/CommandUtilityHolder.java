@@ -26,12 +26,8 @@ public class CommandUtilityHolder {
         return this;
     }
 
-    public CommandFlag getFlag(String fullFlag) {
-        try {
-            return flags.get(fullFlag);
-        } catch (IndexOutOfBoundsException e) {
-            return null;
-        }
+    public Optional<CommandFlag> getFlag(String fullFlag) {
+        return Optional.ofNullable(flags.getOrDefault(fullFlag, null));
     }
 
     public Collection<CommandFlag> getFlags() {
@@ -130,11 +126,11 @@ public class CommandUtilityHolder {
         return this;
     }
 
-    public BaseCommandParameter getParameter(int index) {
+    public Optional<BaseCommandParameter> getParameter(int index) {
         try {
-            return parameters.get(index);
+            return Optional.of(parameters.get(index));
         } catch (IndexOutOfBoundsException e) {
-            return null;
+            return Optional.empty();
         }
     }
 
@@ -159,7 +155,7 @@ public class CommandUtilityHolder {
     }
 
     public Map<String, Object> parseArgs(List<String> args, LastParsed lastParsed) throws ArgumentParseException, NoArgumentFoundException {
-        if (parameters.isEmpty()) return null;
+        if (parameters.isEmpty()) return Map.of();
         Map<String, Object> result = new LinkedHashMap<>();
         for (int i = 0; i < parameters.size(); i++) {
             BaseCommandParameter param = parameters.get(i);

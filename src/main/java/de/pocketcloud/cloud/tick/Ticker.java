@@ -2,11 +2,16 @@ package de.pocketcloud.cloud.tick;
 
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.log.CloudLogger;
+import de.pocketcloud.cloud.util.benchmark.Benchmark;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.locks.LockSupport;
 
+@Getter
+@Accessors(fluent = true)
 public final class Ticker {
 
     public static final long TICK_RATE_MS = 50;
@@ -16,18 +21,18 @@ public final class Ticker {
 
     private final Map<String, Tickable> tickableList = new HashMap<>();
 
-    private final Runnable tickerCallback;
     private long tickCounter = 0;
     private long nextTick = 0;
     private long lastSleepDriftWarning = 0;
 
-    public Ticker(Runnable tickerCallback) {
-        this.tickerCallback = tickerCallback;
-    }
-
     public Ticker register(Tickable tickable) {
         if (tickableList.containsKey(tickable.getClass().getSimpleName())) throw new IllegalArgumentException("Tickable already exists");
         tickableList.put(tickable.getClass().getSimpleName(), tickable);
+        return this;
+    }
+
+    public Ticker registerAll(Tickable... tickables) {
+        for (Tickable tickable : tickables) register(tickable);
         return this;
     }
 
@@ -50,12 +55,16 @@ public final class Ticker {
                 continue;
             }
 
+            Benchmark.startTiming("cloud_tick");
             this.tickCounter++;
 
-            tickerCallback.run();
             for (Tickable tickable : tickableList.values()) {
+                Benchmark.startTiming(tickable.getClass().getSimpleName());
                 tickable.tick(tickCounter);
+                Benchmark.stopTiming(tickable.getClass().getSimpleName());
             }
+
+            Benchmark.stopTiming("cloud_tick");
 
             if ((this.nextTick - tickStart) < -1000) {
                 this.nextTick = tickStart;

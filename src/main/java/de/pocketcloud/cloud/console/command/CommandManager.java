@@ -1,6 +1,7 @@
 package de.pocketcloud.cloud.console.command;
 
 import de.pocketcloud.cloud.console.command.impl.ExitCommand;
+import de.pocketcloud.cloud.console.command.impl.HelpCommand;
 import de.pocketcloud.cloud.console.command.sender.CommandSender;
 import de.pocketcloud.cloud.console.command.sub.SubCommand;
 
@@ -13,6 +14,7 @@ public final class CommandManager {
 
     public CommandManager() {
         register(new ExitCommand());
+        register(new HelpCommand());
     }
 
     public void register(Command command) {
@@ -30,13 +32,13 @@ public final class CommandManager {
         var name = arguments.removeFirst();
 
         Command command;
-        if ((command = get(name)) != null) {
+        if ((command = get(name).orElse(null)) != null) {
             command.handle(sender, name, arguments);
         }
     }
 
-    public Command get(String name) {
-        return commandPool.getOrDefault(name, knownAliasesPool.get(name));
+    public Optional<Command> get(String name) {
+        return Optional.ofNullable(commandPool.getOrDefault(name, knownAliasesPool.get(name)));
     }
 
     public List<Command> getAll() {

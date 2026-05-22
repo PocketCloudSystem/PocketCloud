@@ -1,11 +1,17 @@
 package de.pocketcloud.cloud.network.packet;
 
+import de.pocketcloud.cloud.network.client.ServerClient;
 import de.pocketcloud.cloud.network.packet.util.PacketData;
+import lombok.Getter;
+import lombok.Setter;
 
 public abstract class CloudPacket implements Packet {
     
     private boolean encoded = false;
     private Long sentTimestamp = null;
+    @Setter
+    @Getter
+    private int size = 0;
     
     @Override
     public void encode(PacketData packetData) {
@@ -25,15 +31,14 @@ public abstract class CloudPacket implements Packet {
         decodePayload(packetData);
     }
 
-    public void sendPacket() {
-        if (!(this instanceof CloudboundPacket)) return;
-        //Network.getInstance().sendPacket((CloudboundPacket) this);
-        //TODO
+    public void sendPacket(ServerClient client) {
+        if (!(this instanceof ClientboundPacket p)) return;
+        client.sendPacket(p);
     }
     
     @Override
     public abstract void handle();
-    
+
     @Override
     public final String getName() {
         return getClass().getSimpleName();

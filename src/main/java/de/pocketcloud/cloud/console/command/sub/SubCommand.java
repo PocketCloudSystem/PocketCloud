@@ -70,9 +70,7 @@ public abstract class SubCommand extends CommandUtilityHolder {
     }
 
     public String getUsage() {
-        return usage != null
-                ? usage
-                : buildUsageMessage();
+        return usage != null ? usage : buildUsageMessage();
     }
 
     public static LambdaSubCommand lambda(String name, QuadFunction<CommandSender, String, Map<String, Object>, Map<String, Object>, Boolean> expressionCallback) {

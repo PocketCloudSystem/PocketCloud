@@ -1,0 +1,38 @@
+package de.pocketcloud.cloud.event;
+
+import lombok.Getter;
+
+public abstract class Event {
+
+    public final int MAX_EVENT_CALL_DEPTH = 50;
+    private static int eventCallDepth = 1;
+    @Getter
+    private boolean cancelled = false;
+
+    public void cancel() {
+        if (!(this instanceof Cancelable)) throw new IllegalStateException();
+        this.cancelled = true;
+    }
+
+    public void uncancel() {
+        if (!(this instanceof Cancelable)) throw new IllegalStateException();
+        this.cancelled = false;
+    }
+
+    public void call() {
+        if (eventCallDepth >= MAX_EVENT_CALL_DEPTH) {
+            throw new RuntimeException("Recursive event call detected (reached max depth of " + MAX_EVENT_CALL_DEPTH + " calls)");
+        }
+
+        ++eventCallDepth;
+        try {
+            EventManager.getInstance().call(this);
+        } finally {
+            --eventCallDepth;
+        }
+    }
+
+    public String getName() {
+        return getClass().getSimpleName();
+    }
+}

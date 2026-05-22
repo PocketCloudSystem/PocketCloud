@@ -48,6 +48,10 @@ public abstract class CommandFlag {
         return new CommandShortFlag(flag, false, false);
     }
 
+    public static CommandShortFlag shortFlag(String flag, boolean global) {
+        return new CommandShortFlag(flag, global, false);
+    }
+
     public static CommandShortFlag shortFlag(String flag, boolean global, boolean expectValue) {
         return new CommandShortFlag(flag, global, expectValue);
     }
@@ -57,6 +61,10 @@ public abstract class CommandFlag {
      */
     public static CommandLongFlag longFlag(String flag) {
         return new CommandLongFlag(flag, false, false);
+    }
+
+    public static CommandLongFlag longFlag(String flag, boolean global) {
+        return new CommandLongFlag(flag, global, false);
     }
 
     public static CommandLongFlag longFlag(String flag, boolean global, boolean expectValue) {

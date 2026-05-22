@@ -4,9 +4,9 @@ import de.pocketcloud.cloud.util.FileUtils;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 
 @Getter
 @Accessors(fluent = true)
@@ -25,16 +25,14 @@ public enum ConfigTypes {
         this.extensions = extensions;
     }
 
-    public static ConfigType detect(Path path) {
-        if (Files.isRegularFile(path)) {
-            String extension = FileUtils.extensionOf(path);
-            for (ConfigTypes configType : ConfigTypes.values()) {
-                if (configType.extensions().contains(extension)) {
-                    return configType.type();
-                }
+    public static Optional<ConfigType> detect(Path path) {
+        String extension = FileUtils.extensionOf(path);
+        for (ConfigTypes configType : ConfigTypes.values()) {
+            if (configType.extensions().contains(extension)) {
+                return Optional.of(configType.type());
             }
         }
 
-        return null;
+        return Optional.empty();
     }
 }

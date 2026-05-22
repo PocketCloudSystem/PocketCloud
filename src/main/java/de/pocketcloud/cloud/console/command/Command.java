@@ -34,7 +34,7 @@ public abstract class Command extends CommandUtilityHolder {
 
         CommandDescription annotation = getClass().getAnnotation(CommandDescription.class);
         name = annotation.name();
-        usage = annotation.usage();
+        usage = annotation.usage().isBlank() ? null : annotation.usage();
         description = annotation.description();
         aliases = annotation.aliases();
 
@@ -103,7 +103,7 @@ public abstract class Command extends CommandUtilityHolder {
 
         boolean success;
         if (subCommand == null) {
-            success = run(sender, label, parsedArgs != null ? parsedArgs : Map.of(), finalFlags);
+            success = run(sender, label, parsedArgs, finalFlags);
         } else {
             success = subCommand.run(sender, label, parsedArgs, finalFlags);
         }
@@ -129,9 +129,7 @@ public abstract class Command extends CommandUtilityHolder {
             usage.append("\n");
         }
 
-        if (usage.isEmpty()) {
-            usage.append(getName());
-        }
+        usage.append(getName());
 
         for (BaseCommandParameter parameter : parameters) {
             usage.append(parameter.isOptional()
@@ -176,5 +174,9 @@ public abstract class Command extends CommandUtilityHolder {
 
     public String getUsage(SubCommand subCommand) {
         return subCommand != null ? buildUsageMessage(subCommand) : (usage != null ? usage : buildUsageMessage(null));
+    }
+
+    public String getUsage() {
+        return getUsage(null);
     }
 }

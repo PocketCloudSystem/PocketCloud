@@ -51,6 +51,7 @@ public interface ILogger {
             appendLogEntry(cleanedMessage);
         }
 
+        message = ConsoleColor.convert(message);
         CloudConsole console = PocketCloud.getInstance().console();
         if (console != null) {
             LineReader reader = console.getReader();

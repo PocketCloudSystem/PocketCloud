@@ -1,6 +1,8 @@
 package de.pocketcloud.cloud.network.packet.util;
 
 import com.google.gson.*;
+import de.pocketcloud.cloud.util.FileUtils;
+import de.pocketcloud.cloud.util.Writable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -11,7 +13,6 @@ public final class PacketData {
 
     private final List<Object> data;
     private int readIndex = 0;
-    private static final Gson GSON = new Gson();
 
     public PacketData() {
         this.data = new ArrayList<>();
@@ -28,7 +29,7 @@ public final class PacketData {
 
     public void writeAll(Object... values) {
         for (Object item : values) {
-            if (item instanceof Writable writable) {
+            if (item instanceof Writable<?> writable) {
                 write(writable.write());
             } else {
                 write(item);
@@ -135,11 +136,11 @@ public final class PacketData {
     }
 
     public String toJson() {
-        return GSON.toJson(data);
+        return FileUtils.encodeJson(data);
     }
 
     public static PacketData fromJson(String json) {
-        JsonArray jsonArray = GSON.fromJson(json, JsonArray.class);
+        JsonArray jsonArray = FileUtils.decodeJson(json, JsonArray.class);
         List<Object> list = new ArrayList<>();
         for (JsonElement element : jsonArray) {
             if (element.isJsonPrimitive()) {
@@ -193,10 +194,5 @@ public final class PacketData {
         }
 
         return map;
-    }
-
-    public interface Writable {
-
-        Object write();
     }
 }

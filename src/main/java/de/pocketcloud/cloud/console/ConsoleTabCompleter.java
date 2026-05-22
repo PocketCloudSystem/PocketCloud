@@ -5,7 +5,6 @@ import de.pocketcloud.cloud.console.command.Command;
 import de.pocketcloud.cloud.console.command.CommandManager;
 import de.pocketcloud.cloud.console.command.TabComplete;
 import de.pocketcloud.cloud.console.command.holder.CommandUtilityHolder;
-import de.pocketcloud.cloud.console.command.parameter.BaseCommandParameter;
 import de.pocketcloud.cloud.console.command.sub.LambdaSubCommand;
 import de.pocketcloud.cloud.console.command.sub.SubCommand;
 import org.jline.reader.Candidate;
@@ -39,11 +38,6 @@ public final class ConsoleTabCompleter implements Completer {
 
         for (Command cmd : commandManager.getAll()) {
             if (startsWith(cmd.getName(), current)) matches.add(cmd.getName());
-            for (String alias : cmd.getAliases()) {
-                if (startsWith(alias, current)) {
-                    matches.add(alias);
-                }
-            }
         }
 
         return matches;
@@ -52,7 +46,7 @@ public final class ConsoleTabCompleter implements Completer {
     private List<String> completeCommandArguments(List<String> tokens, String current) {
         List<String> copiedTokens = new ArrayList<>(tokens);
         String commandName = copiedTokens.removeFirst();
-        Object command = PocketCloud.getInstance().commandManager().get(commandName);
+        Object command = PocketCloud.getInstance().commandManager().get(commandName).orElse(null);
         if (command == null) return List.of();
         List<String> matches = new ArrayList<>();
         Object originalCommand = command;
@@ -60,11 +54,7 @@ public final class ConsoleTabCompleter implements Completer {
 
         command = resolveSubCommand(command, commandName, copiedTokens, current, matches);
 
-        BaseCommandParameter param = ((CommandUtilityHolder) command).getParameter(copiedTokens.size());
-
-        if (param != null) {
-            matches.addAll(param.onTabCompleteMatch(current));
-        }
+        ((CommandUtilityHolder) command).getParameter(copiedTokens.size()).ifPresent(param -> matches.addAll(param.onTabCompleteMatch(current)));
 
         Object usedForCustomTabCompletion = command instanceof LambdaSubCommand ? originalCommand : command;
 

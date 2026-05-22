@@ -56,7 +56,7 @@ public final class Config {
 
     public void load() throws IOException, UnsupportedFileExtensionException {
         if (!Files.exists(filePath.getParent())) throw new FileNotFoundException("Parent of " + filePath + " not found");
-        if (type == null) type = ConfigTypes.detect(filePath);
+        if (type == null) type = ConfigTypes.detect(filePath).orElse(null);
 
         if (type == null) throw new UnsupportedFileExtensionException("Unsupported file extension from " + filePath + " has no config type");
         File file = filePath.toFile();
@@ -82,14 +82,30 @@ public final class Config {
         load();
     }
 
-    public boolean save() {
+    public boolean save() throws IOException {
         return save(null);
     }
 
     /**
      * @param customSaveHandler If applied, the config will use this to save the config to disk, meaning the handler will save the config.
      */
-    public boolean save(Function<Config, Boolean> customSaveHandler) {
+    public boolean save(Function<Config, Boolean> customSaveHandler) throws IOException {
+        if (!changed) return true;
+        if (customSaveHandler != null) return customSaveHandler.apply(this);
+        String content = type.encode(this.content);
+        Files.writeString(filePath, content);
+        return true;
+    }
+
+    public boolean saveSafe() {
+        return saveSafe(null);
+    }
+
+    /**
+     * Only difference between {@link Config#save()} and {@link Config#saveSafe()} is, that saveSafe swallows the exception and returns false instead.
+     * @param customSaveHandler If applied, the config will use this to save the config to disk, meaning the handler will save the config.
+     */
+    public boolean saveSafe(Function<Config, Boolean> customSaveHandler) {
         if (!changed) return true;
         if (customSaveHandler != null) return customSaveHandler.apply(this);
 
@@ -175,11 +191,19 @@ public final class Config {
         }
 
         Object value = current.get(keys[keys.length - 1]);
-        return type.isInstance(value) ? type.cast(value) : defaultValue;
+        return type != null ? (type.isInstance(value) ? type.cast(value) : defaultValue) : (T) value;
     }
 
     public <T> T get(String key, T defaultValue) {
         return get(key, (Class<T>) defaultValue.getClass(), defaultValue);
+    }
+
+    public <T> T get(String key, Class<T> type) {
+        return get(key, type, null);
+    }
+
+    public Object get(String key) {
+        return get(key, Object.class, null);
     }
 
     public Map<String, Object> getAll() {

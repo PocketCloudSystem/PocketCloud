@@ -8,7 +8,7 @@ import lombok.experimental.Accessors;
 public enum CloudLogLevel {
 
     INFO("§bINFO"),
-    WARN("§eWARN"),
+    WARN("§cWARN"),
     ERROR("§4ERROR"),
     SUCCESS("§aSUCCESS"),
     DEBUG("§6DEBUG");

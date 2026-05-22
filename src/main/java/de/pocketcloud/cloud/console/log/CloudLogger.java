@@ -25,7 +25,7 @@ public final class CloudLogger {
     }
 
     public static ILogger tmp(String logPath) {
-        return new MainLogger(logPath, true, false);
+        return new MainLogger(logPath, true, logPath != null);
     }
 
     public static ILogger tmp(String logPath, boolean debugMode, boolean saveLogs) {

@@ -2,6 +2,7 @@ package de.pocketcloud.cloud.console;
 
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.command.sender.ConsoleCommandSender;
+import de.pocketcloud.cloud.tick.Tickable;
 import lombok.Getter;
 import org.jline.reader.EndOfFileException;
 import org.jline.reader.LineReader;
@@ -17,7 +18,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 @Getter
-public final class CloudConsole extends Thread {
+public final class CloudConsole extends Thread implements Tickable {
 
     private String prompt = "§c" + System.getProperty("user.name").toLowerCase() + "§8@§bcloud §8» §r";
 
@@ -45,6 +46,8 @@ public final class CloudConsole extends Thread {
     }
 
     public void uninstall() {
+        this.interrupt();
+
         try {
             if (reader != null) {
                 reader.getBuffer().clear();
@@ -62,8 +65,13 @@ public final class CloudConsole extends Thread {
                 terminal.close();
             }
         } catch (Exception _) {}
+    }
 
-        this.interrupt();
+    public void clear() {
+        try {
+            terminal.puts(org.jline.utils.InfoCmp.Capability.clear_screen);
+            terminal.flush();
+        } catch (Exception _) {}
     }
 
     @Override
@@ -78,6 +86,11 @@ public final class CloudConsole extends Thread {
                 break;
             }
         }
+    }
+
+    @Override
+    public void tick(long currentTick) {
+        pollCommands();
     }
 
     public void pollCommands() {

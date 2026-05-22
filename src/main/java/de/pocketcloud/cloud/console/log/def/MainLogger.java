@@ -8,6 +8,7 @@ import de.pocketcloud.cloud.util.FormatUtils;
 import java.io.*;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 
 public class MainLogger implements ILogger {
 
@@ -38,18 +39,25 @@ public class MainLogger implements ILogger {
 
     @Override
     public MainLogger exception(Throwable throwable) {
-        error("§cUnhandled §e{}§c: §e{} §cwas thrown in §e{} §cat line §e{}",
-                throwable.getClass().getName(),
-                throwable.getMessage(),
-                throwable.getStackTrace()[0].getFileName(),
-                throwable.getStackTrace()[0].getLineNumber()
-        );
+        if (throwable.getStackTrace().length > 0) {
+            error("§cUnhandled §e{}§c: §e{} §cwas thrown in §e{} §cat line §e{}",
+                    throwable.getClass().getName(),
+                    throwable.getMessage(),
+                    throwable.getStackTrace()[0].getFileName(),
+                    throwable.getStackTrace()[0].getLineNumber()
+            );
+        } else {
+            error("§cUnhandled §e{}§c: §e{}",
+                    throwable.getClass().getName(),
+                    throwable.getMessage()
+            );
+        }
 
         int i = 1;
         for (StackTraceElement trace : throwable.getStackTrace()) {
             error("§cTrace §e#{} §ccalled at '§e{}§c' in §e{} §cat line §e{}",
                     i++,
-                    trace.getMethodName() + "()",
+                    trace.getMethodName(),
                     trace.getClassName(),
                     trace.getLineNumber()
             );
@@ -77,7 +85,7 @@ public class MainLogger implements ILogger {
                 .replace("{log_level}", logLevel.prefix())
                 .replace("{message}", parsedMessage);
 
-        echo(ConsoleColor.convert(formatted));
+        echo(formatted);
         return this;
     }
 
@@ -86,6 +94,7 @@ public class MainLogger implements ILogger {
         if (closed || logFile == null) return;
         try {
             logFile.write(message);
+            logFile.newLine();
             logFile.flush();
         } catch (IOException e) {
             exception(e);
