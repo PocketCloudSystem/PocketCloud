@@ -2,19 +2,38 @@ package de.pocketcloud.cloud.console.command;
 
 import de.pocketcloud.cloud.console.command.impl.ExitCommand;
 import de.pocketcloud.cloud.console.command.impl.HelpCommand;
+import de.pocketcloud.cloud.console.command.impl.ReloadCommand;
 import de.pocketcloud.cloud.console.command.sender.CommandSender;
 import de.pocketcloud.cloud.console.command.sub.SubCommand;
+import de.pocketcloud.cloud.load.Loadable;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 
 import java.util.*;
 
-public final class CommandManager {
+public final class CommandManager implements Loadable {
+
+    @Getter
+    private static CommandManager instance = null;
 
     private final Map<String, Command> commandPool = new HashMap<>();
     private final Map<String, Command> knownAliasesPool = new HashMap<>();
 
     public CommandManager() {
+        instance = this;
+    }
+
+    @Override
+    public void load() {
         register(new ExitCommand());
         register(new HelpCommand());
+        register(new ReloadCommand());
+    }
+
+    @Override
+    public void unload() {
+        commandPool.clear();
+        knownAliasesPool.clear();
     }
 
     public void register(Command command) {
@@ -34,7 +53,7 @@ public final class CommandManager {
         Command command;
         if ((command = get(name).orElse(null)) != null) {
             command.handle(sender, name, arguments);
-        }
+        } else sender.error("§cCommand not found. §rRun §8'§bhelp§8' §rto receive a list of available commands.");
     }
 
     public Optional<Command> get(String name) {

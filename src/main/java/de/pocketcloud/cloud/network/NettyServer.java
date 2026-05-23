@@ -42,7 +42,7 @@ public class NettyServer {
         this.address = address;
     }
 
-    public void start() throws InterruptedException {
+    public void start() {
         try {
             new ServerBootstrap()
                     .channelFactory(Epoll.isAvailable() ? EpollServerSocketChannel::new : NioServerSocketChannel::new)
@@ -54,8 +54,7 @@ public class NettyServer {
 
             CloudLogger.get().info("§bNetwork connection §rhas been §aestablished §ron §b{}§r.", address.toString());
         } catch (Exception e) {
-            CloudLogger.get().exception(e);
-            CloudLogger.get().warn("Failed to establish network connection, shutting down...");
+            CloudLogger.get().exception("Failed to establish network connection, shutting down...", e);
             PocketCloud.getInstance().shutdown();
         }
     }

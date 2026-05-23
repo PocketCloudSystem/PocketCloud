@@ -137,7 +137,11 @@ public final class PocketCloudPaths {
         }
 
         public String asString() {
-            return asPath().toString();
+            try {
+                return asPath().toAbsolutePath().toString();
+            } catch (Exception _) {
+                return asPath().toString();
+            }
         }
 
         public Path asPath() {

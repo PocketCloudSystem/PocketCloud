@@ -34,16 +34,14 @@ public final class CloudMySqlProvider extends CloudProvider {
 //            });
         });
 
-        LocalCache.get(ActiveInGameModuleCache.class).getAll().forEach(module -> {
-            getModuleState(module).thenAccept(enabled -> {
-                Boolean realEnabled = enabled.orElse(false);
-                if (enabled.isEmpty()) {
-                    executeAsync(DatabaseQueries.insertModuleState(), module, false);
-                }
+        LocalCache.get(ActiveInGameModuleCache.class).getAll().forEach(module -> getModuleState(module).thenAccept(enabled -> {
+            Boolean realEnabled = enabled.orElse(false);
+            if (enabled.isEmpty()) {
+                executeAsync(DatabaseQueries.insertModuleState(), module, false);
+            }
 
-                LocalCache.get(ActiveInGameModuleCache.class).set(module, realEnabled);
-            });
-        });
+            LocalCache.get(ActiveInGameModuleCache.class).set(module, realEnabled);
+        }));
 
         getWhitelist().thenAccept(LocalCache.get(WhitelistCache.class)::syncIn);
         getNotificationList().thenAccept(LocalCache.get(NotificationListCache.class)::syncIn);

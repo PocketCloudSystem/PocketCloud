@@ -4,6 +4,7 @@ import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.event.impl.plugin.PluginDisableEvent;
 import de.pocketcloud.cloud.event.impl.plugin.PluginEnableEvent;
 import de.pocketcloud.cloud.event.impl.plugin.PluginLoadEvent;
+import de.pocketcloud.cloud.load.Loadable;
 import de.pocketcloud.cloud.plugin.exception.PluginLoadFailedException;
 import de.pocketcloud.cloud.plugin.loader.JarCloudPluginLoader;
 import de.pocketcloud.cloud.tick.Tickable;
@@ -20,13 +21,21 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Getter
-public final class CloudPluginManager implements Tickable {
+public final class CloudPluginManager implements Tickable, Loadable {
+
+    @Getter
+    private static CloudPluginManager instance = null;
 
     private final Map<String, CloudPlugin> plugins = new HashMap<>();
     private final JarCloudPluginLoader pluginLoader = new JarCloudPluginLoader();
     private final Path pluginsFolder = Paths.get("storage/plugins");
 
-    public void loadAll() {
+    public CloudPluginManager() {
+        instance = this;
+    }
+
+    public void load() {
+        CloudLogger.get().info("Loading plugins...");
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(pluginsFolder)) {
             for (Path path : stream) {
                 if (Files.isRegularFile(path)) {
@@ -37,12 +46,21 @@ public final class CloudPluginManager implements Tickable {
             }
         } catch (IOException e) {
             CloudLogger.get().exception("Unable to load plugins", e);
+        } finally {
+            enableAll();
         }
+    }
+
+    @Override
+    public void unload() {
+        disableAll();
+        this.plugins.clear();
     }
 
     public void loadPlugin(Path jarFile) {
         if (pluginLoader.canLoad(jarFile)) {
             try {
+                CloudLogger.get().info("Loading plugin §b{}§r...", jarFile.getFileName().toString());
                 CloudPlugin plugin = pluginLoader.load(jarFile);
                 if (plugins.containsKey(plugin.getDescription().getName())) throw new PluginLoadFailedException("Plugin with the same name already loaded");
                 plugins.put(plugin.getDescription().getName(), plugin);
@@ -60,6 +78,7 @@ public final class CloudPluginManager implements Tickable {
 
     public void enable(CloudPlugin plugin) {
         if (plugin.isEnabled()) return;
+        CloudLogger.get().info("§aEnabling §rplugin §b{}§r...",  plugin.getDescription().getName());
         plugin.setState(CloudPluginState.ENABLED);
         try {
             new PluginEnableEvent(plugin).call();
@@ -71,11 +90,13 @@ public final class CloudPluginManager implements Tickable {
     }
 
     public void disableAll() {
-        plugins.values().stream().filter(CloudPlugin::isEnabled).forEach(this::enable);
+        CloudLogger.get().info("§cDisabling §rall plugins...");
+        plugins.values().stream().filter(CloudPlugin::isEnabled).forEach(this::disable);
     }
 
     public void disable(CloudPlugin plugin) {
         if (plugin.isDisabled()) return;
+        CloudLogger.get().info("§cDisabling §rplugin §b{}§r...",  plugin.getDescription().getName());
         plugins.remove(plugin.getDescription().getName());
         plugin.setState(CloudPluginState.DISABLED);
         try {
@@ -90,19 +111,12 @@ public final class CloudPluginManager implements Tickable {
         }
     }
 
-    public void clear() {
-        for (CloudPlugin plugin : plugins.values()) {
-            try {
-                plugin.getLoader().close();
-            } catch (IOException _) {}
-        }
-
-        this.plugins.clear();
-    }
-
     @Override
     public void tick(long currentTick) {
-        //todo tick plugin schedulers
+        for (CloudPlugin plugin : plugins.values()) {
+            if (!plugin.isEnabled()) continue;
+            plugin.getScheduler().tick(currentTick);
+        }
     }
 
     public CloudPlugin get(String name) {

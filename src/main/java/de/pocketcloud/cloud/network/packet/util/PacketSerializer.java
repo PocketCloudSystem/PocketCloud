@@ -1,7 +1,6 @@
 package de.pocketcloud.cloud.network.packet.util;
 
 import com.google.gson.JsonSyntaxException;
-import de.pocketcloud.cloud.network.packet.ClientboundPacket;
 import de.pocketcloud.cloud.network.packet.CloudPacket;
 import de.pocketcloud.cloud.network.packet.PacketPool;
 import de.pocketcloud.cloud.network.exception.PacketException;

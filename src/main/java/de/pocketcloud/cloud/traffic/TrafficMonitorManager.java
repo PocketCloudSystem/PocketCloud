@@ -1,11 +1,11 @@
 package de.pocketcloud.cloud.traffic;
 
-import de.pocketcloud.cloud.console.log.CloudLogger;
+import de.pocketcloud.cloud.load.Loadable;
 import de.pocketcloud.cloud.tick.Tickable;
 import de.pocketcloud.cloud.traffic.impl.NetworkTrafficMonitor;
-import de.pocketcloud.cloud.util.FormatUtils;
 import de.pocketcloud.cloud.util.TimeUtils;
 import lombok.Getter;
+import lombok.experimental.Accessors;
 
 import java.net.SocketAddress;
 import java.util.List;
@@ -15,12 +15,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
 
-public final class TrafficMonitorManager implements Tickable {
+public final class TrafficMonitorManager implements Tickable, Loadable {
 
     public static final String TRAFFIC_NETWORK = "network";
 
     @Getter
     private static TrafficMonitorManager instance;
+
     @Getter
     private final Map<String, Supplier<? extends TrafficMonitor>> trafficMonitorTypes = new ConcurrentHashMap<>();
     @Getter
@@ -31,8 +32,17 @@ public final class TrafficMonitorManager implements Tickable {
 
     public TrafficMonitorManager() {
         instance = this;
+    }
 
+    @Override
+    public void load() {
         registerTrafficMonitorType(TRAFFIC_NETWORK, NetworkTrafficMonitor::new);
+    }
+
+    @Override
+    public void unload() {
+        trafficMonitorTypes.clear();
+        trafficMonitors.clear();
     }
 
     public void registerTrafficMonitorType(String type, Supplier<? extends TrafficMonitor> factory) {

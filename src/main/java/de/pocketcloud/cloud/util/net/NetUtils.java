@@ -11,11 +11,30 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public final class NetUtils {
 
+    private static final Pattern CONTENT_RANGE = Pattern.compile("bytes\\s+\\d+-\\d+/(\\d+)");
+
     public static long downloadSize(String url) {
+        long headReqSize = tryHeadRequest(url);
+        if (headReqSize != -1) {
+            return headReqSize;
+        }
+
+        long rangeReqSize = tryRangeRequest(url);
+        if (rangeReqSize != -1) {
+            return rangeReqSize;
+        }
+
+        return -1;
+    }
+
+    private static long tryHeadRequest(String url) {
         try (HttpClient client = createClient()) {
             return client.send(
                     HttpRequest.newBuilder()
@@ -27,6 +46,40 @@ public final class NetUtils {
         } catch (Exception e) {
             return -1L;
         }
+    }
+
+    private static long tryRangeRequest(String url) {
+        try (HttpClient client = createClient()) {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .header("User-Agent", "Mozilla/5.0")
+                    .header("Range", "bytes=0-0")
+                    .GET()
+                    .build();
+
+            try {
+                HttpResponse<Void> response = client.send(
+                        request,
+                        HttpResponse.BodyHandlers.discarding()
+                );
+
+                List<String> contentRange = response.headers().allValues("Content-Range");
+
+                for (String header : contentRange) {
+                    Matcher m = CONTENT_RANGE.matcher(header);
+                    if (m.find()) {
+                        return Long.parseLong(m.group(1));
+                    }
+                }
+            } catch (IOException | InterruptedException e) {
+                return -1L;
+            }
+
+        } catch (Exception e) {
+            return -1L;
+        }
+
+        return -1L;
     }
 
     public static void download(String url, Path targetFile, Consumer<DownloadProgress> onProgress) throws IOException, InterruptedException {

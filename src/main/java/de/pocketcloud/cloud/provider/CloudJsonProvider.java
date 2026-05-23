@@ -92,7 +92,9 @@ public final class CloudJsonProvider extends CloudProvider {
             try {
                 Template template = Template.read((Map<String, Object>) data);
                 templates.put(template.name(), template);
-            } catch (Exception _) {}
+            } catch (Exception e) {
+                CloudLogger.get().exception("Unable to load templates", e);
+            }
         });
         return CompletableFuture.completedFuture(templates);
     }

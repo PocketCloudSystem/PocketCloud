@@ -1,7 +1,7 @@
 package de.pocketcloud.cloud.template.group;
 
 import de.pocketcloud.cloud.template.Template;
-import de.pocketcloud.cloud.util.MapperUtils;
+import de.pocketcloud.cloud.util.mapper.MapperUtils;
 import de.pocketcloud.cloud.util.PocketCloudPaths;
 import de.pocketcloud.cloud.util.Writable;
 import lombok.Getter;

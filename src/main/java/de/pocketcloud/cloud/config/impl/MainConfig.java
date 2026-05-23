@@ -1,6 +1,7 @@
 package de.pocketcloud.cloud.config.impl;
 
 import de.pocketcloud.cloud.provider.database.MySqlSettings;
+import de.pocketcloud.cloud.tick.Ticker;
 import de.pocketcloud.cloud.util.StringUtils;
 import de.pocketcloud.configlib.*;
 import lombok.Getter;
@@ -12,6 +13,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Getter
 @Accessors(fluent = true)
 public final class MainConfig extends Configuration {
+
+    @Getter
+    @Accessors(fluent = false)
+    @Ignored
+    private static MainConfig instance = null;
 
     @Comment({"The name of the cloud."})
     private String cloudName = "main-cloud";
@@ -40,7 +46,11 @@ public final class MainConfig extends Configuration {
 
     public MainConfig() {
         super("storage/configs/config.yml", ConfigType.YAML);
+        instance = this;
+        reload();
+    }
 
+    public void reload() {
         var changes = new AtomicInteger(0);
         if (!load(changes) || changes.get() > 0) save();
     }

@@ -1,7 +1,9 @@
 package de.pocketcloud.cloud.template;
 
 import de.pocketcloud.cloud.server.software.ServerSoftware;
+import de.pocketcloud.cloud.util.PocketCloudPaths;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -9,6 +11,10 @@ public enum TemplateType {
 
     SERVER,
     PROXY;
+
+    public Path globalTemplatePath() {
+        return PocketCloudPaths.templates().global().with(name().toLowerCase()).asPath();
+    }
 
     private final List<ServerSoftware> softwareList = new ArrayList<>();
 

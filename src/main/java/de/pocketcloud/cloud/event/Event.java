@@ -10,12 +10,12 @@ public abstract class Event {
     private boolean cancelled = false;
 
     public void cancel() {
-        if (!(this instanceof Cancelable)) throw new IllegalStateException();
+        if (!(this instanceof Cancelable)) throw new IllegalStateException("Event is not cancelable");
         this.cancelled = true;
     }
 
     public void uncancel() {
-        if (!(this instanceof Cancelable)) throw new IllegalStateException();
+        if (!(this instanceof Cancelable)) throw new IllegalStateException("Event is not cancelable");
         this.cancelled = false;
     }
 

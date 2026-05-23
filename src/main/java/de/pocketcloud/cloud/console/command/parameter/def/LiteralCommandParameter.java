@@ -5,7 +5,6 @@ import de.pocketcloud.cloud.console.command.Command;
 import de.pocketcloud.cloud.console.command.exception.ArgumentParseException;
 import de.pocketcloud.cloud.console.command.parameter.BaseCommandParameter;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 

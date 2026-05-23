@@ -2,8 +2,10 @@ package de.pocketcloud.cloud.server.software;
 
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.log.CloudLogger;
+import de.pocketcloud.cloud.load.Loadable;
 import de.pocketcloud.cloud.util.FileUtils;
-import de.pocketcloud.cloud.util.PocketCloudPaths;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
@@ -11,7 +13,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
-public final class ServerSoftwareManager {
+public final class ServerSoftwareManager implements Loadable {
+
+    @Getter
+    private static ServerSoftwareManager instance = null;
 
     public static final List<ServerSoftware> DEFAULTS = List.of(
             new ServerSoftware("pmmp-latest", "SERVER", new ServerSoftware.SoftwareDownload(
@@ -55,14 +60,18 @@ public final class ServerSoftwareManager {
     private final Map<String, ServerSoftware> softwareList = new HashMap<>();
     private final List<String> disabledSoftware = new ArrayList<>();
 
+    public ServerSoftwareManager() {
+        instance = this;
+    }
+
     public void load() {
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(Path.of("storage/software/"), "*.json")) {
             for (Path file : stream) {
                 if (Files.isRegularFile(file)) {
                     ServerSoftware software = null;
                     try {
-                        software = FileUtils.decodeJsonFile(file.toString(), ServerSoftware.class);
-                        if (!software.normalizedName().equals(software.normalizedName())) {
+                        software = FileUtils.decodeJsonFile(file, ServerSoftware.class);
+                        if (!software.normalizedName().equals(file.getFileName().toString().replace(".json", ""))) {
                             CloudLogger.get().warn("Mismatch of name and file name from software {}", file.getFileName().toString());
                             continue;
                         }
@@ -94,6 +103,8 @@ public final class ServerSoftwareManager {
         if (!software.directoryPath().toFile().exists() && !software.directoryPath().toFile().mkdirs()) throw new RuntimeException("Unable to create directory");
         if (!software.bridge().directoryPath(software).toFile().exists() && !software.bridge().directoryPath(software).toFile().mkdirs()) throw new RuntimeException("Unable to create directory");
 
+        if (!software.configFilePath().toFile().exists()) FileUtils.filePutContents(software.configFilePath(), FileUtils.PRETTY_GSON.toJson(software));
+
         if (software.requiresUpdate()) {
             if (!software.downloadSoftware()) throw new RuntimeException("Failed to download software");
         }
@@ -107,12 +118,18 @@ public final class ServerSoftwareManager {
         }
     }
 
+    @Override
+    public void unload() {
+        softwareList.clear();
+        disabledSoftware.clear();
+    }
+
     public void register(ServerSoftware software, boolean override) {
         if (softwareList.containsKey(software.name()) && !override) throw new IllegalArgumentException("ServerSoftware already exists");
         softwareList.put(software.name(), software);
         if (!software.directoryPath().toFile().exists() && !software.directoryPath().toFile().mkdirs()) throw new RuntimeException("Unable to create directory");
         if (!software.bridge().directoryPath(software).toFile().exists() && !software.bridge().directoryPath(software).toFile().mkdirs()) throw new RuntimeException("Unable to create directory");
-        FileUtils.filePutContents(PocketCloudPaths.storage().software().with(software.normalizedName() + ".json").toString(), FileUtils.PRETTY_GSON.toJson(software));
+        FileUtils.filePutContents(software.configFilePath(), FileUtils.PRETTY_GSON.toJson(software));
         disabledSoftware.add(software.name());
         CloudLogger.get().warn("Please restart the cloud to download the required artifacts for the software §b{}§r.", software.name());
     }

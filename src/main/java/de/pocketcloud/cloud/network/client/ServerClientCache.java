@@ -4,6 +4,7 @@ import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.tick.Tickable;
 import io.netty.channel.Channel;
 import lombok.Getter;
+import lombok.experimental.Accessors;
 
 import java.net.SocketAddress;
 import java.util.Collection;

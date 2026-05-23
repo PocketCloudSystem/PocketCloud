@@ -54,7 +54,7 @@ public final class ArrayUtils {
                 Map<String, Object> nestedDefault = (Map<String, Object>) defaultValue;
 
                 map.put(key, fillMissingKeys(nestedMap, nestedDefault, affectedKeys, enforceTypes));
-            } else if (defaultValue instanceof Map<?, ?> && !(actualValue instanceof Map<?, ?>)) {
+            } else if (defaultValue instanceof Map<?, ?>) {
                 affectedKeys.incrementAndGet();
                 map.put(key, defaultValue);
             } else if (enforceTypes && defaultValue != null && actualValue != null) {

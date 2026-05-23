@@ -26,8 +26,8 @@ public final class Ticker {
     private long lastSleepDriftWarning = 0;
 
     public Ticker register(Tickable tickable) {
-        if (tickableList.containsKey(tickable.getClass().getSimpleName())) throw new IllegalArgumentException("Tickable already exists");
-        tickableList.put(tickable.getClass().getSimpleName(), tickable);
+        if (tickableList.containsKey(tickable.getClass().getName())) throw new IllegalArgumentException("Tickable already exists");
+        tickableList.put(tickable.getClass().getName(), tickable);
         return this;
     }
 
@@ -37,12 +37,12 @@ public final class Ticker {
     }
 
     public Ticker unregister(Class<Tickable> tickable) {
-        tickableList.remove(tickable.getSimpleName());
+        tickableList.remove(tickable.getName());
         return this;
     }
 
     public Ticker unregister(Tickable tickable) {
-        tickableList.remove(tickable.getClass().getSimpleName());
+        tickableList.remove(tickable.getClass().getName());
         return this;
     }
 
@@ -58,10 +58,12 @@ public final class Ticker {
             Benchmark.startTiming("cloud_tick");
             this.tickCounter++;
 
-            for (Tickable tickable : tickableList.values()) {
-                Benchmark.startTiming(tickable.getClass().getSimpleName());
-                tickable.tick(tickCounter);
-                Benchmark.stopTiming(tickable.getClass().getSimpleName());
+            if (!PocketCloud.getInstance().loader().isReloading()) {
+                for (Tickable tickable : tickableList.values()) {
+                    Benchmark.startTiming("tick_" + tickable.getClass().getName());
+                    tickable.tick(tickCounter);
+                    Benchmark.stopTiming("tick_" + tickable.getClass().getName());
+                }
             }
 
             Benchmark.stopTiming("cloud_tick");

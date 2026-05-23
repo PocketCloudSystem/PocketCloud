@@ -1,4 +1,4 @@
-package de.pocketcloud.cloud.util;
+package de.pocketcloud.cloud.util.mapper;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -8,6 +8,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class MapperUtils {
 
     private static final Map<Class<?>, Field[]> FIELD_CACHE = new ConcurrentHashMap<>();
+
+    private static final Map<Class<? extends MapKeyConverter<?, ?>>, MapKeyConverter<?, ?>> CONVERTER_CACHE = new ConcurrentHashMap<>();
 
     public static Map<String, Object> toMap(Object obj) {
         Objects.requireNonNull(obj, "obj must not be null");
@@ -21,7 +23,16 @@ public final class MapperUtils {
                     continue;
                 }
 
-                map.put(field.getName(), convertToMap(value));
+                MapKey mapKey = field.getAnnotation(MapKey.class);
+                MapInline mapInline = field.getAnnotation(MapInline.class);
+                if (mapInline != null) {
+                    map.putAll(toMap(value));
+                } else if (mapKey != null) {
+                    MapKeyConverter converter = getConverter(mapKey.converter());
+                    map.put(field.getName(), converter.toValue(value));
+                } else {
+                    map.put(field.getName(), convertToMap(value));
+                }
             }
             return map;
         } catch (IllegalAccessException e) {
@@ -38,8 +49,18 @@ public final class MapperUtils {
                 Object value = map.get(field.getName());
                 if (value == null) continue;
                 field.setAccessible(true);
-                Object converted = convertFromMap(value, field.getType());
-                field.set(instance, converted);
+
+                MapKey mapKey = field.getAnnotation(MapKey.class);
+                MapInline mapInline = field.getAnnotation(MapInline.class);
+
+                if (mapInline != null) {
+                    field.set(instance, fromMap(map, field.getType()));
+                } else if (mapKey != null) {
+                    MapKeyConverter converter = getConverter(mapKey.converter());
+                    field.set(instance, converter.fromValue(value));
+                } else {
+                    field.set(instance, convertFromMap(value, field.getType()));
+                }
             }
             return instance;
         } catch (RuntimeException e) {
@@ -47,6 +68,19 @@ public final class MapperUtils {
         } catch (Exception e) {
             throw new RuntimeException("Failed to map map to object of type " + clazz.getName(), e);
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T, R> MapKeyConverter<T, R> getConverter(Class<? extends MapKeyConverter<?, ?>> clazz) {
+        return (MapKeyConverter<T, R>) CONVERTER_CACHE.computeIfAbsent(clazz, c -> {
+            try {
+                var constructor = c.getDeclaredConstructor();
+                constructor.setAccessible(true);
+                return constructor.newInstance();
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to instantiate converter: " + c.getName(), e);
+            }
+        });
     }
 
     private static Field[] getFields(Class<?> clazz) {

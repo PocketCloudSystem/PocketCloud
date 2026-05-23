@@ -73,6 +73,10 @@ public final class EventManager {
         handlers.clear();
     }
 
+    /**
+     * Do not use this method to call an event.
+     * {@link Event#call()}
+     */
     public void call(Event event) {
         Benchmark.startTiming("event_" + event.getName());
         List<RegisteredHandler> toCall = new ArrayList<>();

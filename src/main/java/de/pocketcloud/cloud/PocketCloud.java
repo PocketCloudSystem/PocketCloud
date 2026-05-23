@@ -7,17 +7,21 @@ import de.pocketcloud.cloud.console.command.CommandManager;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.console.log.def.MainLogger;
 import de.pocketcloud.cloud.event.EventManager;
+import de.pocketcloud.cloud.load.Loader;
 import de.pocketcloud.cloud.network.NettyServer;
 import de.pocketcloud.cloud.network.client.ServerClientCache;
 import de.pocketcloud.cloud.network.packet.PacketPool;
 import de.pocketcloud.cloud.network.request.RequestManager;
 import de.pocketcloud.cloud.plugin.CloudPluginManager;
 import de.pocketcloud.cloud.provider.CloudProvider;
+import de.pocketcloud.cloud.server.library.LibraryManager;
 import de.pocketcloud.cloud.server.software.ServerSoftwareManager;
+import de.pocketcloud.cloud.template.TemplateManager;
 import de.pocketcloud.cloud.tick.Ticker;
 import de.pocketcloud.cloud.traffic.TrafficMonitorManager;
 import de.pocketcloud.cloud.util.FileUtils;
 import de.pocketcloud.cloud.util.PocketCloudPaths;
+import de.pocketcloud.cloud.util.Utils;
 import de.pocketcloud.cloud.util.VersionInfo;
 import de.pocketcloud.cloud.util.benchmark.Benchmark;
 import de.pocketcloud.cloud.util.benchmark.BenchmarkTiming;
@@ -25,9 +29,8 @@ import lombok.Getter;
 import lombok.experimental.Accessors;
 
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.net.InetSocketAddress;
+import java.nio.file.Path;
 
 @Getter
 @Accessors(fluent = true)
@@ -45,12 +48,15 @@ public final class PocketCloud {
     private boolean hasStopped = false;
 
     private Ticker ticker = null;
+    private Loader loader = null;
 
     private MainConfig config = null;
     private MainLogger logger = null;
     private CloudConsole console = null;
     private CommandManager commandManager = null;
     private ServerSoftwareManager serverSoftwareManager = null;
+    private LibraryManager libraryManager = null;
+    private TemplateManager templateManager = null;
     private NettyServer network = null;
     private RequestManager requestManager = null;
     private PacketPool packetPool = null;
@@ -73,6 +79,7 @@ public final class PocketCloud {
         }
 
         ticker = new Ticker();
+        loader = new Loader();
 
         Benchmark.startTiming("cloud_start");
 
@@ -89,16 +96,8 @@ public final class PocketCloud {
 
         commandManager = new CommandManager();
         serverSoftwareManager = new ServerSoftwareManager();
-
-        //TODO download libs, binnaries
-
-        serverSoftwareManager.load();
-
-        printBanner();
-        logger.info("The §bCloud §ris §astarting§r...");
-
-        CloudProvider.select();
-
+        libraryManager = new LibraryManager();
+        templateManager = new TemplateManager();
         network = new NettyServer(new InetSocketAddress(config.network().get("address").toString(), Integer.parseInt(config.network().get("port").toString())));
         requestManager = new RequestManager();
         packetPool = new PacketPool();
@@ -107,24 +106,30 @@ public final class PocketCloud {
         pluginManager = new CloudPluginManager();
         eventManager = new EventManager();
 
+        loader.registerPreAll(serverSoftwareManager, libraryManager);
+        loader.registerAll(commandManager, packetPool, pluginManager, templateManager);
+
+        loader.preloadAll();
+
+        printBanner();
+        logger.info("The §bCloud §ris §astarting§r...");
+
+        CloudProvider.select();
+
         ticker.registerAll(console, requestManager, clientCache, trafficMonitorManager, pluginManager);
+
+        loader.loadAll();
 
         if (serverSoftwareManager.getAll().isEmpty()) {
             CloudLogger.get().warn("No software found, therefore no server can be started.");
         }
 
-        try {
-            network.start();
-        } catch (InterruptedException e) {
-            logger.exception("Unable to start netty server", e);
-            shutdown();
-        }
+        network.start();
 
         Runtime.getRuntime().addShutdownHook(new CloudShutdownHook());
 
         BenchmarkTiming result = Benchmark.stopTiming("cloud_start");
-        BigDecimal bd = BigDecimal.valueOf(result.duration() / 1000).setScale(3, RoundingMode.HALF_UP);
-        logger.info("§bCloud §rhas been §astarted§r. §8(§rTook §b{}s§8)", bd.floatValue());
+        logger.info("§bCloud §rhas been §astarted§r. §8(§rTook §b{}s§8)", Utils.formatNumber(result.duration() / 1000, 3));
 
         ticker.tick();
     }
@@ -138,7 +143,22 @@ public final class PocketCloud {
     }
 
     private void createDirectories() {
-        FileUtils.createDirs(PocketCloudPaths.ALL_DIRECTORIES.toArray(new String[0]));
+        FileUtils.createDirs(PocketCloudPaths.ALL_DIRECTORIES.stream().map(Path::of).toArray(Path[]::new));
+    }
+
+    public void reload() {
+        if (!running || hasStopped) return;
+        if (loader.isReloading()) return;
+        logger.info("Reloading...");
+        logger.warn("§cNOTE: §rNot everything is reloadable. To achieve the best outcome, restarting the cloud would be the better option.");
+        try {
+            config.reload();
+            loader.reload();
+            logger.success("Reload complete.");
+        } catch (Exception e) {
+            logger.exception("Failed to reload", e);
+            shutdown();
+        }
     }
 
     public void shutdown() {
@@ -159,10 +179,10 @@ public final class PocketCloud {
     private void shutdown0() {
         logger.info("Shutting down...");
 
-        pluginManager.disableAll();
-        network.close();
+        if (loader != null) loader.unloadAll();
+        if (network != null) network.close();
 
         logger.success("§cStopped §rthe §bcloud§r.");
-        console.uninstall();
+        if (console != null) console.uninstall();
     }
 }

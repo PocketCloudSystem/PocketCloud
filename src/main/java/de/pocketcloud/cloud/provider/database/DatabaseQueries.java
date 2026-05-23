@@ -19,7 +19,8 @@ public final class DatabaseQueries {
                 "startNewPercentage FLOAT," +
                 "autoStart BOOL," +
                 "alwaysCopyToStaticServers BOOL," +
-                "templateType VARCHAR(10)" +
+                "templateType VARCHAR(20)" +
+                "serverSoftware VARCHAR(30)" +
             "); " +
             "CREATE TABLE IF NOT EXISTS " + DatabaseTables.SERVER_GROUPS + " (" +
                 "name VARCHAR(50) PRIMARY KEY," +
@@ -136,7 +137,7 @@ public final class DatabaseQueries {
     private static String buildInsert(String table, String[] columns) {
         String cols = String.join(", ", columns);
         String placeholders = "?,".repeat(columns.length);
-        placeholders = placeholders.substring(0, placeholders.length() - 1); // trim trailing comma
+        placeholders = placeholders.substring(0, placeholders.length() - 1);
         return "INSERT INTO " + table + " (" + cols + ") VALUES (" + placeholders + ")";
     }
 

@@ -5,6 +5,7 @@ import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.console.util.DownloadProgressBar;
 import de.pocketcloud.cloud.template.TemplateType;
 import de.pocketcloud.cloud.util.FileUtils;
+import de.pocketcloud.cloud.util.PocketCloudPaths;
 import de.pocketcloud.cloud.util.net.NetUtils;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
@@ -41,7 +42,7 @@ public record ServerSoftware(
 
             File sizeFile = sizeFilePath().toFile();
             if (!sizeFile.exists() && !sizeFile.createNewFile()) throw new IOException("Failed to create .size file");
-            FileUtils.filePutContents(sizeFilePath().toString(), String.valueOf(sourceFile().length()));
+            FileUtils.filePutContents(sizeFilePath(), String.valueOf(sourceFile().length()));
 
             progressBar.finish();
             return true;
@@ -87,6 +88,10 @@ public record ServerSoftware(
 
     public Path directoryPath() {
         return Path.of("storage/software/" + normalizedName());
+    }
+
+    public Path configFilePath() {
+        return PocketCloudPaths.storage().software().with(normalizedName() + ".json").asPath();
     }
 
     public TemplateType type() {
@@ -168,7 +173,7 @@ public record ServerSoftware(
 
                 File sizeFile = sizeFile(parent).toFile();
                 if (!sizeFile.exists() && !sizeFile.createNewFile()) throw new IOException("Failed to create .size file for binary");
-                FileUtils.filePutContents(sizeFile(parent).toString(), String.valueOf(archivePath.toFile().length()));
+                FileUtils.filePutContents(sizeFile(parent), String.valueOf(archivePath.toFile().length()));
 
                 Files.deleteIfExists(archivePath);
                 progressBar.finish();
@@ -238,7 +243,7 @@ public record ServerSoftware(
 
                 File sizeFile = sizeFile(parent).toFile();
                 if (!sizeFile.exists() && !sizeFile.createNewFile()) throw new IOException("Failed to create .size file for bridge");
-                FileUtils.filePutContents(sizeFile(parent).toString(), String.valueOf(sourceFile(parent).toFile().length()));
+                FileUtils.filePutContents(sizeFile(parent), String.valueOf(sourceFile(parent).toFile().length()));
 
                 progressBar.finish();
                 return true;

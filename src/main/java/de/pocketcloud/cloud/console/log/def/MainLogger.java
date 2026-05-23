@@ -1,6 +1,5 @@
 package de.pocketcloud.cloud.console.log.def;
 
-import de.pocketcloud.cloud.console.ConsoleColor;
 import de.pocketcloud.cloud.console.log.CloudLogLevel;
 import de.pocketcloud.cloud.console.log.ILogger;
 import de.pocketcloud.cloud.util.FormatUtils;
@@ -8,7 +7,6 @@ import de.pocketcloud.cloud.util.FormatUtils;
 import java.io.*;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
 
 public class MainLogger implements ILogger {
 

@@ -13,7 +13,7 @@ import java.nio.charset.StandardCharsets;
 public final class CloudPacketEncoder extends MessageToByteEncoder<CloudPacket> {
 
     @Override
-    protected void encode(ChannelHandlerContext ctx, CloudPacket packet, ByteBuf out) throws Exception {
+    protected void encode(ChannelHandlerContext ctx, CloudPacket packet, ByteBuf out) {
         byte[] bytes = PacketSerializer.encode(packet, false, "test");
         packet.setSize(bytes.length);
         TrafficMonitorManager.getInstance().pushBytes(TrafficMonitorManager.TRAFFIC_NETWORK, bytes.length, TrafficMonitor.REGULAR_MODE_OUT);
