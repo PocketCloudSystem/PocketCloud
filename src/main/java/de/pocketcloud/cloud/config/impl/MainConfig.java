@@ -1,7 +1,6 @@
 package de.pocketcloud.cloud.config.impl;
 
 import de.pocketcloud.cloud.provider.database.MySqlSettings;
-import de.pocketcloud.cloud.tick.Ticker;
 import de.pocketcloud.cloud.util.StringUtils;
 import de.pocketcloud.configlib.*;
 import lombok.Getter;

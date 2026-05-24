@@ -6,6 +6,7 @@ import de.pocketcloud.cloud.event.impl.template.TemplateEditEvent;
 import de.pocketcloud.cloud.event.impl.template.TemplateRemoveEvent;
 import de.pocketcloud.cloud.load.Loadable;
 import de.pocketcloud.cloud.provider.CloudProvider;
+import de.pocketcloud.cloud.template.group.ServerGroupManager;
 import de.pocketcloud.cloud.template.util.TemplateEditData;
 import de.pocketcloud.cloud.tick.Tickable;
 import de.pocketcloud.cloud.util.FileUtils;
@@ -40,14 +41,14 @@ public final class TemplateManager implements Tickable, Loadable {
         for (TemplateType type : TemplateType.values()) FileUtils.createDir(type.globalTemplatePath());
         CloudProvider.current().getTemplates()
                 .thenAccept(this.templates::putAll)
-                .thenAccept(_ -> CloudLogger.get().info("Loaded §b{} §rtemplate{}.", templates.size(), templates.size() == 1 ? "" : "s"));
-        //TODO load server groups
+                .thenAccept(_ -> ServerGroupManager.getInstance().load());
     }
 
     @Override
     public void unload() {
+        CloudLogger.get().info("Unloading templates...");
         this.templates.clear();
-        //todo unload servergroupmanager
+        ServerGroupManager.getInstance().unload();
     }
 
     public void create(Template template) {
@@ -61,7 +62,7 @@ public final class TemplateManager implements Tickable, Loadable {
             }
 
             CloudProvider.current().addTemplate(template);
-            if (!Files.isDirectory(template.getPath())) Files.createDirectories(template.getPath());
+            if (!Files.isDirectory(template.path())) Files.createDirectories(template.path());
             templates.put(template.name(), template);
             BenchmarkTiming res = Benchmark.stopTiming("template_creation");
             CloudLogger.get().success("Successfully §acreated §rthe template §b{}§r. §8(§rTook §b{}ms§8)", template.name(), Utils.formatNumber(res.duration(), 2));
@@ -98,9 +99,9 @@ public final class TemplateManager implements Tickable, Loadable {
         }
 
         CloudProvider.current().removeTemplate(template);
-        if (Files.isDirectory(template.getPath())) {
+        if (Files.isDirectory(template.path())) {
             try {
-                FileUtils.removeDirectory(template.getPath());
+                FileUtils.removeDirectory(template.path());
             } catch (Exception e) {
                 CloudLogger.get().exception("Failed to remove template directory of {}", e, template.name());
             }

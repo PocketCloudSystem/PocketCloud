@@ -17,6 +17,7 @@ import de.pocketcloud.cloud.provider.CloudProvider;
 import de.pocketcloud.cloud.server.library.LibraryManager;
 import de.pocketcloud.cloud.server.software.ServerSoftwareManager;
 import de.pocketcloud.cloud.template.TemplateManager;
+import de.pocketcloud.cloud.template.group.ServerGroupManager;
 import de.pocketcloud.cloud.tick.Ticker;
 import de.pocketcloud.cloud.traffic.TrafficMonitorManager;
 import de.pocketcloud.cloud.util.FileUtils;
@@ -57,6 +58,7 @@ public final class PocketCloud {
     private ServerSoftwareManager serverSoftwareManager = null;
     private LibraryManager libraryManager = null;
     private TemplateManager templateManager = null;
+    private ServerGroupManager serverGroupManager = null;
     private NettyServer network = null;
     private RequestManager requestManager = null;
     private PacketPool packetPool = null;
@@ -98,6 +100,7 @@ public final class PocketCloud {
         serverSoftwareManager = new ServerSoftwareManager();
         libraryManager = new LibraryManager();
         templateManager = new TemplateManager();
+        serverGroupManager = new ServerGroupManager();
         network = new NettyServer(new InetSocketAddress(config.network().get("address").toString(), Integer.parseInt(config.network().get("port").toString())));
         requestManager = new RequestManager();
         packetPool = new PacketPool();

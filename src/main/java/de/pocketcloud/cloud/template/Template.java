@@ -2,6 +2,8 @@ package de.pocketcloud.cloud.template;
 
 import com.google.gson.annotations.JsonAdapter;
 import de.pocketcloud.cloud.server.software.ServerSoftware;
+import de.pocketcloud.cloud.template.group.ServerGroup;
+import de.pocketcloud.cloud.template.group.ServerGroupManager;
 import de.pocketcloud.cloud.template.util.conv.ServerSoftwareConverter;
 import de.pocketcloud.cloud.template.util.conv.TemplateTypeConverter;
 import de.pocketcloud.cloud.util.mapper.MapInline;
@@ -16,6 +18,7 @@ import lombok.Setter;
 import lombok.experimental.Accessors;
 
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 
 @JsonAdapter(TemplateJsonSerializer.class)
@@ -84,6 +87,10 @@ public final class Template implements Writable<Map<String, Object>> {
         return this;
     }
 
+    public boolean isParentGroup(ServerGroup serverGroup) {
+        return ServerGroupManager.getInstance().get(this).contains(serverGroup);
+    }
+
     public boolean isTypeOf(TemplateType type) {
         return this.templateType.equals(type);
     }
@@ -92,7 +99,11 @@ public final class Template implements Writable<Map<String, Object>> {
         return this.serverSoftware.name().equals(software.name());
     }
 
-    public Path getPath() {
+    public List<ServerGroup> parentGroups() {
+        return ServerGroupManager.getInstance().get(this);
+    }
+
+    public Path path() {
         return PocketCloudPaths.templates().with(name).asPath();
     }
 
