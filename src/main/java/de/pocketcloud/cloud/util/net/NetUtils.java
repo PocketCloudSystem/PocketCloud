@@ -5,6 +5,8 @@ import de.pocketcloud.cloud.util.FormatUtils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.DatagramSocket;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -20,18 +22,30 @@ public final class NetUtils {
 
     private static final Pattern CONTENT_RANGE = Pattern.compile("bytes\\s+\\d+-\\d+/(\\d+)");
 
+    public static boolean isLocalUdpPortFree(int port) {
+        try (DatagramSocket socket = new DatagramSocket(port)) {
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    public static boolean isValidUrl(String url) {
+        try {
+            URI.create(url).toURL();
+            return true;
+        } catch (MalformedURLException | IllegalArgumentException e) {
+            return false;
+        }
+    }
+
     public static long downloadSize(String url) {
         long headReqSize = tryHeadRequest(url);
         if (headReqSize != -1) {
             return headReqSize;
         }
 
-        long rangeReqSize = tryRangeRequest(url);
-        if (rangeReqSize != -1) {
-            return rangeReqSize;
-        }
-
-        return -1;
+        return tryRangeRequest(url);
     }
 
     private static long tryHeadRequest(String url) {

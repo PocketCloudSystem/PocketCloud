@@ -20,14 +20,14 @@ public final class LiteralCommandParameter extends BaseCommandParameter {
 
     @Override
     public Object parseValue(String input) throws ArgumentParseException {
-        Command command = PocketCloud.getInstance().commandManager().get(input).orElse(null);
+        Command command = PocketCloud.instance().commandManager().get(input).orElse(null);
         if (command == null) throw new ArgumentParseException();
         return command;
     }
 
     @Override
     public List<String> onTabCompleteMatch(String currentArg) {
-        List<String> commandNames = PocketCloud.getInstance().commandManager().getAll().stream().map(Command::getName).toList();
+        List<String> commandNames = PocketCloud.instance().commandManager().getAll().stream().map(Command::getName).toList();
         if (currentArg.isEmpty()) return commandNames;
         return commandNames.stream().filter(s -> s.contains(currentArg)).collect(Collectors.toList());
     }

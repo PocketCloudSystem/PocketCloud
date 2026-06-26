@@ -1,9 +1,11 @@
 package de.pocketcloud.cloud.network.packet;
 
-import de.pocketcloud.cloud.network.packet.util.PacketData;
+import de.pocketcloud.cloud.network.client.ServerClient;
+import de.pocketcloud.cloud.network.packet.data.PacketData;
 import de.pocketcloud.cloud.network.request.RequestManager;
 import de.pocketcloud.cloud.util.TriConsumer;
 import lombok.Getter;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,7 +15,7 @@ import java.util.function.Consumer;
 
 /**
  * A reversed request: the cloud sends this to a sub-server, and the sub-server answers via ResponseClientPacket.
- * Logic is reversed compared to the regular RequestPacket — here the cloud is the sender.
+ * Logic is reversed compared to the regular RequestPacket — here, the cloud is the sender.
  * @see ResponseClientPacket
  */
 public abstract class RequestClientPacket extends CloudPacket implements ClientboundPacket {
@@ -43,8 +45,11 @@ public abstract class RequestClientPacket extends CloudPacket implements Clientb
     @Override
     public final void decodePayload(PacketData packetData) {}
 
+    @Override
+    public final void handle(@NotNull ServerClient client) {}
+
     public RequestClientPacket sendRequest(io.netty.channel.Channel channel) {
-        return RequestManager.getInstance().send(this, channel);
+        return RequestManager.instance().send(this, channel);
     }
 
     public final void invokeClosures(boolean failed, ResponseClientPacket responsePacket, RequestPacketFailureReason reason) {
@@ -85,7 +90,4 @@ public abstract class RequestClientPacket extends CloudPacket implements Clientb
     public boolean isPrepared() {
         return requestId != null;
     }
-
-    @Override
-    public final void handle() {}
 }

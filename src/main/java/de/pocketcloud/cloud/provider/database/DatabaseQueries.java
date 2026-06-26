@@ -13,10 +13,11 @@ public final class DatabaseQueries {
                 "lobby BOOL," +
                 "maintenance BOOL," +
                 "`staticServers` BOOL," +
+                "`saveOnShutdown` BOOL," +
                 "maxPlayerCount INTEGER," +
                 "minServerCount INTEGER," +
                 "maxServerCount INTEGER," +
-                "startNewPercentage FLOAT," +
+                "startNewPercentage DOUBLE," +
                 "autoStart BOOL," +
                 "alwaysCopyToStaticServers BOOL," +
                 "templateType VARCHAR(20)" +

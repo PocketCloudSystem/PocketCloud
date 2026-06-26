@@ -26,16 +26,16 @@ public final class TaskHandler {
         this.plugin = plugin;
 
         this.id = ThreadLocalRandom.current().nextLong(Long.MIN_VALUE, Long.MAX_VALUE);
-        this.nextRun = PocketCloud.getInstance().ticker().tickCounter() + delay;
+        this.nextRun = PocketCloud.instance().currentTick() + delay;
     }
 
     public void cancel() {
         if (cancelled) return;
         cancelled = true;
         try {
-            task.onCancel(PocketCloud.getInstance().ticker().tickCounter());
+            task.onCancel(PocketCloud.instance().currentTick());
         } catch (Exception e) {
-            plugin.getLogger().exception("Uncaught exception occurred during onCancel of task {} on tick {}", e, task.getClass().getName(), PocketCloud.getInstance().ticker().tickCounter());
+            plugin.getLogger().exception("Uncaught exception occurred during onCancel of task {} on tick {}", e, task.getClass().getName(), PocketCloud.instance().currentTick());
         }
     }
 

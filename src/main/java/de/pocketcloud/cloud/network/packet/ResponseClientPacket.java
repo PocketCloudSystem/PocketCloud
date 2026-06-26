@@ -1,6 +1,6 @@
 package de.pocketcloud.cloud.network.packet;
 
-import de.pocketcloud.cloud.network.packet.util.PacketData;
+import de.pocketcloud.cloud.network.packet.data.PacketData;
 import lombok.Getter;
 
 /**

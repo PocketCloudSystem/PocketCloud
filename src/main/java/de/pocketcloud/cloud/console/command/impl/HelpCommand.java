@@ -2,13 +2,13 @@ package de.pocketcloud.cloud.console.command.impl;
 
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.command.Command;
+import de.pocketcloud.cloud.console.command.ctx.CommandContext;
 import de.pocketcloud.cloud.console.command.desc.CommandDescription;
 import de.pocketcloud.cloud.console.command.parameter.def.LiteralCommandParameter;
 import de.pocketcloud.cloud.console.command.sender.CommandSender;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 @CommandDescription(name = "help", description = "List all commands", aliases = {"?"})
 public final class HelpCommand extends Command {
@@ -19,12 +19,12 @@ public final class HelpCommand extends Command {
     }
 
     @Override
-    public boolean run(CommandSender sender, String label, Map<String, Object> args, Map<String, Object> flags) {
+    public boolean run(CommandSender sender, CommandContext ctx) {
         List<Command> commands = new ArrayList<>();
-        if (args.containsKey("command")) {
-            commands.add((Command) args.get("command"));
+        if (ctx.hasArg("command")) {
+            commands.add(ctx.argCommand("command"));
         } else {
-            commands.addAll(PocketCloud.getInstance().commandManager().getAll());
+            commands.addAll(PocketCloud.instance().commandManager().getAll());
         }
 
         sender.info("Commands §8(§b{}§8)§r:", commands.size());

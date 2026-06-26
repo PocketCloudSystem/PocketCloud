@@ -7,6 +7,7 @@ import java.util.Map;
 public final class JsonConfigType implements ConfigType {
 
     @Override
+    @SuppressWarnings("unchecked")
     public Map<String, Object> decode(String content) {
         return FileUtils.decodeJson(content, Map.class);
     }

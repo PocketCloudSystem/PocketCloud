@@ -5,6 +5,7 @@ import de.pocketcloud.cloud.console.log.def.PrefixedLogger;
 import de.pocketcloud.cloud.scheduler.TaskScheduler;
 import lombok.Getter;
 import lombok.Setter;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -39,7 +40,7 @@ public abstract class CloudPlugin {
         this.description = description;
         this.dataFolder = dataFolder;
         this.pluginFilePath = pluginFilePath;
-        this.logger = new PrefixedLogger(PocketCloud.getInstance().logger(), "[" + description.getName() + "]");
+        this.logger = new PrefixedLogger(PocketCloud.instance().logger(), "[" + description.name() + "]");
     }
 
     public boolean saveResource(String relativePath, boolean overwrite) throws IOException {
@@ -73,6 +74,7 @@ public abstract class CloudPlugin {
         return state == CloudPluginState.DISABLED;
     }
 
+    @Nullable
     public InputStream getResource(String path) throws IOException {
         try (JarFile jarFile = new JarFile(pluginFilePath.toFile())) {
             JarEntry entry = jarFile.getJarEntry(path);

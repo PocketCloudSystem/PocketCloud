@@ -32,7 +32,7 @@ public final class TemplateJsonSerializer implements JsonSerializer<Template>, J
         String name = object.get("name").getAsString();
         Template.TemplateSettings settings = jsonDeserializationContext.deserialize(object, Template.TemplateSettings.class);
         TemplateType templateType = TemplateType.valueOf(object.get("templateType").getAsString());
-        ServerSoftware software = PocketCloud.getInstance().serverSoftwareManager().get(object.get("serverSoftware").getAsString());
+        ServerSoftware software = PocketCloud.instance().serverSoftwareManager().get(object.get("serverSoftware").getAsString());
 
         return new Template(name, settings, templateType, software);
     }

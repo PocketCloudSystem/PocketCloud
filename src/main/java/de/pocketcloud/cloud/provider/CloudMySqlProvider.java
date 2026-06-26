@@ -2,39 +2,39 @@ package de.pocketcloud.cloud.provider;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.cache.*;
+import de.pocketcloud.cloud.config.impl.MainConfig;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.provider.database.DatabaseQueries;
 import de.pocketcloud.cloud.provider.database.MySqlSettings;
 import de.pocketcloud.cloud.template.Template;
 import de.pocketcloud.cloud.template.group.ServerGroup;
 import de.pocketcloud.cloud.util.FileUtils;
+import de.pocketcloud.cloud.util.concurrent.Promise;
 
 import javax.sql.DataSource;
 import java.sql.*;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 
 public final class CloudMySqlProvider extends CloudProvider {
 
     private final DataSource connectionPool;
 
     public CloudMySqlProvider() {
-        this.connectionPool = buildConnectionPool(PocketCloud.getInstance().config().getMysqlSettings());
+        this.connectionPool = buildConnectionPool(MainConfig.instance().getMysqlSettings());
 
-        executeAsync(DatabaseQueries.createTables()).thenRun(() -> {
+        executeAsync(DatabaseQueries.createTables()).thenSuccess(_ -> {
             //TODO migration
-//            MigratorManager.getInstance().getAll(
+//            MigratorManager.instance().getAll(
 //                (IMigrator m) -> m.id().startsWith("migrate-json-")
 //            ).forEach(migrator -> {
 //                if (migrator.requiresMigration()) {
-//                    MigratorManager.getInstance().migrate(migrator);
+//                    MigratorManager.instance().migrate(migrator);
 //                }
 //            });
         });
 
-        LocalCache.get(ActiveInGameModuleCache.class).getAll().forEach(module -> getModuleState(module).thenAccept(enabled -> {
+        LocalCache.get(ActiveInGameModuleCache.class).getAll().forEach(module -> getModuleState(module).thenSuccess(enabled -> {
             Boolean realEnabled = enabled.orElse(false);
             if (enabled.isEmpty()) {
                 executeAsync(DatabaseQueries.insertModuleState(), module, false);
@@ -43,65 +43,60 @@ public final class CloudMySqlProvider extends CloudProvider {
             LocalCache.get(ActiveInGameModuleCache.class).set(module, realEnabled);
         }));
 
-        getWhitelist().thenAccept(LocalCache.get(WhitelistCache.class)::syncIn);
-        getNotificationList().thenAccept(LocalCache.get(NotificationListCache.class)::syncIn);
+        getWhitelist().thenSuccess(LocalCache.get(WhitelistCache.class)::syncIn);
+        getNotificationList().thenSuccess(LocalCache.get(NotificationListCache.class)::syncIn);
     }
 
     @Override
-    public CompletableFuture<Void> addTemplate(Template template) {
+    public Promise<Void> addTemplate(Template template) {
         Map<String, Object> data = template.write();
         return executeAsync(DatabaseQueries.addTemplate(), data.values().toArray());
     }
 
     @Override
-    public CompletableFuture<Void> removeTemplate(Template template) {
+    public Promise<Void> removeTemplate(Template template) {
         return executeAsync(DatabaseQueries.removeTemplate(), template.name());
     }
 
     @Override
-    public CompletableFuture<Void> editTemplate(Template template, Map<String, Object> newData) {
+    public Promise<Void> editTemplate(Template template, Map<String, Object> newData) {
         Object[] params = buildUpdateParams(newData, template.name());
         return executeAsync(DatabaseQueries.editTemplate(newData), params);
     }
 
     @Override
-    public CompletableFuture<Optional<Template>> getTemplate(String templateName) {
-        CompletableFuture<Optional<Template>> promise = new CompletableFuture<>();
-        queryAsync(DatabaseQueries.getTemplate(), templateName).thenAccept(rows -> {
+    public Promise<Optional<Template>> getTemplate(String templateName) {
+        Promise<Optional<Template>> promise = new Promise<>();
+        queryAsync(DatabaseQueries.getTemplate(), templateName).thenSuccess(rows -> {
             if (rows.isEmpty()) {
-                promise.complete(Optional.empty());
+                promise.resolve(Optional.empty());
                 return;
             }
 
             try {
-                promise.complete(Optional.of(Template.read(rows.getFirst())));
+                promise.resolve(Optional.of(Template.read(rows.getFirst())));
             } catch (Exception e) {
-                promise.completeExceptionally(e);
+                promise.fail(e);
             }
-        }).exceptionally(ex -> {
-            promise.completeExceptionally(ex);
-            return null;
-        });
+        }).failure(promise::fail);
 
         return promise;
     }
 
     @Override
-    public CompletableFuture<Boolean> checkTemplate(String template) {
-        CompletableFuture<Boolean> promise = new CompletableFuture<>();
+    public Promise<Boolean> checkTemplate(String template) {
+        Promise<Boolean> promise = new Promise<>();
         countAsync(DatabaseQueries.checkTemplate(), template)
-                .thenAccept(count -> promise.complete(count > 0))
-                .exceptionally(ex -> {
-                    promise.completeExceptionally(ex);
-                    return null;
-                });
+                .thenSuccess(count -> promise.resolve(count > 0))
+                .failure(promise::fail);
+        
         return promise;
     }
 
     @Override
-    public CompletableFuture<Map<String, Template>> getTemplates() {
-        CompletableFuture<Map<String, Template>> promise = new CompletableFuture<>();
-        queryAsync(DatabaseQueries.getTemplates()).thenAccept(rows -> {
+    public Promise<Map<String, Template>> getTemplates() {
+        Promise<Map<String, Template>> promise = new Promise<>();
+        queryAsync(DatabaseQueries.getTemplates()).thenSuccess(rows -> {
             Map<String, Template> templates = new HashMap<>();
             rows.forEach(row -> {
                 try {
@@ -110,72 +105,65 @@ public final class CloudMySqlProvider extends CloudProvider {
                 } catch (Exception _) {}
             });
 
-            promise.complete(templates);
-        }).exceptionally(ex -> {
-            promise.completeExceptionally(ex);
-            return null;
-        });
+            promise.resolve(templates);
+        }).failure(promise::fail);
 
         return promise;
     }
 
     @Override
-    public CompletableFuture<Void> addServerGroup(ServerGroup serverGroup) {
+    public Promise<Void> addServerGroup(ServerGroup serverGroup) {
         Map<String, Object> data = serverGroup.write();
         if (data.get("templates") instanceof List) data.put("templates", FileUtils.encodeJson(data.get("templates")));
         return executeAsync(DatabaseQueries.addServerGroup(), data.values().toArray());
     }
 
     @Override
-    public CompletableFuture<Void> removeServerGroup(ServerGroup serverGroup) {
+    public Promise<Void> removeServerGroup(ServerGroup serverGroup) {
         return executeAsync(DatabaseQueries.removeServerGroup(), serverGroup.name());
     }
 
     @Override
-    public CompletableFuture<Void> editServerGroup(ServerGroup serverGroup, Map<String, Object> newData) {
+    public Promise<Void> editServerGroup(ServerGroup serverGroup, Map<String, Object> newData) {
         if (newData.get("templates") instanceof List) newData.put("templates", FileUtils.encodeJson(newData.get("templates")));
         Object[] params = buildUpdateParams(newData, serverGroup.name());
         return executeAsync(DatabaseQueries.editServerGroup(newData), params);
     }
 
     @Override
-    public CompletableFuture<Optional<ServerGroup>> getServerGroup(String serverGroupName) {
-        CompletableFuture<Optional<ServerGroup>> promise = new CompletableFuture<>();
-        queryAsync(DatabaseQueries.getServerGroup(), serverGroupName).thenAccept(rows -> {
+    public Promise<Optional<ServerGroup>> getServerGroup(String serverGroupName) {
+        Promise<Optional<ServerGroup>> promise = new Promise<>();
+        queryAsync(DatabaseQueries.getServerGroup(), serverGroupName).thenSuccess(rows -> {
             if (rows.isEmpty()) {
-                promise.complete(Optional.empty());
+                promise.resolve(Optional.empty());
                 return;
             }
 
             try {
                 ServerGroup sg = ServerGroup.read(rows.getFirst());
-                promise.complete(Optional.of(sg));
+                promise.resolve(Optional.of(sg));
             } catch (Exception e) {
-                promise.completeExceptionally(e);
+                promise.fail(e);
             }
-        }).exceptionally(ex -> {
-            promise.completeExceptionally(ex);
-            return null;
-        });
+        }).failure(promise::fail);
+        
         return promise;
     }
 
     @Override
-    public CompletableFuture<Boolean> checkServerGroup(String serverGroup) {
-        CompletableFuture<Boolean> promise = new CompletableFuture<>();
+    public Promise<Boolean> checkServerGroup(String serverGroup) {
+        Promise<Boolean> promise = new Promise<>();
         countAsync(DatabaseQueries.checkServerGroup(), serverGroup)
-                .thenAccept(count -> promise.complete(count > 0))
-                .exceptionally(ex -> {
-                    promise.completeExceptionally(ex);
-                    return null;
-                });
+                .thenSuccess(count -> promise.resolve(count > 0))
+                .failure(promise::fail);
+        
         return promise;
     }
 
     @Override
-    public CompletableFuture<Map<String, ServerGroup>> getServerGroups() {
-        CompletableFuture<Map<String, ServerGroup>> promise = new CompletableFuture<>();
-        queryAsync(DatabaseQueries.getServerGroups()).thenAccept(rows -> {
+    public Promise<Map<String, ServerGroup>> getServerGroups() {
+        Promise<Map<String, ServerGroup>> promise = new Promise<>();
+        queryAsync(DatabaseQueries.getServerGroups()).thenSuccess(rows -> {
             Map<String, ServerGroup> serverGroups = new HashMap<>();
             rows.forEach(row -> {
                 try {
@@ -183,122 +171,108 @@ public final class CloudMySqlProvider extends CloudProvider {
                     serverGroups.put(sg.name(), sg);
                 } catch (Exception _) {}
             });
-            promise.complete(serverGroups);
-        }).exceptionally(ex -> {
-            promise.completeExceptionally(ex);
-            return null;
-        });
+            promise.resolve(serverGroups);
+        }).failure(promise::fail);
+        
         return promise;
     }
 
     @Override
-    public CompletableFuture<Void> setModuleState(String module, boolean enabled) {
-        CompletableFuture<Void> promise = new CompletableFuture<>();
+    public Promise<Void> setModuleState(String module, boolean enabled) {
+        Promise<Void> promise = new Promise<>();
         LocalCache.get(ActiveInGameModuleCache.class).set(module, enabled);
-        countAsync(DatabaseQueries.checkModuleState(), module).thenAccept(count -> {
+        countAsync(DatabaseQueries.checkModuleState(), module).thenSuccess(count -> {
             String sql = count > 0 ? DatabaseQueries.setModuleState() : DatabaseQueries.insertModuleState();
             executeAsync(sql, enabled, module)
-                    .thenRun(() -> promise.complete(null))
-                    .exceptionally(ex -> {
-                        promise.completeExceptionally(ex);
-                        return null;
-                    });
+                    .thenSuccess(_ -> promise.resolve(null))
+                    .failure(promise::fail);
         });
+
         return promise;
     }
 
     @Override
-    public CompletableFuture<Optional<Boolean>> getModuleState(String module) {
-        CompletableFuture<Optional<Boolean>> promise = new CompletableFuture<>();
-        queryAsync(DatabaseQueries.getModuleState(), module).thenAccept(rows -> {
+    public Promise<Optional<Boolean>> getModuleState(String module) {
+        Promise<Optional<Boolean>> promise = new Promise<>();
+        queryAsync(DatabaseQueries.getModuleState(), module).thenSuccess(rows -> {
             if (rows.isEmpty()) {
-                promise.complete(Optional.empty());
+                promise.resolve(Optional.empty());
             } else {
                 Object enabled = rows.getFirst().get("enabled");
-                promise.complete(Optional.of(Integer.valueOf(1).equals(enabled) || Boolean.TRUE.equals(enabled)));
+                promise.resolve(Optional.of(Integer.valueOf(1).equals(enabled) || Boolean.TRUE.equals(enabled)));
             }
-        }).exceptionally(ex -> {
-            promise.completeExceptionally(ex);
-            return null;
-        });
+        }).failure(promise::fail);
+        
         return promise;
     }
 
     @Override
-    public CompletableFuture<Void> enablePlayerNotifications(String player) {
+    public Promise<Void> enablePlayerNotifications(String player) {
         return executeAsync(DatabaseQueries.enablePlayerNotifications(), player);
     }
 
     @Override
-    public CompletableFuture<Void> disablePlayerNotifications(String player) {
+    public Promise<Void> disablePlayerNotifications(String player) {
         return executeAsync(DatabaseQueries.disablePlayerNotifications(), player);
     }
 
     @Override
-    public CompletableFuture<Boolean> hasNotificationsEnabled(String player) {
-        CompletableFuture<Boolean> promise = new CompletableFuture<>();
+    public Promise<Boolean> hasNotificationsEnabled(String player) {
+        Promise<Boolean> promise = new Promise<>();
         countAsync(DatabaseQueries.hasNotificationsEnabled(), player)
-                .thenAccept(count -> promise.complete(count > 0))
-                .exceptionally(ex -> {
-                    promise.completeExceptionally(ex);
-                    return null;
-                });
+                .thenSuccess(count -> promise.resolve(count > 0))
+                .failure(promise::fail);
+        
         return promise;
     }
 
     @Override
-    public CompletableFuture<List<String>> getNotificationList() {
-        CompletableFuture<List<String>> promise = new CompletableFuture<>();
+    public Promise<List<String>> getNotificationList() {
+        Promise<List<String>> promise = new Promise<>();
         queryAsync(DatabaseQueries.getNotificationList()).
-                thenAccept(rows -> {
+                thenSuccess(rows -> {
                     List<String> list = rows.stream().map(r -> (String) r.get("player")).toList();
-                    promise.complete(list);
-                }).exceptionally(ex -> {
-                    promise.completeExceptionally(ex);
-                    return null;
-                });
+                    promise.resolve(list);
+                }).failure(promise::fail);
+        
         return promise;
     }
 
     @Override
-    public CompletableFuture<Void> addToWhitelist(String player) {
+    public Promise<Void> addToWhitelist(String player) {
         LocalCache.get(WhitelistCache.class).add(player);
         return executeAsync(DatabaseQueries.addToWhitelist(), player);
     }
 
     @Override
-    public CompletableFuture<Void> removeFromWhitelist(String player) {
+    public Promise<Void> removeFromWhitelist(String player) {
         LocalCache.get(WhitelistCache.class).remove(player);
         return executeAsync(DatabaseQueries.removeFromWhitelist(), player);
     }
 
     @Override
-    public CompletableFuture<Boolean> isOnWhitelist(String player) {
-        CompletableFuture<Boolean> promise = new CompletableFuture<>();
+    public Promise<Boolean> isOnWhitelist(String player) {
+        Promise<Boolean> promise = new Promise<>();
         countAsync(DatabaseQueries.isOnWhitelist(), player)
-                .thenAccept(count -> promise.complete(count > 0))
-                .exceptionally(ex -> {
-                    promise.completeExceptionally(ex);
-                    return null;
-                });
+                .thenSuccess(count -> promise.resolve(count > 0))
+                .failure(promise::fail);
+        
         return promise;
     }
 
     @Override
-    public CompletableFuture<List<String>> getWhitelist() {
-        CompletableFuture<List<String>> promise = new CompletableFuture<>();
-        queryAsync(DatabaseQueries.getWhitelist()).thenAccept(rows -> {
+    public Promise<List<String>> getWhitelist() {
+        Promise<List<String>> promise = new Promise<>();
+        queryAsync(DatabaseQueries.getWhitelist()).thenSuccess(rows -> {
             List<String> list = rows.stream().map(r -> (String) r.get("player")).toList();
-            promise.complete(list);
-        }).exceptionally(ex -> {
-            promise.completeExceptionally(ex);
-            return null;
-        });
+            promise.resolve(list);
+        }).failure(promise::fail);
+        
         return promise;
     }
 
-    private CompletableFuture<Void> executeAsync(String sql, Object... params) {
-        return CompletableFuture.runAsync(() -> {
+    private Promise<Void> executeAsync(String sql, Object... params) {
+        return Promise.runAsync(() -> {
             try (Connection conn = connectionPool.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
                 bindParams(ps, params);
                 ps.executeUpdate();
@@ -309,8 +283,8 @@ public final class CloudMySqlProvider extends CloudProvider {
         });
     }
 
-    private CompletableFuture<List<Map<String, Object>>> queryAsync(String sql, Object... params) {
-        return CompletableFuture.supplyAsync(() -> {
+    private Promise<List<Map<String, Object>>> queryAsync(String sql, Object... params) {
+        return Promise.supplyAsync(() -> {
             List<Map<String, Object>> rows = new ArrayList<>();
             try (Connection conn = connectionPool.getConnection();
                  PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -334,7 +308,7 @@ public final class CloudMySqlProvider extends CloudProvider {
         });
     }
 
-    private CompletableFuture<Integer> countAsync(String sql, Object... params) {
+    private Promise<Integer> countAsync(String sql, Object... params) {
         return queryAsync(sql, params).thenApply(rows -> {
             if (rows.isEmpty()) return 0;
             Object v = rows.getFirst().values().iterator().next();

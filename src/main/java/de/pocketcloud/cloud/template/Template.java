@@ -1,11 +1,14 @@
 package de.pocketcloud.cloud.template;
 
 import com.google.gson.annotations.JsonAdapter;
+import de.pocketcloud.cloud.player.CloudPlayer;
+import de.pocketcloud.cloud.player.CloudPlayerManager;
 import de.pocketcloud.cloud.server.software.ServerSoftware;
 import de.pocketcloud.cloud.template.group.ServerGroup;
 import de.pocketcloud.cloud.template.group.ServerGroupManager;
 import de.pocketcloud.cloud.template.util.conv.ServerSoftwareConverter;
 import de.pocketcloud.cloud.template.util.conv.TemplateTypeConverter;
+import de.pocketcloud.cloud.util.FilterableObject;
 import de.pocketcloud.cloud.util.mapper.MapInline;
 import de.pocketcloud.cloud.util.mapper.MapKey;
 import de.pocketcloud.cloud.util.mapper.MapperUtils;
@@ -13,7 +16,6 @@ import de.pocketcloud.cloud.util.PocketCloudPaths;
 import de.pocketcloud.cloud.util.Writable;
 import de.pocketcloud.cloud.util.gson.TemplateJsonSerializer;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 
@@ -22,25 +24,10 @@ import java.util.List;
 import java.util.Map;
 
 @JsonAdapter(TemplateJsonSerializer.class)
-@Getter
 @Accessors(fluent = true)
-@NoArgsConstructor
-public final class Template implements Writable<Map<String, Object>> {
-
-    private String name;
-    @MapInline
-    private TemplateSettings settings;
-    @MapKey(converter = TemplateTypeConverter.class)
-    private TemplateType templateType;
-    @MapKey(converter = ServerSoftwareConverter.class)
-    private ServerSoftware serverSoftware;
-
-    public Template(String name, TemplateSettings settings, TemplateType templateType, ServerSoftware serverSoftware) {
-        this.name = name;
-        this.settings = settings;
-        this.templateType = templateType;
-        this.serverSoftware = serverSoftware;
-    }
+public record Template(String name, @MapInline TemplateSettings settings,
+                       @MapKey(converter = TemplateTypeConverter.class) TemplateType templateType,
+                       @MapKey(converter = ServerSoftwareConverter.class) ServerSoftware serverSoftware) implements Writable<Map<String, Object>>, FilterableObject {
 
     public Template setLobby(boolean lobby) {
         settings.setLobby(lobby);
@@ -77,7 +64,7 @@ public final class Template implements Writable<Map<String, Object>> {
         return this;
     }
 
-    public Template setStartNewPercentage(float startNewPercentage) {
+    public Template setStartNewPercentage(double startNewPercentage) {
         settings.setStartNewPercentage(startNewPercentage);
         return this;
     }
@@ -88,7 +75,11 @@ public final class Template implements Writable<Map<String, Object>> {
     }
 
     public boolean isParentGroup(ServerGroup serverGroup) {
-        return ServerGroupManager.getInstance().get(this).contains(serverGroup);
+        return ServerGroupManager.instance().get(this).contains(serverGroup);
+    }
+
+    public boolean isParentGroup(String serverGroup) {
+        return ServerGroupManager.instance().get(this).stream().anyMatch(g -> g.name().equals(serverGroup));
     }
 
     public boolean isTypeOf(TemplateType type) {
@@ -99,8 +90,16 @@ public final class Template implements Writable<Map<String, Object>> {
         return this.serverSoftware.name().equals(software.name());
     }
 
+    public List<CloudPlayer> players() {
+        return CloudPlayerManager.instance().getAll(this);
+    }
+
+    public long playerCount() {
+        return players().size();
+    }
+
     public List<ServerGroup> parentGroups() {
-        return ServerGroupManager.getInstance().get(this);
+        return ServerGroupManager.instance().get(this);
     }
 
     public Path path() {
@@ -125,17 +124,19 @@ public final class Template implements Writable<Map<String, Object>> {
         private boolean maintenance;
         private boolean staticServers;
         private boolean alwaysCopyToStaticServers;
+        private boolean saveOnShutdown;
         private int maxPlayerCount;
         private int minServerCount;
         private int maxServerCount;
-        private float startNewPercentage;
+        private double startNewPercentage;
         private boolean autoStart;
 
-        public TemplateSettings(boolean lobby, boolean maintenance, boolean staticServers, boolean alwaysCopyToStaticServers, int maxPlayerCount, int minServerCount, int maxServerCount, float startNewPercentage, boolean autoStart) {
+        public TemplateSettings(boolean lobby, boolean maintenance, boolean staticServers, boolean alwaysCopyToStaticServers, boolean saveOnShutdown, int maxPlayerCount, int minServerCount, int maxServerCount, double startNewPercentage, boolean autoStart) {
             this.lobby = lobby;
             this.maintenance = maintenance;
             this.staticServers = staticServers;
             this.alwaysCopyToStaticServers = alwaysCopyToStaticServers;
+            this.saveOnShutdown = saveOnShutdown;
             this.maxPlayerCount = maxPlayerCount;
             this.minServerCount = minServerCount;
             this.maxServerCount = maxServerCount;

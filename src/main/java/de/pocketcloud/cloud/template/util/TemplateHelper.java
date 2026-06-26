@@ -1,6 +1,7 @@
 package de.pocketcloud.cloud.template.util;
 
 import de.pocketcloud.cloud.template.Template;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.List;
@@ -50,7 +51,7 @@ public final class TemplateHelper {
         KEY_TYPES.put("maxPlayerCount", Integer.class);
         KEY_TYPES.put("minServerCount", Integer.class);
         KEY_TYPES.put("maxServerCount", Integer.class);
-        KEY_TYPES.put("startNewPercentage", Float.class);
+        KEY_TYPES.put("startNewPercentage", Double.class);
         KEY_TYPES.put("autoStart", Boolean.class);
         KEY_TYPES.put("templateType", String.class);
         KEY_TYPES.put("serverSoftware", String.class);
@@ -76,6 +77,7 @@ public final class TemplateHelper {
         }
     }
 
+    @Nullable
     public static Template.TemplateSettings sumSettingsToInstance(Map<String, Object> data) {
         if (!data.keySet().containsAll(EDITABLE_KEYS)) return null;
 
@@ -92,7 +94,7 @@ public final class TemplateHelper {
                 result.realValue = Boolean.parseBoolean(value);
                 return true;
             }
-        } else if (type == Integer.class || type == Float.class) {
+        } else if (type == Integer.class || type == Double.class) {
             result.expected = "number";
             if (isNumeric(value)) {
                 result.realValue = parseNumeric(type, value);
@@ -110,7 +112,7 @@ public final class TemplateHelper {
                 result.realValue = value;
                 return true;
             }
-        } else if (type == Integer.class || type == Float.class) {
+        } else if (type == Integer.class || type == Double.class) {
             result.expected = "number";
             if (value instanceof Number) {
                 result.realValue = parseNumeric(type, value.toString());

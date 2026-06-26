@@ -1,9 +1,10 @@
 package de.pocketcloud.cloud.console;
 
 import de.pocketcloud.cloud.PocketCloud;
-import de.pocketcloud.cloud.console.command.sender.ConsoleCommandSender;
+import de.pocketcloud.cloud.console.screen.ScreenManager;
 import de.pocketcloud.cloud.tick.Tickable;
 import lombok.Getter;
+import lombok.Setter;
 import org.jline.reader.EndOfFileException;
 import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
@@ -20,13 +21,15 @@ import java.util.concurrent.LinkedBlockingQueue;
 @Getter
 public final class CloudConsole extends Thread implements Tickable {
 
-    private String prompt = "§c" + System.getProperty("user.name").toLowerCase() + "§8@§bcloud §8» §r";
+    @Setter
+    private String prompt = "";
 
     private final BlockingQueue<String> consoleQueue = new LinkedBlockingQueue<>();
     private Terminal terminal;
     private LineReader reader;
 
     public void install() throws IOException {
+        resetPrompt();
         terminal = TerminalBuilder.builder()
                 .color(true)
                 .encoding(StandardCharsets.UTF_8)
@@ -43,6 +46,8 @@ public final class CloudConsole extends Thread implements Tickable {
                 .build();
 
         terminal.flush();
+
+        terminal.handle(Terminal.Signal.INT, _ -> ScreenManager.instance().get().onCancel(PocketCloud.instance().currentTick()));
     }
 
     public void uninstall() {
@@ -76,16 +81,26 @@ public final class CloudConsole extends Thread implements Tickable {
 
     @Override
     public void run() {
-        while (PocketCloud.getInstance().running()) {
+        while (PocketCloud.instance().running()) {
             try {
                 String line = reader.readLine(ConsoleColor.convert(prompt));
-                if (line == null || line.isBlank()) continue;
+                if (line == null) continue;
                 consoleQueue.offer(line);
             } catch (UserInterruptException | EndOfFileException _) {
                 consoleQueue.offer("exit -y");
                 break;
             }
         }
+    }
+
+    public void print(String line) {
+        CloudConsole console = PocketCloud.instance().console();
+        if (console != null) {
+            LineReader reader = console.getReader();
+            if (reader != null) {
+                reader.printAbove(line);
+            } else System.out.println(line);
+        } else System.out.println(line);
     }
 
     @Override
@@ -96,12 +111,59 @@ public final class CloudConsole extends Thread implements Tickable {
     public void pollCommands() {
         String line;
         while ((line = consoleQueue.poll()) != null) {
-            PocketCloud.getInstance().commandManager().call(new ConsoleCommandSender(), line.split(" "));
+            PocketCloud.instance().screenManager().get().handleInput(line);
         }
     }
 
-    public CloudConsole setPrompt(String prompt) {
-        this.prompt = prompt;
-        return this;
+    public void enableHistory(boolean enabled) {
+        reader.setVariable(LineReader.DISABLE_HISTORY, !enabled);
+    }
+
+    public void showCursor(boolean enabled) {
+        terminal.puts(InfoCmp.Capability.cursor_invisible, enabled);
+    }
+
+    public void showTyping(boolean enabled) {
+        terminal.echo(enabled);
+    }
+
+    public void enableCompletion(boolean enabled) {
+        reader.setVariable(LineReader.DISABLE_COMPLETION, !enabled);
+    }
+
+    public void enableHistory() {
+        enableHistory(true);
+    }
+
+    public void disableHistory() {
+        enableHistory(false);
+    }
+
+    public void showCursor() {
+        showCursor(true);
+    }
+
+    public void hideCursor() {
+        showCursor(false);
+    }
+
+    public void showTyping() {
+        showTyping(true);
+    }
+
+    public void hideTyping() {
+        showTyping(false);
+    }
+
+    public void enableCompletion() {
+        enableCompletion(true);
+    }
+
+    public void disableCompletion() {
+        enableCompletion(false);
+    }
+
+    public void resetPrompt() {
+        this.prompt = "§c" + System.getProperty("user.name").toLowerCase() + "§8@§bcloud §8» §r";
     }
 }

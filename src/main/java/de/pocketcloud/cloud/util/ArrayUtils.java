@@ -1,9 +1,20 @@
 package de.pocketcloud.cloud.util;
 
+import org.jetbrains.annotations.Nullable;
+
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public final class ArrayUtils {
+
+    public static LinkedHashMap<String, Object> orderedMap(Object... keysAndValues) {
+        LinkedHashMap<String, Object> map = new LinkedHashMap<>();
+        for (int i = 0; i < keysAndValues.length; i += 2) {
+            map.put((String) keysAndValues[i], keysAndValues[i + 1]);
+        }
+        return map;
+    }
 
     public static boolean hasAllKeys(Map<String, Object> map, Map<String, Object> defaultMap) {
         for (Map.Entry<String, Object> entry : defaultMap.entrySet()) {
@@ -12,7 +23,7 @@ public final class ArrayUtils {
 
             if (!map.containsKey(key)) return false;
 
-            if (defaultValue instanceof Map<?, ?> defaultNested && !((Map<?, ?>) defaultValue).isEmpty()) {
+            if (defaultValue instanceof Map<?, ?> defaultNested && !defaultNested.isEmpty()) {
                 Object actual = map.get(key);
                 if (!(actual instanceof Map<?, ?>)) return false;
 
@@ -27,43 +38,38 @@ public final class ArrayUtils {
         return true;
     }
 
-    public static Map<String, Object> fillMissingKeys(Map<String, Object> map, Map<String, Object> defaultMap) {
+    public static <K, V> Map<K, V> fillMissingKeys(Map<K, V> map, Map<K, V> defaultMap) {
         return fillMissingKeys(map, defaultMap, null, false);
     }
 
-    public static Map<String, Object> fillMissingKeys(Map<String, Object> map, Map<String, Object> defaultMap, boolean enforceTypes) {
+    public static <K, V> Map<K, V> fillMissingKeys(Map<K, V> map, Map<K, V> defaultMap, boolean enforceTypes) {
         return fillMissingKeys(map, defaultMap, null, enforceTypes);
     }
 
-    public static Map<String, Object> fillMissingKeys(Map<String, Object> map, Map<String, Object> defaultMap, AtomicInteger affectedKeys, boolean enforceTypes) {
+    @SuppressWarnings("unchecked")
+    public static <K, V> Map<K, V> fillMissingKeys(Map<K, V> map, Map<K, V> defaultMap, @Nullable AtomicInteger affectedKeys, boolean enforceTypes) {
         if (affectedKeys == null) affectedKeys = new AtomicInteger(0);
-
-        for (Map.Entry<String, Object> entry : defaultMap.entrySet()) {
-            String key = entry.getKey();
-            Object defaultValue = entry.getValue();
-            Object actualValue = map.get(key);
+        for (Map.Entry<K, V> entry : defaultMap.entrySet()) {
+            K key = entry.getKey();
+            V defaultValue = entry.getValue();
+            V actualValue = map.get(key);
 
             if (!map.containsKey(key)) {
                 affectedKeys.incrementAndGet();
                 map.put(key, defaultValue);
-            } else if (defaultValue instanceof Map<?, ?> && actualValue instanceof Map<?, ?>) {
+            } else if (defaultValue instanceof Map<?, ?> defaultNested && actualValue instanceof Map<?, ?> actualNested) {
                 affectedKeys.incrementAndGet();
-                @SuppressWarnings("unchecked")
-                Map<String, Object> nestedMap = (Map<String, Object>) actualValue;
-                @SuppressWarnings("unchecked")
-                Map<String, Object> nestedDefault = (Map<String, Object>) defaultValue;
-
-                map.put(key, fillMissingKeys(nestedMap, nestedDefault, affectedKeys, enforceTypes));
+                Map<Object, Object> merged = fillMissingKeys((Map<Object, Object>) actualNested, (Map<Object, Object>) defaultNested, affectedKeys, enforceTypes);
+                map.put(key, (V) merged);
             } else if (defaultValue instanceof Map<?, ?>) {
                 affectedKeys.incrementAndGet();
                 map.put(key, defaultValue);
-            } else if (enforceTypes && defaultValue != null && actualValue != null) {
-                if (!defaultValue.getClass().equals(actualValue.getClass())) {
-                    affectedKeys.incrementAndGet();
-                    map.put(key, defaultValue);
-                }
+            } else if (enforceTypes && defaultValue != null && actualValue != null && !defaultValue.getClass().equals(actualValue.getClass())) {
+                affectedKeys.incrementAndGet();
+                map.put(key, defaultValue);
             }
         }
+
         return map;
     }
 }

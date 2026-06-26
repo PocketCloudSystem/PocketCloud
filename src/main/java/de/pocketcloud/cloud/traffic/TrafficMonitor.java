@@ -116,7 +116,7 @@ public abstract class TrafficMonitor {
         handlers.clear();
         monitoringDuration = TimeUtils.currentSeconds() - timestamp;
 
-        TrafficMonitorManager.getInstance().removeTrafficMonitor(this);
+        TrafficMonitorManager.instance().removeTrafficMonitor(this);
 
         Consumer<Object[]> handler = stopMonitoringHandler;
         if (!onStopMonitoring(args) && handler != null) {

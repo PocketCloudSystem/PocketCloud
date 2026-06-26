@@ -18,6 +18,7 @@ import java.util.Map;
 public final class RequestManager implements Tickable {
 
     @Getter
+    @Accessors(fluent = true)
     private static RequestManager instance;
 
     private final Map<String, RequestClientPacket> requests = new HashMap<>();

@@ -1,5 +1,7 @@
 package de.pocketcloud.cloud.cache;
 
+import de.pocketcloud.cloud.network.packet.impl.ModuleSyncPacket;
+
 import java.util.*;
 
 public final class ActiveInGameModuleCache implements LocalCache<String> {
@@ -18,7 +20,7 @@ public final class ActiveInGameModuleCache implements LocalCache<String> {
 
     @Override
     public void syncOut() {
-        //TODO
+        ModuleSyncPacket.fromModuleCache().broadcastPacket();
     }
 
     @Override

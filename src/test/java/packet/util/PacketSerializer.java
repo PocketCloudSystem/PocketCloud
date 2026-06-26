@@ -2,7 +2,6 @@ package packet.util;
 
 import com.google.gson.JsonSyntaxException;
 import exception.PacketException;
-import packet.ClientboundPacket;
 import packet.CloudPacket;
 import packet.PacketPool;
 
@@ -45,7 +44,7 @@ public final class PacketSerializer {
             }
             
             String json = new String(decompressed, StandardCharsets.UTF_8);
-            de.pocketcloud.cloud.network.packet.util.PacketData data = de.pocketcloud.cloud.network.packet.util.PacketData.fromJson(json);
+            de.pocketcloud.cloud.network.packet.data.PacketData data = de.pocketcloud.cloud.network.packet.data.PacketData.fromJson(json);
             
             if (data.isEmpty()) throw new PacketException("Received buffer is empty");
             

@@ -9,6 +9,7 @@ import de.pocketcloud.cloud.plugin.exception.PluginLoadFailedException;
 import de.pocketcloud.cloud.plugin.loader.JarCloudPluginLoader;
 import de.pocketcloud.cloud.tick.Tickable;
 import lombok.Getter;
+import lombok.experimental.Accessors;
 
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
@@ -18,12 +19,14 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Getter
 public final class CloudPluginManager implements Tickable, Loadable {
 
     @Getter
+    @Accessors(fluent = true)
     private static CloudPluginManager instance = null;
 
     private final Map<String, CloudPlugin> plugins = new HashMap<>();
@@ -62,8 +65,8 @@ public final class CloudPluginManager implements Tickable, Loadable {
             try {
                 CloudLogger.get().info("Loading plugin §b{}§r...", jarFile.getFileName().toString());
                 CloudPlugin plugin = pluginLoader.load(jarFile);
-                if (plugins.containsKey(plugin.getDescription().getName())) throw new PluginLoadFailedException("Plugin with the same name already loaded");
-                plugins.put(plugin.getDescription().getName(), plugin);
+                if (plugins.containsKey(plugin.getDescription().name())) throw new PluginLoadFailedException("Plugin with the same name already loaded");
+                plugins.put(plugin.getDescription().name(), plugin);
                 new PluginLoadEvent(plugin).call();
                 plugin.onLoad();
             } catch (Exception e) {
@@ -78,7 +81,7 @@ public final class CloudPluginManager implements Tickable, Loadable {
 
     public void enable(CloudPlugin plugin) {
         if (plugin.isEnabled()) return;
-        CloudLogger.get().info("§aEnabling §rplugin §b{}§r...",  plugin.getDescription().getName());
+        CloudLogger.get().info("§aEnabling §rplugin §b{}§r...",  plugin.getDescription().name());
         plugin.setState(CloudPluginState.ENABLED);
         try {
             new PluginEnableEvent(plugin).call();
@@ -96,8 +99,8 @@ public final class CloudPluginManager implements Tickable, Loadable {
 
     public void disable(CloudPlugin plugin) {
         if (plugin.isDisabled()) return;
-        CloudLogger.get().info("§cDisabling §rplugin §b{}§r...",  plugin.getDescription().getName());
-        plugins.remove(plugin.getDescription().getName());
+        CloudLogger.get().info("§cDisabling §rplugin §b{}§r...",  plugin.getDescription().name());
+        plugins.remove(plugin.getDescription().name());
         plugin.setState(CloudPluginState.DISABLED);
         try {
             new PluginDisableEvent(plugin).call();
@@ -119,8 +122,8 @@ public final class CloudPluginManager implements Tickable, Loadable {
         }
     }
 
-    public CloudPlugin get(String name) {
-        return plugins.getOrDefault(name, null);
+    public Optional<CloudPlugin> get(String name) {
+        return Optional.ofNullable(plugins.getOrDefault(name, null));
     }
 
     public List<CloudPlugin> getEnabledPlugins() {

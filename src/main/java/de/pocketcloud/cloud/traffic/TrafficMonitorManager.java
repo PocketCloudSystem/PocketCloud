@@ -4,6 +4,7 @@ import de.pocketcloud.cloud.load.Loadable;
 import de.pocketcloud.cloud.tick.Tickable;
 import de.pocketcloud.cloud.traffic.impl.NetworkTrafficMonitor;
 import de.pocketcloud.cloud.util.TimeUtils;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
@@ -15,6 +16,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
 
+@Getter
+@Accessors(fluent = true)
 public final class TrafficMonitorManager implements Tickable, Loadable {
 
     public static final String TRAFFIC_NETWORK = "network";
@@ -22,12 +25,10 @@ public final class TrafficMonitorManager implements Tickable, Loadable {
     @Getter
     private static TrafficMonitorManager instance;
 
-    @Getter
     private final Map<String, Supplier<? extends TrafficMonitor>> trafficMonitorTypes = new ConcurrentHashMap<>();
-    @Getter
     private final Map<String, List<TrafficMonitor>> trafficMonitors = new ConcurrentHashMap<>();
-    @Getter
     private final Map<String, Map<String, Long>> allTimeTraffic = new ConcurrentHashMap<>();
+    @Getter(AccessLevel.NONE)
     private final Map<String, Map<String, List<TrafficData>>> byteHistory = new ConcurrentHashMap<>();
 
     public TrafficMonitorManager() {
@@ -152,15 +153,15 @@ public final class TrafficMonitorManager implements Tickable, Loadable {
         }
     }
 
-    public List<TrafficMonitor> getTrafficMonitors(String type) {
+    public List<TrafficMonitor> trafficMonitors(String type) {
         return trafficMonitors.get(type);
     }
 
-    public Map<String, Long> getAllTimeTraffic(String type) {
+    public Map<String, Long> allTimeTraffic(String type) {
         return allTimeTraffic.get(type);
     }
 
-    public Optional<Long> getAllTimeTraffic(String type, String mode) {
+    public Optional<Long> allTimeTraffic(String type, String mode) {
         if (allTimeTraffic.containsKey(type)) return Optional.ofNullable(allTimeTraffic.get(type).getOrDefault(mode, null));
         return Optional.empty();
     }

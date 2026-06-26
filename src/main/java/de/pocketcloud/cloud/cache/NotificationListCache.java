@@ -1,5 +1,8 @@
 package de.pocketcloud.cloud.cache;
 
+import de.pocketcloud.cloud.network.packet.impl.NotificationListSyncPacket;
+import de.pocketcloud.cloud.template.TemplateType;
+
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -17,7 +20,7 @@ public final class NotificationListCache implements LocalCache<String> {
 
     @Override
     public void syncOut() {
-
+        NotificationListSyncPacket.fromNotificationListCache().broadcastPacket();
     }
 
     @Override

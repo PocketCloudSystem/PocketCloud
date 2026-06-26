@@ -5,6 +5,7 @@ import de.pocketcloud.cloud.config.type.ConfigType;
 import de.pocketcloud.cloud.config.type.ConfigTypes;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import lombok.Getter;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -89,7 +90,7 @@ public final class Config {
     /**
      * @param customSaveHandler If applied, the config will use this to save the config to disk, meaning the handler will save the config.
      */
-    public boolean save(Function<Config, Boolean> customSaveHandler) throws IOException {
+    public boolean save(@Nullable Function<Config, Boolean> customSaveHandler) throws IOException {
         if (!changed) return true;
         if (customSaveHandler != null) return customSaveHandler.apply(this);
         String content = type.encode(this.content);
@@ -105,7 +106,7 @@ public final class Config {
      * Only difference between {@link Config#save()} and {@link Config#saveSafe()} is, that saveSafe swallows the exception and returns false instead.
      * @param customSaveHandler If applied, the config will use this to save the config to disk, meaning the handler will save the config.
      */
-    public boolean saveSafe(Function<Config, Boolean> customSaveHandler) {
+    public boolean saveSafe(@Nullable Function<Config, Boolean> customSaveHandler) {
         if (!changed) return true;
         if (customSaveHandler != null) return customSaveHandler.apply(this);
 
@@ -119,6 +120,7 @@ public final class Config {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public Config set(String key, Object value) {
         String[] keys = key.split("\\.");
         Map<String, Object> current = content;
@@ -166,6 +168,7 @@ public final class Config {
         return this;
     }
 
+    @SuppressWarnings("unchecked")
     public boolean has(String key) {
         String[] keys = key.split("\\.");
         Map<String, Object> current = content;
@@ -180,7 +183,7 @@ public final class Config {
     }
 
     @SuppressWarnings("unchecked")
-    public <T> T get(String key, Class<T> type, T defaultValue) {
+    public <T> T get(String key, @Nullable Class<T> type, T defaultValue) {
         String[] keys = key.split("\\.");
         Map<String, Object> current = content;
 
@@ -194,6 +197,7 @@ public final class Config {
         return type != null ? (type.isInstance(value) ? type.cast(value) : defaultValue) : (T) value;
     }
 
+    @SuppressWarnings("unchecked")
     public <T> T get(String key, T defaultValue) {
         return get(key, (Class<T>) defaultValue.getClass(), defaultValue);
     }

@@ -69,7 +69,7 @@ public final class Benchmark {
     }
 
     public static BenchmarkTiming startTiming(String name) {
-        BenchmarkTiming timing = new BenchmarkTiming(name, PocketCloud.getInstance().ticker().tickCounter());
+        BenchmarkTiming timing = new BenchmarkTiming(name, PocketCloud.instance().currentTick());
         timings.put(name, timing);
         timing.startTiming();
         return timing;

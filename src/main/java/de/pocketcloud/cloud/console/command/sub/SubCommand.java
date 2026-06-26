@@ -1,16 +1,16 @@
 package de.pocketcloud.cloud.console.command.sub;
 
 import de.pocketcloud.cloud.console.command.Command;
+import de.pocketcloud.cloud.console.command.ctx.CommandContext;
 import de.pocketcloud.cloud.console.command.desc.SubCommandDescription;
 import de.pocketcloud.cloud.console.command.flag.CommandFlag;
 import de.pocketcloud.cloud.console.command.holder.CommandUtilityHolder;
 import de.pocketcloud.cloud.console.command.parameter.BaseCommandParameter;
 import de.pocketcloud.cloud.console.command.sender.CommandSender;
-import de.pocketcloud.cloud.util.QuadFunction;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.Map;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 public abstract class SubCommand extends CommandUtilityHolder {
@@ -47,7 +47,7 @@ public abstract class SubCommand extends CommandUtilityHolder {
 
     abstract public void prepare();
 
-    abstract public boolean run(CommandSender sender, String label, Map<String, Object> args, Map<String, Object> flags);
+    abstract public boolean run(CommandSender sender, CommandContext ctx);
 
     private String buildUsageMessage() {
         StringBuilder usage = new StringBuilder();
@@ -73,26 +73,26 @@ public abstract class SubCommand extends CommandUtilityHolder {
         return usage != null ? usage : buildUsageMessage();
     }
 
-    public static LambdaSubCommand lambda(String name, QuadFunction<CommandSender, String, Map<String, Object>, Map<String, Object>, Boolean> expressionCallback) {
+    public static LambdaSubCommand lambda(String name, BiFunction<CommandSender, CommandContext, Boolean> expressionCallback) {
         return new LambdaSubCommand(name, null, false, expressionCallback, null);
     }
 
-    public static LambdaSubCommand lambda(String name, QuadFunction<CommandSender, String, Map<String, Object>, Map<String, Object>, Boolean> expressionCallback, boolean optional) {
+    public static LambdaSubCommand lambda(String name, BiFunction<CommandSender, CommandContext, Boolean> expressionCallback, boolean optional) {
         return new LambdaSubCommand(name, null, optional, expressionCallback, null);
 
     }
 
-    public static LambdaSubCommand lambda(String name, QuadFunction<CommandSender, String, Map<String, Object>, Map<String, Object>, Boolean> expressionCallback, boolean optional, String usage) {
+    public static LambdaSubCommand lambda(String name, BiFunction<CommandSender, CommandContext, Boolean> expressionCallback, boolean optional, String usage) {
         return new LambdaSubCommand(name, usage, optional, expressionCallback, null);
 
     }
 
-    public static LambdaSubCommand lambda(String name, QuadFunction<CommandSender, String, Map<String, Object>, Map<String, Object>, Boolean> expressionCallback, boolean optional, Consumer<SubCommand> prepareCallback) {
+    public static LambdaSubCommand lambda(String name, BiFunction<CommandSender, CommandContext, Boolean> expressionCallback, boolean optional, Consumer<SubCommand> prepareCallback) {
         return new LambdaSubCommand(name, null, optional, expressionCallback, prepareCallback);
 
     }
 
-    public static LambdaSubCommand lambda(String name, QuadFunction<CommandSender, String, Map<String, Object>, Map<String, Object>, Boolean> expressionCallback, boolean optional, Consumer<SubCommand> prepareCallback, String usage) {
+    public static LambdaSubCommand lambda(String name, BiFunction<CommandSender, CommandContext, Boolean> expressionCallback, boolean optional, Consumer<SubCommand> prepareCallback, String usage) {
         return new LambdaSubCommand(name, usage, optional, expressionCallback, prepareCallback);
     }
 }

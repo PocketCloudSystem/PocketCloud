@@ -48,7 +48,7 @@ public final class Ticker {
 
     public void tick() {
         this.nextTick = System.currentTimeMillis();
-        while (PocketCloud.getInstance().running()) {
+        while (PocketCloud.instance().running()) {
             long tickStart = System.currentTimeMillis();
             if ((tickStart - this.nextTick) < -25) {
                 sleepUntilNextTick();
@@ -58,7 +58,7 @@ public final class Ticker {
             Benchmark.startTiming("cloud_tick");
             this.tickCounter++;
 
-            if (!PocketCloud.getInstance().loader().isReloading()) {
+            if (!PocketCloud.instance().loader().isReloading()) {
                 for (Tickable tickable : tickableList.values()) {
                     Benchmark.startTiming("tick_" + tickable.getClass().getName());
                     tickable.tick(tickCounter);

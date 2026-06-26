@@ -10,7 +10,7 @@ import java.time.format.DateTimeFormatter;
 
 public class MainLogger implements ILogger {
 
-    public static final String LOG_FORMAT = "§8[§b{time_with_ms}§8] §8[§r{thread}§8/§r{log_level}§r§8] §r{message}§r";
+    public static final String LOG_FORMAT = "§8[§r{time_with_ms}§8] {log_level} §r§8» §r{message}§r";
 
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm:ss");
     private static final DateTimeFormatter TIME_MS_FMT = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
@@ -59,6 +59,10 @@ public class MainLogger implements ILogger {
                     trace.getClassName(),
                     trace.getLineNumber()
             );
+        }
+
+        if (throwable.getCause() != null) {
+            exception(throwable.getCause());
         }
 
         return this;

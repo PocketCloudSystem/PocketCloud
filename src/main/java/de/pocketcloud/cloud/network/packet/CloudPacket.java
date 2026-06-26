@@ -1,9 +1,14 @@
 package de.pocketcloud.cloud.network.packet;
 
+import de.pocketcloud.cloud.network.broadcaster.PacketBroadcaster;
 import de.pocketcloud.cloud.network.client.ServerClient;
-import de.pocketcloud.cloud.network.packet.util.PacketData;
+import de.pocketcloud.cloud.network.packet.data.PacketData;
+import de.pocketcloud.cloud.util.FilterableObject;
 import lombok.Getter;
 import lombok.Setter;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.concurrent.CompletableFuture;
 
 public abstract class CloudPacket implements Packet {
     
@@ -27,17 +32,21 @@ public abstract class CloudPacket implements Packet {
         assert packetName != null;
         if (!packetName.equals(getName())) throw new RuntimeException("Packet name does not equal the actual class name? What have you done?");
         sentTimestamp = packetData.readLong();
-        if (sentTimestamp == null) throw new RuntimeException("Packet data does not contain the actual sent timestamp? What have you done?");
         decodePayload(packetData);
     }
 
-    public void sendPacket(ServerClient client) {
-        if (!(this instanceof ClientboundPacket p)) return;
-        client.sendPacket(p);
+    public CompletableFuture<Void> sendPacket(ServerClient client) {
+        if (this instanceof ClientboundPacket p) return client.sendPacket(p);
+        return CompletableFuture.failedFuture(new RuntimeException("Packet not a ClientboundPacket"));
+    }
+
+    public void broadcastPacket(FilterableObject... exclusions) {
+        if (!(this instanceof ClientboundPacket p)) throw new IllegalStateException("Cannot broadcast non-ClientboundPacket");
+        PacketBroadcaster.broadcastPacket(p, exclusions);
     }
     
     @Override
-    public abstract void handle();
+    public abstract void handle(@NotNull ServerClient client);
 
     @Override
     public final String getName() {

@@ -10,12 +10,11 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Getter
-@Accessors(fluent = true)
 public final class MainConfig extends Configuration {
 
     @Getter
-    @Accessors(fluent = false)
     @Ignored
+    @Accessors(fluent = true)
     private static MainConfig instance = null;
 
     @Comment({"The name of the cloud."})
@@ -32,6 +31,7 @@ public final class MainConfig extends Configuration {
             .set("packet_size_limit", 10_000_000, "Traffic limit in bytes");
     @Comment({"The HTTP service configuration for the cloud."})
     private ConfigMap httpServer = new ConfigMap()
+            .set("enabled", false, "Whether the http server will start or not")
             .set("address", "0.0.0.0", "Bind address for the HTTP server")
             .set("port", 8080, "Port for the HTTP server")
             .set("auth-key", StringUtils.generate(20), "Authorization key for incoming HTTP requests");
@@ -78,6 +78,7 @@ public final class MainConfig extends Configuration {
     }
 
     public MainConfig setHttpServer(String address, Integer port, String authKey) {
+        this.httpServer.set("enabled", address, "Whether the http server will start or not");
         this.httpServer.set("address", address, "Bind address for the http server");
         this.httpServer.set("port", port, "Port for the http server");
         this.httpServer.set("auth_key", authKey, "Authorization key for incoming HTTP requests");
@@ -94,7 +95,7 @@ public final class MainConfig extends Configuration {
     }
 
     public InetSocketAddress getNetworkAddress() {
-        return InetSocketAddress.createUnresolved(this.network.get("address").toString(), Integer.parseInt(this.network.get("port").toString()));
+        return new InetSocketAddress(this.network.get("address").toString(), Integer.parseInt(this.network.get("port").toString()));
     }
 
     public boolean isNetworkEncryptionEnabled() {
@@ -105,8 +106,12 @@ public final class MainConfig extends Configuration {
         return Long.parseLong(this.network.get("packet_size_limit").toString());
     }
 
+    public boolean isHttpServerEnabled() {
+        return this.httpServer.get("enabled").toString().equals("true");
+    }
+
     public InetSocketAddress getHttpServerAddress() {
-        return InetSocketAddress.createUnresolved(this.httpServer.get("address").toString(), Integer.parseInt(this.httpServer.get("port").toString()));
+        return new InetSocketAddress(this.httpServer.get("address").toString(), Integer.parseInt(this.httpServer.get("port").toString()));
     }
 
     public String getHttpServerAuthKey() {

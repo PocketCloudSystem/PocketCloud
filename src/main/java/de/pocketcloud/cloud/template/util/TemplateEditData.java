@@ -11,7 +11,7 @@ public class TemplateEditData {
     private Integer maxPlayerCount = null;
     private Integer minServerCount = null;
     private Integer maxServerCount = null;
-    private Float startNewPercentage = null;
+    private Double startNewPercentage = null;
     private Boolean autoStart = null;
 
     /**
@@ -66,7 +66,7 @@ public class TemplateEditData {
         return this;
     }
 
-    public TemplateEditData startNewPercentage(Float startNewPercentage) {
+    public TemplateEditData startNewPercentage(Double startNewPercentage) {
         this.startNewPercentage = startNewPercentage;
         return this;
     }

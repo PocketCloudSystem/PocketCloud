@@ -1,7 +1,7 @@
 package de.pocketcloud.cloud.network.packet;
 
-import de.pocketcloud.cloud.network.packet.util.PacketData;
-import io.netty.channel.Channel;
+import de.pocketcloud.cloud.network.client.ServerClient;
+import de.pocketcloud.cloud.network.packet.data.PacketData;
 import lombok.Getter;
 
 /**
@@ -28,8 +28,8 @@ public abstract class RequestPacket extends CloudPacket implements CloudboundPac
     @Override
     public final void encodePayload(PacketData packetData) {}
 
-    public void sendResponse(ResponsePacket packet, Channel channel) {
+    public void sendResponse(ResponsePacket packet, ServerClient client) {
         packet.setRequestId(requestId);
-        channel.writeAndFlush(packet);
+        client.channel().writeAndFlush(packet);
     }
 }

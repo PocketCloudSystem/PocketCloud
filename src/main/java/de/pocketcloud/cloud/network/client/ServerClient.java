@@ -1,26 +1,26 @@
 package de.pocketcloud.cloud.network.client;
 
-import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.network.packet.ClientboundPacket;
-import de.pocketcloud.cloud.network.packet.CloudPacket;
-import de.pocketcloud.cloud.util.TriConsumer;
+import de.pocketcloud.cloud.server.CloudServer;
+import de.pocketcloud.cloud.util.FilterableObject;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelFutureListener;
 import io.netty.util.AttributeKey;
 import lombok.Getter;
+import lombok.experimental.Accessors;
 
 import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
-public final class ServerClient {
+public final class ServerClient implements FilterableObject {
 
-    /** Netty channel attribute used to attach a {@link ServerClient} directly to its channel. */
     public static final AttributeKey<ServerClient> ATTRIBUTE_KEY = AttributeKey.valueOf("serverClient");
 
-    public record DelayedPacket(CloudPacket packet, long deliverAt, TriConsumer<ServerClient, CloudPacket, Boolean> onSend) {}
+    public record DelayedPacket(ClientboundPacket packet, long deliverAt, CompletableFuture<Void> future) {}
 
     @Getter
+    @Accessors(fluent = true)
     private final Channel channel;
     private final List<DelayedPacket> delayedPackets = new ArrayList<>();
 
@@ -28,22 +28,24 @@ public final class ServerClient {
         this.channel = channel;
     }
 
-    public boolean sendPacket(ClientboundPacket packet) {
-        if (!channel.isActive()) {
-            CloudLogger.get().warn("Failed to send packet §b{} §rto §b{}§r.", ((CloudPacket) packet).getName(), channel.remoteAddress());
-            return false;
-        }
+    public CompletableFuture<Void> sendPacket(ClientboundPacket packet) {
+        CompletableFuture<Void> future = new CompletableFuture<>();
 
-        channel.writeAndFlush(packet).addListener((ChannelFutureListener) future -> {
-            if (!future.isSuccess()) {
-                CloudLogger.get().warn("Failed to send packet §b{} §rto §b{}§r.", ((CloudPacket) packet).getName(), channel.remoteAddress());
+        channel.writeAndFlush(packet).addListener(f -> {
+            if (f.isSuccess()) {
+                future.complete(null);
+            } else {
+                future.completeExceptionally(f.cause());
             }
         });
-        return true;
+
+        return future;
     }
 
-    public void sendDelayedPacket(CloudPacket packet, long delayMs, TriConsumer<ServerClient, CloudPacket, Boolean> onSend) {
-        delayedPackets.add(new DelayedPacket(packet, System.currentTimeMillis() + delayMs, onSend));
+    public CompletableFuture<Void> sendDelayedPacket(ClientboundPacket packet, long delayMs) {
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        delayedPackets.add(new DelayedPacket(packet, System.currentTimeMillis() + delayMs, future));
+        return future;
     }
 
     public List<DelayedPacket> pollDuePackets() {
@@ -55,26 +57,24 @@ public final class ServerClient {
         return due;
     }
 
-    public List<DelayedPacket> getDelayedPackets() {
+    public List<DelayedPacket> delayedPackets() {
         return List.copyOf(delayedPackets);
     }
 
-    public SocketAddress getAddress() {
+    public SocketAddress address() {
         return channel.remoteAddress();
     }
 
-//    //todo
-//    public boolean hasServer() {
-//        return getServer() != null;
-//    }
+    public boolean hasServer() {
+        return server() != null;
+    }
 
-    //Todo
-//    public CloudServer getServer() {
-//        return ServerClientCache.getInstance().getServer(this);
-//    }
+    public CloudServer server() {
+        return ServerClientCache.instance().getServer(this);
+    }
 
     @Override
     public String toString() {
-        return "ServerClient[address=" + getAddress() + "]";
+        return "ServerClient[address=" + address() + "]";
     }
 }

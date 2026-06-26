@@ -5,7 +5,11 @@ import de.pocketcloud.cloud.event.impl.template.TemplateCreateEvent;
 import de.pocketcloud.cloud.event.impl.template.TemplateEditEvent;
 import de.pocketcloud.cloud.event.impl.template.TemplateRemoveEvent;
 import de.pocketcloud.cloud.load.Loadable;
+import de.pocketcloud.cloud.network.broadcaster.PacketBroadcaster;
+import de.pocketcloud.cloud.network.packet.impl.TemplateSyncPacket;
 import de.pocketcloud.cloud.provider.CloudProvider;
+import de.pocketcloud.cloud.server.CloudServer;
+import de.pocketcloud.cloud.server.CloudServerManager;
 import de.pocketcloud.cloud.template.group.ServerGroupManager;
 import de.pocketcloud.cloud.template.util.TemplateEditData;
 import de.pocketcloud.cloud.tick.Tickable;
@@ -14,6 +18,7 @@ import de.pocketcloud.cloud.util.Utils;
 import de.pocketcloud.cloud.util.benchmark.Benchmark;
 import de.pocketcloud.cloud.util.benchmark.BenchmarkTiming;
 import lombok.Getter;
+import lombok.experimental.Accessors;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -25,6 +30,7 @@ import java.util.Optional;
 public final class TemplateManager implements Tickable, Loadable {
 
     @Getter
+    @Accessors(fluent = true)
     private static TemplateManager instance = null;
 
     private final Map<String, Template> templates = new HashMap<>();
@@ -33,22 +39,20 @@ public final class TemplateManager implements Tickable, Loadable {
         instance = this;
     }
 
-    //TODO broadcast sync packets
-
     @Override
     public void load() {
         CloudLogger.get().info("Loading templates...");
         for (TemplateType type : TemplateType.values()) FileUtils.createDir(type.globalTemplatePath());
         CloudProvider.current().getTemplates()
-                .thenAccept(this.templates::putAll)
-                .thenAccept(_ -> ServerGroupManager.getInstance().load());
+                .thenSuccess(this.templates::putAll)
+                .thenSuccess(_ -> ServerGroupManager.instance().load());
     }
 
     @Override
     public void unload() {
         CloudLogger.get().info("Unloading templates...");
         this.templates.clear();
-        ServerGroupManager.getInstance().unload();
+        ServerGroupManager.instance().unload();
     }
 
     public void create(Template template) {
@@ -66,6 +70,7 @@ public final class TemplateManager implements Tickable, Loadable {
             templates.put(template.name(), template);
             BenchmarkTiming res = Benchmark.stopTiming("template_creation");
             CloudLogger.get().success("Successfully §acreated §rthe template §b{}§r. §8(§rTook §b{}ms§8)", template.name(), Utils.formatNumber(res.duration(), 2));
+            TemplateSyncPacket.create(template, false).broadcastPacket();
         } catch (IOException e) {
             CloudLogger.get().exception("Failed to create template {}", e, template.name());
             Benchmark.stopTiming("template_creation");
@@ -86,7 +91,18 @@ public final class TemplateManager implements Tickable, Loadable {
         CloudProvider.current().editTemplate(template, template.write());
         BenchmarkTiming res = Benchmark.stopTiming("template_editing");
         CloudLogger.get().success("Successfully §eedited §rthe template §b{}§r. §8(§rTook §b{}ms§8)", template.name(), Utils.formatNumber(res.duration(), 2));
-        //TODO kick playxers from template if new edit data has maintenance=true
+        TemplateSyncPacket.create(template, false).broadcastPacket();
+        if (template.settings().isMaintenance()) {
+            template.players().forEach(player -> {
+                if (template.settings().isLobby()) {
+                    player.kick("MAINTENANCE");
+                } else {
+                    Optional<CloudServer> lobbyServer = CloudServerManager.instance().getFreeLobby();
+                    if (lobbyServer.isEmpty()) player.kick("MAINTENANCE");
+                    else player.transfer(lobbyServer.get());
+                }
+            });
+        }
     }
 
     public void remove(Template template) {
@@ -118,7 +134,28 @@ public final class TemplateManager implements Tickable, Loadable {
 
     @Override
     public void tick(long currentTick) {
-        //start servers
+        if (!ServerGroupManager.instance().isLoaded()) return;
+        for (Template template : templates.values()) {
+            if (template.settings().isAutoStart()) {
+                int runningServers = CloudServerManager.instance().getAll(template).size();
+                if (runningServers < template.settings().getMaxServerCount() && runningServers < template.settings().getMinServerCount()) {
+                    if ((System.currentTimeMillis() - CloudServerManager.instance().lastServerStopTime()) >= 500) {
+                        CloudServerManager.instance().start(template, template.settings().getMinServerCount() - runningServers);
+                    }
+                }
+            }
+
+            CloudServer latest = CloudServerManager.instance().getLatest(template).orElse(null);
+            if (latest != null) {
+                double requiredPercentage = template.settings().getStartNewPercentage();
+                if (requiredPercentage <= 0) continue;
+                int players = latest.playerCount();
+                double percentage = (double) (100 * players) / latest.serverData().maxPlayers();
+                if (percentage >= requiredPercentage && CloudServerManager.instance().checkCapacity(template)) {
+                    CloudServerManager.instance().start(template, 1);
+                }
+            }
+        }
     }
 
     public Optional<Template> get(String name) {

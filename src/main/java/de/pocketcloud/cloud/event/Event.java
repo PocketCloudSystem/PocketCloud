@@ -26,13 +26,13 @@ public abstract class Event {
 
         ++eventCallDepth;
         try {
-            EventManager.getInstance().call(this);
+            EventManager.instance().call(this);
         } finally {
             --eventCallDepth;
         }
     }
 
-    public String getName() {
+    public String name() {
         return getClass().getSimpleName();
     }
 }

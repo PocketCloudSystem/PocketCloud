@@ -38,7 +38,7 @@ public record Library(
         Path libPath = directoryPath();
         FileUtils.removeDirectory(libPath.toAbsolutePath());
 
-        DownloadProgressBar progressBar = new DownloadProgressBar(name, PocketCloud.getInstance().console().getTerminal(), PocketCloud.getInstance().console().getReader());
+        DownloadProgressBar progressBar = new DownloadProgressBar(name, PocketCloud.instance().console().getTerminal(), PocketCloud.instance().console().getReader());
         progressBar.start();
 
         Path archivePath = libPath.getParent().resolve(name + ".zip");

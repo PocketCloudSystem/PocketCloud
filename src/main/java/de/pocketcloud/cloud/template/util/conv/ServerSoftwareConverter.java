@@ -13,6 +13,6 @@ public class ServerSoftwareConverter implements MapKeyConverter<ServerSoftware, 
 
     @Override
     public ServerSoftware fromValue(String value) {
-        return ServerSoftwareManager.getInstance().get(value);
+        return ServerSoftwareManager.instance().get(value);
     }
 }

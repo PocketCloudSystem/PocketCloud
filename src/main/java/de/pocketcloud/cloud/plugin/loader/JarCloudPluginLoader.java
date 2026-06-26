@@ -13,6 +13,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Objects;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -20,7 +21,7 @@ public final class JarCloudPluginLoader {
 
     public boolean canLoad(Path path) {
         if (Files.isRegularFile(path)) {
-            if (FileUtils.extensionOf(path).equals("jar")) {
+            if (Objects.equals(FileUtils.extensionOf(path), "jar")) {
                 try (JarFile jarFile = new JarFile(path.toFile())) {
                     JarEntry entry = jarFile.getJarEntry("plugin.yml");
                     if (entry == null) throw new PluginLoadFailedException("No plugin.yml found in " + path);
@@ -39,16 +40,16 @@ public final class JarCloudPluginLoader {
         try (JarFile jarFile = new JarFile(pluginJar)) {
             JarEntry entry = jarFile.getJarEntry("plugin.yml");
             try (InputStream inputStream = jarFile.getInputStream(entry)) {
-                CloudPluginDescription description = FileUtils.YAML.loadAs(inputStream, CloudPluginDescription.class);
-                if (description.getName() == null) throw new PluginLoadFailedException("No plugin name found in plugin.yml: " + path);
-                if (description.getVersion() == null) throw new PluginLoadFailedException("No plugin version found in plugin.yml: " + path);
-                if (description.getMain() == null) throw new PluginLoadFailedException("No plugin main found in plugin.yml: " + path);
+                CloudPluginDescription description = FileUtils.YAML.readValue(inputStream, CloudPluginDescription.class);
+                if (description.name() == null) throw new PluginLoadFailedException("No plugin name found in plugin.yml: " + path);
+                if (description.version() == null) throw new PluginLoadFailedException("No plugin version found in plugin.yml: " + path);
+                if (description.main() == null) throw new PluginLoadFailedException("No plugin main found in plugin.yml: " + path);
 
                 classLoader = new CloudPluginClassLoader(this.getClass().getClassLoader(), pluginJar);
-                Class<?> mainClass = classLoader.loadClass(description.getMain());
+                Class<?> mainClass = classLoader.loadClass(description.main());
                 if (!CloudPlugin.class.isAssignableFrom(mainClass)) throw new PluginLoadFailedException("Main class does not extend CloudPlugin");
 
-                Path dataFolder = Paths.get("storage/plugins/", description.getName());
+                Path dataFolder = Paths.get("storage/plugins/", description.name());
                 if (!Files.exists(dataFolder)) Files.createDirectories(dataFolder);
 
                 Class<? extends CloudPlugin> castedMain = mainClass.asSubclass(CloudPlugin.class);

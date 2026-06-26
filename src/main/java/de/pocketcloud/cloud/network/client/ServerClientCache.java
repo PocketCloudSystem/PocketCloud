@@ -1,28 +1,25 @@
 package de.pocketcloud.cloud.network.client;
 
 import de.pocketcloud.cloud.console.log.CloudLogger;
+import de.pocketcloud.cloud.server.CloudServer;
+import de.pocketcloud.cloud.server.CloudServerManager;
 import de.pocketcloud.cloud.tick.Tickable;
 import io.netty.channel.Channel;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
 import java.net.SocketAddress;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Predicate;
 
 public final class ServerClientCache implements Tickable {
 
     @Getter
-    private static ServerClientCache instance;
+    @Accessors(fluent = true)
+    private static ServerClientCache instance = null;
 
-    /** serverName -> ServerClient */
-    private final Map<String, ServerClient> clientsByServer = new HashMap<>();
-    /** client.toString() ->serverName */
-    private final Map<String, String> serversByClient = new HashMap<>();
-    /** SocketAddress.toString() -> ServerClient */
+    private final Map<UUID, ServerClient> clientsByServer = new HashMap<>();
+    private final Map<String, UUID> serversByClient = new HashMap<>();
     private final Map<String, ServerClient> clientsByAddress = new HashMap<>();
 
     public ServerClientCache() {
@@ -33,62 +30,63 @@ public final class ServerClientCache implements Tickable {
     public void tick(long currentTick) {
         for (ServerClient client : clientsByServer.values()) {
             for (ServerClient.DelayedPacket dp : client.pollDuePackets()) {
-                boolean success = client.sendPacket((de.pocketcloud.cloud.network.packet.ClientboundPacket) dp.packet());
-                if (dp.onSend() != null) {
-                    dp.onSend().accept(client, dp.packet(), success);
-                }
+                client.sendPacket(dp.packet())
+                        .thenAccept(dp.future()::complete)
+                        .exceptionally(e -> {
+                            dp.future().completeExceptionally(e);
+                            return null;
+                        });
             }
         }
     }
 
-//    public synchronized void add(CloudServer server, ServerClient client) {
-//        if (isRegistered(client)) return;
-//        CloudLogger.get().debug("Adding client {} => {}", client, server.getName());
-//        clientsByServer.put(server.getName(), client);
-//        serversByClient.put(client.toString(), server.getName());
-//        clientsByAddress.put(client.getAddress().toString(), client);
-//    }
+    public synchronized void add(CloudServer server, ServerClient client) {
+        if (isRegistered(client)) return;
+        CloudLogger.get().debug("Adding client {} => {} ({})", client, server.name(), server.uuid().toString());
+        clientsByServer.put(server.uuid(), client);
+        serversByClient.put(client.toString(), server.uuid());
+        clientsByAddress.put(client.address().toString(), client);
+    }
 
     public synchronized void remove(ServerClient client) {
         if (!isRegistered(client)) return;
         CloudLogger.get().debug("Removing client {}", client);
-        String serverName = serversByClient.remove(client.toString());
-        if (serverName != null) {
-            clientsByServer.remove(serverName);
+        UUID serverUuid = serversByClient.remove(client.toString());
+        if (serverUuid != null) {
+            clientsByServer.remove(serverUuid);
         } else {
             clientsByServer.values().remove(client);
         }
-        clientsByAddress.remove(client.getAddress().toString());
+
+        clientsByAddress.remove(client.address().toString());
     }
 
-    //TODo
-//    public synchronized void remove(CloudServer server) {
-//        ServerClient client = clientsByServer.get(server.getName());
-//        if (client != null) remove(client);
-//    }
+    public synchronized void remove(CloudServer server) {
+        ServerClient client = clientsByServer.get(server.uuid());
+        if (client != null) remove(client);
+    }
 
     public synchronized boolean isRegistered(ServerClient client) {
         return serversByClient.containsKey(client.toString());
     }
 
-    public synchronized ServerClient getByChannel(Channel channel) {
-        return clientsByAddress.get(channel.remoteAddress().toString());
+    public synchronized Optional<ServerClient> getByChannel(Channel channel) {
+        return Optional.ofNullable(clientsByAddress.getOrDefault(channel.remoteAddress().toString(), null));
     }
 
-    public synchronized ServerClient getByAddress(SocketAddress address) {
-        return clientsByAddress.get(address.toString());
+    public synchronized Optional<ServerClient> getByAddress(SocketAddress address) {
+        return Optional.ofNullable(clientsByAddress.getOrDefault(address.toString(), null));
     }
 
-//    public synchronized ServerClient get(CloudServer server) {
-//        return clientsByServer.get(server.getName());
-//    }
-//
-//    public synchronized CloudServer getServer(ServerClient client) {
-//        String serverName = serversByClient.get(client.toString());
-//        if (serverName == null) return null;
-//        // Resolve through your CloudServerManager — adjust the call to match your actual API.
-//        return de.pocketcloud.cloud.server.CloudServerManager.getInstance().get(serverName);
-//    }
+    public synchronized Optional<ServerClient> get(CloudServer server) {
+        return Optional.ofNullable(clientsByServer.getOrDefault(server.uuid(), null));
+    }
+
+    public synchronized CloudServer getServer(ServerClient client) {
+        UUID serverUuid = serversByClient.get(client.toString());
+        if (serverUuid == null) return null;
+        return CloudServerManager.instance().get(serverUuid).orElse(null);
+    }
 
     public synchronized List<ServerClient> getAll(Predicate<ServerClient> filter) {
         return clientsByServer.values().stream()
@@ -98,9 +96,5 @@ public final class ServerClientCache implements Tickable {
 
     public synchronized Collection<ServerClient> getAll() {
         return List.copyOf(clientsByServer.values());
-    }
-
-    public static long convertTicksToMs(int ticks) {
-        return ticks * 50L; // 1000 ms / 20 tps
     }
 }

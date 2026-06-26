@@ -1,6 +1,8 @@
 package de.pocketcloud.cloud.network.packet;
 
-import de.pocketcloud.cloud.network.packet.util.PacketData;
+import de.pocketcloud.cloud.network.client.ServerClient;
+import de.pocketcloud.cloud.network.packet.data.PacketData;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Base interface for all packets in the network system.
@@ -15,7 +17,7 @@ public interface Packet {
 
     void decodePayload(PacketData packetData);
 
-    void handle();
+    void handle(@NotNull ServerClient client);
 
     String getName();
 

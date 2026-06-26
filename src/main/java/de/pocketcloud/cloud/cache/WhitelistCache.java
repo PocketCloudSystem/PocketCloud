@@ -1,5 +1,7 @@
 package de.pocketcloud.cloud.cache;
 
+import de.pocketcloud.cloud.network.packet.impl.MaintenanceListSyncPacket;
+
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -17,7 +19,7 @@ public final class WhitelistCache implements LocalCache<String> {
 
     @Override
     public void syncOut() {
-
+        MaintenanceListSyncPacket.fromMaintenanceListCache().broadcastPacket();
     }
 
     @Override

@@ -5,11 +5,11 @@ import de.pocketcloud.cloud.PocketCloud;
 public final class CloudShutdownHook extends Thread {
 
     public CloudShutdownHook() {
-        super("ShutdownHook");
+        super("Shutdown-Hook");
     }
 
     @Override
     public void run() {
-        PocketCloud.getInstance().shutdown();
+        PocketCloud.instance().shutdown();
     }
 }

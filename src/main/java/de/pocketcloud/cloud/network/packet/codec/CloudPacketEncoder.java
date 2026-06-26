@@ -1,7 +1,8 @@
 package de.pocketcloud.cloud.network.packet.codec;
 
+import de.pocketcloud.cloud.PocketCloud;
+import de.pocketcloud.cloud.config.impl.MainConfig;
 import de.pocketcloud.cloud.network.packet.CloudPacket;
-import de.pocketcloud.cloud.network.packet.util.PacketSerializer;
 import de.pocketcloud.cloud.traffic.TrafficMonitor;
 import de.pocketcloud.cloud.traffic.TrafficMonitorManager;
 import io.netty.buffer.ByteBuf;
@@ -14,11 +15,11 @@ public final class CloudPacketEncoder extends MessageToByteEncoder<CloudPacket> 
 
     @Override
     protected void encode(ChannelHandlerContext ctx, CloudPacket packet, ByteBuf out) {
-        byte[] bytes = PacketSerializer.encode(packet, false, "test");
+        byte[] bytes = PacketSerializer.encode(packet, MainConfig.instance().isNetworkEncryptionEnabled(), PocketCloud.instance().network().authToken());
         packet.setSize(bytes.length);
-        TrafficMonitorManager.getInstance().pushBytes(TrafficMonitorManager.TRAFFIC_NETWORK, bytes.length, TrafficMonitor.REGULAR_MODE_OUT);
-        TrafficMonitorManager.getInstance().callHandlers(TrafficMonitorManager.TRAFFIC_NETWORK, TrafficMonitor.REGULAR_MODE_OUT, ctx.channel().remoteAddress(), new String(bytes, StandardCharsets.UTF_8), (long) packet.getSize());
-        TrafficMonitorManager.getInstance().callHandlers(TrafficMonitorManager.TRAFFIC_NETWORK, TrafficMonitor.REGULAR_MODE_OUT, ctx.channel().remoteAddress(), packet, (long) packet.getSize());
+        TrafficMonitorManager.instance().pushBytes(TrafficMonitorManager.TRAFFIC_NETWORK, bytes.length, TrafficMonitor.REGULAR_MODE_OUT);
+        TrafficMonitorManager.instance().callHandlers(TrafficMonitorManager.TRAFFIC_NETWORK, TrafficMonitor.REGULAR_MODE_OUT, ctx.channel().remoteAddress(), new String(bytes, StandardCharsets.UTF_8), (long) packet.getSize());
+        TrafficMonitorManager.instance().callHandlers(TrafficMonitorManager.TRAFFIC_NETWORK, TrafficMonitor.REGULAR_MODE_OUT, ctx.channel().remoteAddress(), packet, (long) packet.getSize());
         out.writeInt(bytes.length);
         out.writeBytes(bytes);
     }

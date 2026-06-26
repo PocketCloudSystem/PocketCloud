@@ -1,10 +1,8 @@
 package de.pocketcloud.cloud.console.log;
 
-import de.pocketcloud.cloud.PocketCloud;
-import de.pocketcloud.cloud.console.CloudConsole;
 import de.pocketcloud.cloud.console.ConsoleColor;
 import de.pocketcloud.cloud.console.log.cache.LogMessagesCache;
-import org.jline.reader.LineReader;
+import de.pocketcloud.cloud.console.output.OutputManager;
 
 public interface ILogger {
     
@@ -51,14 +49,7 @@ public interface ILogger {
             appendLogEntry(cleanedMessage);
         }
 
-        message = ConsoleColor.convert(message);
-        CloudConsole console = PocketCloud.getInstance().console();
-        if (console != null) {
-            LineReader reader = console.getReader();
-            if (reader != null) {
-                reader.printAbove(message);
-            } else System.out.println(message);
-        } else System.out.println(message);
+        OutputManager.get().handleOutput(ConsoleColor.convert(message));
         return this;
     }
 

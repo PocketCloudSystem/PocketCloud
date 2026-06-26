@@ -16,6 +16,7 @@ import java.util.*;
 public final class LibraryManager implements Loadable {
 
     @Getter
+    @Accessors(fluent = true)
     private static LibraryManager instance = null;
 
     public static final List<Library> DEFAULTS = List.of(
@@ -41,7 +42,7 @@ public final class LibraryManager implements Loadable {
             }
         } catch (Exception e) {
             CloudLogger.get().exception("Failed to load bridge libraries", e);
-            PocketCloud.getInstance().shutdown();
+            PocketCloud.instance().shutdown();
         }
 
         for (Library library : DEFAULTS) {

@@ -1,5 +1,6 @@
 package de.pocketcloud.cloud.console.command;
 
+import de.pocketcloud.cloud.console.command.ctx.CommandContext;
 import de.pocketcloud.cloud.console.command.desc.CommandDescription;
 import de.pocketcloud.cloud.console.command.exception.ArgumentParseException;
 import de.pocketcloud.cloud.console.command.exception.FlagParseException;
@@ -11,6 +12,7 @@ import de.pocketcloud.cloud.console.command.sender.CommandSender;
 import de.pocketcloud.cloud.console.command.sub.SubCommand;
 import de.pocketcloud.cloud.console.log.CloudLogLevel;
 import lombok.Getter;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -103,9 +105,9 @@ public abstract class Command extends CommandUtilityHolder {
 
         boolean success;
         if (subCommand == null) {
-            success = run(sender, label, parsedArgs, finalFlags);
+            success = run(sender, new CommandContext(label, parsedArgs, finalFlags));
         } else {
-            success = subCommand.run(sender, label, parsedArgs, finalFlags);
+            success = subCommand.run(sender, new CommandContext(label, parsedArgs, finalFlags));
         }
 
         if (!success) {
@@ -113,7 +115,7 @@ public abstract class Command extends CommandUtilityHolder {
         }
     }
 
-    public abstract boolean run(CommandSender sender, String label, Map<String, Object> args, Map<String, Object> flags);
+    public abstract boolean run(CommandSender sender, CommandContext ctx);
 
     private String buildUsageMessage(SubCommand subCommand) {
         if (subCommand != null) return subCommand.getUsage();
@@ -164,6 +166,7 @@ public abstract class Command extends CommandUtilityHolder {
         return this;
     }
 
+    @Nullable
     public SubCommand getSubCommand(String name) {
         return subCommands.getOrDefault(name.toLowerCase(), null);
     }

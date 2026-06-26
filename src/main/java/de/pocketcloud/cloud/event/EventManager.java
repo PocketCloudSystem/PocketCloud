@@ -1,8 +1,10 @@
 package de.pocketcloud.cloud.event;
 
+import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.plugin.CloudPlugin;
 import de.pocketcloud.cloud.util.benchmark.Benchmark;
 import lombok.Getter;
+import lombok.experimental.Accessors;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -16,6 +18,7 @@ import java.util.function.Consumer;
 public final class EventManager {
 
     @Getter
+    @Accessors(fluent = true)
     private static EventManager instance;
 
     private final Map<String, Map<Class<?>, List<RegisteredHandler>>> handlers = new ConcurrentHashMap<>();
@@ -24,8 +27,9 @@ public final class EventManager {
         instance = this;
     }
 
+    @SuppressWarnings("unchecked")
     public <T extends Event> void register(Class<T> eventClass, EventPriority priority, Consumer<T> handler, CloudPlugin plugin) {
-        handlers.computeIfAbsent(plugin.getDescription().getName(), k -> new ConcurrentHashMap<>())
+        handlers.computeIfAbsent(plugin.getDescription().name(), k -> new ConcurrentHashMap<>())
                 .computeIfAbsent(eventClass, k -> new CopyOnWriteArrayList<>())
                 .add(new RegisteredHandler(priority, (Consumer<Event>) handler));
     }
@@ -44,7 +48,7 @@ public final class EventManager {
 
             RegisteredHandler rh = getRegisteredHandler(listener, method);
 
-            handlers.computeIfAbsent(plugin.getDescription().getName(), k -> new ConcurrentHashMap<>())
+            handlers.computeIfAbsent(plugin.getDescription().name(), k -> new ConcurrentHashMap<>())
                     .computeIfAbsent(eventType, k -> new CopyOnWriteArrayList<>())
                     .add(rh);
         }
@@ -66,7 +70,7 @@ public final class EventManager {
     }
 
     public void removeHandlers(CloudPlugin plugin) {
-        handlers.remove(plugin.getDescription().getName());
+        handlers.remove(plugin.getDescription().name());
     }
 
     public void removeAll() {
@@ -78,7 +82,7 @@ public final class EventManager {
      * {@link Event#call()}
      */
     public void call(Event event) {
-        Benchmark.startTiming("event_" + event.getName());
+        Benchmark.startTiming("event_" + event.name());
         List<RegisteredHandler> toCall = new ArrayList<>();
 
         for (Map<Class<?>, List<RegisteredHandler>> pluginMap : handlers.values()) {
@@ -90,9 +94,13 @@ public final class EventManager {
         toCall.sort(Comparator.comparingInt(rh -> rh.priority().ordinal()));
 
         for (RegisteredHandler rh : toCall) {
-            rh.handler().accept(event);
+            try {
+                rh.handler().accept(event);
+            } catch (Throwable e) {
+                PocketCloud.instance().logger().exception("§cException caught during event handling of {}", e, event.name());
+            }
         }
 
-        Benchmark.stopTiming("event_" + event.getName());
+        Benchmark.stopTiming("event_" + event.name());
     }
 }

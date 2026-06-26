@@ -1,6 +1,7 @@
 package de.pocketcloud.cloud.template.group;
 
 import de.pocketcloud.cloud.template.Template;
+import de.pocketcloud.cloud.util.FilterableObject;
 import de.pocketcloud.cloud.util.mapper.MapperUtils;
 import de.pocketcloud.cloud.util.PocketCloudPaths;
 import de.pocketcloud.cloud.util.Writable;
@@ -11,7 +12,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
-public final class ServerGroup implements Writable<Map<String, Object>> {
+public final class ServerGroup implements Writable<Map<String, Object>>, FilterableObject {
 
     @Getter
     @Accessors(fluent = true)

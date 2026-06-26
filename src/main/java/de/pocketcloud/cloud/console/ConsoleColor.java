@@ -2,6 +2,8 @@ package de.pocketcloud.cloud.console;
 
 import lombok.Getter;
 import lombok.experimental.Accessors;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jline.jansi.Ansi;
 
 import java.util.Arrays;
@@ -40,9 +42,7 @@ public enum ConsoleColor {
         this.ansiCode = ansiCode;
     }
 
-    public static String convert(String input) {
-        if (input == null) return null;
-
+    public static String convert(@NotNull String input) {
         StringBuilder result = new StringBuilder();
         String[] parts = input.split(String.valueOf(SYMBOL));
 
@@ -66,11 +66,11 @@ public enum ConsoleColor {
         return result.toString();
     }
 
-    public static String clean(String input) {
-        if (input == null) return null;
+    public static String clean(@NotNull String input) {
         return input.replaceAll(SYMBOL + "[0-9a-ur-t]", "");
     }
 
+    @Nullable
     private static ConsoleColor fromCode(char code) {
         return Arrays.stream(values()).filter(consoleColor -> consoleColor.colorCode() == code).findAny().orElse(null);
     }
