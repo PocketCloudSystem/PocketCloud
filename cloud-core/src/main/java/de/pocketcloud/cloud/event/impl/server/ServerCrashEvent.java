@@ -5,7 +5,7 @@ import lombok.Getter;
 
 import java.util.List;
 
-public final class ServerCrashEvent extends ServerEvent {
+public class ServerCrashEvent extends ServerEvent {
 
     @Getter
     private final List<String> data;

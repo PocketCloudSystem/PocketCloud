@@ -4,12 +4,11 @@ import de.pocketcloud.common.function.TriConsumer;
 import de.pocketcloud.network.packet.Packet;
 import de.pocketcloud.network.traffic.TrafficDirection;
 import de.pocketcloud.network.traffic.TrafficMonitor;
-
-import java.net.SocketAddress;
+import io.netty.channel.Channel;
 
 public final class NetworkTrafficMonitor extends TrafficMonitor {
 
-    public <T extends Packet> NetworkTrafficMonitor monitorPacketIn(Class<T> packetClass, TriConsumer<SocketAddress, T, Long> handler) {
+    public <T extends Packet> NetworkTrafficMonitor monitorPacketIn(Class<T> packetClass, TriConsumer<Channel, T, Long> handler) {
         addHandler(parsePacketMode(TrafficDirection.IN, packetClass), (a, b, by) -> {
             @SuppressWarnings("unchecked")
             T buffer = (T) b;
@@ -18,7 +17,7 @@ public final class NetworkTrafficMonitor extends TrafficMonitor {
         return this;
     }
 
-    public <T extends Packet> NetworkTrafficMonitor monitorPacketOut(Class<T> packetClass, TriConsumer<SocketAddress, T, Long> handler) {
+    public <T extends Packet> NetworkTrafficMonitor monitorPacketOut(Class<T> packetClass, TriConsumer<Channel, T, Long> handler) {
         addHandler(parsePacketMode(TrafficDirection.OUT, packetClass), (a, b, by) -> {
             @SuppressWarnings("unchecked")
             T buffer = (T) b;

@@ -1,27 +1,24 @@
 package de.pocketcloud.cloud.event.impl.packet;
 
-import de.pocketcloud.cloud.event.impl.network.NetworkEvent;
-import de.pocketcloud.cloud.network.NetworkNettyServer;
-import de.pocketcloud.cloud.network.client.ServerClient;
-import de.pocketcloud.network.packet.ClientboundPacket;
+import de.pocketcloud.network.packet.Packet;
+import de.pocketcloud.network.traffic.TrafficDirection;
+import io.netty.channel.Channel;
 import lombok.Getter;
+import org.jetbrains.annotations.Nullable;
 
-public final class PacketTooLargeEvent extends NetworkEvent {
+@Getter
+public class PacketTooLargeEvent extends PacketEvent {
 
-    @Getter
-    private final ServerClient receiver;
-    @Getter
-    private final ClientboundPacket packet;
-    @Getter
+    private final Channel receiverOrSender;
+    private final Packet packet;
     private final int size;
-    @Getter
-    private final String buffer;
+    private final TrafficDirection direction;
 
-    public PacketTooLargeEvent(NetworkNettyServer network, ServerClient receiver, ClientboundPacket packet, int size, String buffer) {
-        super(network);
-        this.receiver = receiver;
+    public PacketTooLargeEvent(Channel receiverOrSender, @Nullable Packet packet, int size, TrafficDirection direction) {
+        super(packet);
+        this.receiverOrSender = receiverOrSender;
         this.packet = packet;
         this.size = size;
-        this.buffer = buffer;
+        this.direction = direction;
     }
 }

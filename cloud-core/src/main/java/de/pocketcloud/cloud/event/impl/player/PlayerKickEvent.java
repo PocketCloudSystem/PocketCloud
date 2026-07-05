@@ -4,7 +4,7 @@ import de.pocketcloud.cloud.event.Cancelable;
 import de.pocketcloud.cloud.player.CloudPlayer;
 import lombok.Getter;
 
-public final class PlayerKickEvent extends PlayerEvent implements Cancelable {
+public class PlayerKickEvent extends PlayerEvent implements Cancelable {
 
     @Getter
     private final String reason;

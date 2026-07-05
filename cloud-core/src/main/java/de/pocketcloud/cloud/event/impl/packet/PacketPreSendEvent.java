@@ -1,22 +1,17 @@
 package de.pocketcloud.cloud.event.impl.packet;
 
 import de.pocketcloud.cloud.event.Cancelable;
-import de.pocketcloud.cloud.event.impl.network.NetworkEvent;
-import de.pocketcloud.cloud.network.NetworkNettyServer;
-import de.pocketcloud.cloud.network.client.ServerClient;
 import de.pocketcloud.network.packet.ClientboundPacket;
+import io.netty.channel.Channel;
 import lombok.Getter;
 
-public final class PacketPreSendEvent extends NetworkEvent implements Cancelable {
+@Getter
+public class PacketPreSendEvent extends PacketEvent implements Cancelable {
 
-    @Getter
-    private final ServerClient receiver;
-    @Getter
-    private final ClientboundPacket packet;
+    private final Channel receiver;
 
-    public PacketPreSendEvent(NetworkNettyServer network, ServerClient receiver, ClientboundPacket packet) {
-        super(network);
+    public PacketPreSendEvent(Channel receiver, ClientboundPacket packet) {
+        super(packet);
         this.receiver = receiver;
-        this.packet = packet;
     }
 }

@@ -5,7 +5,7 @@ import de.pocketcloud.cloud.template.Template;
 import de.pocketcloud.cloud.template.group.ServerGroup;
 import lombok.Getter;
 
-public final class ServerGroupRemoveTemplateEvent extends ServerGroupEvent implements Cancelable {
+public class ServerGroupRemoveTemplateEvent extends ServerGroupEvent implements Cancelable {
 
     @Getter
     private final Template template;

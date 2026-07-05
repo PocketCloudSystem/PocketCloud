@@ -1,24 +1,16 @@
 package de.pocketcloud.cloud.event.impl.packet;
 
-import de.pocketcloud.cloud.event.impl.network.NetworkEvent;
-import de.pocketcloud.cloud.network.NetworkNettyServer;
-import de.pocketcloud.cloud.network.client.ServerClient;
 import de.pocketcloud.network.packet.ClientboundPacket;
+import io.netty.channel.Channel;
 import lombok.Getter;
 
-public final class PacketSentEvent extends NetworkEvent {
+@Getter
+public class PacketSentEvent extends PacketEvent {
 
-    @Getter
-    private final ServerClient receiver;
-    @Getter
-    private final ClientboundPacket packet;
-    @Getter
-    private final boolean success;
+    private final Channel receiver;
 
-    public PacketSentEvent(NetworkNettyServer network, ServerClient receiver, ClientboundPacket packet, boolean success) {
-        super(network);
+    public PacketSentEvent(Channel receiver, ClientboundPacket packet) {
+        super(packet);
         this.receiver = receiver;
-        this.packet = packet;
-        this.success = success;
     }
 }

@@ -3,11 +3,11 @@ package de.pocketcloud.network.traffic;
 import de.pocketcloud.common.lifecycle.Loadable;
 import de.pocketcloud.common.lifecycle.Tickable;
 import de.pocketcloud.network.traffic.impl.NetworkTrafficMonitor;
+import io.netty.channel.Channel;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
 import java.lang.reflect.InvocationTargetException;
-import java.net.SocketAddress;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -95,11 +95,11 @@ public final class TrafficMonitorManager implements Tickable, Loadable {
         }
     }
 
-    public void callHandlers(Class<? extends TrafficMonitor> type, TrafficDirection direction, SocketAddress address, Object buffer, Long bytes) {
+    public void callHandlers(Class<? extends TrafficMonitor> type, TrafficDirection direction, Channel channel, Object buffer, Long bytes) {
         List<TrafficMonitor> monitors = trafficMonitors.get(type);
         if (monitors == null) return;
         for (TrafficMonitor monitor : monitors) {
-            monitor.callHandlers(direction, address, buffer, bytes);
+            monitor.callHandlers(direction, channel, buffer, bytes);
         }
     }
 

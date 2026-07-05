@@ -2,9 +2,9 @@ package de.pocketcloud.network.traffic;
 
 import de.pocketcloud.common.function.TriConsumer;
 import de.pocketcloud.common.util.TimeUtils;
+import io.netty.channel.Channel;
 import lombok.Getter;
 
-import java.net.SocketAddress;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -21,7 +21,7 @@ public abstract class TrafficMonitor {
     @Getter
     protected final long timestamp;
     protected volatile Long monitoringDuration = null;
-    protected final Map<TrafficDirection, List<TriConsumer<SocketAddress, Object, Long>>> handlers = new ConcurrentHashMap<>();
+    protected final Map<TrafficDirection, List<TriConsumer<Channel, Object, Long>>> handlers = new ConcurrentHashMap<>();
     protected final Map<TrafficDirection, TrafficWindow> windows = new ConcurrentHashMap<>();
     protected volatile Consumer<Object[]> stopMonitoringHandler = null;
 
@@ -34,15 +34,16 @@ public abstract class TrafficMonitor {
         }
     }
 
-    public TrafficMonitor monitorIn(TriConsumer<SocketAddress, Object, Long> handler) {
+    public TrafficMonitor monitorIn(TriConsumer<Channel, Object, Long> handler) {
         return addHandler(TrafficDirection.IN, handler);
     }
 
-    public TrafficMonitor monitorOut(TriConsumer<SocketAddress, Object, Long> handler) {
+    public TrafficMonitor monitorOut(TriConsumer<Channel, Object, Long> handler) {
         return addHandler(TrafficDirection.OUT, handler);
     }
 
-    protected TrafficMonitor addHandler(TrafficDirection direction, TriConsumer<SocketAddress, Object, Long> handler) {
+    protected TrafficMonitor addHandler(TrafficDirection direction, TriConsumer<Channel, Object, Long> handler) {
+        if (!handlers.containsKey(direction)) handlers.put(direction, new CopyOnWriteArrayList<>());
         handlers.get(direction).add(handler);
         return this;
     }
@@ -56,8 +57,9 @@ public abstract class TrafficMonitor {
         windows.values().forEach(TrafficWindow::cleanup);
     }
 
-    public void callHandlers(TrafficDirection direction, SocketAddress address, Object buffer, Long bytes) {
+    public void callHandlers(TrafficDirection direction, Channel address, Object buffer, Long bytes) {
         if (!active.get()) return;
+        if (!handlers.containsKey(direction)) return;
         handlers.get(direction).forEach(handler -> handler.accept(address, buffer, bytes));
     }
 

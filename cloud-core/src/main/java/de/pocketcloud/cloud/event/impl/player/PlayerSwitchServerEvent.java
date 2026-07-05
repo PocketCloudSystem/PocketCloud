@@ -5,7 +5,7 @@ import de.pocketcloud.cloud.server.CloudServer;
 import lombok.Getter;
 import org.jetbrains.annotations.Nullable;
 
-public final class PlayerSwitchServerEvent extends PlayerEvent {
+public class PlayerSwitchServerEvent extends PlayerEvent {
 
     @Getter
     @Nullable

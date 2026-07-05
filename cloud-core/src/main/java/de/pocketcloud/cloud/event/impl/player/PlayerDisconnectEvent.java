@@ -4,7 +4,7 @@ import de.pocketcloud.cloud.player.CloudPlayer;
 import de.pocketcloud.cloud.server.CloudServer;
 import lombok.Getter;
 
-public final class PlayerDisconnectEvent extends PlayerEvent {
+public class PlayerDisconnectEvent extends PlayerEvent {
 
     @Getter
     private final CloudServer server;

@@ -5,7 +5,7 @@ import de.pocketcloud.cloud.template.Template;
 import de.pocketcloud.cloud.template.util.TemplateEditData;
 import lombok.Getter;
 
-public final class TemplateEditEvent extends TemplateEvent implements Cancelable {
+public class TemplateEditEvent extends TemplateEvent implements Cancelable {
 
     @Getter
     private final TemplateEditData editData;

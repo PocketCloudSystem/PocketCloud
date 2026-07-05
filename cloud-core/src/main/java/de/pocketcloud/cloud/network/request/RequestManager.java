@@ -10,6 +10,7 @@ import lombok.experimental.Accessors;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Tracks pending {@link RequestClientPacket}s sent from the cloud to sub-servers.
@@ -22,7 +23,7 @@ public final class RequestManager implements Tickable {
     @Accessors(fluent = true)
     private static RequestManager instance;
 
-    private final Map<String, RequestClientPacket> requests = new HashMap<>();
+    private final Map<String, RequestClientPacket> requests = new ConcurrentHashMap<>();
 
     public RequestManager() {
         instance = this;

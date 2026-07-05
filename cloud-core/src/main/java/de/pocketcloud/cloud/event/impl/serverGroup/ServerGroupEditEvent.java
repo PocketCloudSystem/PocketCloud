@@ -7,7 +7,7 @@ import lombok.Getter;
 
 import java.util.List;
 
-public final class ServerGroupEditEvent extends ServerGroupEvent {
+public class ServerGroupEditEvent extends ServerGroupEvent {
 
     @Getter
     private final List<Template> newTemplates;

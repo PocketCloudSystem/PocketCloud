@@ -1,29 +1,29 @@
 package de.pocketcloud.network.codec;
 
-import de.pocketcloud.common.function.TriConsumer;
+import de.pocketcloud.network.traffic.PacketTrafficListener;
 import de.pocketcloud.network.traffic.TrafficDirection;
-import de.pocketcloud.network.traffic.TrafficMonitorManager;
-import de.pocketcloud.network.traffic.impl.NetworkTrafficMonitor;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 
-import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.function.BooleanSupplier;
+import java.util.function.IntSupplier;
 import java.util.function.Supplier;
 
 public final class CloudPacketDecoder extends ByteToMessageDecoder {
 
     private final BooleanSupplier encryptionEnabled;
+    private final IntSupplier maxPacketSizeSupplier;
     private final Supplier<String> authTokenSupplier;
-    private final TriConsumer<SocketAddress, String, byte[]> unknownPacketListener;
+    private final PacketTrafficListener trafficListener;
 
-    public CloudPacketDecoder(BooleanSupplier encryptionEnabled, Supplier<String> authTokenSupplier, TriConsumer<SocketAddress, String, byte[]> unknownPacketListener) {
+    public CloudPacketDecoder(BooleanSupplier encryptionEnabled, IntSupplier maxPacketSizeSupplier, Supplier<String> authTokenSupplier, PacketTrafficListener trafficListener) {
         this.encryptionEnabled = encryptionEnabled;
+        this.maxPacketSizeSupplier = maxPacketSizeSupplier;
         this.authTokenSupplier = authTokenSupplier;
-        this.unknownPacketListener = unknownPacketListener;
+        this.trafficListener = trafficListener;
     }
 
     @Override
@@ -37,16 +37,20 @@ public final class CloudPacketDecoder extends ByteToMessageDecoder {
             return;
         }
 
+        if (length > maxPacketSizeSupplier.getAsInt()) {
+            trafficListener.onTooLargePacket(ctx.channel(), null, length, TrafficDirection.IN);
+            return;
+        }
+
         byte[] bytes = new byte[length];
         in.readBytes(bytes);
         String payload = new String(bytes, StandardCharsets.UTF_8);
 
-        TrafficMonitorManager.instance().pushBytes(NetworkTrafficMonitor.class, TrafficDirection.IN, length);
-        TrafficMonitorManager.instance().callHandlers(NetworkTrafficMonitor.class, TrafficDirection.IN, ctx.channel().remoteAddress(), payload, (long) length);
+        if (!trafficListener.onIncoming(ctx.channel(), bytes, length, payload)) return;
 
         var packet = PacketSerializer.decode(bytes, encryptionEnabled.getAsBoolean(), authTokenSupplier.get());
         if (packet == null) {
-            unknownPacketListener.accept(ctx.channel().remoteAddress(), payload, bytes);
+            trafficListener.onUnknownPacket(ctx.channel(), bytes, length, payload);
             return;
         }
 

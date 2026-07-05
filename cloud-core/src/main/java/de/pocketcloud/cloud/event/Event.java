@@ -19,7 +19,7 @@ public abstract class Event {
         this.cancelled = false;
     }
 
-    public void call() {
+    public Event call() {
         if (eventCallDepth >= MAX_EVENT_CALL_DEPTH) {
             throw new RuntimeException("Recursive event call detected (reached max depth of " + MAX_EVENT_CALL_DEPTH + " calls)");
         }
@@ -30,6 +30,8 @@ public abstract class Event {
         } finally {
             --eventCallDepth;
         }
+
+        return this;
     }
 
     public String name() {
