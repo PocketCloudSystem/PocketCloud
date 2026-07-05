@@ -67,7 +67,6 @@ public final class PacketSerializer {
             String givenKey = decodeData.readString();
             if (givenKey == null) throw new PacketException("Received packet does not contain an authentication key");
 
-            CloudLogger.get().info(givenKey);
             if (!givenKey.equals(authenticationKey)) throw new PacketException("Received packet does not contain a valid authentication key");
             
             return packet;

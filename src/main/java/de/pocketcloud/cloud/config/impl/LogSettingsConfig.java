@@ -6,6 +6,7 @@ import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.network.packet.type.NotificationType;
 import de.pocketcloud.cloud.util.net.NetUtils;
 import de.pocketcloud.configlib.*;
+import de.r3pt1s.discord.webhook.Webhook;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -30,6 +31,9 @@ public final class LogSettingsConfig extends Configuration {
     @Getter
     @Accessors(fluent = true)
     private static LogSettingsConfig instance = null;
+
+    @Ignored
+    private Webhook webhook = null;
 
     @Comment({"Whether the debug mode should be enabled"})
     private boolean debugMode = false;
@@ -189,6 +193,13 @@ public final class LogSettingsConfig extends Configuration {
             case PLAYER_SWITCHED_SERVER -> serverSwitched;
             default -> true;
         };
+    }
+
+    public Webhook craftDiscordWebhook() {
+        if (webhook == null) {
+            webhook = new Webhook(discordWebhook.get("webhook-url").toString());
+        }
+        return webhook;
     }
 
     public LinkedHashMap<String, Object> getDiscordWebhook() {

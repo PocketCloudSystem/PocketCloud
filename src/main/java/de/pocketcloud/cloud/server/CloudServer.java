@@ -12,17 +12,17 @@ import de.pocketcloud.cloud.network.client.ServerClient;
 import de.pocketcloud.cloud.network.client.ServerClientCache;
 import de.pocketcloud.cloud.network.packet.ClientboundPacket;
 import de.pocketcloud.cloud.network.packet.impl.*;
+import de.pocketcloud.cloud.network.packet.impl.request.client.CommandExecuteRequestPacket;
+import de.pocketcloud.cloud.network.packet.impl.response.client.CommandExecuteResponsePacket;
 import de.pocketcloud.cloud.network.packet.type.NotificationType;
+import de.pocketcloud.cloud.network.packet.type.ServerCommandExecutionResult;
 import de.pocketcloud.cloud.network.packet.type.ServerDisconnectReason;
 import de.pocketcloud.cloud.network.packet.type.VerificationStatus;
 import de.pocketcloud.cloud.player.CloudPlayer;
 import de.pocketcloud.cloud.player.CloudPlayerManager;
 import de.pocketcloud.cloud.server.config.IServerProperties;
 import de.pocketcloud.cloud.server.config.ServerPropertiesGenerator;
-import de.pocketcloud.cloud.server.util.CloudServerData;
-import de.pocketcloud.cloud.server.util.CloudServerStorage;
-import de.pocketcloud.cloud.server.util.ServerStartMethods;
-import de.pocketcloud.cloud.server.util.ServerStatus;
+import de.pocketcloud.cloud.server.util.*;
 import de.pocketcloud.cloud.template.Template;
 import de.pocketcloud.cloud.template.TemplateManager;
 import de.pocketcloud.cloud.template.TemplateType;
@@ -46,6 +46,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeoutException;
 
 import static de.pocketcloud.cloud.util.FileUtils.IO_EXECUTOR;
 
@@ -59,21 +60,23 @@ public final class CloudServer implements Tickable, Writable<Map<String, Object>
     private final CloudServerData serverData;
     private final CloudServerStorage storage;
 
-    private boolean pidLookupDone = false;
-    private long lastPidLookupTime = 0;
-    private int lastPidLookupCounter = 0;
+    private transient final Map<String, ServerCommandExecutionRequest> commandExecutionOrders = new HashMap<>();
 
-    private final PrefixedLogger logger;
+    private transient boolean pidLookupDone = false;
+    private transient long lastPidLookupTime = 0;
+    private transient int lastPidLookupCounter = 0;
+
+    private transient final PrefixedLogger logger;
     @Setter
     private VerificationStatus verificationStatus = VerificationStatus.PENDING;
     private ServerStatus status = ServerStatus.PENDING;
     @Setter
-    private Long lastKeepAlive = null;
+    private transient Long lastKeepAlive = null;
     private Long startTime = null;
     @Setter
     private Long verifiedTime = null;
-    private Long stopTime = null;
-    private Config mainProperties = null;
+    private transient Long stopTime = null;
+    private transient Config mainProperties = null;
 
     public CloudServer(int id, UUID uuid, String templateName, CloudServerData serverData) {
         this.id = id;
@@ -81,7 +84,7 @@ public final class CloudServer implements Tickable, Writable<Map<String, Object>
         this.templateName = templateName;
         this.serverData = serverData;
         this.storage = new CloudServerStorage(uuid);
-        this.logger = new PrefixedLogger(PocketCloud.instance().logger(), "§8[§b" + name() + "§r§8]");
+        this.logger = new PrefixedLogger(PocketCloud.instance().logger(), "§8[§b" + name() + "§r§8]§r");
     }
 
     public CloudServer(int id, UUID uuid, String templateName, CloudServerData serverData, ServerStatus status) {
@@ -97,7 +100,7 @@ public final class CloudServer implements Tickable, Writable<Map<String, Object>
     @Override
     public void tick(long currentTick) {
         if (startTime == null) return;
-        if (status == ServerStatus.STARTING) {
+        if (status.isStarting()) {
             if (!pidLookupDone && serverData.processId() == null && (System.currentTimeMillis() - lastPidLookupTime) >= 1500 && lastPidLookupCounter < 5) {
                 lastPidLookupTime = System.currentTimeMillis();
                 lastPidLookupCounter++;
@@ -111,6 +114,14 @@ public final class CloudServer implements Tickable, Writable<Map<String, Object>
 
             if ((startTime + (template().templateType().timeout() * 1000L)) < System.currentTimeMillis()) {
                 CloudServersHandler.handleStartFailure(this, null, false);
+            }
+        } else if (status.isOnline()) {
+            for (Map.Entry<String, ServerCommandExecutionRequest> entry : commandExecutionOrders.entrySet()) {
+                ServerCommandExecutionRequest request = entry.getValue();
+                if ((request.time() + 5000L) <= System.currentTimeMillis()) {
+                    request.promise().reject(new TimeoutException("Request timed out"));
+                    commandExecutionOrders.remove(entry.getKey());
+                }
             }
         }
     }
@@ -182,8 +193,17 @@ public final class CloudServer implements Tickable, Writable<Map<String, Object>
 
                 Map<String, Object> replacements = properties.replacePlaceholders(this);
                 String content = FileUtils.fileGetContents(filePath);
+
                 for (Map.Entry<String, Object> entry : replacements.entrySet()) {
-                    content = content.replace(entry.getKey(), entry.getValue().toString());
+                    Object value = entry.getValue();
+                    String key = entry.getKey();
+
+                    if (value instanceof Number || value instanceof Boolean) {
+                        content = content.replace("\"" + key + "\"", value.toString());
+                        content = content.replace("'" + key + "'", value.toString());
+                    }
+
+                    content = content.replace(key, value.toString());
                 }
 
                 FileUtils.filePutContents(filePath, content);
@@ -193,12 +213,32 @@ public final class CloudServer implements Tickable, Writable<Map<String, Object>
         }, IO_EXECUTOR);
     }
 
+    @SuppressWarnings("unchecked")
+    private void replacePlaceholdersRecursively(Map<String, Object> map, Map<String, Object> replacements) {
+        for (Map.Entry<String, Object> entry : map.entrySet()) {
+            Object value = entry.getValue();
+            if (value instanceof String str) {
+                for (Map.Entry<String, Object> repl : replacements.entrySet()) {
+                    if (str.equals(repl.getKey())) {
+                        entry.setValue(repl.getValue());
+                        break;
+                    } else if (str.contains(repl.getKey())) {
+                        str = str.replace(repl.getKey(), repl.getValue().toString());
+                        entry.setValue(str);
+                    }
+                }
+            } else if (value instanceof Map) {
+                replacePlaceholdersRecursively((Map<String, Object>) value, replacements);
+            }
+        }
+    }
+
     public CloudServer start() {
         startTime = System.currentTimeMillis();
         setStatus(ServerStatus.STARTING);
         new ServerStartEvent(this).call();
         CloudLogger.get().info("§aStarting §b{} §8[§ruuid={}, path={}, port={}§8]§r...", name(), uuid.toString(), path().toString(), serverData.port());
-        NotificationType.SERVER_STARTING.notify(Map.of("server", name()));
+        NotificationType.SERVER_STARTING.notify(Map.of("server", name()), Map.of());
         return this;
     }
 
@@ -210,7 +250,7 @@ public final class CloudServer implements Tickable, Writable<Map<String, Object>
 
     public void stop(boolean force) {
         new ServerStopEvent(this, force).call();
-        NotificationType.SERVER_STOPPING.notify(Map.of("server", name()));
+        NotificationType.SERVER_STOPPING.notify(Map.of("server", name()), Map.of());
         stopTime = System.currentTimeMillis();
 
         if (force) {
@@ -297,12 +337,36 @@ public final class CloudServer implements Tickable, Writable<Map<String, Object>
         if (serverData.processId() != null) ProcessUtils.kill(serverData.processId(), true);
     }
 
+    public Promise<ServerCommandExecutionResult> dispatch(String commandLine) {
+        Optional<ServerClient> client = client();
+        if (client.isEmpty()) return Promise.rejected(new IllegalStateException("Not verified yet"));
+        String id = "command-" + StringUtils.generate(10);
+        Promise<ServerCommandExecutionResult> promise = new Promise<>();
+        CommandExecuteRequestPacket requestPacket = (CommandExecuteRequestPacket) CommandExecuteRequestPacket.create(commandLine, id).sendRequest(client.get()).then(response -> {
+            if (response instanceof CommandExecuteResponsePacket p) {
+                promise.resolve(p.getCommandExecutionResult());
+            } else {
+                promise.reject(new IllegalStateException("Received unexpected response: " + response.getClass().getName()));
+            }
+
+            commandExecutionOrders.remove(id);
+        }).failure((_, e, reason) -> promise.reject(Objects.requireNonNullElseGet(e, () -> new RuntimeException("RequestActionFailureReason: " + reason.name()))));
+
+        commandExecutionOrders.put(id, new ServerCommandExecutionRequest(id, promise, requestPacket.getSentTimestamp()));
+
+        return promise;
+    }
+
     public void addToProxies() {
-        ProxyRegisterServerPacket.create(this).broadcastPacket(TemplateType.SERVER);
+        if (template().templateType() == TemplateType.SERVER) {
+            ProxyRegisterServerPacket.create(this).broadcastPacket(TemplateType.SERVER);
+        }
     }
 
     public void removeFromProxies() {
-        ProxyUnregisterServerPacket.create(this).broadcastPacket(TemplateType.SERVER);
+        if (template().templateType() == TemplateType.SERVER) {
+            ProxyUnregisterServerPacket.create(this).broadcastPacket(TemplateType.SERVER);
+        }
     }
 
     public void sync() {

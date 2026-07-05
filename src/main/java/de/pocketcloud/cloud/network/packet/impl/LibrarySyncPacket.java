@@ -12,16 +12,16 @@ import lombok.NoArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 @NoArgsConstructor
 @Getter
 public final class LibrarySyncPacket extends CloudPacket implements ClientboundPacket {
 
-    private List<Map<String, String>> data;
+    private List<LinkedHashMap<String, String>> data;
 
-    public LibrarySyncPacket(List<Map<String, String>> data) {
+    public LibrarySyncPacket(List<LinkedHashMap<String, String>> data) {
         this.data = data != null ? data : List.of();
     }
 
@@ -36,20 +36,20 @@ public final class LibrarySyncPacket extends CloudPacket implements ClientboundP
     @Override
     public void decodePayload(PacketData packetData) {}
 
-    public static LibrarySyncPacket create(List<Map<String, String>> data) {
+    public static LibrarySyncPacket create(List<LinkedHashMap<String, String>> data) {
         return new LibrarySyncPacket(data);
     }
 
     public static LibrarySyncPacket fromLibraries(CloudServer server) {
-        List<Map<String, String>> data = new ArrayList<>();
+        List<LinkedHashMap<String, String>> data = new ArrayList<>();
         for (Library lib : LibraryManager.instance().getAll().values()) {
             if (!lib.isAvailableFor(server.template().serverSoftware())) continue;
-            data.add(Map.of(
-                "name", lib.name(),
-                "path", lib.directoryPath().toAbsolutePath().toString(),
-                "namespacePrefix", lib.namespacePrefix(),
-                "namespaceFolder", lib.namespaceFolder()
-            ));
+            LinkedHashMap<String, String> libData = new LinkedHashMap<>();
+            libData.put("name", lib.name());
+            libData.put("path", lib.directoryPath().toAbsolutePath().toString());
+            libData.put("namespacePrefix", lib.namespacePrefix());
+            libData.put("namespaceFolder", lib.namespaceFolder());
+            data.add(libData);
         }
         return new LibrarySyncPacket(data);
     }

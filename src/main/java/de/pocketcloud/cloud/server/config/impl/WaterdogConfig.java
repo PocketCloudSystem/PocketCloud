@@ -58,12 +58,12 @@ public final class WaterdogConfig extends ServerProperties {
                         "priorities", List.of(),
                         "host", "0.0.0.0:%server_port%",
                         "max_players", "%max_players%",
-                        "forced_hosts", "{}",
+                        "forced_hosts", new LinkedHashMap<>(),
                         "additional_ports", List.of(),
                         "join_handler", "DefaultJoinHandler",
                         "reconnect_handler", "DefaultReconnectHandler"
                 ),
-                "servers", "{}",
+                "servers", new LinkedHashMap<>(),
                 "network_settings", ArrayUtils.orderedMap(
                         "connection_throttle", 10,
                         "connection_throttle_time", 1000,
@@ -74,8 +74,8 @@ public final class WaterdogConfig extends ServerProperties {
                         "max_downstream_mtu", 1400,
                         "connection_timeout", 15
                 ),
-                "permissions", "{}",
-                "permissions_default", "[]",
+                "permissions", new LinkedHashMap<>(),
+                "permissions_default", List.of(),
                 "enable_debug", false,
                 "upstream_encryption", true,
                 "online_mode", true,

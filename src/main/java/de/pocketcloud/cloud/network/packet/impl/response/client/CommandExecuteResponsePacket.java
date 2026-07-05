@@ -4,7 +4,6 @@ import de.pocketcloud.cloud.network.client.ServerClient;
 import de.pocketcloud.cloud.network.packet.ResponseClientPacket;
 import de.pocketcloud.cloud.network.packet.type.ServerCommandExecutionResult;
 import de.pocketcloud.cloud.network.packet.data.PacketData;
-import de.pocketcloud.cloud.server.CloudServersHandler;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.jetbrains.annotations.NotNull;
@@ -19,13 +18,17 @@ public final class CommandExecuteResponsePacket extends ResponseClientPacket {
         this.commandExecutionResult = commandExecutionResult;
     }
 
+//    @Override
+//    public void handle(@NotNull ServerClient client) {
+//        var server = client.server();
+//        if (server != null) {
+//            CloudServersHandler.handleCommandResponse(server, commandExecutionResult);
+//        }
+//    }
+
+
     @Override
-    public void handle(@NotNull ServerClient client) {
-        var server = client.server();
-        if (server != null) {
-            CloudServersHandler.handleCommandResponse(server, commandExecutionResult);
-        }
-    }
+    public void handle(@NotNull ServerClient client) {}
 
     @Override
     public void decodePayload(PacketData packetData) {

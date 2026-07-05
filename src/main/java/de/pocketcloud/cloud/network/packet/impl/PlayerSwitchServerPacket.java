@@ -44,7 +44,7 @@ public final class PlayerSwitchServerPacket extends CloudPacket implements Cloud
                     "player", player,
                     "old_server", cloudPlayer.currentServerName() != null ? cloudPlayer.currentServerName() : "None",
                     "new_server", newServer
-                ));
+                ), Map.of());
                 new PlayerSwitchServerEvent(cloudPlayer, cloudPlayer.currentServer().orElse(null), server).call();
                 cloudPlayer.setCurrentServer(server);
             }

@@ -5,6 +5,7 @@ import de.pocketcloud.cloud.network.client.ServerClient;
 import de.pocketcloud.cloud.network.packet.ClientboundPacket;
 import de.pocketcloud.cloud.network.packet.CloudPacket;
 import de.pocketcloud.cloud.network.packet.data.PacketData;
+import de.pocketcloud.cloud.util.FileUtils;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.jetbrains.annotations.NotNull;
@@ -33,8 +34,7 @@ public final class LanguageSyncPacket extends CloudPacket implements Clientbound
     @Override
     public void encodePayload(PacketData packetData) {
         try {
-            String json = toJson(messages);
-            byte[] compressed = gzipCompress(json.getBytes(StandardCharsets.UTF_8));
+            byte[] compressed = gzipCompress(FileUtils.GSON.toJson(messages).getBytes(StandardCharsets.UTF_8));
             String encoded = Base64.getEncoder().encodeToString(compressed);
             packetData.writeAll(language, encoded);
         } catch (Exception e) {
@@ -44,15 +44,6 @@ public final class LanguageSyncPacket extends CloudPacket implements Clientbound
 
     @Override
     public void decodePayload(PacketData packetData) {}
-
-    private String toJson(Map<String, String> map) {
-        // Minimal JSON serialization; replace with your JSON library of choice (e.g. Jackson/Gson)
-        var sb = new StringBuilder("{");
-        map.forEach((k, v) -> sb.append("\"").append(k).append("\":\"").append(v).append("\","));
-        if (!map.isEmpty()) sb.deleteCharAt(sb.length() - 1);
-        sb.append("}");
-        return sb.toString();
-    }
 
     private byte[] gzipCompress(byte[] data) throws Exception {
         var baos = new ByteArrayOutputStream();

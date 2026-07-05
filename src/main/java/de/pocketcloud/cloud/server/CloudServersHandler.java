@@ -1,7 +1,7 @@
 package de.pocketcloud.cloud.server;
 
 import de.pocketcloud.cloud.console.log.CloudLogger;
-import de.pocketcloud.cloud.network.packet.type.ServerCommandExecutionResult;
+import de.pocketcloud.cloud.event.impl.server.ServerDisconnectEvent;
 import de.pocketcloud.cloud.network.packet.type.ServerDisconnectReason;
 import de.pocketcloud.cloud.server.util.ServerStatus;
 import org.jetbrains.annotations.NotNull;
@@ -27,11 +27,18 @@ public final class CloudServersHandler {
         server.deleteTmpDir();
     }
 
-    public static void handleDisconnect(@NotNull CloudServer server, ServerDisconnectReason reason) {
+    public static void handleDisconnect(@NotNull CloudServer server, @NotNull ServerDisconnectReason reason) {
+        if (server.status().isOffline()) {
+            CloudServerManager.instance().remove(server);
+            return;
+        }
 
-    }
+        server.setStatus(ServerStatus.OFFLINE);
+        new ServerDisconnectEvent(server).call();
+        CloudLogger.get().info("The server §b{} §rhas §cdisconnected §rfrom the cloud.", server.name());
+        //todo check for crash
 
-    public static void handleCommandResponse(@NotNull CloudServer server, ServerCommandExecutionResult result) {
-
+        server.remove();
+        server.deleteTmpDir();
     }
 }

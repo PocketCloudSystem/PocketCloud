@@ -1,5 +1,6 @@
 package de.pocketcloud.cloud.server.start;
 
+import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.server.CloudServer;
 import de.pocketcloud.cloud.server.software.ServerSoftware;
 import de.pocketcloud.cloud.util.TerminalUtils;
@@ -27,12 +28,15 @@ public final class ScreenServerStartMethod implements ServerStartMethod {
                         .replace("{BINARY_PATH}", software.binary().directoryPath().toAbsolutePath() + File.separator)
                         .replace("{SOFTWARE_PATH}", software.directoryPath().toAbsolutePath() + File.separator);
 
-                commands.add("cd " + TerminalUtils.shellEscape(server.path().toAbsolutePath().toString()) +
+                String finalCommand = "cd " + TerminalUtils.shellEscape(server.path().toAbsolutePath().toString()) +
                         " " +
                         "&&" +
                         "screen -dmS " + TerminalUtils.shellEscape(paneName) +
                         " " +
-                        "bash -lc " + TerminalUtils.shellEscape("exec " + startCommand));
+                        "bash -lc " + TerminalUtils.shellEscape("exec " + startCommand);
+                CloudLogger.get().error(finalCommand);
+
+                commands.add(finalCommand);
                 map.put(paneName, null);
             }
 

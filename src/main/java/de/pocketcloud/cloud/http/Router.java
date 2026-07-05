@@ -23,6 +23,8 @@ public final class Router {
     @Getter
     private static Router instance = null;
 
+    public static HttpMethod QUERY = new HttpMethod("QUERY");
+
     private final List<RouteDefinition> routes = new ArrayList<>();
 
     public Router() {
@@ -67,6 +69,10 @@ public final class Router {
 
     public void connect(String path, RouteHandler handler) {
         addRoute(HttpMethod.CONNECT, path, handler);
+    }
+
+    public void query(String path, RouteHandler handler) {
+        addRoute(QUERY, path, handler);
     }
 
     private void addRoute(HttpMethod method, String path, RouteHandler handler) {
@@ -130,6 +136,8 @@ public final class Router {
                 result.add(buildDefinition(HttpMethod.TRACE, method.getAnnotation(TraceRoute.class).value(), controller, method));
             if (method.isAnnotationPresent(ConnectRoute.class))
                 result.add(buildDefinition(HttpMethod.CONNECT, method.getAnnotation(ConnectRoute.class).value(), controller, method));
+            if (method.isAnnotationPresent(QueryRoute.class))
+                result.add(buildDefinition(QUERY, method.getAnnotation(QueryRoute.class).value(), controller, method));
         }
 
         return result;

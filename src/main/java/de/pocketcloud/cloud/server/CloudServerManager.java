@@ -20,6 +20,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Getter
 @Accessors(fluent = true)
@@ -33,16 +34,19 @@ public final class CloudServerManager implements Tickable {
                 return t;
             }
     );
+    private static final int MULTI_START_BATCH_SIZE = 5;
+    private static final int MULTI_START_THRESHOLD = 5;
 
     @Getter
     @Accessors(fluent = true)
     private static CloudServerManager instance = null;
 
-    private static final int MULTI_START_THRESHOLD = 5;
-    private static final int MULTI_START_BATCH_SIZE = 10;
+    private static final int MAX_PARALLEL_STARTS = 2;
 
     @Getter(AccessLevel.NONE)
     private final Map<String, CloudServer> servers = new ConcurrentHashMap<>();
+    private final AtomicInteger startingServers = new AtomicInteger(0);
+
     private long lastServerStartTime = 0;
     private long lastServerStopTime = 0;
     private long nextServerStartTime = 0;
@@ -103,12 +107,12 @@ public final class CloudServerManager implements Tickable {
         }
 
         Promise<Void> promise = new Promise<>();
-//        server.executeCommand(saveCommandLine)
-//            .then(() -> {
-//                server.saveFiles();
-//                promise.resolve();
-//            })
-//            .failure(() -> promise.reject("Request timeout"));
+        server.dispatch(saveCommandLine)
+            .thenSuccess(_ -> {
+                server.save();
+                promise.resolve(null);
+            })
+            .failure(promise::reject);
 
         return promise;
     }
@@ -176,13 +180,27 @@ public final class CloudServerManager implements Tickable {
     private void onStartFailed(Object[] crashData) {
         CloudServer server = (CloudServer) crashData[0];
         Throwable exception = crashData.length > 1 ? (Throwable) crashData[1] : null;
-        CloudLogger.get().warn("§cFailed to prepare server §e{}§8: §e{}", server, exception != null ? exception.getMessage() : "Unknown error");
+        CloudLogger.get().warn("§cFailed to prepare server §e{}§8: §e{}", server.name(), exception != null ? exception.getMessage() : "Unknown error");
         if (exception != null) CloudLogger.get().exception(exception);
     }
 
     @Override
     public void tick(long currentTick) {
         servers.values().forEach(server -> server.tick(currentTick));
+
+
+        /**
+         * TODO
+         * <pr>How the cloud should actually start servers to save CPU</pr>
+         * {constant MAX_PARALLEL_STARTS = 2;}
+         * The cloud starts 2 servers and waits until they connected to the cloud + sent the respective HandshakePacket.
+         * The amount of servers currently starting is being saved to an AtomicInteger - which when reaching anything below 2, the cloud starts a new amount of servers by this formula:
+         * MAX_PARALLEL_STARTS - AtomicInteger.get() = n
+         *
+         * If a boot sequence of a server takes too long (not the server timeout specified inside the ServerSoftware) by a fixed amount of seconds (most likely 5), the cloud will just
+         * start another server.
+         *
+         */
 
         if (!serverPrepareQueue.isEmpty()) {
             Benchmark.startTiming("check_server_prepare_queue");

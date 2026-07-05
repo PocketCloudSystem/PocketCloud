@@ -76,9 +76,9 @@ public final class CloudMySqlProvider extends CloudProvider {
             try {
                 promise.resolve(Optional.of(Template.read(rows.getFirst())));
             } catch (Exception e) {
-                promise.fail(e);
+                Promise.rejected(e);
             }
-        }).failure(promise::fail);
+        }).failure(promise::reject);
 
         return promise;
     }
@@ -88,7 +88,7 @@ public final class CloudMySqlProvider extends CloudProvider {
         Promise<Boolean> promise = new Promise<>();
         countAsync(DatabaseQueries.checkTemplate(), template)
                 .thenSuccess(count -> promise.resolve(count > 0))
-                .failure(promise::fail);
+                .failure(promise::reject);
         
         return promise;
     }
@@ -106,7 +106,7 @@ public final class CloudMySqlProvider extends CloudProvider {
             });
 
             promise.resolve(templates);
-        }).failure(promise::fail);
+        }).failure(promise::reject);
 
         return promise;
     }
@@ -143,9 +143,9 @@ public final class CloudMySqlProvider extends CloudProvider {
                 ServerGroup sg = ServerGroup.read(rows.getFirst());
                 promise.resolve(Optional.of(sg));
             } catch (Exception e) {
-                promise.fail(e);
+                promise.reject(e);
             }
-        }).failure(promise::fail);
+        }).failure(promise::reject);
         
         return promise;
     }
@@ -155,7 +155,7 @@ public final class CloudMySqlProvider extends CloudProvider {
         Promise<Boolean> promise = new Promise<>();
         countAsync(DatabaseQueries.checkServerGroup(), serverGroup)
                 .thenSuccess(count -> promise.resolve(count > 0))
-                .failure(promise::fail);
+                .failure(promise::reject);
         
         return promise;
     }
@@ -172,7 +172,7 @@ public final class CloudMySqlProvider extends CloudProvider {
                 } catch (Exception _) {}
             });
             promise.resolve(serverGroups);
-        }).failure(promise::fail);
+        }).failure(promise::reject);
         
         return promise;
     }
@@ -185,7 +185,7 @@ public final class CloudMySqlProvider extends CloudProvider {
             String sql = count > 0 ? DatabaseQueries.setModuleState() : DatabaseQueries.insertModuleState();
             executeAsync(sql, enabled, module)
                     .thenSuccess(_ -> promise.resolve(null))
-                    .failure(promise::fail);
+                    .failure(promise::reject);
         });
 
         return promise;
@@ -201,7 +201,7 @@ public final class CloudMySqlProvider extends CloudProvider {
                 Object enabled = rows.getFirst().get("enabled");
                 promise.resolve(Optional.of(Integer.valueOf(1).equals(enabled) || Boolean.TRUE.equals(enabled)));
             }
-        }).failure(promise::fail);
+        }).failure(promise::reject);
         
         return promise;
     }
@@ -221,7 +221,7 @@ public final class CloudMySqlProvider extends CloudProvider {
         Promise<Boolean> promise = new Promise<>();
         countAsync(DatabaseQueries.hasNotificationsEnabled(), player)
                 .thenSuccess(count -> promise.resolve(count > 0))
-                .failure(promise::fail);
+                .failure(promise::reject);
         
         return promise;
     }
@@ -233,7 +233,7 @@ public final class CloudMySqlProvider extends CloudProvider {
                 thenSuccess(rows -> {
                     List<String> list = rows.stream().map(r -> (String) r.get("player")).toList();
                     promise.resolve(list);
-                }).failure(promise::fail);
+                }).failure(promise::reject);
         
         return promise;
     }
@@ -255,7 +255,7 @@ public final class CloudMySqlProvider extends CloudProvider {
         Promise<Boolean> promise = new Promise<>();
         countAsync(DatabaseQueries.isOnWhitelist(), player)
                 .thenSuccess(count -> promise.resolve(count > 0))
-                .failure(promise::fail);
+                .failure(promise::reject);
         
         return promise;
     }
@@ -266,7 +266,7 @@ public final class CloudMySqlProvider extends CloudProvider {
         queryAsync(DatabaseQueries.getWhitelist()).thenSuccess(rows -> {
             List<String> list = rows.stream().map(r -> (String) r.get("player")).toList();
             promise.resolve(list);
-        }).failure(promise::fail);
+        }).failure(promise::reject);
         
         return promise;
     }
@@ -277,7 +277,7 @@ public final class CloudMySqlProvider extends CloudProvider {
                 bindParams(ps, params);
                 ps.executeUpdate();
             } catch (SQLException e) {
-                CloudLogger.get().exception("MySQL execute failed: {}", e, sql);
+                CloudLogger.get().exception("MySQL execute rejecteded: {}", e, sql);
                 throw new RuntimeException(e);
             }
         });
@@ -301,7 +301,7 @@ public final class CloudMySqlProvider extends CloudProvider {
                     }
                 }
             } catch (SQLException e) {
-                CloudLogger.get().exception("MySQL query failed: {}", e, sql);
+                CloudLogger.get().exception("MySQL query rejecteded: {}", e, sql);
                 throw new RuntimeException(e);
             }
             return rows;

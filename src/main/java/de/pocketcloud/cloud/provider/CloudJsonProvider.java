@@ -76,7 +76,7 @@ public final class CloudJsonProvider extends CloudProvider {
             Template template = Template.read(data);
             return Promise.resolved(Optional.of(template));
         } catch (Exception e) {
-            return Promise.failed(e);
+            return Promise.rejected(e);
         }
     }
 
@@ -128,7 +128,7 @@ public final class CloudJsonProvider extends CloudProvider {
             ServerGroup group = ServerGroup.read(data);
             return Promise.resolved(Optional.of(group));
         } catch (Exception e) {
-            return Promise.failed(e);
+            return Promise.rejected(e);
         }
     }
 
@@ -218,7 +218,7 @@ public final class CloudJsonProvider extends CloudProvider {
             config.save();
             return Promise.resolved(null);
         } catch (Exception e) {
-            return Promise.failed(e);
+            return Promise.rejected(e);
         }
     }
 }

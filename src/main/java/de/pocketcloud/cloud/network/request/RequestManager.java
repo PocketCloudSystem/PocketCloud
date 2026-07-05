@@ -1,5 +1,6 @@
 package de.pocketcloud.cloud.network.request;
 
+import de.pocketcloud.cloud.network.client.ServerClient;
 import de.pocketcloud.cloud.network.packet.RequestClientPacket;
 import de.pocketcloud.cloud.network.packet.RequestPacketFailureReason;
 import de.pocketcloud.cloud.network.packet.ResponseClientPacket;
@@ -27,11 +28,15 @@ public final class RequestManager implements Tickable {
         instance = this;
     }
 
-    public RequestClientPacket send(RequestClientPacket packet, io.netty.channel.Channel channel) {
+    public RequestClientPacket send(RequestClientPacket packet, ServerClient client) {
         if (requests.containsKey(packet.getRequestId())) return requests.get(packet.getRequestId());
-        packet.prepare();
-        channel.writeAndFlush(packet);
         requests.put(packet.getRequestId(), packet);
+        client.sendPacket(packet).exceptionally(e -> {
+            reject(packet, e);
+            remove(packet);
+            return null;
+        });
+
         return packet;
     }
 
@@ -46,13 +51,17 @@ public final class RequestManager implements Tickable {
     public void resolve(ResponseClientPacket packet) {
         RequestClientPacket request = requests.get(packet.getRequestId());
         if (request != null) {
-            request.invokeClosures(false, packet, null);
+            request.invokeClosures(false, packet, null, null);
             remove(request);
         }
     }
 
     public void reject(RequestClientPacket packet) {
-        packet.invokeClosures(true, null, RequestPacketFailureReason.REQUEST_TIMEOUT);
+        packet.invokeClosures(true, null, RequestPacketFailureReason.REQUEST_TIMEOUT, null);
+    }
+
+    public void reject(RequestClientPacket packet, Throwable e) {
+        packet.invokeClosures(true, null, RequestPacketFailureReason.EXCEPTION, e);
     }
 
     @Override

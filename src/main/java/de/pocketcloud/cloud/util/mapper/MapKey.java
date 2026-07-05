@@ -9,5 +9,7 @@ import java.lang.annotation.Target;
 @Target({ElementType.FIELD, ElementType.RECORD_COMPONENT})
 public @interface MapKey {
 
+    String name() default "";
+
     Class<? extends MapKeyConverter<?, ?>> converter();
 }

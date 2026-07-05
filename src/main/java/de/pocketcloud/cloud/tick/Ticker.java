@@ -66,6 +66,7 @@ public final class Ticker {
                 }
             }
 
+            long tickEnd = System.currentTimeMillis();
             Benchmark.stopTiming("cloud_tick");
 
             if ((this.nextTick - tickStart) < -1000) {
@@ -73,6 +74,9 @@ public final class Ticker {
             } else {
                 this.nextTick += TICK_RATE_MS;
             }
+
+            PocketCloud.instance().performanceStats().updateTickStats(tickStart / 1000.0, tickEnd / 1000.0);
+            PocketCloud.instance().performanceStats().updateSystemStats(tickCounter);
 
             sleepUntilNextTick();
         }

@@ -1,9 +1,9 @@
 package de.pocketcloud.cloud.util.mapper;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.RecordComponent;
+import sun.misc.Unsafe;
+import sun.reflect.ReflectionFactory;
+
+import java.lang.reflect.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -36,7 +36,8 @@ public final class MapperUtils {
                     map.putAll(toMap(value));
                 } else if (mapKey != null) {
                     MapKeyConverter<Object, Object> converter = getConverter(mapKey.converter());
-                    map.put(field.getName(), converter.toValue(value));
+                    String name = mapKey.name().isBlank() ? field.getName() : mapKey.name();
+                    map.put(name, converter.toValue(value));
                 } else {
                     map.put(field.getName(), convertToMap(value));
                 }
@@ -67,7 +68,8 @@ public final class MapperUtils {
                     map.putAll(toMap(value));
                 } else if (mapKey != null) {
                     MapKeyConverter<Object, Object> converter = getConverter(mapKey.converter());
-                    map.put(component.getName(), converter.toValue(value));
+                    String name = mapKey.name().isBlank() ? component.getName() : mapKey.name();
+                    map.put(name, converter.toValue(value));
                 } else {
                     map.put(component.getName(), convertToMap(value));
                 }
@@ -95,7 +97,7 @@ public final class MapperUtils {
                 if (mapInline != null) {
                     field.set(instance, fromMap(map, field.getType()));
                 } else {
-                    Object value = map.get(field.getName());
+                    Object value = mapKey != null ? (mapKey.name().isBlank() ? map.get(field.getName()) : map.get(mapKey.name())) : map.get(field.getName());
                     if (value == null) continue;
                     if (mapKey != null) {
                         MapKeyConverter<Object, Object> converter = getConverter(mapKey.converter());
@@ -129,7 +131,7 @@ public final class MapperUtils {
             if (mapInline != null) {
                 args[i] = fromMap(map, component.getType());
             } else {
-                Object value = map.get(component.getName());
+                Object value = mapKey != null ? (mapKey.name().isBlank() ? map.get(component.getName()) : map.get(mapKey.name())) : map.get(component.getName());
                 if (mapKey != null) {
                     MapKeyConverter<Object, Object> converter = getConverter(mapKey.converter());
                     args[i] = value == null ? null : converter.fromValue(value);
@@ -153,14 +155,14 @@ public final class MapperUtils {
         } catch (NoSuchMethodException _) {}
 
         try {
-            Field unsafeField = sun.misc.Unsafe.class.getDeclaredField("theUnsafe");
+            Field unsafeField = Unsafe.class.getDeclaredField("theUnsafe");
             unsafeField.setAccessible(true);
-            sun.misc.Unsafe unsafe = (sun.misc.Unsafe) unsafeField.get(null);
+            Unsafe unsafe = (Unsafe) unsafeField.get(null);
             return (T) unsafe.allocateInstance(clazz);
         } catch (Exception _) {}
 
         try {
-            var rf = sun.reflect.ReflectionFactory.getReflectionFactory();
+            var rf = ReflectionFactory.getReflectionFactory();
             var objConstructor = Object.class.getDeclaredConstructor();
             var syntheticConstructor = (Constructor<T>) rf.newConstructorForSerialization(clazz, objConstructor);
             return syntheticConstructor.newInstance();
@@ -225,7 +227,7 @@ public final class MapperUtils {
             if (target == float.class || target == Float.class) return Float.parseFloat(s);
             if (target == double.class || target == Double.class) return Double.parseDouble(s);
             if (target == char.class || target == Character.class) return s.isEmpty() ? '\0' : s.charAt(0);
-            if (target.isEnum()) return Enum.valueOf((Class<Enum>) target, s);
+            if (target == UUID.class) return UUID.fromString(s);
         }
 
         if (target == boolean.class || target == Boolean.class) {
@@ -242,6 +244,14 @@ public final class MapperUtils {
     private static Object convertToMap(Object value) {
         if (value == null) return null;
         if (isPrimitive(value.getClass())) return value;
+
+        if (value instanceof Enum<?> e) {
+            return e.name();
+        }
+
+        if (value instanceof UUID uuid) {
+            return uuid.toString();
+        }
 
         if (value instanceof Map<?, ?> map) {
             Map<String, Object> result = new LinkedHashMap<>();
@@ -260,6 +270,7 @@ public final class MapperUtils {
             for (Object item : (Object[]) value) result.add(convertToMap(item));
             return result;
         }
+
         return toMap(value);
     }
 
@@ -292,7 +303,6 @@ public final class MapperUtils {
         return type.isPrimitive()
                 || type == String.class
                 || Number.class.isAssignableFrom(type)
-                || type == Boolean.class
-                || type.isEnum();
+                || type == Boolean.class;
     }
 }

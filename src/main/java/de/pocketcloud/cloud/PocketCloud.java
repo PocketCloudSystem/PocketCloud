@@ -29,10 +29,7 @@ import de.pocketcloud.cloud.template.TemplateManager;
 import de.pocketcloud.cloud.template.group.ServerGroupManager;
 import de.pocketcloud.cloud.tick.Ticker;
 import de.pocketcloud.cloud.traffic.TrafficMonitorManager;
-import de.pocketcloud.cloud.util.FileUtils;
-import de.pocketcloud.cloud.util.PocketCloudPaths;
-import de.pocketcloud.cloud.util.Utils;
-import de.pocketcloud.cloud.util.VersionInfo;
+import de.pocketcloud.cloud.util.*;
 import de.pocketcloud.cloud.util.benchmark.Benchmark;
 import de.pocketcloud.cloud.util.benchmark.BenchmarkTiming;
 import lombok.Getter;
@@ -57,9 +54,11 @@ public final class PocketCloud {
 
     private boolean running;
     private boolean hasStopped = false;
+    private long startTime = 0;
 
     private final List<Map<String, Object>> startNotifications = new ArrayList<>();
 
+    private final PerformanceStats performanceStats = new PerformanceStats();
     private Ticker ticker = null;
     private Loader loader = null;
 
@@ -141,7 +140,7 @@ public final class PocketCloud {
         eventManager = new EventManager();
 
         loader.registerPreAll(serverSoftwareManager, libraryManager);
-        loader.registerAll(commandManager, packetPool, pluginManager, templateManager, propertiesGenerator);
+        loader.registerAll(commandManager, packetPool, pluginManager, templateManager, propertiesGenerator, trafficMonitorManager);
 
         loader.preloadAll();
 
@@ -172,6 +171,7 @@ public final class PocketCloud {
 
         BenchmarkTiming result = Benchmark.stopTiming("cloud_start");
         logger.info("§bCloud §rhas been §astarted§r. §8(§rTook §b{}s§8)", Utils.formatNumber(result.duration() / 1000, 3));
+        startTime = System.currentTimeMillis();
 
         ticker.tick();
     }
@@ -252,6 +252,11 @@ public final class PocketCloud {
 
         logger.success("§cStopped §rthe §bcloud§r.");
         if (console != null) console.uninstall();
+    }
+
+    public long uptime() {
+        if (startTime <= 0) return 0;
+        return System.currentTimeMillis() - startTime;
     }
 
     public long currentTick() {

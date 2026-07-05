@@ -20,8 +20,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Accessors(fluent = true)
 public enum Language {
 
-    ENGLISH(PocketCloudPaths.storage().inGame().with("de_DE.yml").asPath(), new String[]{"de_DE", "ger", "Deutsch"}, Map.of()),
-    GERMAN(PocketCloudPaths.storage().inGame().with("en_US.yml").asPath(), new String[]{"en_US", "en", "English"}, Map.of());
+    ENGLISH(PocketCloudPaths.storage().inGame().with("de_DE.yml").asPath(), new String[]{"de_DE", "ger", "Deutsch"}, DefaultMessages.MESSAGES),
+    GERMAN(PocketCloudPaths.storage().inGame().with("en_US.yml").asPath(), new String[]{"en_US", "en", "English"}, DefaultMessages.MESSAGES_DE);
 
     private final Map<String, String> messages;
 

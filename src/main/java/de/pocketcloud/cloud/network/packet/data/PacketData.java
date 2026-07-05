@@ -9,7 +9,6 @@ import de.pocketcloud.cloud.template.Template;
 import de.pocketcloud.cloud.template.group.ServerGroup;
 import de.pocketcloud.cloud.util.FileUtils;
 import de.pocketcloud.cloud.util.Writable;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
@@ -57,7 +56,7 @@ public final class PacketData {
         return Integer.parseInt(String.valueOf(read));
     }
 
-    public @NotNull Long readLong() {
+    public Long readLong() {
         Object read = read();
         if (read instanceof Number number) {
             return number.longValue();
@@ -89,29 +88,20 @@ public final class PacketData {
         return Boolean.parseBoolean(String.valueOf(read));
     }
 
-//    @SuppressWarnings("unchecked")
-//    public List<Object> readArray() {
-//        Object read = read();
-//        if (read instanceof List<?> list) {
-//            List<Object> newList = new ArrayList<>();
-//            for (var item : list) {
-//                if (item instanceof JsonElement element) newList.add(toObject(element));
-//                else newList.add(item);
-//            }
-//
-//            return newList;
-//        } else if (read instanceof JsonArray jsonArray) {
-//            return (List<Object>) toObject(jsonArray);
-//        }
-//
-//        return new ArrayList<>();
-//    }
-
     @SuppressWarnings("unchecked")
     public List<Object> readArray() {
         Object read = read();
         if (read instanceof List<?> list) return (List<Object>) list;
         throw new PacketDecodeException("Array", read);
+    }
+
+    public <T> List<T> readArray(Class<T> type) {
+        List<Object> raw = readArray();
+        List<T> result = new ArrayList<>(raw.size());
+        for (Object item : raw) {
+            result.add(coerce(item, type));
+        }
+        return result;
     }
 
     @SuppressWarnings("unchecked")
@@ -121,16 +111,14 @@ public final class PacketData {
         throw new PacketDecodeException("Map", read);
     }
 
-//    @SuppressWarnings("unchecked")
-//    public Map<String, Object> readMap() {
-//        Object read = read();
-//        return switch (read) {
-//            case null -> throw new IndexOutOfBoundsException("Buffer is empty");
-//            case Map<?, ?> map -> (Map<String, Object>) read;
-//            case JsonObject jsonObject -> (Map<String, Object>) toObject(jsonObject);
-//            default -> new HashMap<>();
-//        };
-//    }
+    public <T> Map<String, T> readMap(Class<T> valueType) {
+        Map<String, Object> raw = readMap();
+        Map<String, T> result = new LinkedHashMap<>(raw.size());
+        for (Map.Entry<String, Object> entry : raw.entrySet()) {
+            result.put(entry.getKey(), coerce(entry.getValue(), valueType));
+        }
+        return result;
+    }
 
     public Template readTemplate() {
         return Template.read(readMap());
@@ -205,34 +193,6 @@ public final class PacketData {
         return FileUtils.encodeJson(data);
     }
 
-//    public static PacketData fromJson(String json) {
-//        JsonArray jsonArray = FileUtils.decodeJson(json, JsonArray.class);
-//        List<Object> list = new ArrayList<>();
-//        for (JsonElement element : jsonArray) {
-//            if (element.isJsonPrimitive()) {
-//                var primitive = element.getAsJsonPrimitive();
-//                if (primitive.isBoolean()) {
-//                    list.add(primitive.getAsBoolean());
-//                } else if (primitive.isNumber()) {
-//                    list.add(primitive.getAsNumber());
-//                } else {
-//                    list.add(primitive.getAsString());
-//                }
-//            } else if (element.isJsonArray()) {
-//                List<Object> subList = new ArrayList<>();
-//                for (JsonElement subElement : element.getAsJsonArray()) {
-//                    subList.add(subElement);
-//                }
-//                list.add(subList);
-//            } else if (element.isJsonObject()) {
-//                list.add(element.getAsJsonObject());
-//            } else {
-//                list.add(element);
-//            }
-//        }
-//        return new PacketData(list);
-//    }
-
     public static PacketData fromJson(String json) {
         JsonArray jsonArray = FileUtils.decodeJson(json, JsonArray.class);
         List<Object> list = new ArrayList<>();
@@ -269,6 +229,23 @@ public final class PacketData {
         }
 
         return map;
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> T coerce(Object item, Class<T> type) {
+        if (item == null) return null;
+        if (type.isInstance(item)) return type.cast(item);
+
+        if (Number.class.isAssignableFrom(type) && item instanceof Number number) {
+            if (type == Integer.class) return (T) Integer.valueOf(number.intValue());
+            if (type == Long.class) return (T) Long.valueOf(number.longValue());
+            if (type == Double.class) return (T) Double.valueOf(number.doubleValue());
+            if (type == Float.class) return (T) Float.valueOf(number.floatValue());
+            if (type == Short.class) return (T) Short.valueOf(number.shortValue());
+            if (type == Byte.class) return (T) Byte.valueOf(number.byteValue());
+        }
+
+        throw new PacketDecodeException(type.getSimpleName(), item);
     }
 
     public static final class PacketDecodeException extends RuntimeException {

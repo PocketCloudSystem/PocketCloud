@@ -46,7 +46,8 @@ public final class CloudNotificationPacket extends CloudPacket implements Client
                 default -> {}
             }
         }
-        notificationType.notify(args);
+
+        notificationType.notify(args, Map.of());
     }
 
     @Override

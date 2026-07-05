@@ -1,9 +1,13 @@
 package de.pocketcloud.cloud.network.client;
 
+import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.log.CloudLogger;
+import de.pocketcloud.cloud.network.broadcaster.PacketBroadcaster;
+import de.pocketcloud.cloud.network.packet.impl.KeepAlivePacket;
 import de.pocketcloud.cloud.server.CloudServer;
 import de.pocketcloud.cloud.server.CloudServerManager;
 import de.pocketcloud.cloud.tick.Tickable;
+import de.pocketcloud.cloud.util.PerformanceStats;
 import io.netty.channel.Channel;
 import lombok.Getter;
 import lombok.experimental.Accessors;
@@ -28,6 +32,18 @@ public final class ServerClientCache implements Tickable {
 
     @Override
     public void tick(long currentTick) {
+        if (currentTick % 30 == 0) {
+            PerformanceStats stats = PocketCloud.instance().performanceStats();
+            PacketBroadcaster.broadcastPacket(KeepAlivePacket.create(
+                    stats.currentTPS(),
+                    stats.averageTPS(),
+                    stats.processUsedMemory(),
+                    stats.processPeakUsedMemory(),
+                    stats.processMaxMemory(),
+                    stats.processCpuUsage()
+            ));
+        }
+
         for (ServerClient client : clientsByServer.values()) {
             for (ServerClient.DelayedPacket dp : client.pollDuePackets()) {
                 client.sendPacket(dp.packet())

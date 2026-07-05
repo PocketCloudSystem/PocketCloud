@@ -4,6 +4,7 @@ import de.pocketcloud.cloud.network.broadcaster.PacketBroadcaster;
 import de.pocketcloud.cloud.network.client.ServerClient;
 import de.pocketcloud.cloud.network.packet.data.PacketData;
 import de.pocketcloud.cloud.util.FilterableObject;
+import io.netty.channel.Channel;
 import lombok.Getter;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
@@ -44,8 +45,12 @@ public abstract class CloudPacket implements Packet {
         if (!(this instanceof ClientboundPacket p)) throw new IllegalStateException("Cannot broadcast non-ClientboundPacket");
         PacketBroadcaster.broadcastPacket(p, exclusions);
     }
-    
+
     @Override
+    public void handle(@NotNull Channel channel) {
+        handle(channel.attr(ServerClient.ATTRIBUTE_KEY).get());
+    }
+
     public abstract void handle(@NotNull ServerClient client);
 
     @Override

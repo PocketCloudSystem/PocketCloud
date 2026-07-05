@@ -1,5 +1,7 @@
 package de.pocketcloud.cloud.util.concurrent;
 
+import de.pocketcloud.cloud.console.log.CloudLogger;
+
 import java.util.concurrent.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -7,65 +9,54 @@ import java.util.function.Supplier;
 
 public final class Promise<T> {
 
-    private final CompletableFuture<FutureResult<T>> future;
-    private static Executor defaultExecutor = ForkJoinPool.commonPool(); // Can be changed
+    private final CompletableFuture<T> future;
+
+    private static volatile Executor defaultExecutor = ForkJoinPool.commonPool();
 
     public Promise() {
         this.future = new CompletableFuture<>();
     }
 
-    private Promise(CompletableFuture<FutureResult<T>> future) {
+    private Promise(CompletableFuture<T> future) {
         this.future = future;
     }
 
-    public static <T> Promise<T> of(CompletableFuture<FutureResult<T>> future) {
+    public static <T> Promise<T> of(CompletableFuture<T> future) {
         return new Promise<>(future);
     }
 
     public static <T> Promise<T> resolved(T value) {
-        Promise<T> p = new Promise<>();
-        p.resolve(value);
-        return p;
+        return of(CompletableFuture.completedFuture(value));
     }
 
-    public static <T> Promise<T> rejected(String error) {
-        Promise<T> p = new Promise<>();
-        p.reject(error);
-        return p;
-    }
-
-    public static <T> Promise<T> failed(Throwable e) {
-        Promise<T> p = new Promise<>();
-        p.fail(e);
-        return p;
+    public static <T> Promise<T> rejected(Throwable e) {
+        return of(CompletableFuture.failedFuture(e));
     }
 
     public static <T> Promise<T> supplyAsync(Supplier<T> supplier) {
         return supplyAsync(supplier, defaultExecutor);
     }
 
-    @SuppressWarnings("unchecked")
     public static <T> Promise<T> supplyAsync(Supplier<T> supplier, Executor executor) {
+        return of(CompletableFuture.supplyAsync(supplier, executor));
+    }
+
+    public static <T> Promise<T> supplyAsyncResult(Supplier<PromiseResult<T>> supplier) {
+        return supplyAsyncResult(supplier, defaultExecutor);
+    }
+
+    public static <T> Promise<T> supplyAsyncResult(Supplier<PromiseResult<T>> supplier, Executor executor) {
         Promise<T> promise = new Promise<>();
-
         CompletableFuture.supplyAsync(supplier, executor)
-                .thenAccept(result -> {
-                    if (result instanceof FutureResult) {
-                        FutureResult<T> fr = (FutureResult<T>) result;
-                        if (fr.success()) {
-                            promise.resolve(fr.value());
-                        } else {
-                            promise.reject(fr.error(), fr.value());
-                        }
+                .whenComplete((result, ex) -> {
+                    if (ex != null) {
+                        promise.reject(unwrap(ex));
+                    } else if (result.success()) {
+                        promise.resolve(result.value());
                     } else {
-                        promise.resolve(result);
+                        promise.reject(result.error());
                     }
-                })
-                .exceptionally(ex -> {
-                    promise.fail(ex);
-                    return null;
                 });
-
         return promise;
     }
 
@@ -74,14 +65,7 @@ public final class Promise<T> {
     }
 
     public static Promise<Void> runAsync(Runnable runnable, Executor executor) {
-        Promise<Void> promise = new Promise<>();
-        CompletableFuture.runAsync(runnable, executor)
-                .thenRun(() -> promise.resolve(null))
-                .exceptionally(ex -> {
-                    promise.fail(ex);
-                    return null;
-                });
-        return promise;
+        return of(CompletableFuture.runAsync(runnable, executor));
     }
 
     public static void setDefaultExecutor(Executor executor) {
@@ -89,79 +73,64 @@ public final class Promise<T> {
     }
 
     public boolean resolve(T value) {
-        return future.complete(new FutureResult<>(true, value, null));
+        return future.complete(value);
     }
 
-    public boolean reject(String error) {
-        return future.complete(new FutureResult<>(false, null, error));
-    }
-
-    public boolean reject(String error, T value) {
-        return future.complete(new FutureResult<>(false, value, error));
-    }
-
-    public boolean fail(Throwable throwable) {
-        return future.completeExceptionally(throwable);
+    public boolean reject(Throwable error) {
+        return future.completeExceptionally(error != null ? error : new RuntimeException("rejected with null error"));
     }
 
     public Promise<T> thenSuccess(Consumer<T> consumer) {
-        future.thenAccept(result -> {
-            if (result.success() && consumer != null) {
-                consumer.accept(result.value());
+        future.thenAccept(value -> {
+            if (consumer == null) return;
+            try {
+                consumer.accept(value);
+            } catch (Throwable t) {
+                CloudLogger.get().exception("Unhandled exception in Promise#thenSuccess callback", t);
             }
         });
         return this;
     }
 
-    public Promise<T> thenReject(Consumer<String> consumer) {
-        future.thenAccept(result -> {
-            if (!result.success() && consumer != null) {
-                consumer.accept(result.error());
-            }
-        });
-        return this;
-    }
-
-    public Promise<T> failure(Consumer<Throwable> failure) {
+    public Promise<T> failure(Consumer<Throwable> onFailure) {
         future.exceptionally(ex -> {
-            if (failure != null) failure.accept(ex);
+            if (onFailure == null) return null;
+            try {
+                onFailure.accept(unwrap(ex));
+            } catch (Throwable t) {
+                CloudLogger.get().exception("Unhandled exception in Promise#failure callback", t);
+            }
             return null;
         });
         return this;
     }
 
     public <U> Promise<U> thenApply(Function<T, U> mapper) {
-        return Promise.of(
-                future.thenApply(result -> {
-                    if (result.success()) {
-                        return new FutureResult<>(true, mapper.apply(result.value()), null);
-                    }
-                    return new FutureResult<>(false, null, result.error());
-                })
-        );
+        return of(future.thenApply(mapper));
     }
 
     public <U> Promise<U> thenCompose(Function<T, Promise<U>> mapper) {
-        CompletableFuture<FutureResult<U>> composed = future.thenCompose(result -> {
-            if (result.success()) {
-                return mapper.apply(result.value()).future;
-            } else {
-                return CompletableFuture.completedFuture(new FutureResult<>(false, null, result.error()));
-            }
-        });
-        return Promise.of(composed);
+        return of(future.thenCompose(value -> {
+            Promise<U> next = mapper.apply(value);
+            if (next == null) return CompletableFuture.failedFuture(new NullPointerException("mapper returned null Promise"));
+            return next.future;
+        }));
     }
 
-    public T join() {
-        FutureResult<T> result = future.join();
-        if (result.success()) return result.value();
-        throw new PromiseException(result.error());
+    public T join() throws Throwable {
+        try {
+            return future.join();
+        } catch (CompletionException e) {
+            throw unwrap(e);
+        }
     }
 
-    public T get() throws ExecutionException, InterruptedException {
-        FutureResult<T> result = future.get();
-        if (result.success()) return result.value();
-        throw new ExecutionException(result.error(), null);
+    public T get() throws Throwable {
+        try {
+            return future.get();
+        } catch (ExecutionException e) {
+            throw unwrap(e);
+        }
     }
 
     public boolean isDone() {
@@ -172,41 +141,39 @@ public final class Promise<T> {
         return future.isCompletedExceptionally();
     }
 
-    public CompletableFuture<FutureResult<T>> toCompletableFuture() {
+    public CompletableFuture<T> toCompletableFuture() {
         return future;
     }
 
     public static Promise<Void> all(Promise<?>... promises) {
-        if (promises == null || promises.length == 0) {
-            return Promise.resolved(null);
-        }
+        if (promises == null || promises.length == 0) return Promise.resolved(null);
 
         CompletableFuture<?>[] futures = new CompletableFuture[promises.length];
-
         for (int i = 0; i < promises.length; i++) {
-            futures[i] = promises[i].toCompletableFuture();
+            futures[i] = promises[i].future;
         }
 
-        return Promise.of(CompletableFuture.allOf(futures).thenApply(_ -> new FutureResult<>(true, null, null)));
+        return of(CompletableFuture.allOf(futures));
     }
 
+    @SuppressWarnings("rawtypes")
     public static Promise<Object> anyOf(Promise<?>... promises) {
         if (promises == null || promises.length == 0) {
-            return Promise.rejected("No promises provided");
+            return Promise.rejected(new IllegalArgumentException("No promises provided"));
         }
 
-        CompletableFuture<?>[] futures = new CompletableFuture[promises.length];
-
+        CompletableFuture[] futures = new CompletableFuture[promises.length];
         for (int i = 0; i < promises.length; i++) {
-            futures[i] = promises[i].toCompletableFuture();
+            futures[i] = promises[i].future;
         }
 
-        return Promise.of(CompletableFuture.anyOf(futures).thenApply(result -> new FutureResult<>(true, result, null)));
+        return of(CompletableFuture.anyOf(futures));
     }
 
-    private static class PromiseException extends RuntimeException {
-        public PromiseException(String message) {
-            super(message);
+    private static Throwable unwrap(Throwable t) {
+        if ((t instanceof CompletionException || t instanceof ExecutionException) && t.getCause() != null) {
+            return t.getCause();
         }
+        return t;
     }
 }

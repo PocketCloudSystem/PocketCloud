@@ -1,7 +1,7 @@
 package de.pocketcloud.cloud.network.packet;
 
-import de.pocketcloud.cloud.network.client.ServerClient;
 import de.pocketcloud.cloud.network.packet.data.PacketData;
+import io.netty.channel.Channel;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -17,7 +17,7 @@ public interface Packet {
 
     void decodePayload(PacketData packetData);
 
-    void handle(@NotNull ServerClient client);
+    void handle(@NotNull Channel channel);
 
     String getName();
 

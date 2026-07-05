@@ -43,7 +43,7 @@ public final class CloudPlayerManager {
         players.put(player.name(), player);
         PlayerSyncPacket.create(player, false).broadcastPacket();
         String serverOrProxy = player.currentServerName() != null ? player.currentServerName() : player.currentProxyName();
-        NotificationType.PLAYER_JOINED.notify(Map.of("player", player.name(), "server", serverOrProxy));
+        NotificationType.PLAYER_JOINED.notify(Map.of("player", player.name(), "server", serverOrProxy), Map.of());
 
         var joinTarget = player.currentServer().orElse(player.currentProxy().orElse(null));
         new PlayerConnectEvent(player, joinTarget).call();
@@ -58,7 +58,7 @@ public final class CloudPlayerManager {
         players.remove(player.name());
 
         String serverOrProxy = player.currentServerName() != null ? player.currentServerName() : player.currentProxyName();
-        NotificationType.PLAYER_LEFT.notify(Map.of("player", player.name(), "server", serverOrProxy));
+        NotificationType.PLAYER_LEFT.notify(Map.of("player", player.name(), "server", serverOrProxy), Map.of());
 
         var disconnectTarget = player.currentServer().orElse(player.currentProxy().orElse(null));
         new PlayerDisconnectEvent(player, disconnectTarget, serverOrProxy).call();

@@ -4,8 +4,10 @@ import de.pocketcloud.cloud.network.client.ServerClient;
 import de.pocketcloud.cloud.network.packet.data.PacketData;
 import de.pocketcloud.cloud.network.request.RequestManager;
 import de.pocketcloud.cloud.util.TriConsumer;
+import io.netty.channel.Channel;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -48,14 +50,14 @@ public abstract class RequestClientPacket extends CloudPacket implements Clientb
     @Override
     public final void handle(@NotNull ServerClient client) {}
 
-    public RequestClientPacket sendRequest(io.netty.channel.Channel channel) {
-        return RequestManager.instance().send(this, channel);
+    public RequestClientPacket sendRequest(ServerClient client) {
+        return RequestManager.instance().send(this, client);
     }
 
-    public final void invokeClosures(boolean failed, ResponseClientPacket responsePacket, RequestPacketFailureReason reason) {
+    public final void invokeClosures(boolean failed, ResponseClientPacket responsePacket, RequestPacketFailureReason reason, @Nullable Throwable e) {
         if (failed) {
             if (failureHandler != null) {
-                failureHandler.accept(this, null, reason);
+                failureHandler.accept(this, e, reason);
             }
             return;
         }
@@ -78,7 +80,11 @@ public abstract class RequestClientPacket extends CloudPacket implements Clientb
     }
 
     public RequestClientPacket then(Consumer<ResponseClientPacket> closure) {
-        thenClosures.add((packet, prev) -> { closure.accept(packet); return null; });
+        thenClosures.add((packet, prev) -> {
+            closure.accept(packet);
+            return null;
+        });
+
         return this;
     }
 
