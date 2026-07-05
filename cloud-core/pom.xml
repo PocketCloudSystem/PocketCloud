@@ -86,6 +86,7 @@
     </dependencies>
 
     <build>
+        <directory>${project.basedir}/../target/</directory>
         <finalName>compiled/pocketcloud</finalName>
         <resources>
             <resource>
