@@ -6,23 +6,23 @@ import org.jetbrains.annotations.Nullable;
 
 public interface PacketTrafficListener {
 
-    boolean onOutgoing(Channel address, Packet packet, byte[] rawBytes, int length, String payload);
+    boolean onOutgoing(Channel address, Packet packet, byte[] payload, int length);
 
-    boolean onIncoming(Channel address, byte[] rawBytes, int length, String payload);
+    boolean onIncoming(Channel address, byte[] payload, int length);
 
-    default void onUnknownPacket(Channel address, byte[] rawBytes, int length, String payload) {}
+    default void onUnknownPacket(Channel address, byte[] payload, int length) {}
 
     default void onTooLargePacket(Channel address, @Nullable Packet packet, int length, TrafficDirection direction) {}
 
     PacketTrafficListener NOOP = new PacketTrafficListener() {
 
         @Override
-        public boolean onOutgoing(Channel address, Packet packet, byte[] rawBytes, int length, String payload) {
+        public boolean onIncoming(Channel address, byte[] rawBytes, int length) {
             return true;
         }
 
         @Override
-        public boolean onIncoming(Channel address, byte[] rawBytes, int length, String payload) {
+        public boolean onOutgoing(Channel address, Packet packet, byte[] payload, int length) {
             return true;
         }
     };

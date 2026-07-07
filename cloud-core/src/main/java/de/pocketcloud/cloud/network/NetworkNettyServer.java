@@ -68,13 +68,13 @@ public class NetworkNettyServer {
 
     public void addChannel(Channel channel) {
         if (channels.add(channel)) {
-            CloudLogger.get().info("Client connected: {}", channel.remoteAddress());
+            CloudLogger.get().debug("Client connected: {}", channel.remoteAddress());
         }
     }
 
     public void removeChannel(Channel channel) {
         if (channels.remove(channel)) {
-            CloudLogger.get().info("Client disconnected: {}", channel.remoteAddress());
+            CloudLogger.get().debug("Client disconnected: {}", channel.remoteAddress());
         }
     }
 

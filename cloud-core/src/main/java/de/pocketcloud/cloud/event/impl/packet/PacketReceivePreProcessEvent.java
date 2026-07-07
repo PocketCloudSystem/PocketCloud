@@ -9,12 +9,12 @@ import lombok.Getter;
 public class PacketReceivePreProcessEvent extends NetworkEvent implements Cancelable {
 
     private final Channel sender;
-    private final String buffer;
+    private final byte[] payload;
     private final boolean encryption;
 
-    public PacketReceivePreProcessEvent(Channel sender, String buffer, boolean encryption) {
+    public PacketReceivePreProcessEvent(Channel sender, byte[] payload, boolean encryption) {
         this.sender = sender;
-        this.buffer = buffer;
+        this.payload = payload;
         this.encryption = encryption;
     }
 }

@@ -1,6 +1,5 @@
 package de.pocketcloud.network.codec;
 
-import com.google.gson.JsonSyntaxException;
 import de.pocketcloud.network.exception.PacketException;
 import de.pocketcloud.network.packet.Packet;
 import de.pocketcloud.network.packet.PacketPool;
@@ -9,13 +8,12 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
 public final class PacketSerializer {
-    
+
     private PacketSerializer() {}
 
     public static byte[] encode(Packet packet, boolean encryptionEnabled, String authenticationKey) throws PacketException {
@@ -23,14 +21,13 @@ public final class PacketSerializer {
             PacketData buffer = new PacketData();
             packet.encode(buffer);
             buffer.write(authenticationKey);
-            
-            String jsonBuffer = buffer.toJson();
-            byte[] bytes = jsonBuffer.getBytes(StandardCharsets.UTF_8);
-            
+
+            byte[] bytes = buffer.toByteArray();
+
             if (encryptionEnabled) {
                 bytes = compress(bytes);
             }
-            
+
             return bytes;
         } catch (Exception e) {
             throw new PacketException(e.getMessage());
@@ -45,31 +42,30 @@ public final class PacketSerializer {
             if (encryptionEnabled) {
                 decompressed = decompress(buffer);
             }
-            
-            String json = new String(decompressed, StandardCharsets.UTF_8);
-            PacketData data = PacketData.fromJson(json);
-            
+
+            PacketData data = PacketData.fromBytes(decompressed);
+
             if (data.isEmpty()) throw new PacketException("Received buffer is empty");
-            
+
             String packetName = data.readString();
             if (packetName == null) throw new PacketException("Received buffer does not contain a valid packet name");
-            
+
             var packet = PacketPool.getInstance().get(packetName);
             if (packet == null) return null;
 
-            PacketData decodeData = PacketData.fromJson(json);
+            PacketData decodeData = PacketData.fromBytes(decompressed);
             packet.decode(decodeData);
-            
+
             if (decodeData.isEmpty()) throw new PacketException("Received packet does not contain an authentication key");
-            
+
             String givenKey = decodeData.readString();
             if (givenKey == null) throw new PacketException("Received packet does not contain an authentication key");
 
             if (!givenKey.equals(authenticationKey)) throw new PacketException("Received packet does not contain a valid authentication key");
-            
+
             return packet;
-        } catch (JsonSyntaxException e) {
-            throw new PacketException("Failed to parse JSON: " + e.getMessage(), e);
+        } catch (PacketData.PacketDecodeException e) {
+            throw new PacketException("Failed to decode packet data: " + e.getMessage(), e);
         } catch (DataFormatException e) {
             throw new PacketException("Failed to decompress data: " + e.getMessage(), e);
         } catch (IOException e) {

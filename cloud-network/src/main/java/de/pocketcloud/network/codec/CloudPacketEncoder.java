@@ -35,7 +35,7 @@ public final class CloudPacketEncoder extends MessageToByteEncoder<Packet> {
         }
 
         packet.setSize(bytes.length);
-        if (!trafficListener.onOutgoing(ctx.channel(), packet, bytes, bytes.length, new String(bytes, StandardCharsets.UTF_8))) return;
+        if (!trafficListener.onOutgoing(ctx.channel(), packet, bytes, bytes.length)) return;
         out.writeInt(bytes.length);
         out.writeBytes(bytes);
     }

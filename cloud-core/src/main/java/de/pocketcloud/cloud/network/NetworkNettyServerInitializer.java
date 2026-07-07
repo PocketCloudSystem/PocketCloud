@@ -21,7 +21,7 @@ public class NetworkNettyServerInitializer extends ChannelInitializer<Channel> {
     private static final PacketTrafficListener LISTENER = new PacketTrafficListener() {
 
         @Override
-        public boolean onOutgoing(Channel channel, Packet packet, byte[] rawBytes, int length, String payload) {
+        public boolean onOutgoing(Channel channel, Packet packet, byte[] payload, int length) {
             TrafficMonitorManager.instance().pushBytes(NetworkTrafficMonitor.class, TrafficDirection.OUT, length);
             TrafficMonitorManager.instance().callHandlers(NetworkTrafficMonitor.class, TrafficDirection.OUT, channel, payload, packet.getSize());
 
@@ -36,7 +36,7 @@ public class NetworkNettyServerInitializer extends ChannelInitializer<Channel> {
         }
 
         @Override
-        public boolean onIncoming(Channel channel, byte[] rawBytes, int length, String payload) {
+        public boolean onIncoming(Channel channel, byte[] payload, int length) {
             TrafficMonitorManager.instance().pushBytes(NetworkTrafficMonitor.class, TrafficDirection.IN, length);
             TrafficMonitorManager.instance().callHandlers(NetworkTrafficMonitor.class, TrafficDirection.IN, channel, payload, (long) length);
 
@@ -44,10 +44,9 @@ public class NetworkNettyServerInitializer extends ChannelInitializer<Channel> {
         }
 
         @Override
-        public void onUnknownPacket(Channel channel, byte[] rawBytes, int length, String payload) {
-            new PacketReceiveUnknownEvent(channel, payload, rawBytes, length, MainConfig.instance().isNetworkEncryptionEnabled()).call();
-            CloudLogger.get().debug("Received unknown packet with size {} from {}", length, channel.remoteAddress().toString())
-                    .debug(payload);
+        public void onUnknownPacket(Channel channel, byte[] payload, int length) {
+            new PacketReceiveUnknownEvent(channel, payload, length, MainConfig.instance().isNetworkEncryptionEnabled()).call();
+            CloudLogger.get().debug("Received unknown packet with size {} from {}", length, channel.remoteAddress().toString());
         }
 
         @Override

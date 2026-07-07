@@ -8,15 +8,13 @@ import lombok.Getter;
 public class PacketReceiveUnknownEvent extends NetworkEvent {
 
     private final Channel sender;
-    private final String buffer;
-    private final byte[] rawBytes;
+    private final byte[] payload;
     private final int length;
     private final boolean encryption;
 
-    public PacketReceiveUnknownEvent(Channel sender, String buffer, byte[] rawBytes, int length, boolean encryption) {
+    public PacketReceiveUnknownEvent(Channel sender, byte[] payload, int length, boolean encryption) {
         this.sender = sender;
-        this.buffer = buffer;
-        this.rawBytes = rawBytes;
+        this.payload = payload;
         this.length = length;
         this.encryption = encryption;
     }

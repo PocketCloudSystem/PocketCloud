@@ -133,6 +133,7 @@ public final class LogSettingsConfig extends Configuration {
     }
 
     public boolean canSendWebhook(NotificationType type) {
+        if (!isWebhookEnabled()) return false;
         ConfigMap notifications = (ConfigMap) discordWebhook.get("notifications");
 
         boolean crashedServers = Boolean.parseBoolean(notifications.get("crashed_servers").toString());

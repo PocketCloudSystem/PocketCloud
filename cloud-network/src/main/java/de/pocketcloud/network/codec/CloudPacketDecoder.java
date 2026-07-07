@@ -6,7 +6,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.IntSupplier;
@@ -44,13 +43,12 @@ public final class CloudPacketDecoder extends ByteToMessageDecoder {
 
         byte[] bytes = new byte[length];
         in.readBytes(bytes);
-        String payload = new String(bytes, StandardCharsets.UTF_8);
 
-        if (!trafficListener.onIncoming(ctx.channel(), bytes, length, payload)) return;
+        if (!trafficListener.onIncoming(ctx.channel(), bytes, length)) return;
 
         var packet = PacketSerializer.decode(bytes, encryptionEnabled.getAsBoolean(), authTokenSupplier.get());
         if (packet == null) {
-            trafficListener.onUnknownPacket(ctx.channel(), bytes, length, payload);
+            trafficListener.onUnknownPacket(ctx.channel(), bytes, length);
             return;
         }
 
