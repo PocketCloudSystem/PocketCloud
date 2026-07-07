@@ -5,6 +5,7 @@ import de.pocketcloud.cloud.cache.NotificationListCache;
 import de.pocketcloud.cloud.network.client.ServerClient;
 import de.pocketcloud.cloud.network.packet.RequestPacket;
 import de.pocketcloud.cloud.network.packet.impl.response.PlayerNotificationCheckResponsePacket;
+import de.pocketcloud.network.packet.AuthenticatedPacket;
 import de.pocketcloud.network.packet.data.PacketData;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -12,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
 
 @NoArgsConstructor
 @Getter
-public final class PlayerNotificationCheckRequestPacket extends RequestPacket {
+public final class PlayerNotificationCheckRequestPacket extends RequestPacket implements AuthenticatedPacket {
 
     private String player;
 

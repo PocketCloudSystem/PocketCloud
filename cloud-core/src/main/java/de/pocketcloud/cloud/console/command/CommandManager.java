@@ -1,9 +1,6 @@
 package de.pocketcloud.cloud.console.command;
 
-import de.pocketcloud.cloud.console.command.impl.ExitCommand;
-import de.pocketcloud.cloud.console.command.impl.HelpCommand;
-import de.pocketcloud.cloud.console.command.impl.ReloadCommand;
-import de.pocketcloud.cloud.console.command.impl.StatusCommand;
+import de.pocketcloud.cloud.console.command.impl.*;
 import de.pocketcloud.cloud.console.command.sender.CommandSender;
 import de.pocketcloud.cloud.console.command.sub.SubCommand;
 import de.pocketcloud.common.lifecycle.Loadable;
@@ -28,7 +25,7 @@ public final class CommandManager implements Loadable {
 
     @Override
     public void load() {
-        registerAll(new ExitCommand(), new HelpCommand(), new ReloadCommand(), new StatusCommand());
+        registerAll(new ExitCommand(), new HelpCommand(), new ReloadCommand(), new StatusCommand(), new DebugCommand());
     }
 
     @Override

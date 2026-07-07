@@ -5,6 +5,7 @@ import de.pocketcloud.cloud.cache.WhitelistCache;
 import de.pocketcloud.cloud.network.client.ServerClient;
 import de.pocketcloud.cloud.network.packet.RequestPacket;
 import de.pocketcloud.cloud.network.packet.impl.response.PlayerWhitelistCheckResponsePacket;
+import de.pocketcloud.network.packet.AuthenticatedPacket;
 import de.pocketcloud.network.packet.data.PacketData;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -12,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
 
 @NoArgsConstructor
 @Getter
-public final class PlayerWhitelistCheckRequestPacket extends RequestPacket {
+public final class PlayerWhitelistCheckRequestPacket extends RequestPacket implements AuthenticatedPacket {
 
     private String player;
 

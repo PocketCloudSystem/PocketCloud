@@ -1,6 +1,7 @@
 package de.pocketcloud.cloud.network.packet.impl;
 
 import de.pocketcloud.cloud.network.client.ServerClient;
+import de.pocketcloud.network.packet.AuthenticatedPacket;
 import de.pocketcloud.network.packet.ClientboundPacket;
 import de.pocketcloud.network.packet.CloudboundPacket;
 import de.pocketcloud.cloud.network.packet.CloudPacket;
@@ -13,7 +14,7 @@ import org.jetbrains.annotations.NotNull;
 
 @NoArgsConstructor
 @Getter
-public final class PlayerTextPacket extends CloudPacket implements CloudboundPacket, ClientboundPacket {
+public final class PlayerTextPacket extends CloudPacket implements CloudboundPacket, ClientboundPacket, AuthenticatedPacket {
 
     private String player;
     private String text;

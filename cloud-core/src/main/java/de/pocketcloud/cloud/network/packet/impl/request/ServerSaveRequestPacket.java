@@ -4,6 +4,7 @@ import de.pocketcloud.cloud.network.client.ServerClient;
 import de.pocketcloud.cloud.network.packet.RequestPacket;
 import de.pocketcloud.cloud.network.packet.type.ActionFailureReason;
 import de.pocketcloud.cloud.network.packet.impl.response.ServerSaveResponsePacket;
+import de.pocketcloud.network.packet.AuthenticatedPacket;
 import de.pocketcloud.network.packet.data.PacketData;
 import de.pocketcloud.cloud.server.CloudServerManager;
 import lombok.Getter;
@@ -12,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
 
 @NoArgsConstructor
 @Getter
-public final class ServerSaveRequestPacket extends RequestPacket {
+public final class ServerSaveRequestPacket extends RequestPacket implements AuthenticatedPacket {
 
     private String server;
 

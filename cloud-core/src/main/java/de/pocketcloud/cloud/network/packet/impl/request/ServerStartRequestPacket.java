@@ -4,6 +4,7 @@ import de.pocketcloud.cloud.network.client.ServerClient;
 import de.pocketcloud.cloud.network.packet.RequestPacket;
 import de.pocketcloud.cloud.network.packet.type.ActionFailureReason;
 import de.pocketcloud.cloud.network.packet.impl.response.ServerStartResponsePacket;
+import de.pocketcloud.network.packet.AuthenticatedPacket;
 import de.pocketcloud.network.packet.data.PacketData;
 import de.pocketcloud.cloud.server.CloudServerManager;
 import de.pocketcloud.cloud.template.TemplateManager;
@@ -13,7 +14,7 @@ import org.jetbrains.annotations.NotNull;
 
 @NoArgsConstructor
 @Getter
-public final class ServerStartRequestPacket extends RequestPacket {
+public final class ServerStartRequestPacket extends RequestPacket implements AuthenticatedPacket {
 
     private String template;
     private int count;

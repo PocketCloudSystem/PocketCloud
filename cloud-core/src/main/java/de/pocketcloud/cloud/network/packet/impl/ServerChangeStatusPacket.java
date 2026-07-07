@@ -1,6 +1,7 @@
 package de.pocketcloud.cloud.network.packet.impl;
 
 import de.pocketcloud.cloud.network.client.ServerClient;
+import de.pocketcloud.network.packet.AuthenticatedPacket;
 import de.pocketcloud.network.packet.CloudboundPacket;
 import de.pocketcloud.cloud.network.packet.CloudPacket;
 import de.pocketcloud.network.packet.data.PacketData;
@@ -12,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
 
 @NoArgsConstructor
 @Getter
-public final class ServerChangeStatusPacket extends CloudPacket implements CloudboundPacket {
+public final class ServerChangeStatusPacket extends CloudPacket implements CloudboundPacket, AuthenticatedPacket {
 
     private String serverUuid;
     private ServerStatus status;
@@ -24,9 +25,7 @@ public final class ServerChangeStatusPacket extends CloudPacket implements Cloud
 
     @Override
     public void handle(@NotNull ServerClient client) {
-        if (client.hasServer()) {
-            CloudServerManager.instance().get(serverUuid).ifPresent(server -> server.setStatus(status));
-        }
+        CloudServerManager.instance().get(serverUuid).ifPresent(server -> server.setStatus(status));
     }
 
     @Override

@@ -8,6 +8,7 @@ import de.pocketcloud.cloud.network.client.ServerClientCache;
 import de.pocketcloud.cloud.network.packet.CloudPacket;
 import de.pocketcloud.cloud.network.packet.ResponseClientPacket;
 import de.pocketcloud.cloud.network.request.RequestManager;
+import de.pocketcloud.network.packet.AuthenticatedPacket;
 import de.pocketcloud.network.packet.CloudboundPacket;
 import de.pocketcloud.network.traffic.TrafficDirection;
 import de.pocketcloud.network.traffic.TrafficMonitorManager;
@@ -31,6 +32,11 @@ public class NetworkNettyHandler extends SimpleChannelInboundHandler<CloudPacket
     protected void channelRead0(ChannelHandlerContext ctx, CloudPacket packet) {
         try {
             TrafficMonitorManager.instance().callHandlers(NetworkTrafficMonitor.class, NetworkTrafficMonitor.parsePacketMode(TrafficDirection.IN, packet.getClass()), ctx.channel(), packet, packet.getSize());
+
+            if (packet instanceof AuthenticatedPacket) {
+                ServerClient c = ctx.channel().attr(ServerClient.ATTRIBUTE_KEY).get();
+                if (c.server() == null) return;
+            }
 
             if (new PacketReceiveEvent(ctx.channel(), (CloudboundPacket) packet).call().isCancelled()) {
                 return;

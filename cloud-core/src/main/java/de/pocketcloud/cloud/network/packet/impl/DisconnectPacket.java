@@ -1,6 +1,7 @@
 package de.pocketcloud.cloud.network.packet.impl;
 
 import de.pocketcloud.cloud.network.client.ServerClient;
+import de.pocketcloud.network.packet.AuthenticatedPacket;
 import de.pocketcloud.network.packet.ClientboundPacket;
 import de.pocketcloud.network.packet.CloudboundPacket;
 import de.pocketcloud.cloud.network.packet.CloudPacket;
@@ -13,7 +14,7 @@ import org.jetbrains.annotations.NotNull;
 
 @NoArgsConstructor
 @Getter
-public final class DisconnectPacket extends CloudPacket implements ClientboundPacket, CloudboundPacket {
+public final class DisconnectPacket extends CloudPacket implements ClientboundPacket, CloudboundPacket, AuthenticatedPacket {
 
     private ServerDisconnectReason reason;
 
@@ -23,10 +24,7 @@ public final class DisconnectPacket extends CloudPacket implements ClientboundPa
 
     @Override
     public void handle(@NotNull ServerClient client) {
-        var server = client.server();
-        if (server != null) {
-            CloudServersHandler.handleDisconnect(server, reason);
-        }
+        CloudServersHandler.handleDisconnect(client.server(), reason);
     }
 
     @Override

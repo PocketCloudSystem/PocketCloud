@@ -2,6 +2,7 @@ package de.pocketcloud.cloud.network.packet.impl;
 
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.network.client.ServerClient;
+import de.pocketcloud.network.packet.AuthenticatedPacket;
 import de.pocketcloud.network.packet.ClientboundPacket;
 import de.pocketcloud.network.packet.CloudboundPacket;
 import de.pocketcloud.cloud.network.packet.CloudPacket;
@@ -16,7 +17,7 @@ import java.util.Map;
 
 @NoArgsConstructor
 @Getter
-public final class CloudNotificationPacket extends CloudPacket implements ClientboundPacket, CloudboundPacket {
+public final class CloudNotificationPacket extends CloudPacket implements ClientboundPacket, CloudboundPacket, AuthenticatedPacket {
 
     private NotificationType notificationType;
     private Map<String, Object> args;
