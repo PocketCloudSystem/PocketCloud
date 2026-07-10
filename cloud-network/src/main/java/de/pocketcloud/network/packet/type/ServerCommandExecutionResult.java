@@ -1,4 +1,4 @@
-package de.pocketcloud.cloud.network.packet.type;
+package de.pocketcloud.network.packet.type;
 
 import de.pocketcloud.common.serialization.Writable;
 import de.pocketcloud.common.mapper.MapperUtils;

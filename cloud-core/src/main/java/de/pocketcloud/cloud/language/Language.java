@@ -5,7 +5,8 @@ import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.common.util.ArrayUtils;
 import de.pocketcloud.common.util.FileUtils;
 import de.pocketcloud.cloud.util.PocketCloudPaths;
-import de.pocketcloud.common.language.DefaultMessages;
+import de.pocketcloud.language.DefaultMessages;
+import de.pocketcloud.language.LanguageKey;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import org.jetbrains.annotations.Nullable;
@@ -21,8 +22,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Accessors(fluent = true)
 public enum Language {
 
-    ENGLISH(PocketCloudPaths.storage().inGame().with("de_DE.yml").asPath(), new String[]{"de_DE", "ger", "Deutsch"}, DefaultMessages.MESSAGES),
-    GERMAN(PocketCloudPaths.storage().inGame().with("en_US.yml").asPath(), new String[]{"en_US", "en", "English"}, DefaultMessages.MESSAGES_DE);
+    ENGLISH(PocketCloudPaths.storage().inGame().with("de_DE.yml").asPath(), new String[]{"de_DE", "ger", "Deutsch"}, DefaultMessages.MESSAGES_EN),
+    GERMAN(PocketCloudPaths.storage().inGame().with("en_US.yml").asPath(), new String[]{"en_US", "en", "English"}, DefaultMessages.MESSAGES_GER);
 
     private final Map<String, String> messages;
 
@@ -59,7 +60,8 @@ public enum Language {
         }
     }
 
-    public String translate(String message, Object ... args) {
+    public String translate(LanguageKey key, Object ... args) {
+        String message = messages.getOrDefault(key.langKey(), key.langKey());
         message = message.replace("{PREFIX}", this.messages.getOrDefault("inGame.prefix", ""));
         for (int i = 0; i < args.length; i++) {
             message = message.replace("{" + i + "}", args[i].toString());

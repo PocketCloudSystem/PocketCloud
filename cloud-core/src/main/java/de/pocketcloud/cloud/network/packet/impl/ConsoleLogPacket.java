@@ -1,11 +1,12 @@
 package de.pocketcloud.cloud.network.packet.impl;
 
+import de.pocketcloud.cloud.console.log.CloudLogLevel;
 import de.pocketcloud.cloud.network.client.ServerClient;
 import de.pocketcloud.network.packet.AuthenticatedPacket;
 import de.pocketcloud.network.packet.ClientboundPacket;
 import de.pocketcloud.network.packet.CloudboundPacket;
 import de.pocketcloud.cloud.network.packet.CloudPacket;
-import de.pocketcloud.cloud.network.packet.type.LogType;
+import de.pocketcloud.network.packet.type.LogType;
 import de.pocketcloud.network.packet.data.PacketData;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -25,7 +26,7 @@ public final class ConsoleLogPacket extends CloudPacket implements ClientboundPa
 
     @Override
     public void handle(@NotNull ServerClient client) {
-        client.server().logger().log(logType.toLogLevel(), message);
+        client.server().logger().log(CloudLogLevel.toLogLevel(logType), message);
     }
 
     @Override

@@ -2,7 +2,7 @@ package de.pocketcloud.cloud.network.packet.impl.request;
 
 import de.pocketcloud.cloud.network.client.ServerClient;
 import de.pocketcloud.cloud.network.packet.RequestPacket;
-import de.pocketcloud.cloud.network.packet.type.ActionFailureReason;
+import de.pocketcloud.network.packet.type.ActionFailureReason;
 import de.pocketcloud.cloud.network.packet.impl.response.ServerStopResponsePacket;
 import de.pocketcloud.network.packet.AuthenticatedPacket;
 import de.pocketcloud.network.packet.data.PacketData;

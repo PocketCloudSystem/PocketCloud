@@ -5,7 +5,7 @@ import de.pocketcloud.network.packet.AuthenticatedPacket;
 import de.pocketcloud.network.packet.ClientboundPacket;
 import de.pocketcloud.network.packet.CloudboundPacket;
 import de.pocketcloud.cloud.network.packet.CloudPacket;
-import de.pocketcloud.cloud.network.packet.type.TextType;
+import de.pocketcloud.network.packet.type.TextType;
 import de.pocketcloud.network.packet.data.PacketData;
 import de.pocketcloud.cloud.player.CloudPlayerManager;
 import lombok.Getter;

@@ -2,11 +2,12 @@ package de.pocketcloud.cloud.network.packet.impl;
 
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.network.client.ServerClient;
+import de.pocketcloud.cloud.notification.Notifier;
 import de.pocketcloud.network.packet.AuthenticatedPacket;
 import de.pocketcloud.network.packet.ClientboundPacket;
 import de.pocketcloud.network.packet.CloudboundPacket;
 import de.pocketcloud.cloud.network.packet.CloudPacket;
-import de.pocketcloud.cloud.network.packet.type.NotificationType;
+import de.pocketcloud.network.packet.type.NotificationType;
 import de.pocketcloud.network.packet.data.PacketData;
 import de.pocketcloud.cloud.player.CloudPlayerManager;
 import lombok.Getter;
@@ -29,7 +30,7 @@ public final class CloudNotificationPacket extends CloudPacket implements Client
 
     @Override
     public void handle(@NotNull ServerClient client) {
-        if (notificationType.canLog()) {
+        if (Notifier.canLog(notificationType)) {
             switch (notificationType) {
                 case PLAYER_JOIN_FAILED -> {
                     String player = (String) args.get("player");
@@ -48,7 +49,7 @@ public final class CloudNotificationPacket extends CloudPacket implements Client
             }
         }
 
-        notificationType.notify(args, Map.of());
+        Notifier.notify(notificationType, args, Map.of());
     }
 
     @Override

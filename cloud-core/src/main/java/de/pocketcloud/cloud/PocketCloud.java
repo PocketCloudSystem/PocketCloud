@@ -254,6 +254,9 @@ public final class PocketCloud {
 
         logger.info("Shutting down...");
 
+        logger.info("§cStopping §rall servers...");
+        if (serverManager != null) serverManager.stopAll();
+
         if (loader != null) loader.unloadAll();
         if (network != null) network.close();
 

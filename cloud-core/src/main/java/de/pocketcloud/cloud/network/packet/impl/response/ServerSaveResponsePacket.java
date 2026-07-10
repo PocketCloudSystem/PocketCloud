@@ -1,7 +1,7 @@
 package de.pocketcloud.cloud.network.packet.impl.response;
 
 import de.pocketcloud.cloud.network.packet.ResponsePacket;
-import de.pocketcloud.cloud.network.packet.type.ActionFailureReason;
+import de.pocketcloud.network.packet.type.ActionFailureReason;
 import de.pocketcloud.network.packet.data.PacketData;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

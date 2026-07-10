@@ -148,6 +148,10 @@ public final class CloudServerManager implements Tickable {
         return affectedServers;
     }
 
+    public List<CloudServer> stopAll() {
+        return stopAll(false);
+    }
+
     public List<CloudServer> stopAll(boolean force) {
         List<CloudServer> all = getAll();
         all.forEach(server -> server.stop(force));

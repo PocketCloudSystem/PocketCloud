@@ -2,7 +2,7 @@ package de.pocketcloud.cloud.player;
 
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.event.impl.player.PlayerKickEvent;
-import de.pocketcloud.cloud.network.packet.type.TextType;
+import de.pocketcloud.network.packet.type.TextType;
 import de.pocketcloud.cloud.network.packet.impl.PlayerKickPacket;
 import de.pocketcloud.cloud.network.packet.impl.PlayerSyncPacket;
 import de.pocketcloud.cloud.network.packet.impl.PlayerTextPacket;

@@ -1,6 +1,7 @@
 package de.pocketcloud.cloud.server;
 
 import de.pocketcloud.cloud.PocketCloud;
+import de.pocketcloud.cloud.notification.Notifier;
 import de.pocketcloud.common.config.Config;
 import de.pocketcloud.common.config.exception.UnsupportedFileExtensionException;
 import de.pocketcloud.cloud.console.log.CloudLogger;
@@ -18,10 +19,10 @@ import de.pocketcloud.network.packet.ClientboundPacket;
 import de.pocketcloud.cloud.network.packet.impl.*;
 import de.pocketcloud.cloud.network.packet.impl.request.client.CommandExecuteRequestPacket;
 import de.pocketcloud.cloud.network.packet.impl.response.client.CommandExecuteResponsePacket;
-import de.pocketcloud.cloud.network.packet.type.NotificationType;
-import de.pocketcloud.cloud.network.packet.type.ServerCommandExecutionResult;
-import de.pocketcloud.cloud.network.packet.type.ServerDisconnectReason;
-import de.pocketcloud.cloud.network.packet.type.VerificationStatus;
+import de.pocketcloud.network.packet.type.NotificationType;
+import de.pocketcloud.network.packet.type.ServerCommandExecutionResult;
+import de.pocketcloud.network.packet.type.ServerDisconnectReason;
+import de.pocketcloud.network.packet.type.VerificationStatus;
 import de.pocketcloud.cloud.player.CloudPlayer;
 import de.pocketcloud.cloud.player.CloudPlayerManager;
 import de.pocketcloud.cloud.server.config.IServerProperties;
@@ -69,6 +70,8 @@ public final class CloudServer implements Tickable, Writable<Map<String, Object>
     private transient boolean pidLookupDone = false;
     private transient long lastPidLookupTime = 0;
     private transient int lastPidLookupCounter = 0;
+
+    private transient final LatestPacketInfo latestPacketInfo = new LatestPacketInfo();
 
     private transient final PrefixedLogger logger;
     @Setter
@@ -242,7 +245,7 @@ public final class CloudServer implements Tickable, Writable<Map<String, Object>
         setStatus(ServerStatus.STARTING);
         new ServerStartEvent(this).call();
         CloudLogger.get().info("§aStarting §b{} §8[§ruuid={}, path={}, port={}§8]§r...", name(), uuid.toString(), path().toString(), serverData.port());
-        NotificationType.SERVER_STARTING.notify(Map.of("server", name()), Map.of());
+        Notifier.notify(NotificationType.SERVER_STARTING, Map.of("server", name()), Map.of());
         return this;
     }
 
@@ -254,7 +257,7 @@ public final class CloudServer implements Tickable, Writable<Map<String, Object>
 
     public void stop(boolean force) {
         new ServerStopEvent(this, force).call();
-        NotificationType.SERVER_STOPPING.notify(Map.of("server", name()), Map.of());
+        Notifier.notify(NotificationType.SERVER_STOPPING, Map.of("server", name()), Map.of());
         stopTime = System.currentTimeMillis();
 
         if (force) {

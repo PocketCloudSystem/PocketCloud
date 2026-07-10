@@ -3,10 +3,11 @@ package de.pocketcloud.cloud.network.packet.impl;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.event.impl.player.PlayerSwitchServerEvent;
 import de.pocketcloud.cloud.network.client.ServerClient;
+import de.pocketcloud.cloud.notification.Notifier;
 import de.pocketcloud.network.packet.AuthenticatedPacket;
 import de.pocketcloud.network.packet.CloudboundPacket;
 import de.pocketcloud.cloud.network.packet.CloudPacket;
-import de.pocketcloud.cloud.network.packet.type.NotificationType;
+import de.pocketcloud.network.packet.type.NotificationType;
 import de.pocketcloud.network.packet.data.PacketData;
 import de.pocketcloud.cloud.player.CloudPlayerManager;
 import de.pocketcloud.cloud.server.CloudServerManager;
@@ -34,14 +35,14 @@ public final class PlayerSwitchServerPacket extends CloudPacket implements Cloud
         if (cloudPlayer != null) {
             var server = CloudServerManager.instance().get(newServer).orElse(null);
             if (server != null) {
-                if (NotificationType.PLAYER_SWITCHED_SERVER.canLog()) {
+                if (Notifier.canLog(NotificationType.PLAYER_SWITCHED_SERVER)) {
                     if (cloudPlayer.currentServerName() == null) {
                         CloudLogger.get().info("Player §b{} §rperformed an initial connect on §b{}§r.", cloudPlayer.name(), server.name());
                     } else {
                         CloudLogger.get().info("Player §b{} §rperformed a server switch from §b{} §rto §b{}§r.", cloudPlayer.name(), cloudPlayer.currentServerName(), server.name());
                     }
                 }
-                NotificationType.PLAYER_SWITCHED_SERVER.notify(Map.of(
+                Notifier.notify(NotificationType.PLAYER_SWITCHED_SERVER, Map.of(
                     "player", player,
                     "old_server", cloudPlayer.currentServerName() != null ? cloudPlayer.currentServerName() : "None",
                     "new_server", newServer

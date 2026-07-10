@@ -1,10 +1,4 @@
-package de.pocketcloud.cloud.language;
-
-import lombok.Getter;
-import lombok.experimental.Accessors;
-
-import java.util.HashMap;
-import java.util.Map;
+package de.pocketcloud.language;
 
 public enum LanguageKey {
 
@@ -214,32 +208,13 @@ public enum LanguageKey {
     INGAME_UI_SKIN_MODEL_EDIT_ELEMENT_GEO_NAME_TEXT("inGame.ui.skin_model.edit.element.geo_name.text"),
     INGAME_UI_SKIN_MODEL_EDIT_ELEMENT_GEO_FILE_TEXT("inGame.ui.skin_model.edit.element.geo_file.text");
 
-    private static final Map<String, LanguageKey> BY_LANG_KEY = new HashMap<>();
-
-    static {
-        for (LanguageKey key : values()) {
-            BY_LANG_KEY.put(key.langKey, key);
-        }
-    }
-
-    @Getter
-    @Accessors(fluent = true)
     private final String langKey;
 
     LanguageKey(String langKey) {
         this.langKey = langKey;
     }
 
-    public String translate(Object... args) {
-        return Language.current().translate(langKey, args);
-    }
-
-    @Override
-    public String toString() {
-        return translate();
-    }
-
-    public static LanguageKey get(String langKey) {
-        return BY_LANG_KEY.get(langKey);
+    public String langKey() {
+        return langKey;
     }
 }

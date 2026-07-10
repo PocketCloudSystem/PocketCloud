@@ -13,6 +13,7 @@
         <module>cloud-common</module>
         <module>cloud-network</module>
         <module>cloud-core</module>
+        <module>cloud-language</module>
     </modules>
 
     <name>PocketCloud Parent</name>

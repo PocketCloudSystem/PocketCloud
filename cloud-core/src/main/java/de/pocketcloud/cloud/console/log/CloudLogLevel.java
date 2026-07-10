@@ -1,5 +1,6 @@
 package de.pocketcloud.cloud.console.log;
 
+import de.pocketcloud.network.packet.type.LogType;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
@@ -17,5 +18,15 @@ public enum CloudLogLevel {
 
     CloudLogLevel(String prefix) {
         this.prefix = prefix;
+    }
+
+    public static CloudLogLevel toLogLevel(LogType type) {
+        return switch (type) {
+            case INFO -> CloudLogLevel.INFO;
+            case WARN -> CloudLogLevel.WARN;
+            case ERROR -> CloudLogLevel.ERROR;
+            case SUCCESS -> CloudLogLevel.SUCCESS;
+            case DEBUG -> CloudLogLevel.DEBUG;
+        };
     }
 }

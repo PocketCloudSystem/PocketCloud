@@ -6,7 +6,7 @@ import de.pocketcloud.cloud.event.impl.server.ServerVerifyEvent;
 import de.pocketcloud.cloud.network.client.ServerClient;
 import de.pocketcloud.cloud.network.client.ServerClientCache;
 import de.pocketcloud.cloud.network.packet.RequestPacket;
-import de.pocketcloud.cloud.network.packet.type.VerificationStatus;
+import de.pocketcloud.network.packet.type.VerificationStatus;
 import de.pocketcloud.cloud.network.packet.impl.response.ServerHandshakeResponsePacket;
 import de.pocketcloud.common.util.NumberUtils;
 import de.pocketcloud.network.packet.data.PacketData;

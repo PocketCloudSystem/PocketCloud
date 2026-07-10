@@ -3,7 +3,7 @@ package de.pocketcloud.cloud.config;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.log.CloudLogLevel;
 import de.pocketcloud.cloud.console.log.CloudLogger;
-import de.pocketcloud.cloud.network.packet.type.NotificationType;
+import de.pocketcloud.network.packet.type.NotificationType;
 import de.pocketcloud.common.util.NetUtils;
 import de.pocketcloud.configlib.*;
 import de.r3pt1s.discord.webhook.Webhook;

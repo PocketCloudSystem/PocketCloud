@@ -28,7 +28,7 @@ public interface Packet {
 
     boolean isEncoded();
 
-    long getSentTimestamp();
+    Long getSentTimestamp();
 
     long getSize();
 }

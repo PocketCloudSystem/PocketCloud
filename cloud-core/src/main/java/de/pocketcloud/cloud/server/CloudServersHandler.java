@@ -2,7 +2,7 @@ package de.pocketcloud.cloud.server;
 
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.event.impl.server.ServerDisconnectEvent;
-import de.pocketcloud.cloud.network.packet.type.ServerDisconnectReason;
+import de.pocketcloud.network.packet.type.ServerDisconnectReason;
 import de.pocketcloud.cloud.server.util.ServerStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

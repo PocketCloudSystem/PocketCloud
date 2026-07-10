@@ -3,7 +3,8 @@ package de.pocketcloud.cloud.player;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.event.impl.player.PlayerConnectEvent;
 import de.pocketcloud.cloud.event.impl.player.PlayerDisconnectEvent;
-import de.pocketcloud.cloud.network.packet.type.NotificationType;
+import de.pocketcloud.cloud.notification.Notifier;
+import de.pocketcloud.network.packet.type.NotificationType;
 import de.pocketcloud.cloud.network.packet.impl.PlayerSyncPacket;
 import de.pocketcloud.cloud.server.CloudServer;
 import de.pocketcloud.cloud.server.CloudServerManager;
@@ -35,7 +36,7 @@ public final class CloudPlayerManager {
             return;
         }
 
-        if (NotificationType.PLAYER_JOINED.canLog()) {
+        if (Notifier.canLog(NotificationType.PLAYER_JOINED)) {
             String via = player.currentProxyName() != null ? player.currentProxyName() : player.currentServerName();
             CloudLogger.get().info("Player §b{} §rhas §aconnected §rvia §b{}§r.", player.name(), via);
         }
@@ -43,14 +44,14 @@ public final class CloudPlayerManager {
         players.put(player.name(), player);
         PlayerSyncPacket.create(player, false).broadcastPacket();
         String serverOrProxy = player.currentServerName() != null ? player.currentServerName() : player.currentProxyName();
-        NotificationType.PLAYER_JOINED.notify(Map.of("player", player.name(), "server", serverOrProxy), Map.of());
+        Notifier.notify(NotificationType.PLAYER_JOINED, Map.of("player", player.name(), "server", serverOrProxy), Map.of());
 
         var joinTarget = player.currentServer().orElse(player.currentProxy().orElse(null));
         new PlayerConnectEvent(player, joinTarget).call();
     }
 
     public void remove(CloudPlayer player) {
-        if (NotificationType.PLAYER_JOINED.canLog()) {
+        if (Notifier.canLog(NotificationType.PLAYER_JOINED)) {
             String from = player.currentServerName() != null ? player.currentServerName() : player.currentProxyName();
             CloudLogger.get().info("Player §b{} §cdisconnected §rfrom §b{}§r.", player.name(), from);
         }
@@ -58,7 +59,7 @@ public final class CloudPlayerManager {
         players.remove(player.name());
 
         String serverOrProxy = player.currentServerName() != null ? player.currentServerName() : player.currentProxyName();
-        NotificationType.PLAYER_LEFT.notify(Map.of("player", player.name(), "server", serverOrProxy), Map.of());
+        Notifier.notify(NotificationType.PLAYER_LEFT, Map.of("player", player.name(), "server", serverOrProxy), Map.of());
 
         var disconnectTarget = player.currentServer().orElse(player.currentProxy().orElse(null));
         new PlayerDisconnectEvent(player, disconnectTarget, serverOrProxy).call();

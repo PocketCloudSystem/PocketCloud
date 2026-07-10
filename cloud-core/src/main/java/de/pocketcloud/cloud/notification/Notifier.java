@@ -1,14 +1,13 @@
-package de.pocketcloud.cloud.network.packet.type;
+package de.pocketcloud.cloud.notification;
 
 import de.pocketcloud.cloud.config.LogSettingsConfig;
 import de.pocketcloud.cloud.config.MainConfig;
 import de.pocketcloud.cloud.console.log.CloudLogger;
-import de.pocketcloud.cloud.language.LanguageKey;
 import de.pocketcloud.cloud.network.packet.impl.CloudNotificationPacket;
+import de.pocketcloud.network.packet.type.NotificationType;
 import de.pocketcloud.cloud.server.CloudServerManager;
 import de.pocketcloud.cloud.server.util.ServerCrashData;
 import de.pocketcloud.cloud.template.TemplateType;
-import de.pocketcloud.common.serialization.Writable;
 import de.r3pt1s.discord.webhook.Webhook;
 import de.r3pt1s.discord.webhook.message.Message;
 import de.r3pt1s.discord.webhook.message.embed.Embed;
@@ -18,24 +17,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-public enum NotificationType implements Writable<String> {
-    
-    SERVER_STARTING,
-    SERVER_STOPPING,
-    SERVER_TIMED_OUT,
-    SERVER_STOP_TIMED_OUT,
-    SERVER_CRASHED,
-    SERVER_START_FAILED,
-    PLAYER_JOINED,
-    PLAYER_LEFT,
-    PLAYER_JOIN_FAILED,
-    PLAYER_KICKED,
-    PLAYER_SWITCHED_SERVER;
+public final class Notifier {
 
-    public boolean notify(Map<String, Object> args, Map<Object, Object> extraArgs) {
-        if (!canNotify()) return false;
-        if (canSendWebhook()) {
-            Message message = craftDiscordMessage(args, extraArgs);
+    public static boolean notify(NotificationType type, Map<String, Object> args, Map<Object, Object> extraArgs) {
+        if (!canNotify(type)) return false;
+        if (canSendWebhook(type)) {
+            Message message = craftDiscordMessage(type, args, extraArgs);
             Webhook webhook = LogSettingsConfig.instance().craftDiscordWebhook();
             if (message != null && webhook != null) {
                 message.sendWithDiffWebhook(webhook).exceptionally(ex -> {
@@ -49,15 +36,15 @@ public enum NotificationType implements Writable<String> {
             }
         }
 
-        CloudNotificationPacket.create(this, args).broadcastPacket(CloudServerManager.instance().getAll(TemplateType.PROXY).isEmpty() ? TemplateType.PROXY : TemplateType.SERVER);
+        CloudNotificationPacket.create(type, args).broadcastPacket(CloudServerManager.instance().getAll(TemplateType.PROXY).isEmpty() ? TemplateType.PROXY : TemplateType.SERVER);
         return true;
     }
 
-    public Message craftDiscordMessage(Map<String, Object> args, Map<Object, Object> extraArgs) {
+    public static  Message craftDiscordMessage(NotificationType type, Map<String, Object> args, Map<Object, Object> extraArgs) {
         Message message = new Message().wait(false);
         message.setUsername("PocketCloud Notifications | " + MainConfig.instance().getCloudName());
         message.setAvatarUrl("https://avatars.githubusercontent.com/u/97796660?s=400&u=a65bced92fb37ce5bafc5f1eff9e2845fe66a9cb&v=4");
-        switch (this) {
+        switch (type) {
             case SERVER_CRASHED -> {
                 @SuppressWarnings("unchecked")
                 ServerCrashData crashData = ServerCrashData.read((Map<String, Object>) extraArgs.getOrDefault("crashData", Map.of()));
@@ -67,7 +54,7 @@ public enum NotificationType implements Writable<String> {
                         .setDescription("`The cloud detected a crash on the following server:`")
                         .setColor(Color.RED)
                         .addField("**Affected Server**", "> " + args.getOrDefault("server", "Unknown"), false)
-                        .setFooter("Notification Type: " + name(), null, null)
+                        .setFooter("Notification Type: " + type.name(), null, null)
                 ).addEmbedIf(() -> crashData == null, Embed.create()
                         .setTitle("Crash Data")
                         .setDescription("> No data available.")
@@ -88,7 +75,7 @@ public enum NotificationType implements Writable<String> {
                             .setDescription("`The server exceeded the time to start, killed the created process. (Please take a look into this)`")
                             .setColor(Color.RED)
                             .addField("**Affected Server**", "> " + args.get("server"), false)
-                            .setFooter("Notification Type: " + this.name(), null, null)
+                            .setFooter("Notification Type: " + type.name(), null, null)
                     );
                 } else {
                     message.addEmbed(Embed.create()
@@ -97,7 +84,7 @@ public enum NotificationType implements Writable<String> {
                             .setColor(Color.RED)
                             .addField("**Affected Server**", "> " + args.get("server"), false)
                             .addField("**Reason**", "> " + reason, false)
-                            .setFooter("Notification Type: " + this.name(), null, null)
+                            .setFooter("Notification Type: " + type.name(), null, null)
                     );
                 }
             }
@@ -106,14 +93,14 @@ public enum NotificationType implements Writable<String> {
                     .setDescription("`The server exceeded the time to stop, killed the process.`")
                     .setColor(Color.RED)
                     .addField("**Affected Server**", "> " + args.get("server"), false)
-                    .setFooter("Notification Type: " + this.name(), null, null)
+                    .setFooter("Notification Type: " + type.name(), null, null)
             );
             case SERVER_TIMED_OUT -> message.addEmbed(Embed.create()
                     .setTitle("Notification | Server Timeout")
                     .setDescription("`The server did not respond to the cloud ping, killed the process.`")
                     .setColor(Color.RED)
                     .addField("**Affected Server**", "> " + args.get("server"), false)
-                    .setFooter("Notification Type: " + this.name(), null, null)
+                    .setFooter("Notification Type: " + type.name(), null, null)
             );
             case PLAYER_JOIN_FAILED -> {
                 String player = (String) args.get("player");
@@ -126,7 +113,7 @@ public enum NotificationType implements Writable<String> {
                         .addField("**Affected Player**", "> " + player, false)
                         .addField("**Initial Server**", "> " + server, false)
                         .addField("**Reason**", "> " + ((reason == null || reason.isEmpty()) ? "No reason applied." : reason), false)
-                        .setFooter("Notification Type: " + this.name(), null, null)
+                        .setFooter("Notification Type: " + type.name(), null, null)
                 );
             }
             case PLAYER_KICKED -> {
@@ -140,7 +127,7 @@ public enum NotificationType implements Writable<String> {
                         .addField("**Affected Player**", "> " + player, false)
                         .addField("**Server**", "> " + server, false)
                         .addField("**Reason**", "> " + ((reason == null || reason.isEmpty()) ? "No reason applied." : reason), false)
-                        .setFooter("Notification Type: " + this.name(), null, null)
+                        .setFooter("Notification Type: " + type.name(), null, null)
                 );
             }
             default -> message = null;
@@ -149,36 +136,15 @@ public enum NotificationType implements Writable<String> {
         return message;
     }
 
-    public boolean canSendWebhook() {
-        return LogSettingsConfig.instance().canSendWebhook(this);
+    public static  boolean canSendWebhook(NotificationType type) {
+        return LogSettingsConfig.instance().canSendWebhook(type);
     }
 
-    public boolean canNotify() {
-        return LogSettingsConfig.instance().canNotify(this);
+    public static  boolean canNotify(NotificationType type) {
+        return LogSettingsConfig.instance().canNotify(type);
     }
 
-    public boolean canLog() {
-        return LogSettingsConfig.instance().canLog(this);
-    }
-
-    public LanguageKey langKey() {
-        return switch (this) {
-            case SERVER_STARTING -> LanguageKey.INGAME_NOTIFY_MESSAGE_SERVER_STARTING;
-            case SERVER_STOPPING -> LanguageKey.INGAME_NOTIFY_MESSAGE_SERVER_STOPPING;
-            case SERVER_TIMED_OUT -> LanguageKey.INGAME_NOTIFY_MESSAGE_SERVER_TIMED_OUT;
-            case SERVER_STOP_TIMED_OUT -> LanguageKey.INGAME_NOTIFY_MESSAGE_SERVER_STOP_TIMED_OUT;
-            case SERVER_CRASHED -> LanguageKey.INGAME_NOTIFY_MESSAGE_SERVER_CRASHED;
-            case SERVER_START_FAILED -> LanguageKey.INGAME_NOTIFY_MESSAGE_SERVER_START_FAILED;
-            case PLAYER_JOINED -> LanguageKey.INGAME_NOTIFY_MESSAGE_PLAYER_JOINED;
-            case PLAYER_LEFT -> LanguageKey.INGAME_NOTIFY_MESSAGE_PLAYER_LEFT;
-            case PLAYER_JOIN_FAILED -> LanguageKey.INGAME_NOTIFY_MESSAGE_PLAYER_JOIN_FAILED;
-            case PLAYER_KICKED -> LanguageKey.INGAME_NOTIFY_MESSAGE_PLAYER_KICKED;
-            case PLAYER_SWITCHED_SERVER -> LanguageKey.INGAME_NOTIFY_MESSAGE_PLAYER_SWITCHED_SERVER;
-        };
-    }
-
-    @Override
-    public String write() {
-        return name();
+    public static  boolean canLog(NotificationType type) {
+        return LogSettingsConfig.instance().canLog(type);
     }
 }

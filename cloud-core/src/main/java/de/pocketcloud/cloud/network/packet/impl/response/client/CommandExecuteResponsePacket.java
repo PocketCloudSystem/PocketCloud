@@ -2,7 +2,8 @@ package de.pocketcloud.cloud.network.packet.impl.response.client;
 
 import de.pocketcloud.cloud.network.client.ServerClient;
 import de.pocketcloud.cloud.network.packet.ResponseClientPacket;
-import de.pocketcloud.cloud.network.packet.type.ServerCommandExecutionResult;
+import de.pocketcloud.network.packet.type.ServerCommandExecutionResult;
+import de.pocketcloud.network.packet.AuthenticatedPacket;
 import de.pocketcloud.network.packet.data.PacketData;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -10,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 
 @NoArgsConstructor
 @Getter
-public final class CommandExecuteResponsePacket extends ResponseClientPacket {
+public final class CommandExecuteResponsePacket extends ResponseClientPacket implements AuthenticatedPacket {
 
     private ServerCommandExecutionResult commandExecutionResult;
 
@@ -28,7 +29,9 @@ public final class CommandExecuteResponsePacket extends ResponseClientPacket {
 
 
     @Override
-    public void handle(@NotNull ServerClient client) {}
+    public void handle(@NotNull ServerClient client) {
+
+    }
 
     @Override
     public void decodePayload(PacketData packetData) {
