@@ -18,7 +18,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public final class TrafficMonitorManager implements Tickable, Loadable {
 
     @Getter
-    private static TrafficMonitorManager instance;
+    @Accessors(fluent = true)
+    private static TrafficMonitorManager instance = null;
 
     private final Map<Class<? extends TrafficMonitor>, List<TrafficMonitor>> trafficMonitors = new ConcurrentHashMap<>();
     private final Map<Class<? extends TrafficMonitor>, String> trafficMonitorNames = new ConcurrentHashMap<>();

@@ -1,13 +1,13 @@
 package de.pocketcloud.cloud.notification;
 
+import de.pocketcloud.api.search.ServerSearchQuery;
+import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.config.LogSettingsConfig;
-import de.pocketcloud.cloud.config.MainConfig;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.network.packet.impl.CloudNotificationPacket;
 import de.pocketcloud.network.packet.type.NotificationType;
-import de.pocketcloud.cloud.server.CloudServerManager;
 import de.pocketcloud.cloud.server.util.ServerCrashData;
-import de.pocketcloud.cloud.template.TemplateType;
+import de.pocketcloud.api.template.TemplateType;
 import de.r3pt1s.discord.webhook.Webhook;
 import de.r3pt1s.discord.webhook.message.Message;
 import de.r3pt1s.discord.webhook.message.embed.Embed;
@@ -23,7 +23,7 @@ public final class Notifier {
         if (!canNotify(type)) return false;
         if (canSendWebhook(type)) {
             Message message = craftDiscordMessage(type, args, extraArgs);
-            Webhook webhook = LogSettingsConfig.instance().craftDiscordWebhook();
+            Webhook webhook = PocketCloud.instance().logSettingsConfig().craftDiscordWebhook();
             if (message != null && webhook != null) {
                 message.sendWithDiffWebhook(webhook).exceptionally(ex -> {
                     CloudLogger.get().exception("§cFailed to spread notification to discord", ex);
@@ -36,13 +36,13 @@ public final class Notifier {
             }
         }
 
-        CloudNotificationPacket.create(type, args).broadcastPacket(CloudServerManager.instance().getAll(TemplateType.PROXY).isEmpty() ? TemplateType.PROXY : TemplateType.SERVER);
+        CloudNotificationPacket.create(type, args).broadcastPacket(e -> e.templateType(PocketCloud.instance().servers().query(ServerSearchQuery.create().ofType(TemplateType.PROXY)).isEmpty() ? TemplateType.PROXY : TemplateType.SERVER));
         return true;
     }
 
     public static  Message craftDiscordMessage(NotificationType type, Map<String, Object> args, Map<Object, Object> extraArgs) {
         Message message = new Message().wait(false);
-        message.setUsername("PocketCloud Notifications | " + MainConfig.instance().getCloudName());
+        message.setUsername("PocketCloud Notifications | " + PocketCloud.instance().config().getCloudName());
         message.setAvatarUrl("https://avatars.githubusercontent.com/u/97796660?s=400&u=a65bced92fb37ce5bafc5f1eff9e2845fe66a9cb&v=4");
         switch (type) {
             case SERVER_CRASHED -> {
@@ -137,14 +137,14 @@ public final class Notifier {
     }
 
     public static  boolean canSendWebhook(NotificationType type) {
-        return LogSettingsConfig.instance().canSendWebhook(type);
+        return PocketCloud.instance().logSettingsConfig().canSendWebhook(type);
     }
 
     public static  boolean canNotify(NotificationType type) {
-        return LogSettingsConfig.instance().canNotify(type);
+        return PocketCloud.instance().logSettingsConfig().canNotify(type);
     }
 
     public static  boolean canLog(NotificationType type) {
-        return LogSettingsConfig.instance().canLog(type);
+        return PocketCloud.instance().logSettingsConfig().canLog(type);
     }
 }

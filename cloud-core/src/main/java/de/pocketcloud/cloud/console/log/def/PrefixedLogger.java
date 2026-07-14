@@ -1,26 +1,66 @@
 package de.pocketcloud.cloud.console.log.def;
 
 import de.pocketcloud.cloud.console.log.CloudLogLevel;
+import de.pocketcloud.cloud.console.log.ILogger;
 import lombok.Getter;
 import lombok.Setter;
 
-public class PrefixedLogger extends MainLogger {
+public class PrefixedLogger implements ILogger {
 
-    private final MainLogger parentLogger;
-    @Setter
+    private final ILogger parent;
     @Getter
+    @Setter
     private String prefix;
 
-    public PrefixedLogger(MainLogger parentLogger, String prefix) {
-        super(null, false, false);
-        this.parentLogger = parentLogger;
+    public PrefixedLogger(ILogger parent, String prefix) {
+        this.parent = parent;
         this.prefix = prefix;
-        this.closeLogFile();
     }
 
     @Override
-    public PrefixedLogger log(CloudLogLevel logLevel, String message, Object... params) {
-        parentLogger.log(logLevel, prefix + " " + message, params);
+    public ILogger log(CloudLogLevel level, String message, Object... params) {
+        parent.log(level, prefix + " " + message, params);
         return this;
+    }
+
+    @Override
+    public ILogger withoutFormat(String message, Object... params) {
+        parent.withoutFormat(prefix + " " + message, params);
+        return this;
+    }
+
+    @Override
+    public ILogger exception(Throwable throwable) {
+        return parent.exception(throwable);
+    }
+
+    @Override
+    public ILogger exception(String message, Throwable throwable, Object... params) {
+        return parent.exception(prefix + " " + message, throwable, params);
+    }
+
+    @Override
+    public ILogger echo(String message) {
+        return parent.echo(prefix + " " + message);
+    }
+
+    @Override
+    public boolean isDebugMode() {
+        return parent.isDebugMode();
+    }
+
+    @Override
+    public ILogger setDebugMode(boolean debugMode) {
+        return parent.setDebugMode(debugMode);
+    }
+
+    @Override
+    public boolean isSaveLogs() {
+        return parent.isSaveLogs();
+    }
+
+    @Override
+    public ILogger setSaveLogs(boolean enabled) {
+        return parent.setSaveLogs(enabled);
     }
 }

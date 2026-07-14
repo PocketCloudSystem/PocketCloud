@@ -1,5 +1,6 @@
 package de.pocketcloud.cloud.network.packet.impl;
 
+import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.network.client.ServerClient;
 import de.pocketcloud.network.packet.AuthenticatedPacket;
 import de.pocketcloud.network.packet.CloudboundPacket;
@@ -22,14 +23,14 @@ public final class PlayerDisconnectPacket extends CloudPacket implements Cloudbo
 
     @Override
     public void handle(@NotNull ServerClient client) {
-        var cloudPlayer = CloudPlayerManager.instance().get(player).orElse(null);
+        var cloudPlayer = PocketCloud.instance().players().get(player).orElse(null);
         if (cloudPlayer != null) {
             if (cloudPlayer.currentProxy().isEmpty()) {
-                CloudPlayerManager.instance().remove(cloudPlayer);
+                PocketCloud.instance().players().remove(cloudPlayer);
             } else {
                 var server = client.server();
                 if (server != null && server.template().templateType().isProxy()) {
-                    CloudPlayerManager.instance().remove(cloudPlayer);
+                    PocketCloud.instance().players().remove(cloudPlayer);
                 }
             }
         }

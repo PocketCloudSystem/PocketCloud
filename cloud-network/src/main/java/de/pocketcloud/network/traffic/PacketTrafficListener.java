@@ -6,6 +6,8 @@ import org.jetbrains.annotations.Nullable;
 
 public interface PacketTrafficListener {
 
+    Packet onPacketResolve(String packetName);
+
     boolean onOutgoing(Channel address, Packet packet, byte[] payload, int length);
 
     boolean onIncoming(Channel address, byte[] payload, int length);
@@ -15,6 +17,11 @@ public interface PacketTrafficListener {
     default void onTooLargePacket(Channel address, @Nullable Packet packet, int length, TrafficDirection direction) {}
 
     PacketTrafficListener NOOP = new PacketTrafficListener() {
+
+        @Override
+        public Packet onPacketResolve(String packetName) {
+            return null;
+        }
 
         @Override
         public boolean onIncoming(Channel address, byte[] rawBytes, int length) {

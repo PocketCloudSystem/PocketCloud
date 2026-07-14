@@ -1,37 +1,31 @@
 package de.pocketcloud.cloud.network.broadcaster;
 
 import de.pocketcloud.cloud.PocketCloud;
-import de.pocketcloud.cloud.config.MainConfig;
 import de.pocketcloud.cloud.network.client.ServerClient;
-import de.pocketcloud.cloud.network.client.ServerClientCache;
 import de.pocketcloud.cloud.network.packet.CloudPacket;
-import de.pocketcloud.cloud.server.CloudServer;
-import de.pocketcloud.cloud.template.Template;
-import de.pocketcloud.cloud.util.FilterableObject;
+import de.pocketcloud.cloud.network.packet.PacketExcluder;
 import de.pocketcloud.network.codec.PacketSerializer;
 import de.pocketcloud.network.packet.ClientboundPacket;
 import de.pocketcloud.network.traffic.TrafficDirection;
-import de.pocketcloud.network.traffic.TrafficMonitorManager;
 import de.pocketcloud.network.traffic.impl.NetworkTrafficMonitor;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.function.Consumer;
 
 public final class PacketBroadcaster {
 
-    public static void broadcastPackets(ClientboundPacket[] packets, FilterableObject... exclusions) {
+    public static void broadcastPackets(ClientboundPacket[] packets, Consumer<PacketExcluder> excluderBuilder) {
         if (packets.length == 0) return;
         List<Map.Entry<ClientboundPacket, ByteBuf>> encodedPackets = new ArrayList<>();
         long bytes = 0;
         long targets = 0;
-        Set<FilterableObject> exclusionSet = Set.of(exclusions);
+        PacketExcluder excluder = PacketExcluder.create();
+        if (excluderBuilder != null) excluderBuilder.accept(excluder);
 
         for (ClientboundPacket packet : packets) {
-            byte[] packetBuffer = PacketSerializer.encode(packet, MainConfig.instance().isNetworkEncryptionEnabled(), PocketCloud.instance().network().authToken());
+            byte[] packetBuffer = PacketSerializer.encode(packet, PocketCloud.instance().config().isNetworkEncryptionEnabled(), PocketCloud.instance().network().authToken());
             int packetLength = packetBuffer.length;
             if (packet instanceof CloudPacket cloudPacket) cloudPacket.setSize(packetLength);
             ByteBuf buffer = Unpooled.buffer();
@@ -41,15 +35,9 @@ public final class PacketBroadcaster {
             bytes += 4 + packetLength;
         }
 
-        for (ServerClient client : ServerClientCache.instance().getAll()) {
+        for (ServerClient client : PocketCloud.instance().clients().getAll()) {
             if (!client.hasServer()) continue;
-            CloudServer server = client.server();
-            Template template = server.template();
-            if (exclusionSet.contains(client) ||
-                    exclusionSet.contains(server) ||
-                    exclusionSet.contains(template) ||
-                    exclusionSet.contains(template.templateType())) continue;
-
+            if (excluder.shouldExclude(client)) continue;
             targets++;
             for (Map.Entry<ClientboundPacket, ByteBuf> entry : encodedPackets) {
                 ByteBuf buffer = entry.getValue();
@@ -63,10 +51,14 @@ public final class PacketBroadcaster {
             entry.getValue().release();
         }
 
-        TrafficMonitorManager.instance().pushBytes(NetworkTrafficMonitor.class, TrafficDirection.OUT, bytes * targets);
+        PocketCloud.instance().traffic().pushBytes(NetworkTrafficMonitor.class, TrafficDirection.OUT, bytes * targets);
     }
 
-    public static void broadcastPacket(ClientboundPacket packet, FilterableObject... exclusions) {
-        broadcastPackets(new ClientboundPacket[]{packet}, exclusions);
+    public static void broadcastPacket(ClientboundPacket packet, Consumer<PacketExcluder> excluderBuilder) {
+        broadcastPackets(new ClientboundPacket[]{packet}, excluderBuilder);
+    }
+
+    public static void broadcastPacket(ClientboundPacket packet) {
+        broadcastPackets(new ClientboundPacket[]{packet}, null);
     }
 }

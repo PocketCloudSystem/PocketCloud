@@ -1,9 +1,10 @@
 package de.pocketcloud.cloud.provider;
 
+import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.config.MainConfig;
 import de.pocketcloud.cloud.template.Template;
 import de.pocketcloud.cloud.template.group.ServerGroup;
-import de.pocketcloud.cloud.util.concurrent.Promise;
+import de.pocketcloud.common.concurrent.Promise;
 
 import java.util.List;
 import java.util.Map;
@@ -58,7 +59,7 @@ public abstract class CloudProvider {
     public abstract Promise<List<String>> getWhitelist();
 
     public static void select() {
-        String provider = MainConfig.instance().getProvider();
+        String provider = PocketCloud.instance().config().getProvider();
         current = switch (provider) {
             case "mysql" -> new CloudMySqlProvider();
             default -> new CloudJsonProvider();

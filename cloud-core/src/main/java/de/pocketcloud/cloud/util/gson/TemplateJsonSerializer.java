@@ -1,10 +1,11 @@
 package de.pocketcloud.cloud.util.gson;
 
 import com.google.gson.*;
+import de.pocketcloud.api.template.settings.TemplateSettings;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.server.software.ServerSoftware;
 import de.pocketcloud.cloud.template.Template;
-import de.pocketcloud.cloud.template.TemplateType;
+import de.pocketcloud.api.template.TemplateType;
 
 import java.lang.reflect.Type;
 import java.util.Map;
@@ -30,9 +31,9 @@ public final class TemplateJsonSerializer implements JsonSerializer<Template>, J
         JsonObject object = jsonElement.getAsJsonObject();
 
         String name = object.get("name").getAsString();
-        Template.TemplateSettings settings = jsonDeserializationContext.deserialize(object, Template.TemplateSettings.class);
+        TemplateSettings settings = jsonDeserializationContext.deserialize(object, TemplateSettings.class);
         TemplateType templateType = TemplateType.valueOf(object.get("templateType").getAsString());
-        ServerSoftware software = PocketCloud.instance().serverSoftwareManager().get(object.get("serverSoftware").getAsString());
+        ServerSoftware software = PocketCloud.instance().software().get(object.get("serverSoftware").getAsString());
 
         return new Template(name, settings, templateType, software);
     }

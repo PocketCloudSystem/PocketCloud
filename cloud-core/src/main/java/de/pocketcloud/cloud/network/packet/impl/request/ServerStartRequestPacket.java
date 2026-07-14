@@ -1,5 +1,7 @@
 package de.pocketcloud.cloud.network.packet.impl.request;
 
+import de.pocketcloud.api.search.ServerSearchQuery;
+import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.network.client.ServerClient;
 import de.pocketcloud.cloud.network.packet.RequestPacket;
 import de.pocketcloud.network.packet.type.ActionFailureReason;
@@ -26,10 +28,11 @@ public final class ServerStartRequestPacket extends RequestPacket implements Aut
 
     @Override
     public void handle(@NotNull ServerClient client) {
-        var tmpl = TemplateManager.instance().get(template).orElse(null);
+        var tmpl = PocketCloud.instance().templates().get(template).orElse(null);
         if (tmpl != null) {
-            if (CloudServerManager.instance().getAll(tmpl).size() < tmpl.settings().getMaxServerCount()) {
-                CloudServerManager.instance().start(tmpl, count);
+            if (PocketCloud.instance().servers().query(ServerSearchQuery.create().ofTemplate(tmpl)).size() < tmpl.settings().maxServerCount()) {
+                PocketCloud.instance().servers().start(tmpl, count);
+                //TODO append started server names to resp. packet
                 sendResponse(ServerStartResponsePacket.create(ActionFailureReason.NONE), client);
             } else {
                 sendResponse(ServerStartResponsePacket.create(ActionFailureReason.MAX_SERVERS_REACHED), client);

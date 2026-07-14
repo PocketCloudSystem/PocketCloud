@@ -2,15 +2,15 @@ package de.pocketcloud.cloud.provider;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.cache.*;
-import de.pocketcloud.cloud.config.MainConfig;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.provider.database.DatabaseQueries;
 import de.pocketcloud.cloud.provider.database.MySqlSettings;
 import de.pocketcloud.cloud.template.Template;
 import de.pocketcloud.cloud.template.group.ServerGroup;
 import de.pocketcloud.common.util.FileUtils;
-import de.pocketcloud.cloud.util.concurrent.Promise;
+import de.pocketcloud.common.concurrent.Promise;
 
 import javax.sql.DataSource;
 import java.sql.*;
@@ -21,7 +21,7 @@ public final class CloudMySqlProvider extends CloudProvider {
     private final DataSource connectionPool;
 
     public CloudMySqlProvider() {
-        this.connectionPool = buildConnectionPool(MainConfig.instance().getMysqlSettings());
+        this.connectionPool = buildConnectionPool(PocketCloud.instance().config().getMysqlSettings());
 
         executeAsync(DatabaseQueries.createTables()).thenSuccess(_ -> {
             //TODO migration

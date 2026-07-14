@@ -28,11 +28,6 @@ public final class LogSettingsConfig extends Configuration {
     public static final String CATEGORY_SERVER_SWITCHED = "server_switched";
 
     @Ignored
-    @Getter
-    @Accessors(fluent = true)
-    private static LogSettingsConfig instance = null;
-
-    @Ignored
     private Webhook webhook = null;
 
     @Comment({"Whether the debug mode should be enabled"})
@@ -71,7 +66,6 @@ public final class LogSettingsConfig extends Configuration {
 
     public LogSettingsConfig() {
         super("storage/configs/log_settings.yml", ConfigType.YAML);
-        instance = this;
         reload();
     }
 

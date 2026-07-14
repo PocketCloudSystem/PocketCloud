@@ -6,7 +6,8 @@ import de.pocketcloud.cloud.server.crash.CrashData;
 import de.pocketcloud.cloud.server.crash.CrashHandler;
 import de.pocketcloud.cloud.server.software.ServerSoftware;
 import de.pocketcloud.cloud.server.software.ServerSoftwareManager;
-import de.pocketcloud.cloud.template.TemplateType;
+import de.pocketcloud.api.template.TemplateType;
+import de.pocketcloud.cloud.template.util.TemplateTypeHelper;
 import de.pocketcloud.common.util.FileUtils;
 import org.jetbrains.annotations.Nullable;
 
@@ -24,6 +25,7 @@ public final class PocketMineCrashHandler implements CrashHandler {
 
     public static final String LOG_EXTENSION = "log";
 
+    @SuppressWarnings("unchecked")
     @Nullable
     @Override
     public CrashData retrieveCrashData(CloudServer server) {
@@ -34,7 +36,7 @@ public final class PocketMineCrashHandler implements CrashHandler {
                 for (Path filePath : stream) {
                     if (!filePath.getFileName().toString().endsWith(LOG_EXTENSION)) continue;
                     File file = filePath.toFile();
-                    if ((System.currentTimeMillis() - file.lastModified()) <= ((type.timeout() + 1) * 1000L)) {
+                    if ((System.currentTimeMillis() - file.lastModified()) <= ((TemplateTypeHelper.timeout(type) + 1) * 1000L)) {
                         Map<String, Object> data = readData(filePath);
                         if (data == null || data.isEmpty()) return new CrashData(true, null, null, null, null, null, null);
                         Map<String, Object> errorData = (Map<String, Object>) data.getOrDefault("error", new HashMap<>());

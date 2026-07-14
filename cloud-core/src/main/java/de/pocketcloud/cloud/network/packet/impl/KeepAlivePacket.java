@@ -34,7 +34,7 @@ public final class KeepAlivePacket extends CloudPacket implements ClientboundPac
     public void handle(@NotNull ServerClient client) {
         var server = client.server();
         server.lastKeepAlive(System.currentTimeMillis() / 1000L);
-        server.serverData().setPerformanceStats(tps, avgTps, memoryUsage, memoryPeak, memoryLimit, cpuUsage);
+        server.data().setPerformanceStats(tps, avgTps, memoryUsage, memoryPeak, memoryLimit, cpuUsage);
     }
 
     @Override

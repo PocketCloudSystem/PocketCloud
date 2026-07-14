@@ -1,6 +1,6 @@
 package de.pocketcloud.cloud.template.util;
 
-import de.pocketcloud.cloud.template.Template;
+import de.pocketcloud.api.template.settings.TemplateSettings;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
@@ -78,12 +78,12 @@ public final class TemplateHelper {
     }
 
     @Nullable
-    public static Template.TemplateSettings sumSettingsToInstance(Map<String, Object> data) {
+    public static TemplateSettings sumSettingsToInstance(Map<String, Object> data) {
         if (!data.keySet().containsAll(EDITABLE_KEYS)) return null;
 
         Map<String, Object> onlySettings = new HashMap<>(EDITABLE_KEYS.size());
         for (String key : EDITABLE_KEYS) onlySettings.put(key, data.get(key));
-        return Template.TemplateSettings.read(onlySettings);
+        return TemplateSettings.read(onlySettings);
     }
 
     public static boolean checkValue(String value, String key, ValidationResult result) {

@@ -28,7 +28,7 @@ public final class CloudConsole extends Thread implements Tickable {
     private Terminal terminal;
     private LineReader reader;
 
-    public void install() throws IOException {
+    public CloudConsole install() throws IOException {
         resetPrompt();
         terminal = TerminalBuilder.builder()
                 .color(true)
@@ -47,7 +47,8 @@ public final class CloudConsole extends Thread implements Tickable {
 
         terminal.flush();
 
-        terminal.handle(Terminal.Signal.INT, _ -> ScreenManager.instance().get().onCancel(PocketCloud.instance().currentTick()));
+        terminal.handle(Terminal.Signal.INT, _ -> PocketCloud.instance().screens().get().onCancel(PocketCloud.instance().currentTick()));
+        return this;
     }
 
     public void uninstall() {
@@ -111,7 +112,7 @@ public final class CloudConsole extends Thread implements Tickable {
     public void pollCommands() {
         String line;
         while ((line = consoleQueue.poll()) != null) {
-            PocketCloud.instance().screenManager().get().handleInput(line);
+            PocketCloud.instance().screens().get().handleInput(line);
         }
     }
 

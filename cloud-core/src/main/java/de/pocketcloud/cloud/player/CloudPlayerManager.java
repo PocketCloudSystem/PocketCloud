@@ -1,36 +1,26 @@
 package de.pocketcloud.cloud.player;
 
+import de.pocketcloud.api.model.player.ICloudPlayer;
+import de.pocketcloud.api.provider.IPlayerProvider;
+import de.pocketcloud.api.search.SearchQuery;
+import de.pocketcloud.api.search.ServerSearchQuery;
+import de.pocketcloud.api.template.TemplateType;
+import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.event.impl.player.PlayerConnectEvent;
 import de.pocketcloud.cloud.event.impl.player.PlayerDisconnectEvent;
 import de.pocketcloud.cloud.notification.Notifier;
 import de.pocketcloud.network.packet.type.NotificationType;
 import de.pocketcloud.cloud.network.packet.impl.PlayerSyncPacket;
-import de.pocketcloud.cloud.server.CloudServer;
-import de.pocketcloud.cloud.server.CloudServerManager;
-import de.pocketcloud.cloud.template.Template;
-import de.pocketcloud.cloud.template.TemplateType;
-import de.pocketcloud.cloud.template.group.ServerGroup;
-import de.pocketcloud.cloud.util.FilterableObject;
-import lombok.Getter;
-import lombok.experimental.Accessors;
 
 import java.util.*;
 
-public final class CloudPlayerManager {
-
-    @Getter
-    @Accessors(fluent = true)
-    private static CloudPlayerManager instance;
+public final class CloudPlayerManager implements IPlayerProvider<CloudPlayer> {
 
     private final Map<String, CloudPlayer> players = new LinkedHashMap<>();
 
-    public CloudPlayerManager() {
-        instance = this;
-    }
-
     public void add(CloudPlayer player) {
-        boolean anyProxies = !CloudServerManager.instance().getAll(TemplateType.PROXY).isEmpty();
+        boolean anyProxies = !PocketCloud.instance().servers().query(ServerSearchQuery.create().ofType(TemplateType.PROXY)).isEmpty();
         if (anyProxies && player.currentProxy().isEmpty()) {
             player.kick("Joined via sub-server instead of a proxy.", "Please do not join via sub-servers.");
             return;
@@ -69,36 +59,41 @@ public final class CloudPlayerManager {
         PlayerSyncPacket.create(player, true).broadcastPacket();
     }
 
-    public Optional<CloudPlayer> get(String name) {
-        if (players.containsKey(name)) return Optional.of(players.get(name));
+    @Override
+    public boolean check(String nameOrXuid) {
+        return players.containsKey(nameOrXuid) || players.values().stream().anyMatch(p -> p.xboxUserId().equals(nameOrXuid));
+    }
+
+    @Override
+    public boolean check(UUID uuid) {
+        return players.values().stream().anyMatch(p -> p.uniqueId().equals(uuid));
+    }
+
+    public Optional<CloudPlayer> get(String nameOrXuid) {
+        if (players.containsKey(nameOrXuid)) return Optional.of(players.get(nameOrXuid));
         return players.values().stream()
-            .filter(p -> p.xboxUserId().equals(name) || p.uniqueId().equals(name))
+            .filter(p -> p.xboxUserId().equals(nameOrXuid))
             .findFirst();
     }
 
-    public List<CloudPlayer> getAll(FilterableObject object) {
-        if (object == null) return new ArrayList<>(players.values());
-
-        String objectName = switch (object) {
-            case Template t -> t.name();
-            case CloudServer s -> s.name();
-            case ServerGroup g -> g.name();
-            default -> throw new IllegalArgumentException("Unsupported filter type: " + object.getClass());
-        };
-
-        return players.values().stream().filter(player -> {
-            if (objectName.equals(player.currentServerName())) return true;
-            if (objectName.equals(player.currentProxyName()))  return true;
-            var cs = player.currentServer().orElse(null);
-            if (cs != null && objectName.equals(cs.templateName())) return true;
-            if (cs != null && cs.template().isParentGroup(objectName)) return true;
-            var cp = player.currentProxy().orElse(null);
-            if (cp != null && objectName.equals(cp.templateName())) return true;
-            return cp != null && cp.template().isParentGroup(objectName);
-        }).toList();
+    @Override
+    public Optional<CloudPlayer> get(UUID uuid) {
+        return players.values().stream().filter(p -> p.uniqueId().equals(uuid)).findFirst();
     }
 
-    public List<CloudPlayer> getAll() {
-        return getAll(null);
+    @Override
+    public Collection<CloudPlayer> query(SearchQuery<? extends ICloudPlayer> searchQuery) {
+        return filter(searchQuery);
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T extends ICloudPlayer> Collection<CloudPlayer> filter(SearchQuery<T> searchQuery) {
+        return players.values().stream()
+                .filter(o -> searchQuery.matches((T) o))
+                .toList();
+    }
+
+    public Collection<CloudPlayer> getAll() {
+        return players.values().stream().toList();
     }
 }

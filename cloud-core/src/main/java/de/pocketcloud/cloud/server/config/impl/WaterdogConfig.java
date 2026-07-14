@@ -7,6 +7,7 @@ import de.pocketcloud.cloud.config.MainConfig;
 import de.pocketcloud.cloud.server.CloudServer;
 import de.pocketcloud.cloud.server.software.ServerSoftware;
 import de.pocketcloud.cloud.server.software.ServerSoftwareManager;
+import de.pocketcloud.cloud.template.util.TemplateTypeHelper;
 import de.pocketcloud.common.util.ArrayUtils;
 
 import java.util.LinkedHashMap;
@@ -35,17 +36,17 @@ public final class WaterdogConfig extends ServerProperties {
         return new LinkedHashMap<>(Map.ofEntries(
                 Map.entry("%uuid%", server.uuid().toString()),
                 Map.entry("%name%", server.name()),
-                Map.entry("%server_port%", server.serverData().port()),
-                Map.entry("%max_players%", server.template().settings().getMaxPlayerCount()),
+                Map.entry("%server_port%", server.data().port()),
+                Map.entry("%max_players%", server.template().settings().maxPlayerCount()),
                 Map.entry("%template%", server.templateName()),
-                Map.entry("%address%", MainConfig.instance().getNetworkAddress().getHostString()),
-                Map.entry("%port%", MainConfig.instance().getNetworkAddress().getPort()),
-                Map.entry("%encryption%", MainConfig.instance().isNetworkEncryptionEnabled()),
-                Map.entry("%language%", MainConfig.instance().getLanguage()),
+                Map.entry("%address%", PocketCloud.instance().config().getNetworkAddress().getHostString()),
+                Map.entry("%port%", PocketCloud.instance().config().getNetworkAddress().getPort()),
+                Map.entry("%encryption%", PocketCloud.instance().config().isNetworkEncryptionEnabled()),
+                Map.entry("%language%", PocketCloud.instance().config().getLanguage()),
                 Map.entry("%cloud_path%", System.getProperty("user.dir")),
-                Map.entry("%timeout%", server.template().templateType().timeout()),
+                Map.entry("%timeout%", TemplateTypeHelper.timeout(server.template().templateType())),
                 Map.entry("%auth_key%", PocketCloud.instance().network().authToken()),
-                Map.entry("%packet_size_limit%", MainConfig.instance().getNetworkPacketSizeLimit())
+                Map.entry("%packet_size_limit%", PocketCloud.instance().config().getNetworkPacketSizeLimit())
         ));
     }
 
@@ -117,6 +118,6 @@ public final class WaterdogConfig extends ServerProperties {
 
     @Override
     public ServerSoftware getServerSoftware() {
-        return ServerSoftwareManager.instance().get("waterdogpe-latest");
+        return PocketCloud.instance().software().get("waterdogpe-latest");
     }
 }

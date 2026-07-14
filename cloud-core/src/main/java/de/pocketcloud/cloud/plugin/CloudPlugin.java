@@ -1,6 +1,6 @@
 package de.pocketcloud.cloud.plugin;
 
-import de.pocketcloud.cloud.PocketCloud;
+import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.console.log.def.PrefixedLogger;
 import de.pocketcloud.cloud.scheduler.TaskScheduler;
 import lombok.Getter;
@@ -40,7 +40,7 @@ public abstract class CloudPlugin {
         this.description = description;
         this.dataFolder = dataFolder;
         this.pluginFilePath = pluginFilePath;
-        this.logger = new PrefixedLogger(PocketCloud.instance().logger(), "[" + description.name() + "]");
+        this.logger = CloudLogger.prefixed("[" + description.name() + "]");
     }
 
     public boolean saveResource(String relativePath, boolean overwrite) throws IOException {

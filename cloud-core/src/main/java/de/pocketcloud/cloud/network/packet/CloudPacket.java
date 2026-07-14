@@ -4,11 +4,11 @@ import de.pocketcloud.cloud.network.broadcaster.PacketBroadcaster;
 import de.pocketcloud.cloud.network.client.ServerClient;
 import de.pocketcloud.network.packet.AbstractPacket;
 import de.pocketcloud.network.packet.ClientboundPacket;
-import de.pocketcloud.cloud.util.FilterableObject;
 import io.netty.channel.Channel;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 public abstract class CloudPacket extends AbstractPacket {
 
@@ -24,8 +24,12 @@ public abstract class CloudPacket extends AbstractPacket {
         return CompletableFuture.failedFuture(new RuntimeException("Packet not a ClientboundPacket"));
     }
 
-    public void broadcastPacket(FilterableObject... exclusions) {
-        if (!(this instanceof ClientboundPacket p)) throw new IllegalStateException("...");
-        PacketBroadcaster.broadcastPacket(p, exclusions);
+    public void broadcastPacket() {
+        broadcastPacket(null);
+    }
+
+    public void broadcastPacket(Consumer<PacketExcluder> excluderBuilder) {
+        if (!(this instanceof ClientboundPacket p)) throw new IllegalStateException("Packet not a ClientboundPacket");
+        PacketBroadcaster.broadcastPacket(p, excluderBuilder);
     }
 }

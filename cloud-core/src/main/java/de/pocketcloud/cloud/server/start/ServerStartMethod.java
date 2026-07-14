@@ -1,7 +1,7 @@
 package de.pocketcloud.cloud.server.start;
 
 import de.pocketcloud.cloud.server.CloudServer;
-import de.pocketcloud.cloud.util.concurrent.Promise;
+import de.pocketcloud.common.concurrent.Promise;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;

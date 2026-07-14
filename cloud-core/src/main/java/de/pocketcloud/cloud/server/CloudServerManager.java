@@ -1,5 +1,12 @@
 package de.pocketcloud.cloud.server;
 
+import de.pocketcloud.api.model.group.IServerGroup;
+import de.pocketcloud.api.model.server.ICloudServer;
+import de.pocketcloud.api.model.template.ITemplate;
+import de.pocketcloud.api.search.SearchQuery;
+import de.pocketcloud.api.template.TemplateType;
+import de.pocketcloud.api.provider.IServerProvider;
+import de.pocketcloud.api.search.ServerSearchQuery;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.network.packet.impl.ServerSyncPacket;
 import de.pocketcloud.cloud.server.util.CloudServerData;
@@ -7,11 +14,9 @@ import de.pocketcloud.cloud.server.start.ServerStartMethod;
 import de.pocketcloud.cloud.server.util.ServerStartMethods;
 import de.pocketcloud.cloud.server.util.ServerUtils;
 import de.pocketcloud.cloud.template.Template;
-import de.pocketcloud.cloud.template.TemplateType;
-import de.pocketcloud.cloud.template.group.ServerGroup;
 import de.pocketcloud.common.lifecycle.Tickable;
 import de.pocketcloud.cloud.util.benchmark.Benchmark;
-import de.pocketcloud.cloud.util.concurrent.Promise;
+import de.pocketcloud.common.concurrent.Promise;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.experimental.Accessors;
@@ -24,7 +29,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @Getter
 @Accessors(fluent = true)
-public final class CloudServerManager implements Tickable {
+public final class CloudServerManager implements Tickable, IServerProvider<CloudServer> {
 
     public static final ExecutorService SERVER_EXECUTOR = Executors.newFixedThreadPool(
             Runtime.getRuntime().availableProcessors(),
@@ -34,12 +39,9 @@ public final class CloudServerManager implements Tickable {
                 return t;
             }
     );
+
     private static final int MULTI_START_BATCH_SIZE = 5;
     private static final int MULTI_START_THRESHOLD = 5;
-
-    @Getter
-    @Accessors(fluent = true)
-    private static CloudServerManager instance = null;
 
     private static final int MAX_PARALLEL_STARTS = 2;
 
@@ -58,16 +60,26 @@ public final class CloudServerManager implements Tickable {
     @Getter(AccessLevel.NONE)
     private final Queue<CloudServer> serverStartQueue = new LinkedList<>();
 
-    public CloudServerManager() {
-        instance = this;
+    public void add(CloudServer server) {
+        servers.putIfAbsent(server.name(), server);
+        ServerUtils.addId(server.template(), server.id());
+        ServerUtils.addPort(server.data().port());
     }
 
-    public List<String> start(Template template, int count) {
-        List<String> startedServers = new ArrayList<>();
+    public void remove(CloudServer server) {
+        servers.remove(server.name());
+        ServerUtils.removeId(server.template(), server.id());
+        ServerUtils.removePort(server.data().port());
+        this.lastServerStopTime = System.currentTimeMillis();
+        ServerSyncPacket.create(server, true).broadcastPacket();
+    }
+    
+    public Promise<Collection<String>> start(ITemplate template, int count) {
+        Collection<String> startedServers = new ArrayList<>();
 
         if (!checkCapacity(template)) {
             CloudLogger.get().warn("Failed to start any more servers of §b{} §rdue to the max amount of servers already being reached.", template.name());
-            return startedServers;
+            return Promise.resolved(startedServers);
         }
 
         for (int i = 0; i < count; i++) {
@@ -88,7 +100,7 @@ public final class CloudServerManager implements Tickable {
                 id,
                 uuid,
                 template.name(),
-                new CloudServerData(uuid, port, template.settings().getMaxPlayerCount())
+                new CloudServerData(uuid, port, template.settings().maxPlayerCount())
             );
 
             latestServerStartTimes.put(template.name(), server.name());
@@ -97,7 +109,7 @@ public final class CloudServerManager implements Tickable {
             startedServers.add(server.name());
         }
 
-        return startedServers;
+        return Promise.resolved(startedServers);
     }
 
     public Promise<Void> save(CloudServer server) {
@@ -117,63 +129,55 @@ public final class CloudServerManager implements Tickable {
         return promise;
     }
 
-    public List<CloudServer> stop(CloudServer source, boolean force) {
-        List<CloudServer> affectedServers = new ArrayList<>(Collections.singleton(source));
-        affectedServers.forEach(server -> server.stop(force));
-        return affectedServers;
+    public Promise<Collection<CloudServer>> stop(CloudServer server, boolean force) {
+        Collection<CloudServer> affectedServers = new ArrayList<>(Collections.singleton(server));
+        affectedServers.forEach(s -> s.stop(force));
+        return Promise.resolved(affectedServers);
     }
 
-    public List<CloudServer> stop(Template template, boolean force) {
-        List<CloudServer> affectedServers = getAll(template);
+    public Promise<Collection<CloudServer>> stop(ITemplate template, boolean force) {
+        Collection<CloudServer> affectedServers = query(ServerSearchQuery.create().ofTemplate(template));
         affectedServers.forEach(server -> server.stop(force));
-        return affectedServers;
+        return Promise.resolved(affectedServers);
     }
 
-    public List<CloudServer> stop(ServerGroup group, boolean force) {
-        List<CloudServer> affectedServers = getAll(group);
+    public Promise<Collection<CloudServer>> stop(IServerGroup group, boolean force) {
+        Collection<CloudServer> affectedServers = query(ServerSearchQuery.create().inGroup(group));
         affectedServers.forEach(server -> server.stop(force));
-        return affectedServers;
+        return Promise.resolved(affectedServers);
     }
 
-    public List<CloudServer> stop(TemplateType templateType, boolean force) {
-        List<CloudServer> affectedServers = getAll(templateType);
+    public Promise<Collection<CloudServer>> stop(TemplateType templateType, boolean force) {
+        Collection<CloudServer> affectedServers = query(ServerSearchQuery.create().ofType(templateType));
         affectedServers.forEach(server -> server.stop(force));
-        return affectedServers;
+        return Promise.resolved(affectedServers);
     }
 
-    public List<CloudServer> stop(String name, boolean force) {
-        List<CloudServer> affectedServers = new ArrayList<>();
+    public Promise<Collection<CloudServer>> stop(String name, boolean force) {
+        Collection<CloudServer> affectedServers = new ArrayList<>();
         if (servers.containsKey(name)) affectedServers.add(servers.get(name));
         affectedServers.forEach(server -> server.stop(force));
-        return affectedServers;
+        return Promise.resolved(affectedServers);
     }
-
-    public List<CloudServer> stopAll() {
-        return stopAll(false);
-    }
-
-    public List<CloudServer> stopAll(boolean force) {
-        List<CloudServer> all = getAll();
+    
+    public Promise<Collection<CloudServer>> stopAll(boolean force) {
+        Collection<CloudServer> all = getAll();
         all.forEach(server -> server.stop(force));
-        return all;
+        return Promise.resolved(all);
     }
 
-    public void add(CloudServer server) {
-        servers.putIfAbsent(server.name(), server);
-        ServerUtils.addId(server.template(), server.id());
-        ServerUtils.addPort(server.serverData().port());
+    @Override
+    public boolean check(String name) {
+        return false;
     }
 
-    public void remove(CloudServer server) {
-        servers.remove(server.name());
-        ServerUtils.removeId(server.template(), server.id());
-        ServerUtils.removePort(server.serverData().port());
-        this.lastServerStopTime = System.currentTimeMillis();
-        ServerSyncPacket.create(server, true).broadcastPacket();
+    @Override
+    public boolean check(UUID uuid) {
+        return false;
     }
 
-    public boolean checkCapacity(Template template) {
-        return getAll(template).size() < template.settings().getMaxServerCount();
+    public boolean checkCapacity(ITemplate template) {
+        return query(ServerSearchQuery.create().ofTemplate(template)).size() < template.settings().maxServerCount();
     }
 
     private void addToStartQueue(CloudServer server) {
@@ -223,7 +227,7 @@ public final class CloudServerManager implements Tickable {
             ServerStartMethod method = ServerStartMethods.current();
             int queueSize = serverStartQueue.size();
             if (queueSize >= MULTI_START_THRESHOLD) {
-                List<CloudServer> batch = new ArrayList<>();
+                Collection<CloudServer> batch = new ArrayList<>();
                 int limit = Math.min(queueSize, MULTI_START_BATCH_SIZE);
                 for (int i = 0; i < limit; i++) batch.add(serverStartQueue.poll());
 
@@ -266,7 +270,7 @@ public final class CloudServerManager implements Tickable {
 
     public Optional<CloudServer> getFreeLobby() {
         return servers.values().stream()
-                .filter(s -> s.template().settings().isLobby() && s.playerCount() < s.serverData().maxPlayers())
+                .filter(s -> s.template().settings().lobby() && s.playerCount() < s.data().maxPlayers())
                 .min(Comparator.comparingInt(CloudServer::playerCount));
     }
 
@@ -276,19 +280,19 @@ public final class CloudServerManager implements Tickable {
         return Optional.ofNullable(servers.getOrDefault(latestName, null));
     }
 
-    public List<CloudServer> getAll() {
-        return new ArrayList<>(servers.values());
+    @Override
+    public Collection<CloudServer> query(SearchQuery<? extends ICloudServer> searchQuery) {
+        return filter(searchQuery);
     }
 
-    public List<CloudServer> getAll(Template template) {
-        return servers.values().stream().filter(s -> s.templateName().equals(template.name())).toList();
+    @SuppressWarnings("unchecked")
+    private <T extends ICloudServer> Collection<CloudServer> filter(SearchQuery<T> searchQuery) {
+        return servers.values().stream()
+                .filter(o -> searchQuery.matches((T) o))
+                .toList();
     }
 
-    public List<CloudServer> getAll(TemplateType type) {
-        return servers.values().stream().filter(s -> s.template().templateType().name().equals(type.name())).toList();
-    }
-
-    public List<CloudServer> getAll(ServerGroup group) {
-        return servers.values().stream().filter(s -> s.template().parentGroups().stream().anyMatch(p -> p.name().equals(group.name()))).toList();
+    public Set<CloudServer> getAll() {
+        return new HashSet<>(servers.values());
     }
 }

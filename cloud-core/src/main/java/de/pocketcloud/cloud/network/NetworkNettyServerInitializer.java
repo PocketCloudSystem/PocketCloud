@@ -1,7 +1,6 @@
 package de.pocketcloud.cloud.network;
 
 import de.pocketcloud.cloud.PocketCloud;
-import de.pocketcloud.cloud.config.MainConfig;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.event.impl.packet.*;
 import de.pocketcloud.network.codec.CloudPacketDecoder;
@@ -10,7 +9,6 @@ import de.pocketcloud.network.packet.ClientboundPacket;
 import de.pocketcloud.network.packet.Packet;
 import de.pocketcloud.network.traffic.PacketTrafficListener;
 import de.pocketcloud.network.traffic.TrafficDirection;
-import de.pocketcloud.network.traffic.TrafficMonitorManager;
 import de.pocketcloud.network.traffic.impl.NetworkTrafficMonitor;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
@@ -21,15 +19,20 @@ public class NetworkNettyServerInitializer extends ChannelInitializer<Channel> {
     private static final PacketTrafficListener LISTENER = new PacketTrafficListener() {
 
         @Override
+        public Packet onPacketResolve(String packetName) {
+            return PocketCloud.instance().packets().get(packetName);
+        }
+
+        @Override
         public boolean onOutgoing(Channel channel, Packet packet, byte[] payload, int length) {
-            TrafficMonitorManager.instance().pushBytes(NetworkTrafficMonitor.class, TrafficDirection.OUT, length);
-            TrafficMonitorManager.instance().callHandlers(NetworkTrafficMonitor.class, TrafficDirection.OUT, channel, payload, packet.getSize());
+            PocketCloud.instance().traffic().pushBytes(NetworkTrafficMonitor.class, TrafficDirection.OUT, length);
+            PocketCloud.instance().traffic().callHandlers(NetworkTrafficMonitor.class, TrafficDirection.OUT, channel, payload, packet.getSize());
 
             if (new PacketPreSendEvent(channel, (ClientboundPacket) packet).call().isCancelled()) {
                 return false;
             }
 
-            TrafficMonitorManager.instance().callHandlers(NetworkTrafficMonitor.class, NetworkTrafficMonitor.parsePacketMode(TrafficDirection.OUT, packet.getClass()), channel, packet, packet.getSize());
+            PocketCloud.instance().traffic().callHandlers(NetworkTrafficMonitor.class, NetworkTrafficMonitor.parsePacketMode(TrafficDirection.OUT, packet.getClass()), channel, packet, packet.getSize());
             new PacketSentEvent(channel, (ClientboundPacket) packet).call();
 
             return true;
@@ -37,15 +40,15 @@ public class NetworkNettyServerInitializer extends ChannelInitializer<Channel> {
 
         @Override
         public boolean onIncoming(Channel channel, byte[] payload, int length) {
-            TrafficMonitorManager.instance().pushBytes(NetworkTrafficMonitor.class, TrafficDirection.IN, length);
-            TrafficMonitorManager.instance().callHandlers(NetworkTrafficMonitor.class, TrafficDirection.IN, channel, payload, (long) length);
+            PocketCloud.instance().traffic().pushBytes(NetworkTrafficMonitor.class, TrafficDirection.IN, length);
+            PocketCloud.instance().traffic().callHandlers(NetworkTrafficMonitor.class, TrafficDirection.IN, channel, payload, (long) length);
 
-            return !new PacketReceivePreProcessEvent(channel, payload, MainConfig.instance().isNetworkEncryptionEnabled()).call().isCancelled();
+            return !new PacketReceivePreProcessEvent(channel, payload, PocketCloud.instance().config().isNetworkEncryptionEnabled()).call().isCancelled();
         }
 
         @Override
         public void onUnknownPacket(Channel channel, byte[] payload, int length) {
-            new PacketReceiveUnknownEvent(channel, payload, length, MainConfig.instance().isNetworkEncryptionEnabled()).call();
+            new PacketReceiveUnknownEvent(channel, payload, length, PocketCloud.instance().config().isNetworkEncryptionEnabled()).call();
             CloudLogger.get().debug("Received unknown packet with size {} from {}", length, channel.remoteAddress().toString());
         }
 
@@ -63,8 +66,8 @@ public class NetworkNettyServerInitializer extends ChannelInitializer<Channel> {
     @Override
     protected void initChannel(Channel channel) {
         channel.pipeline().addLast(
-            new CloudPacketDecoder(() -> MainConfig.instance().isNetworkEncryptionEnabled(), () -> Math.toIntExact(MainConfig.instance().getNetworkPacketSizeLimit()), () -> PocketCloud.instance().network().authToken(), LISTENER),
-            new CloudPacketEncoder(() -> MainConfig.instance().isNetworkEncryptionEnabled(), () -> Math.toIntExact(MainConfig.instance().getNetworkPacketSizeLimit()), () -> PocketCloud.instance().network().authToken(), LISTENER),
+            new CloudPacketDecoder(() -> PocketCloud.instance().config().isNetworkEncryptionEnabled(), () -> Math.toIntExact(PocketCloud.instance().config().getNetworkPacketSizeLimit()), () -> PocketCloud.instance().network().authToken(), LISTENER),
+            new CloudPacketEncoder(() -> PocketCloud.instance().config().isNetworkEncryptionEnabled(), () -> Math.toIntExact(PocketCloud.instance().config().getNetworkPacketSizeLimit()), () -> PocketCloud.instance().network().authToken(), LISTENER),
             new NetworkNettyHandler()
         );
     }

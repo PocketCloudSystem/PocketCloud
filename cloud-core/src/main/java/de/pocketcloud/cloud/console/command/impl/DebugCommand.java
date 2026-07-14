@@ -1,5 +1,6 @@
 package de.pocketcloud.cloud.console.command.impl;
 
+import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.config.LogSettingsConfig;
 import de.pocketcloud.cloud.console.command.Command;
 import de.pocketcloud.cloud.console.command.ctx.CommandContext;
@@ -15,11 +16,11 @@ public final class DebugCommand extends Command {
 
     @Override
     public boolean run(CommandSender sender, CommandContext ctx) {
-        LogSettingsConfig.instance().setDebugMode(!LogSettingsConfig.instance().isDebugMode());
-        LogSettingsConfig.instance().save();
-        CloudLogger.get().setDebugMode(LogSettingsConfig.instance().isDebugMode());
+        PocketCloud.instance().logSettingsConfig().setDebugMode(!PocketCloud.instance().logSettingsConfig().isDebugMode());
+        PocketCloud.instance().logSettingsConfig().save();
+        CloudLogger.get().setDebugMode(PocketCloud.instance().logSettingsConfig().isDebugMode());
 
-        if (LogSettingsConfig.instance().isDebugMode()) {
+        if (PocketCloud.instance().logSettingsConfig().isDebugMode()) {
             sender.success("Successfully §aenabled §rthe §6debug mode§r.");
         } else {
             sender.success("Successfully §cdisabled §rthe §6debug mode§r.");

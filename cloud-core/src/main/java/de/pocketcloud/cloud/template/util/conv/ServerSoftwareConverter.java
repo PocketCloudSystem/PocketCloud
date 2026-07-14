@@ -1,7 +1,7 @@
 package de.pocketcloud.cloud.template.util.conv;
 
+import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.server.software.ServerSoftware;
-import de.pocketcloud.cloud.server.software.ServerSoftwareManager;
 import de.pocketcloud.common.mapper.MapKeyConverter;
 
 public class ServerSoftwareConverter implements MapKeyConverter<ServerSoftware, String> {
@@ -13,6 +13,6 @@ public class ServerSoftwareConverter implements MapKeyConverter<ServerSoftware, 
 
     @Override
     public ServerSoftware fromValue(String value) {
-        return ServerSoftwareManager.instance().get(value);
+        return PocketCloud.instance().software().get(value);
     }
 }

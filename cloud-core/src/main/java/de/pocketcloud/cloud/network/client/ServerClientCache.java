@@ -18,17 +18,9 @@ import java.util.function.Predicate;
 
 public final class ServerClientCache implements Tickable {
 
-    @Getter
-    @Accessors(fluent = true)
-    private static ServerClientCache instance = null;
-
     private final Map<UUID, ServerClient> clientsByServer = new HashMap<>();
     private final Map<String, UUID> serversByClient = new HashMap<>();
     private final Map<String, ServerClient> clientsByAddress = new HashMap<>();
-
-    public ServerClientCache() {
-        instance = this;
-    }
 
     @Override
     public void tick(long currentTick) {
@@ -98,10 +90,10 @@ public final class ServerClientCache implements Tickable {
         return Optional.ofNullable(clientsByServer.getOrDefault(server.uuid(), null));
     }
 
-    public synchronized CloudServer getServer(ServerClient client) {
+    public synchronized Optional<CloudServer> getServer(ServerClient client) {
         UUID serverUuid = serversByClient.get(client.toString());
-        if (serverUuid == null) return null;
-        return CloudServerManager.instance().get(serverUuid).orElse(null);
+        if (serverUuid == null) return Optional.empty();
+        return PocketCloud.instance().servers().get(serverUuid);
     }
 
     public synchronized List<ServerClient> getAll(Predicate<ServerClient> filter) {

@@ -1,7 +1,9 @@
 package de.pocketcloud.cloud.server.util;
 
-import de.pocketcloud.cloud.template.Template;
-import de.pocketcloud.cloud.template.TemplateType;
+import de.pocketcloud.api.model.template.ITemplate;
+import de.pocketcloud.cloud.config.ServerSettingsConfig;
+import de.pocketcloud.api.template.TemplateType;
+import de.pocketcloud.cloud.template.util.TemplateTypeHelper;
 import de.pocketcloud.common.util.NetUtils;
 
 import java.util.HashMap;
@@ -16,18 +18,18 @@ public final class ServerUtils {
 
     private ServerUtils() {}
 
-    public static void addId(Template template, int id) {
+    public static void addId(ITemplate template, int id) {
         ids.computeIfAbsent(template.name(), k -> new HashSet<>()).add(id);
     }
 
-    public static void removeId(Template template, int id) {
+    public static void removeId(ITemplate template, int id) {
         Set<Integer> templateIds = ids.get(template.name());
         if (templateIds != null) templateIds.remove(id);
     }
 
-    public static int getFreeId(Template template) {
+    public static int getFreeId(ITemplate template) {
         Set<Integer> templateIds = ids.computeIfAbsent(template.name(), k -> new HashSet<>());
-        for (int i = 1; i <= template.settings().getMaxServerCount(); i++) {
+        for (int i = 1; i <= template.settings().maxServerCount(); i++) {
             if (!templateIds.contains(i)) return i;
         }
         return -1;
@@ -42,9 +44,10 @@ public final class ServerUtils {
     }
 
     public static int getFreePort(TemplateType type) {
-        int start = type.serverPortRange().start();
-        int end = type.serverPortRange().end();
-        boolean randomPorts = type.serverPortRange().random();
+        ServerSettingsConfig.ServerPortRange portRange = TemplateTypeHelper.serverPortRange(type);
+        int start = portRange.start();
+        int end = portRange.end();
+        boolean randomPorts = portRange.random();
 
         int currentPort = start;
 

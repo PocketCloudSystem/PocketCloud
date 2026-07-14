@@ -1,8 +1,8 @@
 package de.pocketcloud.cloud.event.impl.template;
 
+import de.pocketcloud.api.template.util.TemplateEditData;
 import de.pocketcloud.cloud.event.Cancelable;
 import de.pocketcloud.cloud.template.Template;
-import de.pocketcloud.cloud.template.util.TemplateEditData;
 import lombok.Getter;
 
 public class TemplateEditEvent extends TemplateEvent implements Cancelable {

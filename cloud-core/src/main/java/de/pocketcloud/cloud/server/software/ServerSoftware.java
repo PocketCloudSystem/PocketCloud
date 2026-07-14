@@ -1,9 +1,10 @@
 package de.pocketcloud.cloud.server.software;
 
+import de.pocketcloud.api.model.software.IServerSoftware;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.console.util.DownloadProgressBar;
-import de.pocketcloud.cloud.template.TemplateType;
+import de.pocketcloud.api.template.TemplateType;
 import de.pocketcloud.common.util.FileUtils;
 import de.pocketcloud.cloud.util.PocketCloudPaths;
 import de.pocketcloud.common.util.NetUtils;
@@ -19,7 +20,7 @@ public record ServerSoftware(
         SoftwareBinary binary,
         SoftwareBridge bridge,
         SoftwareConfig config
-) {
+) implements IServerSoftware {
 
     public ServerSoftware {
         binary.setParent(this);

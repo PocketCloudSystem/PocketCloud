@@ -1,9 +1,10 @@
 package de.pocketcloud.cloud.server;
 
+import de.pocketcloud.api.server.ServerStatus;
+import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.event.impl.server.ServerDisconnectEvent;
 import de.pocketcloud.network.packet.type.ServerDisconnectReason;
-import de.pocketcloud.cloud.server.util.ServerStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -29,7 +30,7 @@ public final class CloudServersHandler {
 
     public static void handleDisconnect(@NotNull CloudServer server, @NotNull ServerDisconnectReason reason) {
         if (server.status().isOffline()) {
-            CloudServerManager.instance().remove(server);
+            PocketCloud.instance().servers().remove(server);
             return;
         }
 

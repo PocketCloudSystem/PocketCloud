@@ -1,5 +1,6 @@
 package de.pocketcloud.cloud.network.packet.impl;
 
+import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.network.client.ServerClient;
 import de.pocketcloud.cloud.notification.Notifier;
@@ -36,7 +37,7 @@ public final class CloudNotificationPacket extends CloudPacket implements Client
                     String player = (String) args.get("player");
                     String server = (String) args.get("server");
                     String reason = (String) args.get("reason");
-                    boolean alreadyOnAServer = CloudPlayerManager.instance().get(player).filter(p -> p.currentServerName() != null).isPresent();
+                    boolean alreadyOnAServer = PocketCloud.instance().players().get(player).filter(p -> p.currentServerName() != null).isPresent();
                     CloudLogger.get().info("The player §b{} §rtried to join" + (alreadyOnAServer ? "" : " via") + " §b{}§r, but got §ckicked§r: §b{}", player, server, formatReason(reason));
                 }
                 case PLAYER_KICKED -> {

@@ -9,10 +9,6 @@ import java.util.Map;
 
 public final class Loader {
 
-    /**
-     * Preloaders are basically loaders who load something before the actual cloud startup happens. They will not be reloaded.
-     */
-    private final Map<String, Loadable> preLoaders = new HashMap<>();
     private final Map<String, Loadable> loadableList = new HashMap<>();
     @Getter
     private boolean reloading = false;
@@ -20,17 +16,6 @@ public final class Loader {
     public Loader register(Loadable loadable) {
         if (loadableList.containsKey(loadable.getClass().getName())) throw new IllegalStateException("Loadable already exists");
         loadableList.put(loadable.getClass().getName(), loadable);
-        return this;
-    }
-
-    public Loader registerPre(Loadable loadable) {
-        if (preLoaders.containsKey(loadable.getClass().getName())) throw new IllegalStateException("Loadable already exists");
-        preLoaders.put(loadable.getClass().getName(), loadable);
-        return this;
-    }
-
-    public Loader registerPreAll(Loadable... loadables) {
-        for (Loadable loadable : loadables) registerPre(loadable);
         return this;
     }
 
@@ -49,20 +34,10 @@ public final class Loader {
         return this;
     }
 
-    public Loader unregisterPre(Class<Loadable> loadable) {
-        preLoaders.remove(loadable.getName());
-        return this;
-    }
-
-    public Loader unregisterPre(Loadable loadable) {
-        preLoaders.remove(loadable.getClass().getName());
-        return this;
-    }
-
     public void preloadAll() {
-        for (Loadable loadable : preLoaders.values()) {
+        for (Loadable loadable : loadableList.values()) {
             Benchmark.startTiming("preload_" + loadable.getClass().getName());
-            loadable.load();
+            loadable.preload();
             Benchmark.stopTiming("preload_" + loadable.getClass().getName());
         }
     }

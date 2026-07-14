@@ -1,10 +1,10 @@
 package de.pocketcloud.cloud.network.packet;
 
+import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.network.client.ServerClient;
 import de.pocketcloud.common.function.TriConsumer;
 import de.pocketcloud.network.packet.ClientboundPacket;
 import de.pocketcloud.network.packet.data.PacketData;
-import de.pocketcloud.cloud.network.request.RequestManager;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -51,7 +51,7 @@ public abstract class RequestClientPacket extends CloudPacket implements Clientb
     public final void handle(@NotNull ServerClient client) {}
 
     public RequestClientPacket sendRequest(ServerClient client) {
-        return RequestManager.instance().send(this, client);
+        return PocketCloud.instance().requests().send(this, client);
     }
 
     public final void invokeClosures(boolean failed, ResponseClientPacket responsePacket, RequestPacketFailureReason reason, @Nullable Throwable e) {

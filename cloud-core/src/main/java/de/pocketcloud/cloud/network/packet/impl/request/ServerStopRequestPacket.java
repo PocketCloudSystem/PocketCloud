@@ -1,12 +1,12 @@
 package de.pocketcloud.cloud.network.packet.impl.request;
 
+import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.network.client.ServerClient;
 import de.pocketcloud.cloud.network.packet.RequestPacket;
 import de.pocketcloud.network.packet.type.ActionFailureReason;
 import de.pocketcloud.cloud.network.packet.impl.response.ServerStopResponsePacket;
 import de.pocketcloud.network.packet.AuthenticatedPacket;
 import de.pocketcloud.network.packet.data.PacketData;
-import de.pocketcloud.cloud.server.CloudServerManager;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.jetbrains.annotations.NotNull;
@@ -25,11 +25,14 @@ public final class ServerStopRequestPacket extends RequestPacket implements Auth
 
     @Override
     public void handle(@NotNull ServerClient client) {
-        if (!CloudServerManager.instance().stop(server, forcefully).isEmpty()) {
-            sendResponse(ServerStopResponsePacket.create(ActionFailureReason.NONE), client);
-        } else {
-            sendResponse(ServerStopResponsePacket.create(ActionFailureReason.SERVER_NOT_FOUND), client);
-        }
+        PocketCloud.instance().servers().stop(server, forcefully).thenSuccess(c -> {
+            //TODO: append affected servers to resp. packet
+            if (c.isEmpty()) {
+                sendResponse(ServerStopResponsePacket.create(ActionFailureReason.SERVER_NOT_FOUND), client);
+            } else {
+                sendResponse(ServerStopResponsePacket.create(ActionFailureReason.NONE), client);
+            }
+        });
     }
 
     @Override

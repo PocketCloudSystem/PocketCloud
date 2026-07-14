@@ -28,7 +28,7 @@ public final class StatusCommand extends Command {
     @Override
     public boolean run(CommandSender sender, CommandContext ctx) {
         ThreadMXBean bean = ManagementFactory.getThreadMXBean();
-        long uptime = PocketCloud.instance().uptime() / 1000;
+        long uptime = PocketCloud.instance().uptime().toSeconds();
         int threadCount = bean.getThreadCount();
         int peakThreadCount = bean.getPeakThreadCount();
         long totalStartedThreads = bean.getTotalStartedThreadCount();
@@ -45,8 +45,8 @@ public final class StatusCommand extends Command {
         double tps = PocketCloud.instance().performanceStats().currentTPS();
         double avgTps = PocketCloud.instance().performanceStats().averageTPS();
         double tickUsage = PocketCloud.instance().performanceStats().tickUsage();
-        int playerCount = CloudPlayerManager.instance().getAll().size();
-        int serverCount = CloudServerManager.instance().getAll().size();
+        int playerCount = PocketCloud.instance().players().getAll().size();
+        int serverCount = PocketCloud.instance().servers().getAll().size();
 
         section(sender, "Cloud", lines -> {
             lines.put("Uptime", FormatUtils.uptime(uptime) + " §8(§c" + PocketCloud.instance().currentTick() + "§8)");
@@ -62,7 +62,7 @@ public final class StatusCommand extends Command {
         section(sender, "Threads", lines -> {
             lines.put("Thread Count", threadCount + " thread" + (threadCount == 1 ? "" : "s") + " §8(§rPeak: §c" + peakThreadCount + "§8)");
             lines.put("Total Started Threads", totalStartedThreads + " thread" + (totalStartedThreads == 1 ? "" : "s"));
-            if (LogSettingsConfig.instance().isDebugMode()) lines.put("Threads", "§c" + String.join("§8, §c", threads.stream().map(t -> t.getClass().getName() + "@" + t.getName()).collect(Collectors.toCollection(ArrayList::new))));
+            if (PocketCloud.instance().logSettingsConfig().isDebugMode()) lines.put("Threads", "§c" + String.join("§8, §c", threads.stream().map(t -> t.getClass().getName() + "@" + t.getName()).collect(Collectors.toCollection(ArrayList::new))));
         });
 
         section(sender, "System", lines -> {
@@ -72,14 +72,14 @@ public final class StatusCommand extends Command {
         });
 
         section(sender, "Traffic", lines -> {
-            for (Class<? extends TrafficMonitor> entry : TrafficMonitorManager.instance().globalWindows().keySet()) {
-                String name = TrafficMonitorManager.instance().name(entry);
+            for (Class<? extends TrafficMonitor> entry : PocketCloud.instance().traffic().globalWindows().keySet()) {
+                String name = PocketCloud.instance().traffic().name(entry);
                 String formattedName = name.substring(0, 1).toUpperCase() + name.substring(1);
 
-                String bytesIn = FormatUtils.bytes(TrafficMonitorManager.instance().totalBytes(entry, TrafficDirection.IN));
-                String bytesOut = FormatUtils.bytes(TrafficMonitorManager.instance().totalBytes(entry, TrafficDirection.OUT));
-                String avgBytesIn = FormatUtils.bytes(TrafficMonitorManager.instance().averageBytes(entry, TrafficDirection.IN));
-                String avgBytesOut = FormatUtils.bytes(TrafficMonitorManager.instance().averageBytes(entry, TrafficDirection.OUT));
+                String bytesIn = FormatUtils.bytes(PocketCloud.instance().traffic().totalBytes(entry, TrafficDirection.IN));
+                String bytesOut = FormatUtils.bytes(PocketCloud.instance().traffic().totalBytes(entry, TrafficDirection.OUT));
+                String avgBytesIn = FormatUtils.bytes(PocketCloud.instance().traffic().averageBytes(entry, TrafficDirection.IN));
+                String avgBytesOut = FormatUtils.bytes(PocketCloud.instance().traffic().averageBytes(entry, TrafficDirection.OUT));
 
                 lines.put(formattedName + " All-Time Traffic", "§a" + bytesIn + " §8(§aIN§8) §8/ §c" + bytesOut + " §8(§cOUT§8)");
                 lines.put(formattedName + " Average Traffic", "§a" + avgBytesIn + "/s §8/ §c" + avgBytesOut + "/s");

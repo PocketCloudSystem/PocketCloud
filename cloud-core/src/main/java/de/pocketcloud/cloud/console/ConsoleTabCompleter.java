@@ -34,7 +34,7 @@ public final class ConsoleTabCompleter implements Completer {
 
     private List<String> completeCommandNames(String current) {
         List<String> matches = new ArrayList<>();
-        CommandManager commandManager = PocketCloud.instance().commandManager();
+        CommandManager commandManager = PocketCloud.instance().commands();
 
         for (Command cmd : commandManager.getAll()) {
             if (startsWith(cmd.getName(), current)) matches.add(cmd.getName());
@@ -46,7 +46,7 @@ public final class ConsoleTabCompleter implements Completer {
     private List<String> completeCommandArguments(List<String> tokens, String current) {
         List<String> copiedTokens = new ArrayList<>(tokens);
         String commandName = copiedTokens.removeFirst();
-        Object command = PocketCloud.instance().commandManager().get(commandName).orElse(null);
+        Object command = PocketCloud.instance().commands().get(commandName).orElse(null);
         if (command == null) return List.of();
         List<String> matches = new ArrayList<>();
         Object originalCommand = command;

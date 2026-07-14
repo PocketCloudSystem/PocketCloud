@@ -1,0 +1,27 @@
+<configuration>
+    <conversionRule conversionWord="mc" converterClass="de.pocketcloud.cloud.console.log.MinecraftColorConverter"/>
+    <conversionRule conversionWord="clvl" converterClass="de.pocketcloud.cloud.console.log.CloudLevelConverter"/>
+    <conversionRule conversionWord="mcclean" converterClass="de.pocketcloud.cloud.console.log.MinecraftCleanConverter"/>
+
+    <appender name="CONSOLE" class="de.pocketcloud.cloud.console.log.MinecraftConsoleAppender">
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>%mc{§8[§r%d{HH:mm:ss.SSS}§8] %clvl §r§8» §r%msg§r%n}</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>storage/logs/latest.log</file>
+        <encoder>
+            <pattern>%mcclean{§8[§r%d{HH:mm:ss.SSS}§8] %clvl §r§8» §r%msg§r%n}</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>storage/logs/%d{yyyy-MM-dd}.log.gz</fileNamePattern>
+            <maxHistory>14</maxHistory>
+        </rollingPolicy>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </root>
+</configuration>

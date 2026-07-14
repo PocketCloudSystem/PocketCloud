@@ -19,15 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class RequestManager implements Tickable {
 
-    @Getter
-    @Accessors(fluent = true)
-    private static RequestManager instance;
-
     private final Map<String, RequestClientPacket> requests = new ConcurrentHashMap<>();
-
-    public RequestManager() {
-        instance = this;
-    }
 
     public RequestClientPacket send(RequestClientPacket packet, ServerClient client) {
         if (requests.containsKey(packet.getRequestId())) return requests.get(packet.getRequestId());

@@ -1,5 +1,6 @@
 package de.pocketcloud.cloud.network.packet.impl;
 
+import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.server.CloudServer;
 import de.pocketcloud.cloud.server.library.Library;
 import de.pocketcloud.cloud.server.library.LibraryManager;
@@ -42,7 +43,7 @@ public final class LibrarySyncPacket extends CloudPacket implements ClientboundP
 
     public static LibrarySyncPacket fromLibraries(CloudServer server) {
         List<LinkedHashMap<String, String>> data = new ArrayList<>();
-        for (Library lib : LibraryManager.instance().getAll().values()) {
+        for (Library lib : PocketCloud.instance().libraries().getAll().values()) {
             if (!lib.isAvailableFor(server.template().serverSoftware())) continue;
             LinkedHashMap<String, String> libData = new LinkedHashMap<>();
             libData.put("name", lib.name());

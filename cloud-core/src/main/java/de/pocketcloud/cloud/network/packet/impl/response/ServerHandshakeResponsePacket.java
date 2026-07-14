@@ -1,7 +1,7 @@
 package de.pocketcloud.cloud.network.packet.impl.response;
 
+import de.pocketcloud.api.server.VerificationStatus;
 import de.pocketcloud.cloud.network.packet.ResponsePacket;
-import de.pocketcloud.network.packet.type.VerificationStatus;
 import de.pocketcloud.network.packet.data.PacketData;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

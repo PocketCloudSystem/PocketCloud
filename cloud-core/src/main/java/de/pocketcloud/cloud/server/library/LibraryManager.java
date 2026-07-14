@@ -7,27 +7,17 @@ import de.pocketcloud.common.lifecycle.Loadable;
 import de.pocketcloud.cloud.server.software.ServerSoftware;
 import de.pocketcloud.common.util.FileUtils;
 import de.pocketcloud.cloud.util.PocketCloudPaths;
-import lombok.Getter;
-import lombok.experimental.Accessors;
 
 import java.nio.file.Files;
 import java.util.*;
 
 public final class LibraryManager implements Loadable {
 
-    @Getter
-    @Accessors(fluent = true)
-    private static LibraryManager instance = null;
-
     public static final List<Library> DEFAULTS = List.of(
             new Library("forms", "https://github.com/PocketCloudSystem/BetterForms/archive/refs/heads/main.zip", "", "src/", List.of("pmmp-latest"), true)
     );
 
     private final Map<String, Library> libraries = new LinkedHashMap<>();
-
-    public LibraryManager() {
-        instance = this;
-    }
 
     public void load() {
         try {

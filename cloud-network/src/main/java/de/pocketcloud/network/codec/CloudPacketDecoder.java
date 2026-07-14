@@ -46,7 +46,7 @@ public final class CloudPacketDecoder extends ByteToMessageDecoder {
 
         if (!trafficListener.onIncoming(ctx.channel(), bytes, length)) return;
 
-        var packet = PacketSerializer.decode(bytes, encryptionEnabled.getAsBoolean(), authTokenSupplier.get());
+        var packet = PacketSerializer.decode(bytes, encryptionEnabled.getAsBoolean(), authTokenSupplier.get(), trafficListener::onPacketResolve);
         if (packet == null) {
             trafficListener.onUnknownPacket(ctx.channel(), bytes, length);
             return;

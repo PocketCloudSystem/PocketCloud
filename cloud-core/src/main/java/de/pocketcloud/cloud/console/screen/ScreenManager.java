@@ -8,15 +8,7 @@ import lombok.experimental.Accessors;
 
 public final class ScreenManager implements Tickable {
 
-    @Getter
-    @Accessors(fluent = true)
-    private static ScreenManager instance = null;
-
     private Screen currentScreen = null;
-
-    public ScreenManager() {
-        instance = this;
-    }
 
     @Override
     public void tick(long currentTick) {

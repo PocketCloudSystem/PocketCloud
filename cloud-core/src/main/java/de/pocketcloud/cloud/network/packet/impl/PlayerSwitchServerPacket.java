@@ -1,5 +1,6 @@
 package de.pocketcloud.cloud.network.packet.impl;
 
+import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.event.impl.player.PlayerSwitchServerEvent;
 import de.pocketcloud.cloud.network.client.ServerClient;
@@ -9,8 +10,6 @@ import de.pocketcloud.network.packet.CloudboundPacket;
 import de.pocketcloud.cloud.network.packet.CloudPacket;
 import de.pocketcloud.network.packet.type.NotificationType;
 import de.pocketcloud.network.packet.data.PacketData;
-import de.pocketcloud.cloud.player.CloudPlayerManager;
-import de.pocketcloud.cloud.server.CloudServerManager;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.jetbrains.annotations.NotNull;
@@ -31,9 +30,9 @@ public final class PlayerSwitchServerPacket extends CloudPacket implements Cloud
 
     @Override
     public void handle(@NotNull ServerClient client) {
-        var cloudPlayer = CloudPlayerManager.instance().get(player).orElse(null);
+        var cloudPlayer = PocketCloud.instance().players().get(player).orElse(null);
         if (cloudPlayer != null) {
-            var server = CloudServerManager.instance().get(newServer).orElse(null);
+            var server = PocketCloud.instance().servers().get(newServer).orElse(null);
             if (server != null) {
                 if (Notifier.canLog(NotificationType.PLAYER_SWITCHED_SERVER)) {
                     if (cloudPlayer.currentServerName() == null) {

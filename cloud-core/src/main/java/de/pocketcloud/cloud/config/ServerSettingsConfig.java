@@ -4,10 +4,9 @@ import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.log.CloudLogLevel;
 import de.pocketcloud.cloud.server.start.ServerStartMethod;
 import de.pocketcloud.cloud.server.util.ServerStartMethods;
-import de.pocketcloud.cloud.template.TemplateType;
+import de.pocketcloud.api.template.TemplateType;
 import de.pocketcloud.configlib.*;
 import lombok.Getter;
-import lombok.experimental.Accessors;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -16,11 +15,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @Getter
 public final class ServerSettingsConfig extends Configuration {
-
-    @Ignored
-    @Getter
-    @Accessors(fluent = true)
-    private static ServerSettingsConfig instance = null;
 
     @Comment({"Server start method, used to boot a server.", "Available: proc, screen, tmux"})
     private String startMethod = "proc";
@@ -41,7 +35,6 @@ public final class ServerSettingsConfig extends Configuration {
 
     public ServerSettingsConfig() {
         super("storage/configs/server_settings.yml", ConfigType.YAML);
-        instance = this;
         reload();
     }
 

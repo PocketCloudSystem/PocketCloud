@@ -1,5 +1,8 @@
 package de.pocketcloud.cloud.template.group;
 
+import de.pocketcloud.api.model.group.IServerGroup;
+import de.pocketcloud.api.provider.IServerGroupProvider;
+import de.pocketcloud.api.search.SearchQuery;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.event.impl.group.ServerGroupAddTemplateEvent;
 import de.pocketcloud.cloud.event.impl.group.ServerGroupCreateEvent;
@@ -14,29 +17,16 @@ import de.pocketcloud.cloud.util.benchmark.Benchmark;
 import de.pocketcloud.cloud.util.benchmark.BenchmarkTiming;
 import de.pocketcloud.common.util.NumberUtils;
 import lombok.Getter;
-import lombok.experimental.Accessors;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.*;
 
-public final class ServerGroupManager implements Loadable {
-
-    @Getter
-    @Accessors(fluent = true)
-    private static ServerGroupManager instance = null;
+public final class ServerGroupManager implements Loadable, IServerGroupProvider<ServerGroup> {
 
     @Getter
     private boolean loaded = false;
     private final Map<String, ServerGroup> serverGroups = new HashMap<>();
-
-    public ServerGroupManager() {
-        instance = this;
-    }
 
     @Override
     public void load() {
@@ -52,7 +42,7 @@ public final class ServerGroupManager implements Loadable {
         serverGroups.clear();
     }
 
-    public void create(ServerGroup serverGroup) {
+    public void add(ServerGroup serverGroup) {
         Benchmark.startTiming("server_group_creation");
         try {
             ServerGroupCreateEvent ev = new ServerGroupCreateEvent(serverGroup);
@@ -131,15 +121,28 @@ public final class ServerGroupManager implements Loadable {
         ServerGroupSyncPacket.create(serverGroup, true).broadcastPacket();
     }
 
+    @Override
+    public boolean check(String name) {
+        return serverGroups.containsKey(name);
+    }
+
     public Optional<ServerGroup> get(String name) {
         return Optional.ofNullable(serverGroups.getOrDefault(name, null));
     }
 
-    public List<ServerGroup> get(Template template) {
-        return getAll().stream().filter(serverGroup -> serverGroup.is(template)).collect(Collectors.toList());
+    @Override
+    public Collection<ServerGroup> query(SearchQuery<? extends IServerGroup> searchQuery) {
+        return filter(searchQuery);
     }
 
-    public List<ServerGroup> getAll() {
+    @SuppressWarnings("unchecked")
+    private <T extends IServerGroup> Collection<ServerGroup> filter(SearchQuery<T> query) {
+        return serverGroups.values().stream()
+                .filter(o -> query.matches((T) o))
+                .toList();
+    }
+
+    public Collection<ServerGroup> getAll() {
         return serverGroups.values().stream().toList();
     }
 }

@@ -1,41 +1,36 @@
 package de.pocketcloud.cloud.language;
 
-import de.pocketcloud.cloud.config.MainConfig;
+import de.pocketcloud.api.language.ILanguage;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.common.util.ArrayUtils;
 import de.pocketcloud.common.util.FileUtils;
-import de.pocketcloud.cloud.util.PocketCloudPaths;
-import de.pocketcloud.language.DefaultMessages;
-import de.pocketcloud.language.LanguageKey;
 import lombok.Getter;
 import lombok.experimental.Accessors;
-import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Getter
 @Accessors(fluent = true)
-public enum Language {
+public class Language implements ILanguage {
 
-    ENGLISH(PocketCloudPaths.storage().inGame().with("de_DE.yml").asPath(), new String[]{"de_DE", "ger", "Deutsch"}, DefaultMessages.MESSAGES_EN),
-    GERMAN(PocketCloudPaths.storage().inGame().with("en_US.yml").asPath(), new String[]{"en_US", "en", "English"}, DefaultMessages.MESSAGES_GER);
+    private final Map<String, String> messages = new HashMap<>();
 
-    private final Map<String, String> messages;
-
-    private final Path filePath;
-    private final String[] aliases;
+    private final String id;
     private final Map<String, String> defaultMessages;
+    private final Path filePath;
 
-    Language(Path filePath, String[] aliases, Map<String, String> defaultMessages) {
-        this.filePath = filePath;
-        this.aliases = aliases;
+    public Language(String id, Map<String, String> defaultMessages, Path filePath) {
+        this.id = id;
         this.defaultMessages = defaultMessages;
+        this.filePath = filePath;
+    }
 
+    @Override
+    public void fetchAndRepair() {
         if (Files.isRegularFile(filePath)) {
             Map<String, Object> messages = FileUtils.parseYamlFile(filePath);
             Map<String, String> realMessages = new HashMap<>();
@@ -50,41 +45,23 @@ public enum Language {
             if (affected.get() > 0) {
                 CloudLogger.get().info("Incomplete language file §b{}§r, completing the file with the missing language keys...", filePath.toString());
                 FileUtils.emitYamlFile(filePath, realMessages);
-            }
 
-            this.messages = realMessages;
+                messages.clear();
+                messages.putAll(realMessages);
+            }
         } else {
             CloudLogger.get().info("Language file §b{} §rnot found, generating...", filePath.toString());
-            this.messages = defaultMessages;
+            messages.clear();
+            messages.putAll(defaultMessages);
             FileUtils.emitYamlFile(filePath, defaultMessages);
         }
     }
 
-    public String translate(LanguageKey key, Object ... args) {
-        String message = messages.getOrDefault(key.langKey(), key.langKey());
+    @Override
+    public String translate(String key, Object... args) {
+        String message = messages.getOrDefault(key, key);
         message = message.replace("{PREFIX}", this.messages.getOrDefault("inGame.prefix", ""));
-        for (int i = 0; i < args.length; i++) {
-            message = message.replace("{" + i + "}", args[i].toString());
-        }
+        for (int i = 0; i < args.length; i++) message = message.replace("{" + i + "}", args[i].toString());
         return message;
-    }
-
-    public static Language current() {
-        try {
-            return Language.valueOf(MainConfig.instance().getLanguage());
-        } catch (IllegalArgumentException e) {
-            return fallback();
-        }
-    }
-
-    public static Language fallback() {
-        return Language.ENGLISH;
-    }
-
-    @Nullable
-    public static Language get(String name) {
-        return Arrays.stream(values()).filter(l -> l.name().equalsIgnoreCase(name) || Arrays.stream(l.aliases()).anyMatch(a -> a.equalsIgnoreCase(name)))
-                .findFirst()
-                .orElse(null);
     }
 }

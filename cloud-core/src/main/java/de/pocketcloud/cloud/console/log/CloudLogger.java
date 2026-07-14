@@ -1,34 +1,24 @@
 package de.pocketcloud.cloud.console.log;
 
 import de.pocketcloud.cloud.console.log.def.MainLogger;
+import de.pocketcloud.cloud.console.log.def.PrefixedLogger;
 
 public final class CloudLogger {
 
-    private static volatile ILogger instance = null;
+    private static final ILogger MAIN = new MainLogger();
+    private static volatile ILogger instance = MAIN;
+
+    private CloudLogger() {}
 
     public static void set(ILogger logger) {
-        if (logger == null) {
-            instance = null;
-            return;
-        }
-
-        instance = logger;
+        instance = logger != null ? logger : MAIN;
     }
 
     public static ILogger get() {
-        if (instance == null) instance = new MainLogger(null, false, false);
         return instance;
     }
 
-    public static ILogger tmp() {
-        return new MainLogger(null, true, false);
-    }
-
-    public static ILogger tmp(String logPath) {
-        return new MainLogger(logPath, true, logPath != null);
-    }
-
-    public static ILogger tmp(String logPath, boolean debugMode, boolean saveLogs) {
-        return new MainLogger(logPath, debugMode, saveLogs);
+    public static PrefixedLogger prefixed(String prefix) {
+        return new PrefixedLogger(get(), prefix);
     }
 }

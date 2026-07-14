@@ -1,12 +1,12 @@
 package de.pocketcloud.cloud.network.packet.impl;
 
+import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.network.client.ServerClient;
 import de.pocketcloud.network.packet.AuthenticatedPacket;
 import de.pocketcloud.network.packet.CloudboundPacket;
 import de.pocketcloud.cloud.network.packet.CloudPacket;
 import de.pocketcloud.network.packet.data.PacketData;
-import de.pocketcloud.cloud.server.CloudServerManager;
-import de.pocketcloud.cloud.server.util.ServerStatus;
+import de.pocketcloud.api.server.ServerStatus;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.jetbrains.annotations.NotNull;
@@ -25,7 +25,7 @@ public final class ServerChangeStatusPacket extends CloudPacket implements Cloud
 
     @Override
     public void handle(@NotNull ServerClient client) {
-        CloudServerManager.instance().get(serverUuid).ifPresent(server -> server.setStatus(status));
+        PocketCloud.instance().servers().get(serverUuid).ifPresent(server -> server.setStatus(status));
     }
 
     @Override

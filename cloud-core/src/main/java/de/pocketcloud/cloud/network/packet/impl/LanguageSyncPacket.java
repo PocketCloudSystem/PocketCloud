@@ -1,5 +1,6 @@
 package de.pocketcloud.cloud.network.packet.impl;
 
+import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.language.Language;
 import de.pocketcloud.cloud.network.client.ServerClient;
 import de.pocketcloud.network.packet.ClientboundPacket;
@@ -58,11 +59,10 @@ public final class LanguageSyncPacket extends CloudPacket implements Clientbound
     }
 
     public static LanguageSyncPacket fromLanguage(Language language) {
-        Language lang = language != null ? language : Language.current();
-        return new LanguageSyncPacket(lang.name(), lang.messages());
+        return new LanguageSyncPacket(language.id(), language.messages());
     }
 
     public static LanguageSyncPacket fromLanguage() {
-        return fromLanguage(null);
+        return fromLanguage(PocketCloud.instance().language().current());
     }
 }

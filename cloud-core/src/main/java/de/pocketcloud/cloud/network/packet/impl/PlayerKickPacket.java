@@ -1,5 +1,6 @@
 package de.pocketcloud.cloud.network.packet.impl;
 
+import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.network.client.ServerClient;
 import de.pocketcloud.network.packet.AuthenticatedPacket;
 import de.pocketcloud.network.packet.ClientboundPacket;
@@ -27,7 +28,7 @@ public final class PlayerKickPacket extends CloudPacket implements ClientboundPa
 
     @Override
     public void handle(@NotNull ServerClient client) {
-        CloudPlayerManager.instance().get(player).ifPresent(p -> p.kick(reason, disconnectScreenMessage));
+        PocketCloud.instance().players().get(player).ifPresent(p -> p.kick(reason, disconnectScreenMessage));
     }
 
     @Override

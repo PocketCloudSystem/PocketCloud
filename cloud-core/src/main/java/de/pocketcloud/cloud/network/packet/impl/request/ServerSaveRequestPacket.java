@@ -1,5 +1,6 @@
 package de.pocketcloud.cloud.network.packet.impl.request;
 
+import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.network.client.ServerClient;
 import de.pocketcloud.cloud.network.packet.RequestPacket;
 import de.pocketcloud.network.packet.type.ActionFailureReason;
@@ -23,13 +24,13 @@ public final class ServerSaveRequestPacket extends RequestPacket implements Auth
 
     @Override
     public void handle(@NotNull ServerClient client) {
-        var cloudServer = CloudServerManager.instance().get(server);
+        var cloudServer = PocketCloud.instance().servers().get(server);
         if (cloudServer.isEmpty()) {
             sendResponse(ServerSaveResponsePacket.create(ActionFailureReason.SERVER_NOT_FOUND), client);
             return;
         }
 
-        CloudServerManager.instance().save(cloudServer.get())
+        PocketCloud.instance().servers().save(cloudServer.get())
             .thenSuccess(_ -> sendResponse(ServerSaveResponsePacket.create(ActionFailureReason.NONE), client))
             .failure(_ -> sendResponse(ServerSaveResponsePacket.create(ActionFailureReason.REQUEST_TIMEOUT), client));
     }

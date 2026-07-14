@@ -2,12 +2,12 @@ package de.pocketcloud.network.codec;
 
 import de.pocketcloud.network.exception.PacketException;
 import de.pocketcloud.network.packet.Packet;
-import de.pocketcloud.network.packet.PacketPool;
 import de.pocketcloud.network.packet.data.PacketData;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.function.Function;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
@@ -35,7 +35,7 @@ public final class PacketSerializer {
     }
 
     @Nullable
-    public static Packet decode(byte[] buffer, boolean encryptionEnabled, String authenticationKey) throws PacketException {
+    public static Packet decode(byte[] buffer, boolean encryptionEnabled, String authenticationKey, Function<String, Packet> packetResolver) throws PacketException {
         try {
             if (buffer == null || buffer.length == 0) throw new PacketException("Cannot decode an empty buffer");
             byte[] decompressed = buffer;
@@ -50,7 +50,7 @@ public final class PacketSerializer {
             String packetName = data.readString();
             if (packetName == null) throw new PacketException("Received buffer does not contain a valid packet name");
 
-            var packet = PacketPool.getInstance().get(packetName);
+            var packet = packetResolver.apply(packetName);
             if (packet == null) return null;
 
             PacketData decodeData = PacketData.fromBytes(decompressed);

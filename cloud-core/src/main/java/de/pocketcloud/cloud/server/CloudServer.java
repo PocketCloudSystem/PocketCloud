@@ -1,7 +1,14 @@
 package de.pocketcloud.cloud.server;
 
+import de.pocketcloud.api.model.server.ICloudServer;
+import de.pocketcloud.api.search.PlayerSearchQuery;
+import de.pocketcloud.api.search.ServerSearchQuery;
+import de.pocketcloud.api.server.ServerStatus;
+import de.pocketcloud.api.server.VerificationStatus;
 import de.pocketcloud.cloud.PocketCloud;
+import de.pocketcloud.cloud.network.packet.PacketExcluder;
 import de.pocketcloud.cloud.notification.Notifier;
+import de.pocketcloud.cloud.template.util.TemplateTypeHelper;
 import de.pocketcloud.common.config.Config;
 import de.pocketcloud.common.config.exception.UnsupportedFileExtensionException;
 import de.pocketcloud.cloud.console.log.CloudLogger;
@@ -10,7 +17,6 @@ import de.pocketcloud.cloud.event.impl.server.ServerPrepareEvent;
 import de.pocketcloud.cloud.event.impl.server.ServerStartEvent;
 import de.pocketcloud.cloud.event.impl.server.ServerStopEvent;
 import de.pocketcloud.cloud.network.client.ServerClient;
-import de.pocketcloud.cloud.network.client.ServerClientCache;
 import de.pocketcloud.common.serialization.Writable;
 import de.pocketcloud.common.util.FileUtils;
 import de.pocketcloud.common.util.ProcessUtils;
@@ -22,19 +28,15 @@ import de.pocketcloud.cloud.network.packet.impl.response.client.CommandExecuteRe
 import de.pocketcloud.network.packet.type.NotificationType;
 import de.pocketcloud.network.packet.type.ServerCommandExecutionResult;
 import de.pocketcloud.network.packet.type.ServerDisconnectReason;
-import de.pocketcloud.network.packet.type.VerificationStatus;
 import de.pocketcloud.cloud.player.CloudPlayer;
-import de.pocketcloud.cloud.player.CloudPlayerManager;
 import de.pocketcloud.cloud.server.config.IServerProperties;
-import de.pocketcloud.cloud.server.config.ServerPropertiesGenerator;
 import de.pocketcloud.cloud.server.util.*;
 import de.pocketcloud.cloud.template.Template;
-import de.pocketcloud.cloud.template.TemplateManager;
-import de.pocketcloud.cloud.template.TemplateType;
+import de.pocketcloud.api.template.TemplateType;
 import de.pocketcloud.cloud.template.group.ServerGroup;
 import de.pocketcloud.common.lifecycle.Tickable;
 import de.pocketcloud.cloud.util.*;
-import de.pocketcloud.cloud.util.concurrent.Promise;
+import de.pocketcloud.common.concurrent.Promise;
 import de.pocketcloud.common.mapper.MapperUtils;
 import lombok.Getter;
 import lombok.Setter;
@@ -57,12 +59,12 @@ import static de.pocketcloud.common.util.FileUtils.IO_EXECUTOR;
 
 @Getter
 @Accessors(fluent = true)
-public final class CloudServer implements Tickable, Writable<Map<String, Object>>, FilterableObject {
+public final class CloudServer implements Tickable, Writable<Map<String, Object>>, ICloudServer {
 
     private final int id;
     private final UUID uuid;
     private final String templateName;
-    private final CloudServerData serverData;
+    private final CloudServerData data;
     private final CloudServerStorage storage;
 
     private transient final Map<String, ServerCommandExecutionRequest> commandExecutionOrders = new HashMap<>();
@@ -79,28 +81,28 @@ public final class CloudServer implements Tickable, Writable<Map<String, Object>
     private ServerStatus status = ServerStatus.PENDING;
     @Setter
     private transient Long lastKeepAlive = null;
-    private Long startTime = null;
+    private Instant startTime = null;
     @Setter
-    private Long verifiedTime = null;
+    private Instant verifiedTime = null;
     private transient Long stopTime = null;
     private transient Config mainProperties = null;
 
-    public CloudServer(int id, UUID uuid, String templateName, CloudServerData serverData) {
+    public CloudServer(int id, UUID uuid, String templateName, CloudServerData data) {
         this.id = id;
         this.uuid = uuid;
         this.templateName = templateName;
-        this.serverData = serverData;
+        this.data = data;
         this.storage = new CloudServerStorage(uuid);
-        this.logger = new PrefixedLogger(PocketCloud.instance().logger(), "§8[§b" + name() + "§r§8]§r");
+        this.logger = CloudLogger.prefixed("§8[§b" + name() + "§r§8]§r");
     }
 
-    public CloudServer(int id, UUID uuid, String templateName, CloudServerData serverData, ServerStatus status) {
-        this(id, uuid, templateName, serverData);
+    public CloudServer(int id, UUID uuid, String templateName, CloudServerData data, ServerStatus status) {
+        this(id, uuid, templateName, data);
         this.status = status;
     }
 
-    public CloudServer(int id, UUID uuid, String templateName, CloudServerData serverData, Map<String, Object> storage) {
-        this(id, uuid, templateName, serverData);
+    public CloudServer(int id, UUID uuid, String templateName, CloudServerData data, Map<String, Object> storage) {
+        this(id, uuid, templateName, data);
         this.storage.setAll(storage);
     }
 
@@ -108,18 +110,18 @@ public final class CloudServer implements Tickable, Writable<Map<String, Object>
     public void tick(long currentTick) {
         if (startTime == null) return;
         if (status.isStarting()) {
-            if (!pidLookupDone && serverData.processId() == null && (System.currentTimeMillis() - lastPidLookupTime) >= 1500 && lastPidLookupCounter < 5) {
+            if (!pidLookupDone && data.usableProcessId() == null && (System.currentTimeMillis() - lastPidLookupTime) >= 1500 && lastPidLookupCounter < 5) {
                 lastPidLookupTime = System.currentTimeMillis();
                 lastPidLookupCounter++;
                 ServerStartMethods.current().lookupPid(this).thenSuccess(pid -> {
                     if (pid.isPresent()) {
                         pidLookupDone = true;
-                        serverData.processId(pid.get());
+                        data.processId(pid.get());
                     }
                 });
             }
 
-            if ((startTime + (template().templateType().timeout() * 1000L)) < System.currentTimeMillis()) {
+            if ((startTime.toEpochMilli() + (TemplateTypeHelper.timeout(template().templateType()) * 1000L)) < System.currentTimeMillis()) {
                 CloudServersHandler.handleStartFailure(this, null, false);
             }
         } else if (status.isOnline()) {
@@ -156,7 +158,7 @@ public final class CloudServer implements Tickable, Writable<Map<String, Object>
                 FileUtils.unlinkFile(logFileLocation);
             }
 
-            if (Files.exists(path()) && !template().settings().isStaticServers()) {
+            if (Files.exists(path()) && !template().settings().staticServers()) {
                 FileUtils.removeDirectory(path());
             }
 
@@ -171,10 +173,10 @@ public final class CloudServer implements Tickable, Writable<Map<String, Object>
                 }
             }
 
-            Path globalTemplatePath = template().templateType().globalTemplatePath();
+            Path globalTemplatePath = TemplateTypeHelper.globalTemplatePath(template().templateType());
             FileUtils.copyDirectory(globalTemplatePath, path(), Set.of());
 
-            boolean copyFromSources = template().settings().isAlwaysCopyToStaticServers() || !template().settings().isStaticServers();
+            boolean copyFromSources = template().settings().alwaysCopyToStaticServers() || !template().settings().staticServers();
             if (copyFromSources) {
                 for (ServerGroup group : template().parentGroups()) {
                     FileUtils.copyDirectory(group.path(), path(), Set.of());
@@ -183,7 +185,7 @@ public final class CloudServer implements Tickable, Writable<Map<String, Object>
                 FileUtils.copyDirectory(template().path(), path(), Set.of("cloud_log_archive/"));
             }
 
-            List<IServerProperties> propertiesData = ServerPropertiesGenerator.instance().getAll(template().serverSoftware());
+            List<IServerProperties> propertiesData = PocketCloud.instance().properties().getAll(template().serverSoftware());
             for (var properties : propertiesData) {
                 Path filePath = path().resolve(properties.getFileName());
                 if (!copyFromSources) {
@@ -241,10 +243,10 @@ public final class CloudServer implements Tickable, Writable<Map<String, Object>
     }
 
     public CloudServer start() {
-        startTime = System.currentTimeMillis();
+        startTime = Instant.now();
         setStatus(ServerStatus.STARTING);
         new ServerStartEvent(this).call();
-        CloudLogger.get().info("§aStarting §b{} §8[§ruuid={}, path={}, port={}§8]§r...", name(), uuid.toString(), path().toString(), serverData.port());
+        CloudLogger.get().info("§aStarting §b{} §8[§ruuid={}, path={}, port={}§8]§r...", name(), uuid.toString(), path().toString(), data.port());
         Notifier.notify(NotificationType.SERVER_STARTING, Map.of("server", name()), Map.of());
         return this;
     }
@@ -291,8 +293,7 @@ public final class CloudServer implements Tickable, Writable<Map<String, Object>
             }
 
             String formatted = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH:mm:ss.SSS_z")
-                    .format(Instant.ofEpochMilli((long) Math.floor(startTime))
-                            .atZone(ZoneId.systemDefault()));
+                    .format(startTime.atZone(ZoneId.systemDefault()));
 
             try {
                 Files.copy(logFileLocation, logArchivePath.resolve(formatted + "_" + logFileLocation.getFileName().toString() + ".log"));
@@ -324,24 +325,24 @@ public final class CloudServer implements Tickable, Writable<Map<String, Object>
 
     public void deleteTmpDir() {
         saveAndDeleteLogFiles();
-        if (!template().settings().isStaticServers()) {
+        if (!template().settings().staticServers()) {
             CloudLogger.get().debug("Removed server directory {}", path().toString());
             FileUtils.removeDirectory(path());
         }
     }
 
     public void remove() {
-        CloudServerManager.instance().remove(this);
-        ServerClientCache.instance().remove(this);
+        PocketCloud.instance().servers().remove(this);
+        PocketCloud.instance().clients().remove(this);
 
         if (template().templateType() == TemplateType.SERVER) {
-            if (template().settings().isSaveOnShutdown()) save();
+            if (template().settings().saveOnShutdown()) save();
             removeFromProxies();
         }
     }
 
     public void kill() {
-        if (serverData.processId() != null) ProcessUtils.kill(serverData.processId(), true);
+        if (data.usableProcessId() != null) ProcessUtils.kill(data.usableProcessId(), true);
     }
 
     public Promise<ServerCommandExecutionResult> dispatch(String commandLine) {
@@ -366,13 +367,13 @@ public final class CloudServer implements Tickable, Writable<Map<String, Object>
 
     public void addToProxies() {
         if (template().templateType() == TemplateType.SERVER) {
-            ProxyRegisterServerPacket.create(this).broadcastPacket(TemplateType.SERVER);
+            ProxyRegisterServerPacket.create(this).broadcastPacket(e -> e.templateType(TemplateType.SERVER));
         }
     }
 
     public void removeFromProxies() {
         if (template().templateType() == TemplateType.SERVER) {
-            ProxyUnregisterServerPacket.create(this).broadcastPacket(TemplateType.SERVER);
+            ProxyUnregisterServerPacket.create(this).broadcastPacket(e -> e.templateType(TemplateType.SERVER));
         }
     }
 
@@ -387,7 +388,7 @@ public final class CloudServer implements Tickable, Writable<Map<String, Object>
         ));
 
         if (template().templateType().isProxy()) {
-            for (CloudServer subServer : CloudServerManager.instance().getAll(TemplateType.SERVER)) {
+            for (CloudServer subServer : PocketCloud.instance().servers().query(ServerSearchQuery.create().ofType(TemplateType.SERVER))) {
                 if (subServer.status().isOnline()) {
                     syncPackets.add(ProxyRegisterServerPacket.create(subServer));
                 }
@@ -419,11 +420,11 @@ public final class CloudServer implements Tickable, Writable<Map<String, Object>
     }
 
     public Template template() {
-        return TemplateManager.instance().get(templateName).orElseThrow(() -> new RuntimeException("Template null? This should not happen"));
+        return PocketCloud.instance().templates().get(templateName).orElseThrow(() -> new RuntimeException("Template null? This should not happen"));
     }
 
     public Path path() {
-        if (template().settings().isStaticServers()) return PocketCloudPaths.storage().staticServers().with(name()).asPath();
+        if (template().settings().staticServers()) return PocketCloudPaths.storage().staticServers().with(name()).asPath();
         return PocketCloudPaths.tmp().with(uuid.toString()).asPath();
     }
 
@@ -444,11 +445,11 @@ public final class CloudServer implements Tickable, Writable<Map<String, Object>
     }
 
     public Optional<ServerClient> client() {
-        return ServerClientCache.instance().get(this);
+        return PocketCloud.instance().clients().get(this);
     }
 
-    public List<CloudPlayer> players() {
-        return CloudPlayerManager.instance().getAll(this);
+    public Collection<CloudPlayer> players() {
+        return PocketCloud.instance().players().query(PlayerSearchQuery.create().onServer(this));
     }
 
     public int playerCount() {

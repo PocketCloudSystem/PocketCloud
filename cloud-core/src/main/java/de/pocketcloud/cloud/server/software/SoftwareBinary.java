@@ -1,5 +1,6 @@
 package de.pocketcloud.cloud.server.software;
 
+import de.pocketcloud.api.model.software.ISoftwareBinary;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.console.util.DownloadProgressBar;
@@ -36,7 +37,7 @@ import java.util.zip.GZIPInputStream;
  * If the url is either null or blank, `java` will be the result of the placeholder {BINARY_PATH}
  * inside the `download` field in the respective config.
  */
-public final class SoftwareBinary {
+public final class SoftwareBinary implements ISoftwareBinary {
 
     private transient ServerSoftware parent;
 

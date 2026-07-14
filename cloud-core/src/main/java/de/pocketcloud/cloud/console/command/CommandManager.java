@@ -5,23 +5,13 @@ import de.pocketcloud.cloud.console.command.sender.CommandSender;
 import de.pocketcloud.cloud.console.command.sub.SubCommand;
 import de.pocketcloud.common.lifecycle.Loadable;
 import de.pocketcloud.common.util.ArrayUtils;
-import lombok.Getter;
-import lombok.experimental.Accessors;
 
 import java.util.*;
 
 public final class CommandManager implements Loadable {
 
-    @Getter
-    @Accessors(fluent = true)
-    private static CommandManager instance = null;
-
     private final Map<String, Command> commandPool = new HashMap<>();
     private final Map<String, Command> knownAliasesPool = new HashMap<>();
-
-    public CommandManager() {
-        instance = this;
-    }
 
     @Override
     public void load() {

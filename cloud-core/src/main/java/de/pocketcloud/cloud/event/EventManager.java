@@ -1,6 +1,7 @@
 package de.pocketcloud.cloud.event;
 
 import de.pocketcloud.cloud.PocketCloud;
+import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.plugin.CloudPlugin;
 import de.pocketcloud.cloud.util.benchmark.Benchmark;
 import lombok.Getter;
@@ -17,15 +18,7 @@ import java.util.function.Consumer;
 @Getter
 public final class EventManager {
 
-    @Getter
-    @Accessors(fluent = true)
-    private static EventManager instance;
-
     private final Map<String, Map<Class<?>, List<RegisteredHandler>>> handlers = new ConcurrentHashMap<>();
-
-    public EventManager() {
-        instance = this;
-    }
 
     @SuppressWarnings("unchecked")
     public <T extends Event> void register(Class<T> eventClass, EventPriority priority, Consumer<T> handler, CloudPlugin plugin) {
@@ -97,7 +90,7 @@ public final class EventManager {
             try {
                 rh.handler().accept(event);
             } catch (Throwable e) {
-                PocketCloud.instance().logger().exception("§cException caught during event handling of {}", e, event.name());
+                CloudLogger.get().exception("§cException caught during event handling of {}", e, event.name());
             }
         }
 

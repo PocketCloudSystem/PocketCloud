@@ -1,5 +1,6 @@
 package de.pocketcloud.cloud.network.packet.impl;
 
+import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.network.client.ServerClient;
 import de.pocketcloud.network.packet.AuthenticatedPacket;
 import de.pocketcloud.network.packet.ClientboundPacket;
@@ -7,7 +8,6 @@ import de.pocketcloud.network.packet.CloudboundPacket;
 import de.pocketcloud.cloud.network.packet.CloudPacket;
 import de.pocketcloud.network.packet.data.PacketData;
 import de.pocketcloud.cloud.player.CloudPlayer;
-import de.pocketcloud.cloud.player.CloudPlayerManager;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.jetbrains.annotations.NotNull;
@@ -26,7 +26,7 @@ public final class PlayerTransferPacket extends CloudPacket implements Clientbou
 
     @Override
     public void handle(@NotNull ServerClient client) {
-        CloudPlayerManager.instance().get(player).flatMap(CloudPlayer::currentProxy).ifPresent(proxy -> proxy.sendPacket(this));
+        PocketCloud.instance().players().get(player).flatMap(CloudPlayer::currentProxy).ifPresent(proxy -> proxy.sendPacket(this));
     }
 
     @Override

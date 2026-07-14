@@ -1,5 +1,6 @@
 package de.pocketcloud.cloud.server.config.impl;
 
+import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.server.CloudServer;
 import de.pocketcloud.cloud.server.config.ServerProperties;
 import de.pocketcloud.cloud.server.software.ServerSoftware;
@@ -107,6 +108,6 @@ public final class PocketMineConfig extends ServerProperties {
 
     @Override
     public ServerSoftware getServerSoftware() {
-        return ServerSoftwareManager.instance().get("pmmp-latest");
+        return PocketCloud.instance().software().get("pmmp-latest");
     }
 }

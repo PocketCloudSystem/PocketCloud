@@ -1,5 +1,6 @@
 package de.pocketcloud.cloud.server.software;
 
+import de.pocketcloud.api.model.software.ISoftwareBridge;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.console.util.DownloadProgressBar;
@@ -11,7 +12,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-public final class SoftwareBridge {
+public final class SoftwareBridge implements ISoftwareBridge {
 
     private transient ServerSoftware parent;
 

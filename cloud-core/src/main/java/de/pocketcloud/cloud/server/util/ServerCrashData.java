@@ -5,8 +5,9 @@ import de.pocketcloud.common.mapper.MapperUtils;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
-public record ServerCrashData(String type, String error, List<String> stackTrace,
+public record ServerCrashData(String serverName, UUID serverUuid, String type, String error, List<String> stackTrace,
                               String message, String file, Long line) implements Writable<Map<String, Object>> {
 
     @Override

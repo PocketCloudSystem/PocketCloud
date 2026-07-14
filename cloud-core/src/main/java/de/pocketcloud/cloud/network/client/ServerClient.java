@@ -1,8 +1,8 @@
 package de.pocketcloud.cloud.network.client;
 
+import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.network.packet.ClientboundPacket;
 import de.pocketcloud.cloud.server.CloudServer;
-import de.pocketcloud.cloud.util.FilterableObject;
 import io.netty.channel.Channel;
 import io.netty.util.AttributeKey;
 import lombok.Getter;
@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-public final class ServerClient implements FilterableObject {
+public final class ServerClient {
 
     public static final AttributeKey<ServerClient> ATTRIBUTE_KEY = AttributeKey.valueOf("serverClient");
 
@@ -70,7 +70,7 @@ public final class ServerClient implements FilterableObject {
     }
 
     public CloudServer server() {
-        return ServerClientCache.instance().getServer(this);
+        return PocketCloud.instance().clients().getServer(this).orElse(null);
     }
 
     @Override

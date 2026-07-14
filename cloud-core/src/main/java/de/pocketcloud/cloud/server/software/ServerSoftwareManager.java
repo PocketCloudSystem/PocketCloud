@@ -2,10 +2,9 @@ package de.pocketcloud.cloud.server.software;
 
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.log.CloudLogger;
+import de.pocketcloud.cloud.template.util.TemplateTypeHelper;
 import de.pocketcloud.common.lifecycle.Loadable;
 import de.pocketcloud.common.util.FileUtils;
-import lombok.Getter;
-import lombok.experimental.Accessors;
 
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
@@ -14,10 +13,6 @@ import java.nio.file.Path;
 import java.util.*;
 
 public final class ServerSoftwareManager implements Loadable {
-
-    @Getter
-    @Accessors(fluent = true)
-    private static ServerSoftwareManager instance = null;
 
     public static final List<ServerSoftware> DEFAULTS = List.of(
             new ServerSoftware("pmmp-latest", "SERVER", new SoftwareDownload(
@@ -61,11 +56,8 @@ public final class ServerSoftwareManager implements Loadable {
     private final Map<String, ServerSoftware> softwareList = new HashMap<>();
     private final List<String> disabledSoftware = new ArrayList<>();
 
-    public ServerSoftwareManager() {
-        instance = this;
-    }
-
-    public void load() {
+    @Override
+    public void preload() {
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(Path.of("storage/software/"), "*.json")) {
             for (Path file : stream) {
                 if (Files.isRegularFile(file)) {
@@ -97,10 +89,13 @@ public final class ServerSoftwareManager implements Loadable {
         }
     }
 
+    @Override
+    public void load() {}
+
     public void loadSoftware(ServerSoftware software) {
         CloudLogger.get().debug("Loaded {}, part of {} template type", software.name(), software.templateType());
         softwareList.put(software.name(), software);
-        Objects.requireNonNull(software.type()).add(software);
+        TemplateTypeHelper.addSoftware(Objects.requireNonNull(software.type()), software);
         if (!software.directoryPath().toFile().exists() && !software.directoryPath().toFile().mkdirs()) throw new RuntimeException("Unable to create directory");
         if (!software.bridge().directoryPath().toFile().exists() && !software.bridge().directoryPath().toFile().mkdirs()) throw new RuntimeException("Unable to create directory");
 

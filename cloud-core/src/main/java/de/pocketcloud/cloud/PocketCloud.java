@@ -1,5 +1,9 @@
 package de.pocketcloud.cloud;
 
+import de.pocketcloud.api.CloudAPI;
+import de.pocketcloud.api.CloudAPIHolder;
+import de.pocketcloud.api.provider.IModuleProvider;
+import de.pocketcloud.api.service.ServiceRegistry;
 import de.pocketcloud.cloud.config.LogSettingsConfig;
 import de.pocketcloud.cloud.config.MainConfig;
 import de.pocketcloud.cloud.config.ServerSettingsConfig;
@@ -8,22 +12,20 @@ import de.pocketcloud.cloud.console.CloudShutdownHook;
 import de.pocketcloud.cloud.console.command.CommandManager;
 import de.pocketcloud.cloud.console.log.CloudLogLevel;
 import de.pocketcloud.cloud.console.log.CloudLogger;
-import de.pocketcloud.cloud.console.log.def.MainLogger;
 import de.pocketcloud.cloud.console.output.OutputManager;
 import de.pocketcloud.cloud.console.screen.ScreenManager;
 import de.pocketcloud.cloud.event.EventManager;
+import de.pocketcloud.cloud.event.impl.cloud.CloudReadyEvent;
 import de.pocketcloud.cloud.http.HttpServer;
+import de.pocketcloud.cloud.language.LanguageManager;
 import de.pocketcloud.cloud.load.Loader;
 import de.pocketcloud.cloud.network.NetworkNettyServer;
 import de.pocketcloud.cloud.network.client.ServerClientCache;
+import de.pocketcloud.common.lifecycle.Loadable;
+import de.pocketcloud.common.lifecycle.Tickable;
 import de.pocketcloud.common.util.FileUtils;
-import de.pocketcloud.cloud.network.packet.impl.*;
-import de.pocketcloud.cloud.network.packet.impl.request.*;
-import de.pocketcloud.cloud.network.packet.impl.request.client.CommandExecuteRequestPacket;
-import de.pocketcloud.cloud.network.packet.impl.response.*;
-import de.pocketcloud.cloud.network.packet.impl.response.client.CommandExecuteResponsePacket;
 import de.pocketcloud.common.util.NumberUtils;
-import de.pocketcloud.network.packet.PacketPool;
+import de.pocketcloud.cloud.network.packet.PacketRegistry;
 import de.pocketcloud.cloud.network.request.RequestManager;
 import de.pocketcloud.cloud.player.CloudPlayerManager;
 import de.pocketcloud.cloud.plugin.CloudPluginManager;
@@ -44,57 +46,30 @@ import lombok.experimental.Accessors;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.*;
 
 @Getter
 @Accessors(fluent = true)
-public final class PocketCloud {
-
-    public static void main(String[] args) throws IOException {
-        new PocketCloud();
-    }
+public final class PocketCloud implements CloudAPI {
 
     @Getter
     private static PocketCloud instance = null;
 
     private boolean running;
     private boolean hasStopped = false;
-    private long startTime = 0;
+    private Instant startTime = null;
 
     private final List<Map<String, Object>> startNotifications = new ArrayList<>();
 
     private final PerformanceStats performanceStats = new PerformanceStats();
-    private Ticker ticker = null;
-    private Loader loader = null;
-
-    private MainConfig config = null;
-    private MainLogger logger = null;
-    private LogSettingsConfig logSettingsConfig = null;
-    private CloudConsole console = null;
-    private ScreenManager screenManager = null;
-    private CommandManager commandManager = null;
-    private ServerSoftwareManager serverSoftwareManager = null;
-    private LibraryManager libraryManager = null;
-    private ServerPropertiesGenerator propertiesGenerator = null;
-    private ServerSettingsConfig serverSettingsConfig = null;
-    private TemplateManager templateManager = null;
-    private ServerGroupManager serverGroupManager = null;
-    private CloudServerManager serverManager = null;
-    private CloudPlayerManager playerManager = null;
-    private NetworkNettyServer network = null;
-    private HttpServer httpServer = null;
-    private RequestManager requestManager = null;
-    private PacketPool packetPool = null;
-    private ServerClientCache clientCache = null;
-    private TrafficMonitorManager trafficMonitorManager = null;
-    private CloudPluginManager pluginManager = null;
-    private EventManager eventManager = null;
+    private final ServiceRegistry services = new ServiceRegistry();
 
     public PocketCloud() throws IOException {
         instance = this;
         running = true;
+        CloudAPIHolder.setInstance(this);
 
         int version = Runtime.version().feature();
         if (version < 22) {
@@ -105,54 +80,59 @@ public final class PocketCloud {
             return;
         }
 
-        ticker = new Ticker();
-        loader = new Loader();
-
         Benchmark.startTiming("cloud_start");
-
         createDirectories();
 
-        config = new MainConfig();
-        CloudLogger.set(logger = (MainLogger) CloudLogger.tmp("storage/cloud.log"));
-        logSettingsConfig = new LogSettingsConfig();
+        services.register(Ticker.class, new Ticker());
+        services.register(Loader.class, new Loader());
+        services.register(MainConfig.class, new MainConfig());
+        services.register(LogSettingsConfig.class, new LogSettingsConfig());
+        services.register(ServerSettingsConfig.class, new ServerSettingsConfig());
 
         Thread.setDefaultUncaughtExceptionHandler((_, throwable) -> {
             CloudLogger.get().exception(throwable);
             shutdown();
         });
 
-        console = new CloudConsole();
-        console.install();
-        console.start();
+        services.register(CloudConsole.class, new CloudConsole())
+                .install()
+                .start();
 
-        screenManager = new ScreenManager();
-        screenManager.reset();
+        services.register(ScreenManager.class, new ScreenManager())
+                .reset();
 
-        commandManager = new CommandManager();
-        serverSoftwareManager = new ServerSoftwareManager();
-        libraryManager = new LibraryManager();
-        propertiesGenerator = new ServerPropertiesGenerator();
-        serverSettingsConfig = new ServerSettingsConfig();
-        templateManager = new TemplateManager();
-        serverGroupManager = new ServerGroupManager();
-        serverManager = new CloudServerManager();
-        playerManager = new CloudPlayerManager();
-        network = new NetworkNettyServer(config.getNetworkAddress());
-        httpServer = new HttpServer(config.getHttpServerAddress());
-        requestManager = new RequestManager();
-        packetPool = new PacketPool(this::registerPackets);
-        clientCache = new ServerClientCache();
-        trafficMonitorManager = new TrafficMonitorManager();
-        pluginManager = new CloudPluginManager();
-        eventManager = new EventManager();
+        services.register(LanguageManager.class, new LanguageManager());
+        services.register(CommandManager.class, new CommandManager());
+        services.register(ServerSoftwareManager.class, new ServerSoftwareManager());
+        services.register(LibraryManager.class, new LibraryManager());
+        services.register(ServerPropertiesGenerator.class, new ServerPropertiesGenerator());
+        services.register(TemplateManager.class, new TemplateManager());
+        services.register(ServerGroupManager.class, new ServerGroupManager());
+        services.register(CloudServerManager.class, new CloudServerManager());
+        services.register(CloudPlayerManager.class, new CloudPlayerManager());
+        services.register(NetworkNettyServer.class, new NetworkNettyServer(config().getNetworkAddress()));
+        services.register(HttpServer.class, new HttpServer(config().getHttpServerAddress()));
+        services.register(RequestManager.class, new RequestManager());
+        services.register(PacketRegistry.class, new PacketRegistry());
+        services.register(ServerClientCache.class, new ServerClientCache());
+        services.register(TrafficMonitorManager.class, new TrafficMonitorManager());
+        services.register(CloudPluginManager.class, new CloudPluginManager());
+        services.register(EventManager.class, new EventManager());
 
-        loader.registerPreAll(serverSoftwareManager, libraryManager);
-        loader.registerAll(commandManager, packetPool, pluginManager, templateManager, propertiesGenerator, trafficMonitorManager);
+        for (Object obj : services.getAll().values()) {
+            if (obj instanceof Tickable tickable) {
+                ticker().register(tickable);
+            }
 
-        loader.preloadAll();
+            if (obj instanceof Loadable loadable) {
+                loader().register(loadable);
+            }
+        }
+
+        loader().preloadAll();
 
         printBanner();
-        logger.info("The §bCloud §ris §astarting§r...");
+        CloudLogger.get().info("The §bCloud §ris §astarting§r...");
 
         CloudProvider.select();
 
@@ -163,24 +143,23 @@ public final class PocketCloud {
             CloudLogger.get().log(level, message, args);
         }
 
-        ticker.registerAll(console, requestManager, clientCache, trafficMonitorManager, pluginManager, templateManager, serverManager);
+        loader().loadAll();
 
-        loader.loadAll();
-
-        if (serverSoftwareManager.getAll().isEmpty()) {
+        if (software().getAll().isEmpty()) {
             CloudLogger.get().warn("No software found, therefore no server can be started.");
         }
 
-        network.start();
-        if (config.isHttpServerEnabled()) httpServer.start();
+        network().start();
+        if (config().isHttpServerEnabled()) httpServer().start();
 
         Runtime.getRuntime().addShutdownHook(new CloudShutdownHook());
 
         BenchmarkTiming result = Benchmark.stopTiming("cloud_start");
-        logger.info("§bCloud §rhas been §astarted§r. §8(§rTook §b{}s§8)", NumberUtils.formatNumber(result.duration() / 1000, 3));
-        startTime = System.currentTimeMillis();
+        CloudLogger.get().info("§bCloud §rhas been §astarted§r. §8(§rTook §b{}s§8)", NumberUtils.formatNumber(result.duration() / 1000, 3));
+        startTime = Instant.now();
+        new CloudReadyEvent(startTime).call();
 
-        ticker.tick();
+        ticker().tick();
     }
 
     public PocketCloud appendStartNotification(String message, CloudLogLevel level, Object... args) {
@@ -198,11 +177,11 @@ public final class PocketCloud {
     }
 
     private void printBanner() {
-        console.clear();
-        logger.emptyLine().setFormat("§r{message}")
-                .info("  §bPocket§3Cloud §8- §rA cloud system for §lPocketMine-MP servers§r with §lProxy support§r §8- §b{} §8- §rdeveloped by §b{}", VersionInfo.VERSION + (VersionInfo.BETA ? "§c@BETA" : ""), String.join("§8, §b", VersionInfo.DEVELOPERS))
-                .info("  Join our discord for information: §bhttps://discord.gg/3HbPEpaE3T")
-                .emptyLine().resetFormat();
+        console().clear();
+        CloudLogger.get().emptyLine()
+                .withoutFormat("  §bPocket§3Cloud §8- §rA cloud system for §lPocketMine-MP servers§r with §lProxy support§r §8- §b{} §8- §rdeveloped by §b{}", VersionInfo.VERSION + (VersionInfo.BETA ? "§c@BETA" : ""), String.join("§8, §b", VersionInfo.DEVELOPERS))
+                .withoutFormat("  Join our discord for information: §bhttps://discord.gg/3HbPEpaE3T")
+                .emptyLine();
     }
 
     private void createDirectories() {
@@ -211,23 +190,23 @@ public final class PocketCloud {
 
     public void reload() {
         if (!running || hasStopped) return;
-        if (loader.isReloading()) return;
-        logger.info("Reloading...");
-        logger.warn("§cNOTE: §rNot everything is reloadable. To achieve the best outcome, restarting the cloud would be the better option.");
+        if (loader().isReloading()) return;
+        CloudLogger.get().info("Reloading...");
+        CloudLogger.get().warn("§cNOTE: §rNot everything is reloadable. To achieve the best outcome, restarting the cloud would be the better option.");
         try {
-            boolean httpServerBeforeReload = config.isHttpServerEnabled();
-            config.reload();
-            serverSettingsConfig.reload();
-            loader.reload();
-            if (!httpServerBeforeReload && config.isHttpServerEnabled()) {
-                httpServer.start();
-            } else if (httpServerBeforeReload && !config.isHttpServerEnabled()) {
-                httpServer.close();
+            boolean httpServerBeforeReload = config().isHttpServerEnabled();
+            config().reload();
+            serverSettingsConfig().reload();
+            loader().reload();
+            if (!httpServerBeforeReload && config().isHttpServerEnabled()) {
+                httpServer().start();
+            } else if (httpServerBeforeReload && !config().isHttpServerEnabled()) {
+                httpServer().close();
             }
 
-            logger.success("Reload complete.");
+            CloudLogger.get().success("Reload complete.");
         } catch (Exception e) {
-            logger.exception("Failed to reload", e);
+            CloudLogger.get().exception("Failed to reload", e);
             shutdown();
         }
     }
@@ -241,7 +220,7 @@ public final class PocketCloud {
         try {
             shutdown0();
         } catch (Exception e) {
-            logger.exception("Unable to shutdown", e);
+            CloudLogger.get().exception("Unable to shutdown", e);
         }
 
         System.exit(0);
@@ -250,70 +229,128 @@ public final class PocketCloud {
     private void shutdown0() {
         OutputManager.reset();
 
-        if (screenManager != null) screenManager.reset();
+        screens().reset();
 
-        logger.info("Shutting down...");
+        CloudLogger.get().info("Shutting down...");
 
-        logger.info("§cStopping §rall servers...");
-        if (serverManager != null) serverManager.stopAll();
+        CloudLogger.get().info("§cStopping §rall servers...");
+        servers().stopAll();
 
-        if (loader != null) loader.unloadAll();
-        if (network != null) network.close();
+        loader().unloadAll();
+        network().close();
 
-        logger.success("§cStopped §rthe §bcloud§r.");
-        if (console != null) console.uninstall();
+        CloudLogger.get().success("§cStopped §rthe §bcloud§r.");
+        console().uninstall();
     }
 
-    private void registerPackets(PacketPool pool) {
-        pool.register(CommandExecuteRequestPacket.class, CommandExecuteRequestPacket::new);
-        pool.register(PlayerNotificationCheckRequestPacket.class, PlayerNotificationCheckRequestPacket::new);
-        pool.register(PlayerWhitelistCheckRequestPacket.class, PlayerWhitelistCheckRequestPacket::new);
-        pool.register(ServerHandshakeRequestPacket.class, ServerHandshakeRequestPacket::new);
-        pool.register(ServerSaveRequestPacket.class, ServerSaveRequestPacket::new);
-        pool.register(ServerStartRequestPacket.class, ServerStartRequestPacket::new);
-        pool.register(ServerStopRequestPacket.class, ServerStopRequestPacket::new);
-
-        pool.register(CommandExecuteResponsePacket.class, CommandExecuteResponsePacket::new);
-        pool.register(PlayerNotificationCheckResponsePacket.class, PlayerNotificationCheckResponsePacket::new);
-        pool.register(PlayerWhitelistCheckResponsePacket.class, PlayerWhitelistCheckResponsePacket::new);
-        pool.register(ServerHandshakeResponsePacket.class, ServerHandshakeResponsePacket::new);
-        pool.register(ServerSaveResponsePacket.class, ServerSaveResponsePacket::new);
-        pool.register(ServerStartResponsePacket.class, ServerStartResponsePacket::new);
-        pool.register(ServerStopResponsePacket.class, ServerStopResponsePacket::new);
-
-        pool.register(BulkSyncPacket.class, BulkSyncPacket::new);
-        pool.register(CloudNotificationPacket.class, CloudNotificationPacket::new);
-        pool.register(CloudSyncServerStoragePacket.class, CloudSyncServerStoragePacket::new);
-        pool.register(ConsoleLogPacket.class, ConsoleLogPacket::new);
-        pool.register(DisconnectPacket.class, DisconnectPacket::new);
-        pool.register(KeepAlivePacket.class, KeepAlivePacket::new);
-        pool.register(LanguageSyncPacket.class, LanguageSyncPacket::new);
-        pool.register(LibrarySyncPacket.class, LibrarySyncPacket::new);
-        pool.register(MaintenanceListSyncPacket.class, MaintenanceListSyncPacket::new);
-        pool.register(ModuleSyncPacket.class, ModuleSyncPacket::new);
-        pool.register(NotificationListSyncPacket.class, NotificationListSyncPacket::new);
-        pool.register(PlayerConnectPacket.class, PlayerConnectPacket::new);
-        pool.register(PlayerDisconnectPacket.class, PlayerDisconnectPacket::new);
-        pool.register(PlayerKickPacket.class, PlayerKickPacket::new);
-        pool.register(PlayerSwitchServerPacket.class, PlayerSwitchServerPacket::new);
-        pool.register(PlayerSyncPacket.class, PlayerSyncPacket::new);
-        pool.register(PlayerTextPacket.class, PlayerTextPacket::new);
-        pool.register(PlayerTransferPacket.class, PlayerTransferPacket::new);
-        pool.register(PlayerUpdateNotificationStatePacket.class, PlayerUpdateNotificationStatePacket::new);
-        pool.register(ProxyRegisterServerPacket.class, ProxyRegisterServerPacket::new);
-        pool.register(ProxyUnregisterServerPacket.class, ProxyUnregisterServerPacket::new);
-        pool.register(ServerChangeStatusPacket.class, ServerChangeStatusPacket::new);
-        pool.register(ServerGroupSyncPacket.class, ServerGroupSyncPacket::new);
-        pool.register(ServerSyncPacket.class, ServerSyncPacket::new);
-        pool.register(TemplateSyncPacket.class, TemplateSyncPacket::new);
-    }
-
-    public long uptime() {
-        if (startTime <= 0) return 0;
-        return System.currentTimeMillis() - startTime;
+    public Duration uptime() {
+        if (startTime == null) return Duration.ZERO;
+        return Duration.between(startTime, Instant.now());
     }
 
     public long currentTick() {
-        return ticker.tickCounter();
+        return ticker().tickCounter();
+    }
+
+    public Ticker ticker() {
+        return services.get(Ticker.class);
+    }
+
+    public Loader loader() {
+        return services.get(Loader.class);
+    }
+
+    public MainConfig config() {
+        return services.get(MainConfig.class);
+    }
+
+    public LogSettingsConfig logSettingsConfig() {
+        return services.get(LogSettingsConfig.class);
+    }
+
+    public ServerSettingsConfig serverSettingsConfig() {
+        return services.get(ServerSettingsConfig.class);
+    }
+
+    public CloudConsole console() {
+        return services.get(CloudConsole.class);
+    }
+
+    public ScreenManager screens() {
+        return services.get(ScreenManager.class);
+    }
+
+    public CommandManager commands() {
+        return services.get(CommandManager.class);
+    }
+
+    public ServerSoftwareManager software() {
+        return services.get(ServerSoftwareManager.class);
+    }
+
+    public LibraryManager libraries() {
+        return services.get(LibraryManager.class);
+    }
+
+    public ServerPropertiesGenerator properties() {
+        return services.get(ServerPropertiesGenerator.class);
+    }
+
+    public TemplateManager templates() {
+        return services.get(TemplateManager.class);
+    }
+
+    @Override
+    public LanguageManager language() {
+        return services.get(LanguageManager.class);
+    }
+
+    public ServerGroupManager serverGroups() {
+        return services.get(ServerGroupManager.class);
+    }
+
+    public CloudServerManager servers() {
+        return services.get(CloudServerManager.class);
+    }
+
+    public CloudPlayerManager players() {
+        return services.get(CloudPlayerManager.class);
+    }
+
+    public NetworkNettyServer network() {
+        return services.get(NetworkNettyServer.class);
+    }
+
+    public HttpServer httpServer() {
+        return services.get(HttpServer.class);
+    }
+
+    public RequestManager requests() {
+        return services.get(RequestManager.class);
+    }
+
+    public PacketRegistry packets() {
+        return services.get(PacketRegistry.class);
+    }
+
+    public ServerClientCache clients() {
+        return services.get(ServerClientCache.class);
+    }
+
+    public TrafficMonitorManager traffic() {
+        return services.get(TrafficMonitorManager.class);
+    }
+
+    public CloudPluginManager plugins() {
+        return services.get(CloudPluginManager.class);
+    }
+
+    public EventManager events() {
+        return services.get(EventManager.class);
+    }
+
+    @Override
+    public IModuleProvider modules() {
+        return null;
     }
 }

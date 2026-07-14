@@ -24,7 +24,7 @@ public final class HelpCommand extends Command {
         if (ctx.hasArg("command")) {
             commands.add(ctx.argCommand("command"));
         } else {
-            commands.addAll(PocketCloud.instance().commandManager().getAll());
+            commands.addAll(PocketCloud.instance().commands().getAll());
         }
 
         sender.info("Commands §8(§b{}§8)§r:", commands.size());

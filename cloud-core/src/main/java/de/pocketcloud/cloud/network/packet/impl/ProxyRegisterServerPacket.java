@@ -37,6 +37,6 @@ public final class ProxyRegisterServerPacket extends CloudPacket implements Clie
     }
 
     public static ProxyRegisterServerPacket create(CloudServer server) {
-        return create(server.name(), server.serverData().port());
+        return create(server.name(), server.data().port());
     }
 }

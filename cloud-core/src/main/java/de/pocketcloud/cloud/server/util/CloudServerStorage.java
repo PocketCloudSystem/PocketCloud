@@ -1,12 +1,12 @@
 package de.pocketcloud.cloud.server.util;
 
-import de.pocketcloud.cloud.server.CloudServer;
-import de.pocketcloud.cloud.server.CloudServerManager;
-import org.jetbrains.annotations.Nullable;
+import de.pocketcloud.api.CloudAPI;
+import de.pocketcloud.api.model.server.ICloudServer;
+import de.pocketcloud.api.server.storage.ICloudServerStorage;
 
 import java.util.*;
 
-public final class CloudServerStorage {
+public final class CloudServerStorage implements ICloudServerStorage {
 
     private final UUID serverUuid;
     private final Map<String, Object> storage = new HashMap<>();
@@ -39,8 +39,16 @@ public final class CloudServerStorage {
         return storage.containsKey(key);
     }
 
-    public @Nullable Object get(String key) {
-        return storage.getOrDefault(key, null);
+    public Optional<Object> get(String key) {
+        return Optional.ofNullable(storage.getOrDefault(key, null));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T> Optional<T> get(String key, T type) {
+        Object value = get(key).orElse(null);
+        if (value == null) return Optional.empty();
+        return Optional.of((T) value);
     }
 
     public void clear() {
@@ -59,8 +67,8 @@ public final class CloudServerStorage {
         return serverUuid;
     }
 
-    public Optional<CloudServer> server() {
-        return CloudServerManager.instance().get(serverUuid);
+    public Optional<? extends ICloudServer> server() {
+        return CloudAPI.instance().servers().get(serverUuid);
     }
 
     public Map<String, Object> getAll() {

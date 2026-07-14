@@ -1,60 +1,52 @@
 package de.pocketcloud.cloud.template;
 
+import de.pocketcloud.api.model.template.ITemplate;
+import de.pocketcloud.api.provider.ITemplateProvider;
+import de.pocketcloud.api.search.SearchQuery;
+import de.pocketcloud.api.search.ServerSearchQuery;
+import de.pocketcloud.api.template.TemplateType;
+import de.pocketcloud.api.template.util.TemplateEditData;
+import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.event.impl.template.TemplateCreateEvent;
 import de.pocketcloud.cloud.event.impl.template.TemplateEditEvent;
 import de.pocketcloud.cloud.event.impl.template.TemplateRemoveEvent;
+import de.pocketcloud.cloud.template.util.TemplateTypeHelper;
 import de.pocketcloud.common.lifecycle.Loadable;
 import de.pocketcloud.cloud.network.packet.impl.TemplateSyncPacket;
 import de.pocketcloud.cloud.provider.CloudProvider;
 import de.pocketcloud.cloud.server.CloudServer;
-import de.pocketcloud.cloud.server.CloudServerManager;
-import de.pocketcloud.cloud.template.group.ServerGroupManager;
-import de.pocketcloud.cloud.template.util.TemplateEditData;
 import de.pocketcloud.common.lifecycle.Tickable;
 import de.pocketcloud.common.util.FileUtils;
 import de.pocketcloud.cloud.util.benchmark.Benchmark;
 import de.pocketcloud.cloud.util.benchmark.BenchmarkTiming;
 import de.pocketcloud.common.util.NumberUtils;
-import lombok.Getter;
-import lombok.experimental.Accessors;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
-public final class TemplateManager implements Tickable, Loadable {
-
-    @Getter
-    @Accessors(fluent = true)
-    private static TemplateManager instance = null;
+public final class TemplateManager implements Tickable, Loadable, ITemplateProvider<Template> {
 
     private final Map<String, Template> templates = new HashMap<>();
-
-    public TemplateManager() {
-        instance = this;
-    }
 
     @Override
     public void load() {
         CloudLogger.get().info("Loading templates...");
-        for (TemplateType type : TemplateType.values()) FileUtils.createDir(type.globalTemplatePath());
+        for (TemplateType type : TemplateType.values()) FileUtils.createDir(TemplateTypeHelper.globalTemplatePath(type));
         CloudProvider.current().getTemplates()
                 .thenSuccess(this.templates::putAll)
-                .thenSuccess(_ -> ServerGroupManager.instance().load());
+                .thenSuccess(_ -> PocketCloud.instance().serverGroups().load());
     }
 
     @Override
     public void unload() {
         CloudLogger.get().info("Unloading templates...");
         this.templates.clear();
-        ServerGroupManager.instance().unload();
+        PocketCloud.instance().serverGroups().unload();
     }
 
-    public void create(Template template) {
+    public void add(Template template) {
         Benchmark.startTiming("template_creation");
         try {
             TemplateCreateEvent ev = new TemplateCreateEvent(template);
@@ -91,12 +83,12 @@ public final class TemplateManager implements Tickable, Loadable {
         BenchmarkTiming res = Benchmark.stopTiming("template_editing");
         CloudLogger.get().success("Successfully §eedited §rthe template §b{}§r. §8(§rTook §b{}ms§8)", template.name(), NumberUtils.formatNumber(res.duration(), 2));
         TemplateSyncPacket.create(template, false).broadcastPacket();
-        if (template.settings().isMaintenance()) {
+        if (template.settings().maintenance()) {
             template.players().forEach(player -> {
-                if (template.settings().isLobby()) {
+                if (template.settings().lobby()) {
                     player.kick("MAINTENANCE");
                 } else {
-                    Optional<CloudServer> lobbyServer = CloudServerManager.instance().getFreeLobby();
+                    Optional<CloudServer> lobbyServer = PocketCloud.instance().servers().getFreeLobby();
                     if (lobbyServer.isEmpty()) player.kick("MAINTENANCE");
                     else player.transfer(lobbyServer.get());
                 }
@@ -133,25 +125,25 @@ public final class TemplateManager implements Tickable, Loadable {
 
     @Override
     public void tick(long currentTick) {
-        if (!ServerGroupManager.instance().isLoaded()) return;
+        if (!PocketCloud.instance().serverGroups().isLoaded()) return;
         for (Template template : templates.values()) {
-            if (template.settings().isAutoStart()) {
-                int runningServers = CloudServerManager.instance().getAll(template).size();
-                if (runningServers < template.settings().getMaxServerCount() && runningServers < template.settings().getMinServerCount()) {
-                    if ((System.currentTimeMillis() - CloudServerManager.instance().lastServerStopTime()) >= 500) {
-                        CloudServerManager.instance().start(template, template.settings().getMinServerCount() - runningServers);
+            if (template.settings().autoStart()) {
+                int runningServers = PocketCloud.instance().servers().query(ServerSearchQuery.create().ofTemplate(template)).size();
+                if (runningServers < template.settings().maxServerCount() && runningServers < template.settings().minServerCount()) {
+                    if ((System.currentTimeMillis() - PocketCloud.instance().servers().lastServerStopTime()) >= 500) {
+                        PocketCloud.instance().servers().start(template, template.settings().minServerCount() - runningServers);
                     }
                 }
             }
 
-            CloudServer latest = CloudServerManager.instance().getLatest(template).orElse(null);
+            CloudServer latest = PocketCloud.instance().servers().getLatest(template).orElse(null);
             if (latest != null) {
-                double requiredPercentage = template.settings().getStartNewPercentage();
+                double requiredPercentage = template.settings().startNewPercentage();
                 if (requiredPercentage <= 0) continue;
                 int players = latest.playerCount();
-                double percentage = (double) (100 * players) / latest.serverData().maxPlayers();
-                if (percentage >= requiredPercentage && CloudServerManager.instance().checkCapacity(template)) {
-                    CloudServerManager.instance().start(template, 1);
+                double percentage = (double) (100 * players) / latest.data().maxPlayers();
+                if (percentage >= requiredPercentage && PocketCloud.instance().servers().checkCapacity(template)) {
+                    PocketCloud.instance().servers().start(template, 1);
                 }
             }
         }
@@ -161,14 +153,20 @@ public final class TemplateManager implements Tickable, Loadable {
         return Optional.ofNullable(templates.getOrDefault(name, null));
     }
 
-    public List<Template> getAll(TemplateType... types) {
-        if (types.length > 0) return templates.values().stream()
-                .filter(template -> {
-                    for (TemplateType type : types) {
-                        if (template.isTypeOf(type)) return true;
-                    }
-                    return false;
-                }).toList();
+    @Override
+    public Collection<Template> query(SearchQuery<? extends ITemplate> searchQuery) {
+        return filter(searchQuery);
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T extends ITemplate> Collection<Template> filter(SearchQuery<T> query) {
+        return templates.values().stream()
+                .filter(o -> query.matches((T) o))
+                .toList();
+    }
+
+    @Override
+    public Collection<Template> getAll() {
         return templates.values().stream().toList();
     }
 }

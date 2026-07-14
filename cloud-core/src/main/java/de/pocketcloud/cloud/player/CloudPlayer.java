@@ -1,5 +1,7 @@
 package de.pocketcloud.cloud.player;
 
+import de.pocketcloud.api.model.player.ICloudPlayer;
+import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.event.impl.player.PlayerKickEvent;
 import de.pocketcloud.network.packet.type.TextType;
@@ -8,7 +10,6 @@ import de.pocketcloud.cloud.network.packet.impl.PlayerSyncPacket;
 import de.pocketcloud.cloud.network.packet.impl.PlayerTextPacket;
 import de.pocketcloud.cloud.network.packet.impl.PlayerTransferPacket;
 import de.pocketcloud.cloud.server.CloudServer;
-import de.pocketcloud.cloud.server.CloudServerManager;
 import de.pocketcloud.common.serialization.Writable;
 import de.pocketcloud.common.mapper.MapperUtils;
 import lombok.Getter;
@@ -16,19 +17,20 @@ import lombok.experimental.Accessors;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 @Getter
 @Accessors(fluent = true)
-public final class CloudPlayer implements Writable<Map<String, Object>> {
+public final class CloudPlayer implements Writable<Map<String, Object>>, ICloudPlayer {
 
     private final String name;
     private final String address;
     private final String xboxUserId;
-    private final String uniqueId;
+    private final UUID uniqueId;
     private String currentServerName;
     private String currentProxyName;
 
-    public CloudPlayer(String name, String address, String xboxUserId, String uniqueId, String currentServerName, String currentProxyName) {
+    public CloudPlayer(String name, String address, String xboxUserId, UUID uniqueId, String currentServerName, String currentProxyName) {
         this.name = name;
         this.address = address;
         this.xboxUserId = xboxUserId;
@@ -37,7 +39,7 @@ public final class CloudPlayer implements Writable<Map<String, Object>> {
         this.currentProxyName = currentProxyName;
     }
 
-    public CloudPlayer(String name, String address, String xboxUserId, String uniqueId) {
+    public CloudPlayer(String name, String address, String xboxUserId, UUID uniqueId) {
         this(name, address, xboxUserId, uniqueId, null, null);
     }
 
@@ -66,14 +68,13 @@ public final class CloudPlayer implements Writable<Map<String, Object>> {
     }
 
     public void transfer(CloudServer server) {
-        var proxy = currentProxy().orElse(null);
-        var current = currentServer().orElse(null);
-        if (proxy != null) {
-            proxy.sendPacket(PlayerTransferPacket.create(name, server.name()));
-            return;
-        }
+        var proxy = currentProxy();
+        var current = currentServer();
 
-        if (current != null) current.sendPacket(PlayerTransferPacket.create(name, server.name()));
+        proxy.ifPresentOrElse(
+                p -> p.sendPacket(PlayerTransferPacket.create(name, server.name())),
+                () -> current.ifPresent(c -> c.sendPacket(PlayerTransferPacket.create(name, server.name())))
+        );
     }
 
     public void send(String message, TextType textType) {
@@ -108,12 +109,14 @@ public final class CloudPlayer implements Writable<Map<String, Object>> {
         send(title + "\n" + body, TextType.TOAST);
     }
 
+    @Override
     public Optional<CloudServer> currentServer() {
-        return currentServerName == null ? Optional.empty() : CloudServerManager.instance().get(currentServerName);
+        return currentServerName != null ? PocketCloud.instance().servers().get(currentServerName) : Optional.empty();
     }
 
+    @Override
     public Optional<CloudServer> currentProxy() {
-        return currentProxyName == null ? Optional.empty() : CloudServerManager.instance().get(currentProxyName);
+        return currentProxyName != null ? PocketCloud.instance().servers().get(currentProxyName) : Optional.empty();
     }
 
     @Override

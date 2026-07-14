@@ -1,5 +1,6 @@
 package de.pocketcloud.cloud.server.util;
 
+import de.pocketcloud.api.server.data.ICloudServerData;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -10,7 +11,7 @@ import java.util.UUID;
 @Getter
 @Setter
 @Accessors(fluent = true)
-public final class CloudServerData {
+public final class CloudServerData implements ICloudServerData {
 
     private final UUID serverUuid;
     private final int port;
@@ -38,9 +39,5 @@ public final class CloudServerData {
         this.memoryPeak = memoryPeak;
         this.memoryLimit = memoryLimit;
         this.cpuUsage = cpuUsage;
-    }
-
-    public @Nullable Long processId() {
-        return processId != null ? processId : tempProcessId;
     }
 }

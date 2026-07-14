@@ -4,15 +4,12 @@ import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.event.impl.packet.PacketReceiveEvent;
 import de.pocketcloud.cloud.network.client.ServerClient;
-import de.pocketcloud.cloud.network.client.ServerClientCache;
 import de.pocketcloud.cloud.network.packet.CloudPacket;
 import de.pocketcloud.cloud.network.packet.ResponseClientPacket;
-import de.pocketcloud.cloud.network.request.RequestManager;
 import de.pocketcloud.cloud.server.CloudServer;
 import de.pocketcloud.network.packet.AuthenticatedPacket;
 import de.pocketcloud.network.packet.CloudboundPacket;
 import de.pocketcloud.network.traffic.TrafficDirection;
-import de.pocketcloud.network.traffic.TrafficMonitorManager;
 import de.pocketcloud.network.traffic.impl.NetworkTrafficMonitor;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -32,7 +29,7 @@ public class NetworkNettyHandler extends SimpleChannelInboundHandler<CloudPacket
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, CloudPacket packet) {
         try {
-            TrafficMonitorManager.instance().callHandlers(NetworkTrafficMonitor.class, NetworkTrafficMonitor.parsePacketMode(TrafficDirection.IN, packet.getClass()), ctx.channel(), packet, packet.getSize());
+            PocketCloud.instance().traffic().callHandlers(NetworkTrafficMonitor.class, NetworkTrafficMonitor.parsePacketMode(TrafficDirection.IN, packet.getClass()), ctx.channel(), packet, packet.getSize());
             CloudServer server = null;
 
             if (packet instanceof AuthenticatedPacket) {
@@ -46,7 +43,7 @@ public class NetworkNettyHandler extends SimpleChannelInboundHandler<CloudPacket
             }
 
             if (packet instanceof ResponseClientPacket responseClientPacket) {
-                RequestManager.instance().resolve(responseClientPacket);
+                PocketCloud.instance().requests().resolve(responseClientPacket);
             } else packet.handle(ctx.channel());
 
             if (server != null) server.latestPacketInfo().setLatestPacket(System.currentTimeMillis(), packet.getClass());
@@ -81,7 +78,7 @@ public class NetworkNettyHandler extends SimpleChannelInboundHandler<CloudPacket
         PocketCloud.instance().network().removeChannel(channel);
         ServerClient client = channel.attr(ServerClient.ATTRIBUTE_KEY).get();
         if (client != null) {
-            ServerClientCache.instance().remove(client);
+            PocketCloud.instance().clients().remove(client);
         }
     }
 }

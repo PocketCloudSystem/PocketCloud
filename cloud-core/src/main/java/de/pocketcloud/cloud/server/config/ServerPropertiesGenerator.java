@@ -1,16 +1,15 @@
 package de.pocketcloud.cloud.server.config;
 
 import de.pocketcloud.cloud.console.log.CloudLogger;
+import de.pocketcloud.cloud.template.util.TemplateTypeHelper;
 import de.pocketcloud.common.lifecycle.Loadable;
 import de.pocketcloud.cloud.server.config.impl.PocketMineConfig;
 import de.pocketcloud.cloud.server.config.impl.PocketMineServerProperties;
 import de.pocketcloud.cloud.server.config.impl.WaterdogConfig;
 import de.pocketcloud.cloud.server.software.ServerSoftware;
-import de.pocketcloud.cloud.template.TemplateType;
+import de.pocketcloud.api.template.TemplateType;
 import de.pocketcloud.common.util.FileUtils;
 import de.pocketcloud.cloud.util.PocketCloudPaths;
-import lombok.Getter;
-import lombok.experimental.Accessors;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -23,15 +22,7 @@ import java.util.stream.Stream;
 
 public final class ServerPropertiesGenerator implements Loadable {
 
-    @Getter
-    @Accessors(fluent = true)
-    private static ServerPropertiesGenerator instance;
-
     private final Map<String, List<IServerProperties>> defaultConfigFiles = new HashMap<>();
-
-    public ServerPropertiesGenerator() {
-        instance = this;
-    }
 
     @Override
     public void load() {
@@ -52,7 +43,7 @@ public final class ServerPropertiesGenerator implements Loadable {
 
         for (TemplateType type : TemplateType.values()) {
             if (!properties.getServerSoftware().templateType().equals(type.name())) continue;
-            Path globalTemplatePath = type.globalTemplatePath();
+            Path globalTemplatePath = TemplateTypeHelper.globalTemplatePath(type);
             FileUtils.createDir(globalTemplatePath);
 
             Path propertiesPath = globalTemplatePath.resolve(properties.getFileName());

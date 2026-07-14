@@ -1,5 +1,6 @@
 package de.pocketcloud.cloud.network.packet.impl;
 
+import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.network.client.ServerClient;
 import de.pocketcloud.network.packet.AuthenticatedPacket;
 import de.pocketcloud.network.packet.CloudboundPacket;
@@ -25,10 +26,10 @@ public final class PlayerConnectPacket extends CloudPacket implements Cloudbound
     public void handle(@NotNull ServerClient client) {
         var server = client.server();
         if (server != null) {
-            if (CloudPlayerManager.instance().get(player.name()).isEmpty()) {
+            if (PocketCloud.instance().players().get(player.name()).isEmpty()) {
                 if (server.template().templateType().isServer()) player.setCurrentServer(server);
                 else player.setCurrentProxy(server);
-                CloudPlayerManager.instance().add(player);
+                PocketCloud.instance().players().add(player);
             }
         }
     }

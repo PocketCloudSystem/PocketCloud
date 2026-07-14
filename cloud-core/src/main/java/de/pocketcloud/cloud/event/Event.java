@@ -1,5 +1,6 @@
 package de.pocketcloud.cloud.event;
 
+import de.pocketcloud.cloud.PocketCloud;
 import lombok.Getter;
 
 public abstract class Event {
@@ -26,7 +27,7 @@ public abstract class Event {
 
         ++eventCallDepth;
         try {
-            EventManager.instance().call(this);
+            PocketCloud.instance().events().call(this);
         } finally {
             --eventCallDepth;
         }

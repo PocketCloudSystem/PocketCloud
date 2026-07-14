@@ -9,7 +9,7 @@ import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.template.Template;
 import de.pocketcloud.cloud.template.group.ServerGroup;
 import de.pocketcloud.cloud.util.PocketCloudPaths;
-import de.pocketcloud.cloud.util.concurrent.Promise;
+import de.pocketcloud.common.concurrent.Promise;
 import de.pocketcloud.common.config.Config;
 import de.pocketcloud.common.config.exception.UnsupportedFileExtensionException;
 import de.pocketcloud.common.config.type.JsonConfigType;

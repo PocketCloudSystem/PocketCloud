@@ -4,18 +4,12 @@ import de.pocketcloud.cloud.provider.database.MySqlSettings;
 import de.pocketcloud.common.util.StringUtils;
 import de.pocketcloud.configlib.*;
 import lombok.Getter;
-import lombok.experimental.Accessors;
 
 import java.net.InetSocketAddress;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Getter
 public final class MainConfig extends Configuration {
-
-    @Getter
-    @Ignored
-    @Accessors(fluent = true)
-    private static MainConfig instance = null;
 
     @Comment({"The name of the cloud."})
     private String cloudName = "main-cloud";
@@ -45,7 +39,6 @@ public final class MainConfig extends Configuration {
 
     public MainConfig() {
         super("storage/configs/config.yml", ConfigType.YAML);
-        instance = this;
         reload();
     }
 
