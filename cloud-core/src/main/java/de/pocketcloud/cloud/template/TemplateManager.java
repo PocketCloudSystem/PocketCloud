@@ -11,20 +11,23 @@ import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.event.impl.template.TemplateCreateEvent;
 import de.pocketcloud.cloud.event.impl.template.TemplateEditEvent;
 import de.pocketcloud.cloud.event.impl.template.TemplateRemoveEvent;
-import de.pocketcloud.cloud.template.util.TemplateTypeHelper;
-import de.pocketcloud.common.lifecycle.Loadable;
-import de.pocketcloud.cloud.network.packet.impl.TemplateSyncPacket;
 import de.pocketcloud.cloud.provider.CloudProvider;
 import de.pocketcloud.cloud.server.CloudServer;
-import de.pocketcloud.common.lifecycle.Tickable;
-import de.pocketcloud.common.util.FileUtils;
+import de.pocketcloud.cloud.template.util.TemplateTypeHelper;
 import de.pocketcloud.cloud.util.benchmark.Benchmark;
 import de.pocketcloud.cloud.util.benchmark.BenchmarkTiming;
+import de.pocketcloud.common.lifecycle.Loadable;
+import de.pocketcloud.common.lifecycle.Tickable;
+import de.pocketcloud.common.util.FileUtils;
 import de.pocketcloud.common.util.NumberUtils;
+import de.pocketcloud.network.packet.impl.TemplateSyncPacket;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
 public final class TemplateManager implements Tickable, Loadable, ITemplateProvider<Template> {
 
@@ -61,7 +64,7 @@ public final class TemplateManager implements Tickable, Loadable, ITemplateProvi
             templates.put(template.name(), template);
             BenchmarkTiming res = Benchmark.stopTiming("template_creation");
             CloudLogger.get().success("Successfully §acreated §rthe template §b{}§r. §8(§rTook §b{}ms§8)", template.name(), NumberUtils.formatNumber(res.duration(), 2));
-            TemplateSyncPacket.create(template, false).broadcastPacket();
+            TemplateSyncPacket.create(template, false).broadcast();
         } catch (IOException e) {
             CloudLogger.get().exception("Failed to create template {}", e, template.name());
             Benchmark.stopTiming("template_creation");
@@ -82,7 +85,7 @@ public final class TemplateManager implements Tickable, Loadable, ITemplateProvi
         CloudProvider.current().editTemplate(template, template.write());
         BenchmarkTiming res = Benchmark.stopTiming("template_editing");
         CloudLogger.get().success("Successfully §eedited §rthe template §b{}§r. §8(§rTook §b{}ms§8)", template.name(), NumberUtils.formatNumber(res.duration(), 2));
-        TemplateSyncPacket.create(template, false).broadcastPacket();
+        TemplateSyncPacket.create(template, false).broadcast();
         if (template.settings().maintenance()) {
             template.players().forEach(player -> {
                 if (template.settings().lobby()) {

@@ -3,20 +3,20 @@ package de.pocketcloud.cloud.server;
 import de.pocketcloud.api.model.group.IServerGroup;
 import de.pocketcloud.api.model.server.ICloudServer;
 import de.pocketcloud.api.model.template.ITemplate;
-import de.pocketcloud.api.search.SearchQuery;
-import de.pocketcloud.api.template.TemplateType;
 import de.pocketcloud.api.provider.IServerProvider;
+import de.pocketcloud.api.search.SearchQuery;
 import de.pocketcloud.api.search.ServerSearchQuery;
+import de.pocketcloud.api.template.TemplateType;
 import de.pocketcloud.cloud.console.log.CloudLogger;
-import de.pocketcloud.cloud.network.packet.impl.ServerSyncPacket;
-import de.pocketcloud.cloud.server.util.CloudServerData;
 import de.pocketcloud.cloud.server.start.ServerStartMethod;
+import de.pocketcloud.cloud.server.util.CloudServerData;
 import de.pocketcloud.cloud.server.util.ServerStartMethods;
 import de.pocketcloud.cloud.server.util.ServerUtils;
 import de.pocketcloud.cloud.template.Template;
-import de.pocketcloud.common.lifecycle.Tickable;
 import de.pocketcloud.cloud.util.benchmark.Benchmark;
 import de.pocketcloud.common.concurrent.Promise;
+import de.pocketcloud.common.lifecycle.Tickable;
+import de.pocketcloud.network.packet.impl.ServerSyncPacket;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.experimental.Accessors;
@@ -71,7 +71,7 @@ public final class CloudServerManager implements Tickable, IServerProvider<Cloud
         ServerUtils.removeId(server.template(), server.id());
         ServerUtils.removePort(server.data().port());
         this.lastServerStopTime = System.currentTimeMillis();
-        ServerSyncPacket.create(server, true).broadcastPacket();
+        ServerSyncPacket.create(server, true).broadcast();
     }
     
     public Promise<Collection<String>> start(ITemplate template, int count) {

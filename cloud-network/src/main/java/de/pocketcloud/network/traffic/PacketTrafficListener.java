@@ -1,6 +1,6 @@
 package de.pocketcloud.network.traffic;
 
-import de.pocketcloud.network.packet.Packet;
+import de.pocketcloud.api.network.packet.Packet;
 import io.netty.channel.Channel;
 import org.jetbrains.annotations.Nullable;
 

@@ -1,9 +1,13 @@
 package de.pocketcloud.cloud.cache;
 
-import de.pocketcloud.cloud.network.packet.impl.ModuleSyncPacket;
+import de.pocketcloud.cloud.network.broadcaster.PacketBroadcaster;
 import de.pocketcloud.common.cache.LocalCache;
+import de.pocketcloud.network.packet.impl.ModuleSyncPacket;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public final class ActiveInGameModuleCache implements LocalCache<String> {
 
@@ -19,9 +23,13 @@ public final class ActiveInGameModuleCache implements LocalCache<String> {
         enabledModules.addAll(cache);
     }
 
+    public ModuleSyncPacket buildSyncPacket() {
+        return ModuleSyncPacket.create(enabledModules);
+    }
+
     @Override
     public void syncOut() {
-        ModuleSyncPacket.fromModuleCache().broadcastPacket();
+        PacketBroadcaster.broadcast(buildSyncPacket());
     }
 
     @Override

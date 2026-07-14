@@ -1,11 +1,11 @@
 package de.pocketcloud.cloud.util.gson;
 
 import com.google.gson.*;
+import de.pocketcloud.api.template.TemplateType;
 import de.pocketcloud.api.template.settings.TemplateSettings;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.server.software.ServerSoftware;
 import de.pocketcloud.cloud.template.Template;
-import de.pocketcloud.api.template.TemplateType;
 
 import java.lang.reflect.Type;
 import java.util.Map;

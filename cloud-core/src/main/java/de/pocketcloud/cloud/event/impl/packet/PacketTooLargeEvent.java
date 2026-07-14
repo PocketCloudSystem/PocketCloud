@@ -1,6 +1,6 @@
 package de.pocketcloud.cloud.event.impl.packet;
 
-import de.pocketcloud.network.packet.Packet;
+import de.pocketcloud.api.network.packet.Packet;
 import de.pocketcloud.network.traffic.TrafficDirection;
 import io.netty.channel.Channel;
 import lombok.Getter;

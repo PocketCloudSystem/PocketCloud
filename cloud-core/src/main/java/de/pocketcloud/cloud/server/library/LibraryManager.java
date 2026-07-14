@@ -3,10 +3,12 @@ package de.pocketcloud.cloud.server.library;
 import com.google.gson.reflect.TypeToken;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.log.CloudLogger;
-import de.pocketcloud.common.lifecycle.Loadable;
+import de.pocketcloud.cloud.server.CloudServer;
 import de.pocketcloud.cloud.server.software.ServerSoftware;
-import de.pocketcloud.common.util.FileUtils;
 import de.pocketcloud.cloud.util.PocketCloudPaths;
+import de.pocketcloud.common.lifecycle.Loadable;
+import de.pocketcloud.common.util.FileUtils;
+import de.pocketcloud.network.packet.impl.LibrarySyncPacket;
 
 import java.nio.file.Files;
 import java.util.*;
@@ -40,6 +42,21 @@ public final class LibraryManager implements Loadable {
                 loadLibrary(library);
             }
         }
+    }
+
+    public LibrarySyncPacket buildSyncPacket(CloudServer server) {
+        List<LinkedHashMap<String, String>> data = new ArrayList<>();
+        for (Library lib : PocketCloud.instance().libraries().getAll().values()) {
+            if (!lib.isAvailableFor(server.template().serverSoftware())) continue;
+            LinkedHashMap<String, String> libData = new LinkedHashMap<>();
+            libData.put("name", lib.name());
+            libData.put("path", lib.directoryPath().toAbsolutePath().toString());
+            libData.put("namespacePrefix", lib.namespacePrefix());
+            libData.put("namespaceFolder", lib.namespaceFolder());
+            data.add(libData);
+        }
+
+        return LibrarySyncPacket.create(data);
     }
 
     public void loadLibrary(Library library) {

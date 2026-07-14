@@ -1,7 +1,7 @@
 package de.pocketcloud.cloud.event.impl.packet;
 
+import de.pocketcloud.api.network.packet.CloudboundPacket;
 import de.pocketcloud.cloud.event.Cancelable;
-import de.pocketcloud.network.packet.CloudboundPacket;
 import io.netty.channel.Channel;
 import lombok.Getter;
 

@@ -1,7 +1,8 @@
 package de.pocketcloud.cloud.network.client;
 
+import de.pocketcloud.api.network.client.IServerClient;
+import de.pocketcloud.api.network.packet.ClientboundPacket;
 import de.pocketcloud.cloud.PocketCloud;
-import de.pocketcloud.network.packet.ClientboundPacket;
 import de.pocketcloud.cloud.server.CloudServer;
 import io.netty.channel.Channel;
 import io.netty.util.AttributeKey;
@@ -12,8 +13,9 @@ import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
-public final class ServerClient {
+public final class ServerClient implements IServerClient {
 
     public static final AttributeKey<ServerClient> ATTRIBUTE_KEY = AttributeKey.valueOf("serverClient");
 
@@ -42,9 +44,17 @@ public final class ServerClient {
         return future;
     }
 
-    public CompletableFuture<Void> sendDelayedPacket(ClientboundPacket packet, long delayMs) {
+    @Override
+    public CompletableFuture<Void> sendDelayedPacket(ClientboundPacket packet, long delay, TimeUnit unit) {
         CompletableFuture<Void> future = new CompletableFuture<>();
-        delayedPackets.add(new DelayedPacket(packet, System.currentTimeMillis() + delayMs, future));
+        delayedPackets.add(new DelayedPacket(packet, System.currentTimeMillis() + unit.toMillis(delay), future));
+        return future;
+    }
+
+    @Override
+    public CompletableFuture<Void> sendDelayedPacket(ClientboundPacket packet, long ticks) {
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        delayedPackets.add(new DelayedPacket(packet, System.currentTimeMillis() + (ticks * 50), future));
         return future;
     }
 

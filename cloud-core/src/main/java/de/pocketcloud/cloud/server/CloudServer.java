@@ -1,43 +1,49 @@
 package de.pocketcloud.cloud.server;
 
 import de.pocketcloud.api.model.server.ICloudServer;
+import de.pocketcloud.api.network.packet.ClientboundPacket;
 import de.pocketcloud.api.search.PlayerSearchQuery;
 import de.pocketcloud.api.search.ServerSearchQuery;
 import de.pocketcloud.api.server.ServerStatus;
 import de.pocketcloud.api.server.VerificationStatus;
+import de.pocketcloud.api.template.TemplateType;
 import de.pocketcloud.cloud.PocketCloud;
-import de.pocketcloud.cloud.network.packet.PacketExcluder;
-import de.pocketcloud.cloud.notification.Notifier;
-import de.pocketcloud.cloud.template.util.TemplateTypeHelper;
-import de.pocketcloud.common.config.Config;
-import de.pocketcloud.common.config.exception.UnsupportedFileExtensionException;
+import de.pocketcloud.cloud.cache.ActiveInGameModuleCache;
+import de.pocketcloud.cloud.cache.NotificationListCache;
+import de.pocketcloud.cloud.cache.WhitelistCache;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.console.log.def.PrefixedLogger;
 import de.pocketcloud.cloud.event.impl.server.ServerPrepareEvent;
 import de.pocketcloud.cloud.event.impl.server.ServerStartEvent;
 import de.pocketcloud.cloud.event.impl.server.ServerStopEvent;
+import de.pocketcloud.cloud.network.broadcaster.PacketBroadcaster;
 import de.pocketcloud.cloud.network.client.ServerClient;
+import de.pocketcloud.cloud.notification.Notifier;
+import de.pocketcloud.cloud.player.CloudPlayer;
+import de.pocketcloud.cloud.server.config.IServerProperties;
+import de.pocketcloud.cloud.server.util.*;
+import de.pocketcloud.cloud.server.util.conv.InstantConverter;
+import de.pocketcloud.cloud.template.Template;
+import de.pocketcloud.cloud.template.group.ServerGroup;
+import de.pocketcloud.cloud.template.util.TemplateTypeHelper;
+import de.pocketcloud.cloud.util.PocketCloudPaths;
+import de.pocketcloud.common.cache.LocalCache;
+import de.pocketcloud.common.concurrent.Promise;
+import de.pocketcloud.common.config.Config;
+import de.pocketcloud.common.config.exception.UnsupportedFileExtensionException;
+import de.pocketcloud.common.lifecycle.Tickable;
+import de.pocketcloud.common.mapper.MapKey;
+import de.pocketcloud.common.mapper.MapperUtils;
 import de.pocketcloud.common.serialization.Writable;
 import de.pocketcloud.common.util.FileUtils;
 import de.pocketcloud.common.util.ProcessUtils;
 import de.pocketcloud.common.util.StringUtils;
-import de.pocketcloud.network.packet.ClientboundPacket;
-import de.pocketcloud.cloud.network.packet.impl.*;
-import de.pocketcloud.cloud.network.packet.impl.request.client.CommandExecuteRequestPacket;
-import de.pocketcloud.cloud.network.packet.impl.response.client.CommandExecuteResponsePacket;
+import de.pocketcloud.network.packet.impl.*;
+import de.pocketcloud.network.packet.impl.request.client.CommandExecuteRequestPacket;
+import de.pocketcloud.network.packet.impl.response.client.CommandExecuteResponsePacket;
 import de.pocketcloud.network.packet.type.NotificationType;
 import de.pocketcloud.network.packet.type.ServerCommandExecutionResult;
 import de.pocketcloud.network.packet.type.ServerDisconnectReason;
-import de.pocketcloud.cloud.player.CloudPlayer;
-import de.pocketcloud.cloud.server.config.IServerProperties;
-import de.pocketcloud.cloud.server.util.*;
-import de.pocketcloud.cloud.template.Template;
-import de.pocketcloud.api.template.TemplateType;
-import de.pocketcloud.cloud.template.group.ServerGroup;
-import de.pocketcloud.common.lifecycle.Tickable;
-import de.pocketcloud.cloud.util.*;
-import de.pocketcloud.common.concurrent.Promise;
-import de.pocketcloud.common.mapper.MapperUtils;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -53,6 +59,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static de.pocketcloud.common.util.FileUtils.IO_EXECUTOR;
@@ -81,8 +88,10 @@ public final class CloudServer implements Tickable, Writable<Map<String, Object>
     private ServerStatus status = ServerStatus.PENDING;
     @Setter
     private transient Long lastKeepAlive = null;
+    @MapKey(converter = InstantConverter.class)
     private Instant startTime = null;
     @Setter
+    @MapKey(converter = InstantConverter.class)
     private Instant verifiedTime = null;
     private transient Long stopTime = null;
     private transient Config mainProperties = null;
@@ -367,23 +376,23 @@ public final class CloudServer implements Tickable, Writable<Map<String, Object>
 
     public void addToProxies() {
         if (template().templateType() == TemplateType.SERVER) {
-            ProxyRegisterServerPacket.create(this).broadcastPacket(e -> e.templateType(TemplateType.SERVER));
+            ProxyRegisterServerPacket.create(this).broadcast(e -> e.templateType(TemplateType.SERVER));
         }
     }
 
     public void removeFromProxies() {
         if (template().templateType() == TemplateType.SERVER) {
-            ProxyUnregisterServerPacket.create(this).broadcastPacket(e -> e.templateType(TemplateType.SERVER));
+            ProxyUnregisterServerPacket.create(this).broadcast(e -> e.templateType(TemplateType.SERVER));
         }
     }
 
     public void sync() {
         List<ClientboundPacket> syncPackets = new ArrayList<>(List.of(
                 LanguageSyncPacket.fromLanguage(),
-                LibrarySyncPacket.fromLibraries(this),
-                ModuleSyncPacket.fromModuleCache(),
-                MaintenanceListSyncPacket.fromMaintenanceListCache(),
-                NotificationListSyncPacket.fromNotificationListCache(),
+                PocketCloud.instance().libraries().buildSyncPacket(this),
+                LocalCache.get(ActiveInGameModuleCache.class).buildSyncPacket(),
+                LocalCache.get(WhitelistCache.class).buildSyncPacket(),
+                LocalCache.get(NotificationListCache.class).buildSyncPacket(),
                 BulkSyncPacket.generate()
         ));
 
@@ -405,14 +414,19 @@ public final class CloudServer implements Tickable, Writable<Map<String, Object>
         return client().get().sendPacket(packet);
     }
 
-    public CompletableFuture<Void> sendDelayedPacket(ClientboundPacket packet, long delayMs) {
+    public CompletableFuture<Void> sendDelayedPacket(ClientboundPacket packet, long delay, TimeUnit unit) {
         if (client().isEmpty()) return CompletableFuture.failedFuture(new RuntimeException("Client is empty"));
-        return client().get().sendDelayedPacket(packet, delayMs);
+        return client().get().sendDelayedPacket(packet, delay, unit);
+    }
+
+    public CompletableFuture<Void> sendDelayedPacket(ClientboundPacket packet, long ticks) {
+        if (client().isEmpty()) return CompletableFuture.failedFuture(new RuntimeException("Client is empty"));
+        return client().get().sendDelayedPacket(packet, ticks);
     }
 
     public void setStatus(ServerStatus status) {
         this.status = status;
-        ServerSyncPacket.create(this, false).broadcastPacket();
+        PacketBroadcaster.broadcast(ServerSyncPacket.create(this, false));
     }
 
     public String name() {

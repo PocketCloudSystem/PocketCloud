@@ -1,13 +1,12 @@
 package de.pocketcloud.cloud.notification;
 
 import de.pocketcloud.api.search.ServerSearchQuery;
-import de.pocketcloud.cloud.PocketCloud;
-import de.pocketcloud.cloud.config.LogSettingsConfig;
-import de.pocketcloud.cloud.console.log.CloudLogger;
-import de.pocketcloud.cloud.network.packet.impl.CloudNotificationPacket;
-import de.pocketcloud.network.packet.type.NotificationType;
-import de.pocketcloud.cloud.server.util.ServerCrashData;
 import de.pocketcloud.api.template.TemplateType;
+import de.pocketcloud.cloud.PocketCloud;
+import de.pocketcloud.cloud.console.log.CloudLogger;
+import de.pocketcloud.cloud.server.util.ServerCrashData;
+import de.pocketcloud.network.packet.impl.CloudNotificationPacket;
+import de.pocketcloud.network.packet.type.NotificationType;
 import de.r3pt1s.discord.webhook.Webhook;
 import de.r3pt1s.discord.webhook.message.Message;
 import de.r3pt1s.discord.webhook.message.embed.Embed;
@@ -36,7 +35,7 @@ public final class Notifier {
             }
         }
 
-        CloudNotificationPacket.create(type, args).broadcastPacket(e -> e.templateType(PocketCloud.instance().servers().query(ServerSearchQuery.create().ofType(TemplateType.PROXY)).isEmpty() ? TemplateType.PROXY : TemplateType.SERVER));
+        CloudNotificationPacket.create(type, args).broadcast(e -> e.templateType(PocketCloud.instance().servers().query(ServerSearchQuery.create().ofType(TemplateType.PROXY)).isEmpty() ? TemplateType.PROXY : TemplateType.SERVER));
         return true;
     }
 

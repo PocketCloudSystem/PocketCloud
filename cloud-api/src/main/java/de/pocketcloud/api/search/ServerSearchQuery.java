@@ -3,9 +3,9 @@ package de.pocketcloud.api.search;
 import de.pocketcloud.api.CloudAPI;
 import de.pocketcloud.api.model.group.IServerGroup;
 import de.pocketcloud.api.model.server.ICloudServer;
+import de.pocketcloud.api.model.template.ITemplate;
 import de.pocketcloud.api.server.ServerStatus;
 import de.pocketcloud.api.server.VerificationStatus;
-import de.pocketcloud.api.model.template.ITemplate;
 import de.pocketcloud.api.template.TemplateType;
 
 public final class ServerSearchQuery implements SearchQuery<ICloudServer> {

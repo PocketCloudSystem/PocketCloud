@@ -1,12 +1,13 @@
 package de.pocketcloud.cloud.network;
 
+import de.pocketcloud.api.network.packet.ClientboundPacket;
+import de.pocketcloud.api.network.packet.Packet;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.event.impl.packet.*;
 import de.pocketcloud.network.codec.CloudPacketDecoder;
 import de.pocketcloud.network.codec.CloudPacketEncoder;
-import de.pocketcloud.network.packet.ClientboundPacket;
-import de.pocketcloud.network.packet.Packet;
+import de.pocketcloud.network.packet.RequestPacket;
 import de.pocketcloud.network.traffic.PacketTrafficListener;
 import de.pocketcloud.network.traffic.TrafficDirection;
 import de.pocketcloud.network.traffic.impl.NetworkTrafficMonitor;
@@ -30,6 +31,10 @@ public class NetworkNettyServerInitializer extends ChannelInitializer<Channel> {
 
             if (new PacketPreSendEvent(channel, (ClientboundPacket) packet).call().isCancelled()) {
                 return false;
+            }
+
+            if (packet instanceof RequestPacket p) {
+                PocketCloud.instance().requests().add(p);
             }
 
             PocketCloud.instance().traffic().callHandlers(NetworkTrafficMonitor.class, NetworkTrafficMonitor.parsePacketMode(TrafficDirection.OUT, packet.getClass()), channel, packet, packet.getSize());

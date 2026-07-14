@@ -8,19 +8,22 @@ import de.pocketcloud.cloud.event.impl.group.ServerGroupAddTemplateEvent;
 import de.pocketcloud.cloud.event.impl.group.ServerGroupCreateEvent;
 import de.pocketcloud.cloud.event.impl.group.ServerGroupRemoveEvent;
 import de.pocketcloud.cloud.event.impl.group.ServerGroupRemoveTemplateEvent;
-import de.pocketcloud.common.lifecycle.Loadable;
-import de.pocketcloud.cloud.network.packet.impl.ServerGroupSyncPacket;
 import de.pocketcloud.cloud.provider.CloudProvider;
 import de.pocketcloud.cloud.template.Template;
-import de.pocketcloud.common.util.FileUtils;
 import de.pocketcloud.cloud.util.benchmark.Benchmark;
 import de.pocketcloud.cloud.util.benchmark.BenchmarkTiming;
+import de.pocketcloud.common.lifecycle.Loadable;
+import de.pocketcloud.common.util.FileUtils;
 import de.pocketcloud.common.util.NumberUtils;
+import de.pocketcloud.network.packet.impl.ServerGroupSyncPacket;
 import lombok.Getter;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
 public final class ServerGroupManager implements Loadable, IServerGroupProvider<ServerGroup> {
 
@@ -57,7 +60,7 @@ public final class ServerGroupManager implements Loadable, IServerGroupProvider<
             serverGroups.put(serverGroup.name(), serverGroup);
             BenchmarkTiming res = Benchmark.stopTiming("server_group_creation");
             CloudLogger.get().success("Successfully §acreated §rthe server group §b{}§r. §8(§rTook §b{}ms§8)", serverGroup.name(), NumberUtils.formatNumber(res.duration(), 2));
-            ServerGroupSyncPacket.create(serverGroup, false).broadcastPacket();
+            ServerGroupSyncPacket.create(serverGroup, false).broadcast();
         } catch (IOException e) {
             CloudLogger.get().exception("Failed to create server group {}", e, serverGroup.name());
             Benchmark.stopTiming("server_group_creation");
@@ -78,7 +81,7 @@ public final class ServerGroupManager implements Loadable, IServerGroupProvider<
         CloudProvider.current().editServerGroup(serverGroup, serverGroup.write());
         BenchmarkTiming res = Benchmark.stopTiming("server_group_add_template");
         CloudLogger.get().success("Successfully §aadded §b{} §rto the server group §b{}§r. §8(§rTook §b{}ms§8)", template.name(), serverGroup.name(), NumberUtils.formatNumber(res.duration(), 2));
-        ServerGroupSyncPacket.create(serverGroup, false).broadcastPacket();
+        ServerGroupSyncPacket.create(serverGroup, false).broadcast();
     }
 
     public void removeTemplate(ServerGroup serverGroup, Template template) {
@@ -94,7 +97,7 @@ public final class ServerGroupManager implements Loadable, IServerGroupProvider<
         CloudProvider.current().editServerGroup(serverGroup, serverGroup.write());
         BenchmarkTiming res = Benchmark.stopTiming("server_group_remove_template");
         CloudLogger.get().success("Successfully §cremoved §b{} §rfrom the server group §b{}§r. §8(§rTook §b{}ms§8)", template.name(), serverGroup.name(), NumberUtils.formatNumber(res.duration(), 2));
-        ServerGroupSyncPacket.create(serverGroup, false).broadcastPacket();
+        ServerGroupSyncPacket.create(serverGroup, false).broadcast();
     }
 
     public void remove(ServerGroup serverGroup) {
@@ -118,7 +121,7 @@ public final class ServerGroupManager implements Loadable, IServerGroupProvider<
         serverGroups.remove(serverGroup.name());
         BenchmarkTiming res = Benchmark.stopTiming("server_group_removal");
         CloudLogger.get().success("Successfully §cremoved §rthe server group §b{}§r. §8(§rTook §b{}ms§8)", serverGroup.name(), NumberUtils.formatNumber(res.duration(), 2));
-        ServerGroupSyncPacket.create(serverGroup, true).broadcastPacket();
+        ServerGroupSyncPacket.create(serverGroup, true).broadcast();
     }
 
     @Override

@@ -1,6 +1,6 @@
 package de.pocketcloud.network.codec;
 
-import de.pocketcloud.network.packet.Packet;
+import de.pocketcloud.api.network.packet.Packet;
 import de.pocketcloud.network.traffic.PacketTrafficListener;
 import de.pocketcloud.network.traffic.TrafficDirection;
 import io.netty.buffer.ByteBuf;

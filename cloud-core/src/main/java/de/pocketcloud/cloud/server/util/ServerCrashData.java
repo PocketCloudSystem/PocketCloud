@@ -1,7 +1,7 @@
 package de.pocketcloud.cloud.server.util;
 
-import de.pocketcloud.common.serialization.Writable;
 import de.pocketcloud.common.mapper.MapperUtils;
+import de.pocketcloud.common.serialization.Writable;
 
 import java.util.List;
 import java.util.Map;

@@ -1,14 +1,14 @@
 package de.pocketcloud.cloud.network;
 
+import de.pocketcloud.api.network.packet.AuthenticatedPacket;
+import de.pocketcloud.api.network.packet.CloudboundPacket;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.event.impl.packet.PacketReceiveEvent;
 import de.pocketcloud.cloud.network.client.ServerClient;
-import de.pocketcloud.cloud.network.packet.CloudPacket;
-import de.pocketcloud.cloud.network.packet.ResponseClientPacket;
 import de.pocketcloud.cloud.server.CloudServer;
-import de.pocketcloud.network.packet.AuthenticatedPacket;
-import de.pocketcloud.network.packet.CloudboundPacket;
+import de.pocketcloud.network.packet.CloudPacket;
+import de.pocketcloud.network.packet.ResponsePacket;
 import de.pocketcloud.network.traffic.TrafficDirection;
 import de.pocketcloud.network.traffic.impl.NetworkTrafficMonitor;
 import io.netty.channel.Channel;
@@ -31,9 +31,9 @@ public class NetworkNettyHandler extends SimpleChannelInboundHandler<CloudPacket
         try {
             PocketCloud.instance().traffic().callHandlers(NetworkTrafficMonitor.class, NetworkTrafficMonitor.parsePacketMode(TrafficDirection.IN, packet.getClass()), ctx.channel(), packet, packet.getSize());
             CloudServer server = null;
+            ServerClient c = ctx.channel().attr(ServerClient.ATTRIBUTE_KEY).get();
 
             if (packet instanceof AuthenticatedPacket) {
-                ServerClient c = ctx.channel().attr(ServerClient.ATTRIBUTE_KEY).get();
                 if (c.server() == null) return;
                 else server = c.server();
             }
@@ -42,9 +42,11 @@ public class NetworkNettyHandler extends SimpleChannelInboundHandler<CloudPacket
                 return;
             }
 
-            if (packet instanceof ResponseClientPacket responseClientPacket) {
-                PocketCloud.instance().requests().resolve(responseClientPacket);
-            } else packet.handle(ctx.channel());
+            if (packet instanceof ResponsePacket responsePacket) {
+                PocketCloud.instance().requests().resolve(responsePacket);
+            }
+
+            PocketCloud.instance().packets().invokeHandlers(packet, c);
 
             if (server != null) server.latestPacketInfo().setLatestPacket(System.currentTimeMillis(), packet.getClass());
         } catch (Exception e) {

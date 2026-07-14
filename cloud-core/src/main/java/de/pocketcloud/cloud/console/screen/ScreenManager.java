@@ -3,8 +3,6 @@ package de.pocketcloud.cloud.console.screen;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.screen.impl.DefaultScreen;
 import de.pocketcloud.common.lifecycle.Tickable;
-import lombok.Getter;
-import lombok.experimental.Accessors;
 
 public final class ScreenManager implements Tickable {
 

@@ -1,7 +1,7 @@
 package de.pocketcloud.cloud.console.command.parameter.def;
 
-import de.pocketcloud.cloud.console.command.parameter.BaseCommandParameter;
 import de.pocketcloud.cloud.console.command.exception.ArgumentParseException;
+import de.pocketcloud.cloud.console.command.parameter.BaseCommandParameter;
 import lombok.Getter;
 
 import java.util.ArrayList;

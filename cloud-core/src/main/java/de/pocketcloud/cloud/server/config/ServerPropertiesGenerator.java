@@ -1,15 +1,15 @@
 package de.pocketcloud.cloud.server.config;
 
+import de.pocketcloud.api.template.TemplateType;
 import de.pocketcloud.cloud.console.log.CloudLogger;
-import de.pocketcloud.cloud.template.util.TemplateTypeHelper;
-import de.pocketcloud.common.lifecycle.Loadable;
 import de.pocketcloud.cloud.server.config.impl.PocketMineConfig;
 import de.pocketcloud.cloud.server.config.impl.PocketMineServerProperties;
 import de.pocketcloud.cloud.server.config.impl.WaterdogConfig;
 import de.pocketcloud.cloud.server.software.ServerSoftware;
-import de.pocketcloud.api.template.TemplateType;
-import de.pocketcloud.common.util.FileUtils;
+import de.pocketcloud.cloud.template.util.TemplateTypeHelper;
 import de.pocketcloud.cloud.util.PocketCloudPaths;
+import de.pocketcloud.common.lifecycle.Loadable;
+import de.pocketcloud.common.util.FileUtils;
 
 import java.io.IOException;
 import java.nio.file.Files;

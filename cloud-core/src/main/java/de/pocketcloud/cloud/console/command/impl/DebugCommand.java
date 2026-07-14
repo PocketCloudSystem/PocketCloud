@@ -1,7 +1,6 @@
 package de.pocketcloud.cloud.console.command.impl;
 
 import de.pocketcloud.cloud.PocketCloud;
-import de.pocketcloud.cloud.config.LogSettingsConfig;
 import de.pocketcloud.cloud.console.command.Command;
 import de.pocketcloud.cloud.console.command.ctx.CommandContext;
 import de.pocketcloud.cloud.console.command.desc.CommandDescription;

@@ -1,7 +1,6 @@
 package de.pocketcloud.cloud.console;
 
 import de.pocketcloud.cloud.PocketCloud;
-import de.pocketcloud.cloud.console.screen.ScreenManager;
 import de.pocketcloud.common.lifecycle.Tickable;
 import lombok.Getter;
 import lombok.Setter;

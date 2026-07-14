@@ -1,12 +1,9 @@
 package de.pocketcloud.cloud.server.config.impl;
 
-import de.pocketcloud.cloud.server.config.ServerProperties;
-
 import de.pocketcloud.cloud.PocketCloud;
-import de.pocketcloud.cloud.config.MainConfig;
 import de.pocketcloud.cloud.server.CloudServer;
+import de.pocketcloud.cloud.server.config.ServerProperties;
 import de.pocketcloud.cloud.server.software.ServerSoftware;
-import de.pocketcloud.cloud.server.software.ServerSoftwareManager;
 import de.pocketcloud.cloud.template.util.TemplateTypeHelper;
 import de.pocketcloud.common.util.ArrayUtils;
 

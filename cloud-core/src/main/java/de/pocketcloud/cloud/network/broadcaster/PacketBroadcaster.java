@@ -1,22 +1,24 @@
 package de.pocketcloud.cloud.network.broadcaster;
 
+import de.pocketcloud.api.network.packet.ClientboundPacket;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.network.client.ServerClient;
-import de.pocketcloud.cloud.network.packet.CloudPacket;
-import de.pocketcloud.cloud.network.packet.PacketExcluder;
+import de.pocketcloud.network.packet.CloudPacket;
+import de.pocketcloud.api.network.packet.PacketExcluder;
 import de.pocketcloud.network.codec.PacketSerializer;
-import de.pocketcloud.network.packet.ClientboundPacket;
 import de.pocketcloud.network.traffic.TrafficDirection;
 import de.pocketcloud.network.traffic.impl.NetworkTrafficMonitor;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
 public final class PacketBroadcaster {
 
-    public static void broadcastPackets(ClientboundPacket[] packets, Consumer<PacketExcluder> excluderBuilder) {
+    public static void broadcast(ClientboundPacket[] packets, Consumer<PacketExcluder> excluderBuilder) {
         if (packets.length == 0) return;
         List<Map.Entry<ClientboundPacket, ByteBuf>> encodedPackets = new ArrayList<>();
         long bytes = 0;
@@ -54,11 +56,11 @@ public final class PacketBroadcaster {
         PocketCloud.instance().traffic().pushBytes(NetworkTrafficMonitor.class, TrafficDirection.OUT, bytes * targets);
     }
 
-    public static void broadcastPacket(ClientboundPacket packet, Consumer<PacketExcluder> excluderBuilder) {
-        broadcastPackets(new ClientboundPacket[]{packet}, excluderBuilder);
+    public static void broadcast(ClientboundPacket packet, Consumer<PacketExcluder> excluderBuilder) {
+        broadcast(new ClientboundPacket[]{packet}, excluderBuilder);
     }
 
-    public static void broadcastPacket(ClientboundPacket packet) {
-        broadcastPackets(new ClientboundPacket[]{packet}, null);
+    public static void broadcast(ClientboundPacket packet) {
+        broadcast(new ClientboundPacket[]{packet}, null);
     }
 }

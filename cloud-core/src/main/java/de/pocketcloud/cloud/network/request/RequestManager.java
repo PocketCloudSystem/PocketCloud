@@ -1,39 +1,27 @@
 package de.pocketcloud.cloud.network.request;
 
-import de.pocketcloud.cloud.network.client.ServerClient;
-import de.pocketcloud.cloud.network.packet.RequestClientPacket;
-import de.pocketcloud.cloud.network.packet.RequestPacketFailureReason;
-import de.pocketcloud.cloud.network.packet.ResponseClientPacket;
 import de.pocketcloud.common.lifecycle.Tickable;
-import lombok.Getter;
-import lombok.experimental.Accessors;
+import de.pocketcloud.network.packet.RequestPacket;
+import de.pocketcloud.network.packet.RequestPacketFailureReason;
+import de.pocketcloud.network.packet.ResponsePacket;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Tracks pending {@link RequestClientPacket}s sent from the cloud to sub-servers.
- * Resolves them when the matching {@link ResponseClientPacket} arrives, and rejects
- * them when the 10-second timeout expires.
- */
+@ApiStatus.Internal
 public final class RequestManager implements Tickable {
 
-    private final Map<String, RequestClientPacket> requests = new ConcurrentHashMap<>();
+    private final Map<String, RequestPacket> requests = new ConcurrentHashMap<>();
 
-    public RequestClientPacket send(RequestClientPacket packet, ServerClient client) {
-        if (requests.containsKey(packet.getRequestId())) return requests.get(packet.getRequestId());
+    public RequestPacket add(RequestPacket packet) {
         requests.put(packet.getRequestId(), packet);
-        client.sendPacket(packet).exceptionally(e -> {
-            reject(packet, e);
-            remove(packet);
-            return null;
-        });
-
         return packet;
     }
 
-    public void remove(RequestClientPacket packet) {
+    public void remove(RequestPacket packet) {
         remove(packet.getRequestId());
     }
 
@@ -41,27 +29,29 @@ public final class RequestManager implements Tickable {
         requests.remove(requestId);
     }
 
-    public void resolve(ResponseClientPacket packet) {
-        RequestClientPacket request = requests.get(packet.getRequestId());
+    public void resolve(ResponsePacket packet) {
+        RequestPacket request = requests.get(packet.getRequestId());
         if (request != null) {
             request.invokeClosures(false, packet, null, null);
             remove(request);
         }
     }
 
-    public void reject(RequestClientPacket packet) {
+    public void reject(RequestPacket packet) {
         packet.invokeClosures(true, null, RequestPacketFailureReason.REQUEST_TIMEOUT, null);
+        remove(packet);
     }
 
-    public void reject(RequestClientPacket packet, Throwable e) {
+    public void reject(RequestPacket packet, Throwable e) {
         packet.invokeClosures(true, null, RequestPacketFailureReason.EXCEPTION, e);
+        remove(packet);
     }
 
     @Override
     public void tick(long currentTick) {
         long now = System.currentTimeMillis();
         requests.entrySet().removeIf(entry -> {
-            RequestClientPacket request = entry.getValue();
+            RequestPacket request = entry.getValue();
             Long sent = request.getSentTimestamp();
             if (sent != null && (now - sent) > 10_000) {
                 reject(request);
@@ -72,11 +62,11 @@ public final class RequestManager implements Tickable {
         });
     }
 
-    public RequestClientPacket get(String requestId) {
-        return requests.get(requestId);
+    public Optional<RequestPacket> get(String requestId) {
+        return Optional.ofNullable(requests.getOrDefault(requestId, null));
     }
 
-    public Map<String, RequestClientPacket> getAll() {
+    public Map<String, RequestPacket> getAll() {
         return new HashMap<>(requests);
     }
 }

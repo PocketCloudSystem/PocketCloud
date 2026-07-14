@@ -1,5 +1,6 @@
 package de.pocketcloud.network.packet.data;
 
+import de.pocketcloud.api.network.packet.data.IPacketData;
 import de.pocketcloud.common.serialization.Writable;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -10,7 +11,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-public final class PacketData {
+public final class PacketData implements IPacketData {
 
     private static final byte TYPE_NULL = 0;
     private static final byte TYPE_STRING = 1;

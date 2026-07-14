@@ -21,10 +21,6 @@ import de.pocketcloud.cloud.language.LanguageManager;
 import de.pocketcloud.cloud.load.Loader;
 import de.pocketcloud.cloud.network.NetworkNettyServer;
 import de.pocketcloud.cloud.network.client.ServerClientCache;
-import de.pocketcloud.common.lifecycle.Loadable;
-import de.pocketcloud.common.lifecycle.Tickable;
-import de.pocketcloud.common.util.FileUtils;
-import de.pocketcloud.common.util.NumberUtils;
 import de.pocketcloud.cloud.network.packet.PacketRegistry;
 import de.pocketcloud.cloud.network.request.RequestManager;
 import de.pocketcloud.cloud.player.CloudPlayerManager;
@@ -37,9 +33,15 @@ import de.pocketcloud.cloud.server.software.ServerSoftwareManager;
 import de.pocketcloud.cloud.template.TemplateManager;
 import de.pocketcloud.cloud.template.group.ServerGroupManager;
 import de.pocketcloud.cloud.tick.Ticker;
-import de.pocketcloud.cloud.util.*;
+import de.pocketcloud.cloud.util.PerformanceStats;
+import de.pocketcloud.cloud.util.PocketCloudPaths;
+import de.pocketcloud.cloud.util.VersionInfo;
 import de.pocketcloud.cloud.util.benchmark.Benchmark;
 import de.pocketcloud.cloud.util.benchmark.BenchmarkTiming;
+import de.pocketcloud.common.lifecycle.Loadable;
+import de.pocketcloud.common.lifecycle.Tickable;
+import de.pocketcloud.common.util.FileUtils;
+import de.pocketcloud.common.util.NumberUtils;
 import de.pocketcloud.network.traffic.TrafficMonitorManager;
 import lombok.Getter;
 import lombok.experimental.Accessors;
@@ -48,7 +50,9 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 @Getter
 @Accessors(fluent = true)
@@ -80,10 +84,11 @@ public final class PocketCloud implements CloudAPI {
             return;
         }
 
+        services.register(Ticker.class, new Ticker());
+
         Benchmark.startTiming("cloud_start");
         createDirectories();
 
-        services.register(Ticker.class, new Ticker());
         services.register(Loader.class, new Loader());
         services.register(MainConfig.class, new MainConfig());
         services.register(LogSettingsConfig.class, new LogSettingsConfig());

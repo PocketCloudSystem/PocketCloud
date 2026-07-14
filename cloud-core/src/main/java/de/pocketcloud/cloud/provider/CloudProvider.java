@@ -1,7 +1,6 @@
 package de.pocketcloud.cloud.provider;
 
 import de.pocketcloud.cloud.PocketCloud;
-import de.pocketcloud.cloud.config.MainConfig;
 import de.pocketcloud.cloud.template.Template;
 import de.pocketcloud.cloud.template.group.ServerGroup;
 import de.pocketcloud.common.concurrent.Promise;

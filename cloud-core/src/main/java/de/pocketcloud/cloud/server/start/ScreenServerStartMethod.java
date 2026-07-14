@@ -2,8 +2,8 @@ package de.pocketcloud.cloud.server.start;
 
 import de.pocketcloud.cloud.server.CloudServer;
 import de.pocketcloud.cloud.server.software.ServerSoftware;
-import de.pocketcloud.common.util.TerminalUtils;
 import de.pocketcloud.common.concurrent.Promise;
+import de.pocketcloud.common.util.TerminalUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;

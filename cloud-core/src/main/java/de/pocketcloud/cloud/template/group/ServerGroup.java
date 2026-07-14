@@ -2,8 +2,8 @@ package de.pocketcloud.cloud.template.group;
 
 import de.pocketcloud.api.model.group.IServerGroup;
 import de.pocketcloud.cloud.template.Template;
-import de.pocketcloud.common.mapper.MapperUtils;
 import de.pocketcloud.cloud.util.PocketCloudPaths;
+import de.pocketcloud.common.mapper.MapperUtils;
 import de.pocketcloud.common.serialization.Writable;
 import lombok.experimental.Accessors;
 

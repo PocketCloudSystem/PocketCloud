@@ -5,6 +5,7 @@ import de.pocketcloud.api.model.group.IServerGroup;
 import de.pocketcloud.api.model.player.ICloudPlayer;
 import de.pocketcloud.api.model.server.ICloudServer;
 import de.pocketcloud.api.model.template.ITemplate;
+import de.pocketcloud.api.network.client.IServerClient;
 import de.pocketcloud.api.provider.*;
 import de.pocketcloud.api.service.ServiceRegistry;
 
@@ -16,7 +17,7 @@ public interface CloudAPI {
 
     IModuleProvider modules();
 
-    IPacketRegistry packets();
+    IPacketRegistry<? extends IServerClient> packets();
 
     IPlayerProvider<? extends ICloudPlayer> players();
 
@@ -30,7 +31,7 @@ public interface CloudAPI {
 
     ServiceRegistry services();
 
-    default <T> T getService(Class<T> serviceClass) {
+    default <T> T service(Class<T> serviceClass) {
         return services().get(serviceClass);
     }
 }

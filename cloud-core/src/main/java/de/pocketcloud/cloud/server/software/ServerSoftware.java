@@ -1,17 +1,18 @@
 package de.pocketcloud.cloud.server.software;
 
 import de.pocketcloud.api.model.software.IServerSoftware;
+import de.pocketcloud.api.template.TemplateType;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.console.util.DownloadProgressBar;
-import de.pocketcloud.api.template.TemplateType;
-import de.pocketcloud.common.util.FileUtils;
 import de.pocketcloud.cloud.util.PocketCloudPaths;
+import de.pocketcloud.common.util.FileUtils;
 import de.pocketcloud.common.util.NetUtils;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 public record ServerSoftware(
         String name,

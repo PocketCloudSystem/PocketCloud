@@ -4,14 +4,14 @@ import de.pocketcloud.api.model.player.ICloudPlayer;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.event.impl.player.PlayerKickEvent;
-import de.pocketcloud.network.packet.type.TextType;
-import de.pocketcloud.cloud.network.packet.impl.PlayerKickPacket;
-import de.pocketcloud.cloud.network.packet.impl.PlayerSyncPacket;
-import de.pocketcloud.cloud.network.packet.impl.PlayerTextPacket;
-import de.pocketcloud.cloud.network.packet.impl.PlayerTransferPacket;
 import de.pocketcloud.cloud.server.CloudServer;
-import de.pocketcloud.common.serialization.Writable;
 import de.pocketcloud.common.mapper.MapperUtils;
+import de.pocketcloud.common.serialization.Writable;
+import de.pocketcloud.network.packet.impl.PlayerKickPacket;
+import de.pocketcloud.network.packet.impl.PlayerSyncPacket;
+import de.pocketcloud.network.packet.impl.PlayerTextPacket;
+import de.pocketcloud.network.packet.impl.PlayerTransferPacket;
+import de.pocketcloud.network.packet.type.TextType;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
@@ -27,26 +27,30 @@ public final class CloudPlayer implements Writable<Map<String, Object>>, ICloudP
     private final String address;
     private final String xboxUserId;
     private final UUID uniqueId;
+    private final int protocolVersion;
+    private final String gameVersion;
     private String currentServerName;
     private String currentProxyName;
 
-    public CloudPlayer(String name, String address, String xboxUserId, UUID uniqueId, String currentServerName, String currentProxyName) {
+    public CloudPlayer(String name, String address, String xboxUserId, UUID uniqueId, int protocolVersion, String gameVersion, String currentServerName, String currentProxyName) {
         this.name = name;
         this.address = address;
         this.xboxUserId = xboxUserId;
         this.uniqueId = uniqueId;
+        this.protocolVersion = protocolVersion;
+        this.gameVersion = gameVersion;
         this.currentServerName = currentServerName;
         this.currentProxyName = currentProxyName;
     }
 
-    public CloudPlayer(String name, String address, String xboxUserId, UUID uniqueId) {
-        this(name, address, xboxUserId, uniqueId, null, null);
+    public CloudPlayer(String name, String address, String xboxUserId, UUID uniqueId, int protocolVersion, String gameVersion) {
+        this(name, address, xboxUserId, uniqueId, protocolVersion, gameVersion, null, null);
     }
 
     public void setCurrentServer(CloudServer currentServer) {
         CloudLogger.get().debug("Changing current server of " + name + " to " + (currentServer != null ? currentServer.name() : "NULL"));
         this.currentServerName = currentServer != null ? currentServer.name() : null;
-        PlayerSyncPacket.create(this, false).broadcastPacket();
+        PlayerSyncPacket.create(this, false).broadcast();
     }
 
     public void setCurrentProxy(CloudServer currentProxy) {

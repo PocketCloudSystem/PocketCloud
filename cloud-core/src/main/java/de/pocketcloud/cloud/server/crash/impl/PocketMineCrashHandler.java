@@ -1,12 +1,12 @@
 package de.pocketcloud.cloud.server.crash.impl;
 
 import com.google.gson.reflect.TypeToken;
+import de.pocketcloud.api.template.TemplateType;
 import de.pocketcloud.cloud.server.CloudServer;
 import de.pocketcloud.cloud.server.crash.CrashData;
 import de.pocketcloud.cloud.server.crash.CrashHandler;
 import de.pocketcloud.cloud.server.software.ServerSoftware;
 import de.pocketcloud.cloud.server.software.ServerSoftwareManager;
-import de.pocketcloud.api.template.TemplateType;
 import de.pocketcloud.cloud.template.util.TemplateTypeHelper;
 import de.pocketcloud.common.util.FileUtils;
 import org.jetbrains.annotations.Nullable;

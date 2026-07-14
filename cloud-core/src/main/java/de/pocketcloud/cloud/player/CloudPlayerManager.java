@@ -10,8 +10,8 @@ import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.event.impl.player.PlayerConnectEvent;
 import de.pocketcloud.cloud.event.impl.player.PlayerDisconnectEvent;
 import de.pocketcloud.cloud.notification.Notifier;
+import de.pocketcloud.network.packet.impl.PlayerSyncPacket;
 import de.pocketcloud.network.packet.type.NotificationType;
-import de.pocketcloud.cloud.network.packet.impl.PlayerSyncPacket;
 
 import java.util.*;
 
@@ -32,7 +32,7 @@ public final class CloudPlayerManager implements IPlayerProvider<CloudPlayer> {
         }
 
         players.put(player.name(), player);
-        PlayerSyncPacket.create(player, false).broadcastPacket();
+        PlayerSyncPacket.create(player, false).broadcast();
         String serverOrProxy = player.currentServerName() != null ? player.currentServerName() : player.currentProxyName();
         Notifier.notify(NotificationType.PLAYER_JOINED, Map.of("player", player.name(), "server", serverOrProxy), Map.of());
 
@@ -56,7 +56,7 @@ public final class CloudPlayerManager implements IPlayerProvider<CloudPlayer> {
 
         player.setCurrentServer(null);
         player.setCurrentProxy(null);
-        PlayerSyncPacket.create(player, true).broadcastPacket();
+        PlayerSyncPacket.create(player, true).broadcast();
     }
 
     @Override

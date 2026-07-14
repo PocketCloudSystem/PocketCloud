@@ -6,7 +6,10 @@ import de.pocketcloud.cloud.console.command.sub.SubCommand;
 import de.pocketcloud.common.lifecycle.Loadable;
 import de.pocketcloud.common.util.ArrayUtils;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 public final class CommandManager implements Loadable {
 

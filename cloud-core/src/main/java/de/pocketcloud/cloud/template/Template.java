@@ -12,12 +12,12 @@ import de.pocketcloud.cloud.server.software.ServerSoftware;
 import de.pocketcloud.cloud.template.group.ServerGroup;
 import de.pocketcloud.cloud.template.util.conv.ServerSoftwareConverter;
 import de.pocketcloud.cloud.template.util.conv.TemplateTypeConverter;
+import de.pocketcloud.cloud.util.PocketCloudPaths;
+import de.pocketcloud.cloud.util.gson.TemplateJsonSerializer;
 import de.pocketcloud.common.mapper.MapInline;
 import de.pocketcloud.common.mapper.MapKey;
 import de.pocketcloud.common.mapper.MapperUtils;
-import de.pocketcloud.cloud.util.PocketCloudPaths;
 import de.pocketcloud.common.serialization.Writable;
-import de.pocketcloud.cloud.util.gson.TemplateJsonSerializer;
 import lombok.experimental.Accessors;
 
 import java.nio.file.Path;

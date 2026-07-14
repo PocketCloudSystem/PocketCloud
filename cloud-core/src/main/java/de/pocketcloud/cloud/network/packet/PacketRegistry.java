@@ -1,26 +1,37 @@
 package de.pocketcloud.cloud.network.packet;
 
-import de.pocketcloud.common.lifecycle.Loadable;
-import de.pocketcloud.network.packet.Packet;
-import de.pocketcloud.network.packet.handler.PacketHandler;
-import de.pocketcloud.network.packet.handler.PacketListener;
+import de.pocketcloud.api.network.handler.PacketHandler;
+import de.pocketcloud.api.network.handler.PacketListener;
+import de.pocketcloud.api.network.packet.Packet;
 import de.pocketcloud.api.provider.IPacketRegistry;
+import de.pocketcloud.cloud.network.client.ServerClient;
+import de.pocketcloud.cloud.network.packet.handler.NormalPacketHandler;
+import de.pocketcloud.cloud.network.packet.handler.PlayerPacketHandler;
+import de.pocketcloud.cloud.network.packet.handler.ServerPacketHandler;
+import de.pocketcloud.common.lifecycle.Loadable;
 import org.reflections.Reflections;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
-public final class PacketRegistry implements IPacketRegistry, Loadable {
+public final class PacketRegistry implements IPacketRegistry<ServerClient>, Loadable {
 
     private final Map<String, Class<? extends Packet>> packets = new ConcurrentHashMap<>();
-    private final Map<Class<? extends Packet>, List<Consumer<Packet>>> handlers = new ConcurrentHashMap<>();
+    private final Map<Class<? extends Packet>, List<BiConsumer<Packet, ServerClient>>> handlers = new ConcurrentHashMap<>();
+
+    @Override
+    public void preload() {
+        registerPacketListener(new NormalPacketHandler());
+        registerPacketListener(new ServerPacketHandler());
+        registerPacketListener(new PlayerPacketHandler());
+    }
 
     @Override
     public void load() {
-        Reflections reflections = new Reflections("de.pocketcloud.network.packet.def");
+        Reflections reflections = new Reflections("de.pocketcloud.network.packet.impl");
         Set<Class<? extends Packet>> packetClasses = reflections.getSubTypesOf(Packet.class);
         for (Class<? extends Packet> packetClass : packetClasses) {
             registerPacket(packetClass);
@@ -46,9 +57,9 @@ public final class PacketRegistry implements IPacketRegistry, Loadable {
             if (method.isAnnotationPresent(PacketHandler.class)) {
                 Class<? extends Packet>[] packets =  method.getAnnotation(PacketHandler.class).value();
                 for (Class<? extends Packet> packet : packets) {
-                    this.registerPacketHandler(packet, p -> {
+                    this.registerPacketHandler(packet, (p, c) -> {
                         try {
-                            method.invoke(packetListener, p);
+                            method.invoke(packetListener, p, c);
                         } catch (IllegalAccessException | InvocationTargetException e) {
                             throw new RuntimeException(e);
                         }
@@ -60,16 +71,16 @@ public final class PacketRegistry implements IPacketRegistry, Loadable {
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T extends Packet> void registerPacketHandler(Class<T> packet, Consumer<T> handler) {
+    public <U extends Packet> void registerPacketHandler(Class<U> packet, BiConsumer<U, ServerClient> handler) {
         if (!handlers.containsKey(packet)) handlers.put(packet, Collections.synchronizedList(new ArrayList<>()));
-        List<Consumer<Packet>> methods = handlers.get(packet);
-        methods.add((Consumer<Packet>) handler);
+        List<BiConsumer<Packet, ServerClient>> methods = handlers.get(packet);
+        methods.add((BiConsumer<Packet, ServerClient>) handler);
     }
 
     @Override
-    public void invokeHandlers(Packet packet) {
-        for (Consumer<Packet> handler : handlers.get(packet.getClass())) {
-            handler.accept(packet);
+    public void invokeHandlers(Packet packet, ServerClient sender) {
+        for (BiConsumer<Packet, ServerClient> handler : handlers.get(packet.getClass())) {
+            handler.accept(packet, sender);
         }
     }
 
@@ -94,6 +105,6 @@ public final class PacketRegistry implements IPacketRegistry, Loadable {
 
     @Override
     public Collection<Class<? extends Packet>> getAll() {
-        return packets.values();
+        return packets.values().stream().toList();
     }
 }

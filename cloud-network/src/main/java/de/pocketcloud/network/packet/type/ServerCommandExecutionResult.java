@@ -1,7 +1,7 @@
 package de.pocketcloud.network.packet.type;
 
-import de.pocketcloud.common.serialization.Writable;
 import de.pocketcloud.common.mapper.MapperUtils;
+import de.pocketcloud.common.serialization.Writable;
 
 import java.util.ArrayList;
 import java.util.Map;

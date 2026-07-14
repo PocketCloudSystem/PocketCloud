@@ -1,8 +1,8 @@
 package de.pocketcloud.cloud.server.util;
 
 import de.pocketcloud.api.model.template.ITemplate;
-import de.pocketcloud.cloud.config.ServerSettingsConfig;
 import de.pocketcloud.api.template.TemplateType;
+import de.pocketcloud.cloud.config.ServerSettingsConfig;
 import de.pocketcloud.cloud.template.util.TemplateTypeHelper;
 import de.pocketcloud.common.util.NetUtils;
 

@@ -2,7 +2,6 @@ package de.pocketcloud.api.model.player;
 
 import de.pocketcloud.api.CloudAPI;
 import de.pocketcloud.api.model.server.ICloudServer;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -16,6 +15,10 @@ public interface ICloudPlayer {
     String xboxUserId();
 
     UUID uniqueId();
+
+    int protocolVersion();
+
+    String gameVersion();
 
     String currentServerName();
 

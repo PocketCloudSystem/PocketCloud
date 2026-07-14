@@ -1,7 +1,7 @@
 package de.pocketcloud.network.codec;
 
+import de.pocketcloud.api.network.packet.Packet;
 import de.pocketcloud.network.exception.PacketException;
-import de.pocketcloud.network.packet.Packet;
 import de.pocketcloud.network.packet.data.PacketData;
 import org.jetbrains.annotations.Nullable;
 
