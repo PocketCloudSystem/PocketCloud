@@ -2,8 +2,8 @@ package packet.codec;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
-import packet.util.PacketSerializer;
 import io.netty.handler.codec.ByteToMessageDecoder;
+import packet.util.PacketSerializer;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;

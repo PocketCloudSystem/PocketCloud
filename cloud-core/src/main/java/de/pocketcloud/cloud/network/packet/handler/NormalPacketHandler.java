@@ -7,7 +7,8 @@ import de.pocketcloud.cloud.console.log.CloudLogLevel;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.network.client.ServerClient;
 import de.pocketcloud.cloud.notification.Notifier;
-import de.pocketcloud.network.packet.impl.*;
+import de.pocketcloud.network.packet.impl.CloudNotificationPacket;
+import de.pocketcloud.network.packet.impl.ConsoleLogPacket;
 
 import java.util.Map;
 
