@@ -10,13 +10,13 @@ public final class CloudLevelConverter extends ClassicConverter {
         boolean isSuccess = event.getMarkerList() != null &&
                 event.getMarkerList().stream().anyMatch(m -> m.getName().equals("SUCCESS"));
 
-        if (isSuccess) return CloudLogLevel.SUCCESS.prefix();
+        if (isSuccess) return de.pocketcloud.api.logging.CloudLogLevel.SUCCESS.prefix();
 
         return switch (event.getLevel().toString()) {
-            case "WARN" -> CloudLogLevel.WARN.prefix();
-            case "ERROR" -> CloudLogLevel.ERROR.prefix();
-            case "DEBUG" -> CloudLogLevel.DEBUG.prefix();
-            default -> CloudLogLevel.INFO.prefix();
+            case "WARN" -> de.pocketcloud.api.logging.CloudLogLevel.WARN.prefix();
+            case "ERROR" -> de.pocketcloud.api.logging.CloudLogLevel.ERROR.prefix();
+            case "DEBUG" -> de.pocketcloud.api.logging.CloudLogLevel.DEBUG.prefix();
+            default -> de.pocketcloud.api.logging.CloudLogLevel.INFO.prefix();
         };
     }
 }

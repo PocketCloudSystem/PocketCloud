@@ -3,10 +3,9 @@ package de.pocketcloud.cloud.network.packet.handler;
 import de.pocketcloud.api.network.handler.PacketHandler;
 import de.pocketcloud.api.network.handler.PacketListener;
 import de.pocketcloud.cloud.PocketCloud;
-import de.pocketcloud.cloud.console.log.CloudLogLevel;
 import de.pocketcloud.cloud.console.log.CloudLogger;
+import de.pocketcloud.cloud.console.util.CloudLogLevelHelper;
 import de.pocketcloud.cloud.network.client.ServerClient;
-import de.pocketcloud.cloud.notification.Notifier;
 import de.pocketcloud.network.packet.impl.CloudNotificationPacket;
 import de.pocketcloud.network.packet.impl.ConsoleLogPacket;
 
@@ -16,12 +15,12 @@ public final class NormalPacketHandler implements PacketListener {
 
     @PacketHandler({ConsoleLogPacket.class})
     public void handle(ConsoleLogPacket packet, ServerClient sender) {
-        sender.server().logger().log(CloudLogLevel.toLogLevel(packet.getLogType()), packet.getMessage());
+        sender.server().logger().log(CloudLogLevelHelper.toLogLevel(packet.getLogType()), packet.getMessage());
     }
 
     @PacketHandler({CloudNotificationPacket.class})
     public void handle(CloudNotificationPacket packet, ServerClient sender) {
-        if (Notifier.canLog(packet.getNotificationType())) {
+        if (PocketCloud.instance().notifications().canLog(packet.getNotificationType())) {
             switch (packet.getNotificationType()) {
                 case PLAYER_JOIN_FAILED -> {
                     String player = (String) packet.getArgs().get("player");
@@ -40,7 +39,7 @@ public final class NormalPacketHandler implements PacketListener {
             }
         }
 
-        Notifier.notify(packet.getNotificationType(), packet.getArgs(), Map.of());
+        PocketCloud.instance().notifications().notify(packet.getNotificationType(), packet.getArgs(), Map.of());
     }
 
     private String formatReason(String reason) {

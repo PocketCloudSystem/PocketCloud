@@ -114,7 +114,7 @@ public final class CloudPluginManager implements Tickable, Loadable {
     }
 
     public Optional<CloudPlugin> get(String name) {
-        return Optional.ofNullable(plugins.getOrDefault(name, null));
+        return Optional.ofNullable(plugins.get(name));
     }
 
     public List<CloudPlugin> getEnabledPlugins() {

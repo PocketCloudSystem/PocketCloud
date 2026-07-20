@@ -61,7 +61,7 @@ public final class StatusCommand extends Command {
         section(sender, "Threads", lines -> {
             lines.put("Thread Count", threadCount + " thread" + (threadCount == 1 ? "" : "s") + " §8(§rPeak: §c" + peakThreadCount + "§8)");
             lines.put("Total Started Threads", totalStartedThreads + " thread" + (totalStartedThreads == 1 ? "" : "s"));
-            if (PocketCloud.instance().logSettingsConfig().isDebugMode()) lines.put("Threads", "§c" + String.join("§8, §c", threads.stream().map(t -> t.getClass().getName() + "@" + t.getName()).collect(Collectors.toCollection(ArrayList::new))));
+            if (PocketCloud.instance().logSettingsConfig().debugMode()) lines.put("Threads", "§c" + String.join("§8, §c", threads.stream().map(t -> t.getClass().getName() + "@" + t.getName()).collect(Collectors.toCollection(ArrayList::new))));
         });
 
         section(sender, "System", lines -> {

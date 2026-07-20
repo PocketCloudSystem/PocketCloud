@@ -2,9 +2,9 @@ package de.pocketcloud.cloud.console.log.def;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
+import de.pocketcloud.api.logging.CloudLogLevel;
+import de.pocketcloud.api.logging.ILogger;
 import de.pocketcloud.cloud.console.ConsoleColor;
-import de.pocketcloud.cloud.console.log.CloudLogLevel;
-import de.pocketcloud.cloud.console.log.ILogger;
 import de.pocketcloud.cloud.console.log.cache.LogMessagesCache;
 import de.pocketcloud.cloud.console.output.OutputManager;
 import de.pocketcloud.common.util.FormatUtils;

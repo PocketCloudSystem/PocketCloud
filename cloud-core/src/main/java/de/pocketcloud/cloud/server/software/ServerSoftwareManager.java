@@ -1,10 +1,16 @@
 package de.pocketcloud.cloud.server.software;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.ToNumberPolicy;
+import de.pocketcloud.api.component.software.*;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.template.util.TemplateTypeHelper;
 import de.pocketcloud.common.lifecycle.Loadable;
 import de.pocketcloud.common.util.FileUtils;
+import de.pocketcloud.shared.component.software.*;
 
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
@@ -13,6 +19,19 @@ import java.nio.file.Path;
 import java.util.*;
 
 public final class ServerSoftwareManager implements Loadable {
+
+    private static final Gson SOFTWARE_GSON = new GsonBuilder()
+            .setPrettyPrinting()
+            .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
+            .registerTypeAdapter(ISoftwareDownload.class,
+                    (JsonDeserializer<ISoftwareDownload>) (json, _, ctx) -> ctx.deserialize(json, SoftwareDownload.class))
+            .registerTypeAdapter(ISoftwareBinary.class,
+                    (JsonDeserializer<ISoftwareBinary>) (json, _, ctx) -> ctx.deserialize(json, SoftwareBinary.class))
+            .registerTypeAdapter(ISoftwareBridge.class,
+                    (JsonDeserializer<ISoftwareBridge>) (json, _, ctx) -> ctx.deserialize(json, SoftwareBridge.class))
+            .registerTypeAdapter(ISoftwareConfig.class,
+                    (JsonDeserializer<ISoftwareConfig>) (json, _, ctx) -> ctx.deserialize(json, SoftwareConfig.class))
+            .create();
 
     public static final List<ServerSoftware> DEFAULTS = List.of(
             new ServerSoftware("pmmp-latest", "SERVER", new SoftwareDownload(
@@ -63,7 +82,7 @@ public final class ServerSoftwareManager implements Loadable {
                 if (Files.isRegularFile(file)) {
                     ServerSoftware software = null;
                     try {
-                        software = FileUtils.decodeJsonFile(file, ServerSoftware.class);
+                        software = FileUtils.decodeJsonFile(file, ServerSoftware.class, SOFTWARE_GSON);
                         if (!software.normalizedName().equals(file.getFileName().toString().replace(".json", ""))) {
                             CloudLogger.get().warn("Mismatch of name and file name from software {}", file.getFileName().toString());
                             continue;
@@ -96,21 +115,21 @@ public final class ServerSoftwareManager implements Loadable {
         CloudLogger.get().debug("Loaded {}, part of {} template type", software.name(), software.templateType());
         softwareList.put(software.name(), software);
         TemplateTypeHelper.addSoftware(Objects.requireNonNull(software.type()), software);
-        if (!software.directoryPath().toFile().exists() && !software.directoryPath().toFile().mkdirs()) throw new RuntimeException("Unable to create directory");
-        if (!software.bridge().directoryPath().toFile().exists() && !software.bridge().directoryPath().toFile().mkdirs()) throw new RuntimeException("Unable to create directory");
+        if (!service().directoryPath(software).toFile().exists() && !service().directoryPath(software).toFile().mkdirs()) throw new RuntimeException("Unable to create directory");
+        if (!service().bridgeDirectoryPath(software).toFile().exists() && !service().bridgeDirectoryPath(software).toFile().mkdirs()) throw new RuntimeException("Unable to create directory");
 
-        if (!software.configFilePath().toFile().exists()) FileUtils.filePutContents(software.configFilePath(), FileUtils.PRETTY_GSON.toJson(software));
+        if (!service().configFilePath(software).toFile().exists()) FileUtils.encodeJsonFile(service().configFilePath(software), software, SOFTWARE_GSON);
 
-        if (software.requiresUpdate()) {
-            if (!software.downloadSoftware()) throw new RuntimeException("Failed to download software");
+        if (service().requiresUpdateSoftware(software)) {
+            if (!service().downloadSoftware(software)) throw new RuntimeException("Failed to download software");
         }
 
-        if (software.bridge().requiresUpdate()) {
-            if (!software.bridge().download()) throw new RuntimeException("Failed to download software bridge");
+        if (service().requiresUpdateBridge(software)) {
+            if (!service().downloadBridge(software)) throw new RuntimeException("Failed to download software bridge");
         }
 
-        if (software.binary().requiresUpdate()) {
-            if (!software.binary().download()) throw new RuntimeException("Failed to download software binary");
+        if (service().requiresUpdateBinary(software)) {
+            if (!service().downloadBinary(software)) throw new RuntimeException("Failed to download software binary");
         }
     }
 
@@ -123,9 +142,9 @@ public final class ServerSoftwareManager implements Loadable {
     public void register(ServerSoftware software, boolean override) {
         if (softwareList.containsKey(software.name()) && !override) throw new IllegalArgumentException("ServerSoftware already exists");
         softwareList.put(software.name(), software);
-        if (!software.directoryPath().toFile().exists() && !software.directoryPath().toFile().mkdirs()) throw new RuntimeException("Unable to create directory");
-        if (!software.bridge().directoryPath().toFile().exists() && !software.bridge().directoryPath().toFile().mkdirs()) throw new RuntimeException("Unable to create directory");
-        FileUtils.filePutContents(software.configFilePath(), FileUtils.PRETTY_GSON.toJson(software));
+        if (!service().directoryPath(software).toFile().exists() && !service().directoryPath(software).toFile().mkdirs()) throw new RuntimeException("Unable to create directory");
+        if (!service().bridgeDirectoryPath(software).toFile().exists() && !service().bridgeDirectoryPath(software).toFile().mkdirs()) throw new RuntimeException("Unable to create directory");
+        FileUtils.encodeJsonFile(service().configFilePath(software), software, SOFTWARE_GSON);
         disabledSoftware.add(software.name());
         CloudLogger.get().warn("Please restart the cloud to download the required artifacts for the software §b{}§r.", software.name());
     }
@@ -140,13 +159,17 @@ public final class ServerSoftwareManager implements Loadable {
     }
 
     public ServerSoftware get(String name) {
-        return softwareList.getOrDefault(name, null);
+        return softwareList.get(name);
     }
 
     public boolean disabled(ServerSoftware software) {
         return disabledSoftware.contains(software.name());
     }
-
+    
+    public SoftwareService service() {
+        return PocketCloud.instance().software();
+    }
+    
     public Map<String, ServerSoftware> getAll() {
         return softwareList;
     }

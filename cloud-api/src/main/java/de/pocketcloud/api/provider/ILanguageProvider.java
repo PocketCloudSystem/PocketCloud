@@ -4,15 +4,15 @@ import de.pocketcloud.api.language.ILanguage;
 
 import java.util.Optional;
 
-public interface ILanguageProvider<T extends ILanguage> {
+public interface ILanguageProvider {
 
-    void register(T language);
+    void register(ILanguage language);
 
-    void unregister(T language);
+    void unregister(ILanguage language);
 
-    T current();
+    ILanguage current();
 
-    T fallback();
+    ILanguage fallback();
 
-    Optional<T> get(String name);
+    Optional<ILanguage> get(String name);
 }

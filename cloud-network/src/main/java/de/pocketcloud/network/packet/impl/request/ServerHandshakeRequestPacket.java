@@ -30,7 +30,7 @@ public final class ServerHandshakeRequestPacket extends RequestPacket implements
         this.maxPlayers = packetData.readInt();
     }
 
-    public static ServerHandshakeRequestPacket create(String serverName, int processId, int maxPlayers) {
+    public static ServerHandshakeRequestPacket create(String serverName, long processId, int maxPlayers) {
         return new ServerHandshakeRequestPacket(serverName, processId, maxPlayers);
     }
 }

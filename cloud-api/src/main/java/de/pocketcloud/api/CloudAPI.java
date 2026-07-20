@@ -1,11 +1,8 @@
 package de.pocketcloud.api;
 
-import de.pocketcloud.api.language.ILanguage;
-import de.pocketcloud.api.model.group.IServerGroup;
-import de.pocketcloud.api.model.player.ICloudPlayer;
-import de.pocketcloud.api.model.server.ICloudServer;
-import de.pocketcloud.api.model.template.ITemplate;
-import de.pocketcloud.api.network.client.IServerClient;
+import de.pocketcloud.api.config.IEnvironmentConfig;
+import de.pocketcloud.api.executor.IPlayerExecutor;
+import de.pocketcloud.api.logging.ILogger;
 import de.pocketcloud.api.provider.*;
 import de.pocketcloud.api.service.ServiceRegistry;
 
@@ -15,19 +12,23 @@ public interface CloudAPI {
         return CloudAPIHolder.getInstance();
     }
 
-    IModuleProvider modules();
+    IPlayerExecutor playerExecutor();
 
-    IPacketRegistry<? extends IServerClient> packets();
+    IPacketRegistry<?> packets();
 
-    IPlayerProvider<? extends ICloudPlayer> players();
+    IPlayerProvider players();
 
-    IServerGroupProvider<? extends IServerGroup> serverGroups();
+    IServerGroupProvider serverGroups();
 
-    IServerProvider<? extends ICloudServer> servers();
+    IServerProvider servers();
 
-    ITemplateProvider<? extends ITemplate> templates();
+    ITemplateProvider templates();
 
-    ILanguageProvider<? extends ILanguage> language();
+    ILanguageProvider language();
+
+    ILogger logger();
+
+    IEnvironmentConfig environmentConfig();
 
     ServiceRegistry services();
 

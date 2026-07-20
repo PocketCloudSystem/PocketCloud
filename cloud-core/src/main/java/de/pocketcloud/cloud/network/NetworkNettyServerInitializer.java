@@ -48,12 +48,12 @@ public class NetworkNettyServerInitializer extends ChannelInitializer<Channel> {
             PocketCloud.instance().traffic().pushBytes(NetworkTrafficMonitor.class, TrafficDirection.IN, length);
             PocketCloud.instance().traffic().callHandlers(NetworkTrafficMonitor.class, TrafficDirection.IN, channel, payload, (long) length);
 
-            return !new PacketReceivePreProcessEvent(channel, payload, PocketCloud.instance().config().isNetworkEncryptionEnabled()).call().isCancelled();
+            return !new PacketReceivePreProcessEvent(channel, payload, PocketCloud.instance().config().network().encryption()).call().isCancelled();
         }
 
         @Override
         public void onUnknownPacket(Channel channel, byte[] payload, int length) {
-            new PacketReceiveUnknownEvent(channel, payload, length, PocketCloud.instance().config().isNetworkEncryptionEnabled()).call();
+            new PacketReceiveUnknownEvent(channel, payload, length, PocketCloud.instance().config().network().encryption()).call();
             CloudLogger.get().debug("Received unknown packet with size {} from {}", length, channel.remoteAddress().toString());
         }
 
@@ -71,8 +71,8 @@ public class NetworkNettyServerInitializer extends ChannelInitializer<Channel> {
     @Override
     protected void initChannel(Channel channel) {
         channel.pipeline().addLast(
-            new CloudPacketDecoder(() -> PocketCloud.instance().config().isNetworkEncryptionEnabled(), () -> Math.toIntExact(PocketCloud.instance().config().getNetworkPacketSizeLimit()), () -> PocketCloud.instance().network().authToken(), LISTENER),
-            new CloudPacketEncoder(() -> PocketCloud.instance().config().isNetworkEncryptionEnabled(), () -> Math.toIntExact(PocketCloud.instance().config().getNetworkPacketSizeLimit()), () -> PocketCloud.instance().network().authToken(), LISTENER),
+            new CloudPacketDecoder(() -> PocketCloud.instance().config().network().encryption(), () -> Math.toIntExact(PocketCloud.instance().config().network().packetSizeLimit()), () -> PocketCloud.instance().network().authToken(), LISTENER),
+            new CloudPacketEncoder(() -> PocketCloud.instance().config().network().encryption(), () -> Math.toIntExact(PocketCloud.instance().config().network().packetSizeLimit()), () -> PocketCloud.instance().network().authToken(), LISTENER),
             new NetworkNettyHandler()
         );
     }

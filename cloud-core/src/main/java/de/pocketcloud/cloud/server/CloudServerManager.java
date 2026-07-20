@@ -1,22 +1,19 @@
 package de.pocketcloud.cloud.server;
 
-import de.pocketcloud.api.model.group.IServerGroup;
-import de.pocketcloud.api.model.server.ICloudServer;
-import de.pocketcloud.api.model.template.ITemplate;
-import de.pocketcloud.api.provider.IServerProvider;
-import de.pocketcloud.api.search.SearchQuery;
+import de.pocketcloud.api.component.group.IServerGroup;
+import de.pocketcloud.api.component.server.ICloudServer;
+import de.pocketcloud.api.component.template.ITemplate;
+import de.pocketcloud.api.provider.write.IWriteServerProvider;
 import de.pocketcloud.api.search.ServerSearchQuery;
 import de.pocketcloud.api.template.TemplateType;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.server.start.ServerStartMethod;
-import de.pocketcloud.cloud.server.util.CloudServerData;
 import de.pocketcloud.cloud.server.util.ServerStartMethods;
 import de.pocketcloud.cloud.server.util.ServerUtils;
-import de.pocketcloud.cloud.template.Template;
 import de.pocketcloud.cloud.util.benchmark.Benchmark;
 import de.pocketcloud.common.concurrent.Promise;
 import de.pocketcloud.common.lifecycle.Tickable;
-import de.pocketcloud.network.packet.impl.ServerSyncPacket;
+import de.pocketcloud.shared.component.data.CloudServerData;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.experimental.Accessors;
@@ -26,10 +23,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 @Getter
 @Accessors(fluent = true)
-public final class CloudServerManager implements Tickable, IServerProvider<CloudServer> {
+public final class CloudServerManager implements Tickable, IWriteServerProvider {
 
     public static final ExecutorService SERVER_EXECUTOR = Executors.newFixedThreadPool(
             Runtime.getRuntime().availableProcessors(),
@@ -60,20 +58,24 @@ public final class CloudServerManager implements Tickable, IServerProvider<Cloud
     @Getter(AccessLevel.NONE)
     private final Queue<CloudServer> serverStartQueue = new LinkedList<>();
 
-    public void add(CloudServer server) {
-        servers.putIfAbsent(server.name(), server);
-        ServerUtils.addId(server.template(), server.id());
-        ServerUtils.addPort(server.data().port());
+    @Override
+    public void add(ICloudServer server) {
+        CloudServer cloudServer = requireCloudServer(server);
+        servers.putIfAbsent(cloudServer.name(), cloudServer);
+        ServerUtils.addId(cloudServer.template(), cloudServer.id());
+        ServerUtils.addPort(cloudServer.data().port());
     }
 
-    public void remove(CloudServer server) {
+    @Override
+    public void remove(ICloudServer server) {
         servers.remove(server.name());
         ServerUtils.removeId(server.template(), server.id());
         ServerUtils.removePort(server.data().port());
         this.lastServerStopTime = System.currentTimeMillis();
-        ServerSyncPacket.create(server, true).broadcast();
+        ((CloudServer) server).markForRemoval().syncOut();
     }
-    
+
+    @Override
     public Promise<Collection<String>> start(ITemplate template, int count) {
         Collection<String> startedServers = new ArrayList<>();
 
@@ -112,16 +114,18 @@ public final class CloudServerManager implements Tickable, IServerProvider<Cloud
         return Promise.resolved(startedServers);
     }
 
-    public Promise<Void> save(CloudServer server) {
-        String saveCommandLine = server.template().serverSoftware().config().saveCommandLine();
+    @Override
+    public Promise<Void> save(ICloudServer server) {
+        CloudServer cloudServer = requireCloudServer(server);
+        String saveCommandLine = cloudServer.template().serverSoftware().config().saveCommandLine();
         if (saveCommandLine == null) {
-            return server.save();
+            return cloudServer.save();
         }
 
         Promise<Void> promise = new Promise<>();
-        server.dispatch(saveCommandLine)
+        cloudServer.dispatch(saveCommandLine)
             .thenSuccess(_ -> {
-                server.save();
+                cloudServer.save();
                 promise.resolve(null);
             })
             .failure(promise::reject);
@@ -129,53 +133,60 @@ public final class CloudServerManager implements Tickable, IServerProvider<Cloud
         return promise;
     }
 
-    public Promise<Collection<CloudServer>> stop(CloudServer server, boolean force) {
-        Collection<CloudServer> affectedServers = new ArrayList<>(Collections.singleton(server));
-        affectedServers.forEach(s -> s.stop(force));
+    @Override
+    public Promise<Collection<ICloudServer>> stop(ICloudServer server, boolean force) {
+        Collection<ICloudServer> affectedServers = new ArrayList<>(Collections.singleton(requireCloudServer(server)));
+        affectedServers.forEach(s -> ((CloudServer) s).stop(force));
         return Promise.resolved(affectedServers);
     }
 
-    public Promise<Collection<CloudServer>> stop(ITemplate template, boolean force) {
-        Collection<CloudServer> affectedServers = query(ServerSearchQuery.create().ofTemplate(template));
-        affectedServers.forEach(server -> server.stop(force));
+    @Override
+    public Promise<Collection<ICloudServer>> stop(ITemplate template, boolean force) {
+        Collection<ICloudServer> affectedServers = query(ServerSearchQuery.create().ofTemplate(template));
+        affectedServers.forEach(s -> ((CloudServer) s).stop(force));
         return Promise.resolved(affectedServers);
     }
 
-    public Promise<Collection<CloudServer>> stop(IServerGroup group, boolean force) {
-        Collection<CloudServer> affectedServers = query(ServerSearchQuery.create().inGroup(group));
-        affectedServers.forEach(server -> server.stop(force));
+    @Override
+    public Promise<Collection<ICloudServer>> stop(IServerGroup group, boolean force) {
+        Collection<ICloudServer> affectedServers = query(ServerSearchQuery.create().inGroup(group));
+        affectedServers.forEach(s -> ((CloudServer) s).stop(force));
         return Promise.resolved(affectedServers);
     }
 
-    public Promise<Collection<CloudServer>> stop(TemplateType templateType, boolean force) {
-        Collection<CloudServer> affectedServers = query(ServerSearchQuery.create().ofType(templateType));
-        affectedServers.forEach(server -> server.stop(force));
+    @Override
+    public Promise<Collection<ICloudServer>> stop(TemplateType templateType, boolean force) {
+        Collection<ICloudServer> affectedServers = query(ServerSearchQuery.create().ofType(templateType));
+        affectedServers.forEach(s -> ((CloudServer) s).stop(force));
         return Promise.resolved(affectedServers);
     }
 
-    public Promise<Collection<CloudServer>> stop(String name, boolean force) {
-        Collection<CloudServer> affectedServers = new ArrayList<>();
+    @Override
+    public Promise<Collection<ICloudServer>> stop(String name, boolean force) {
+        Collection<ICloudServer> affectedServers = new ArrayList<>();
         if (servers.containsKey(name)) affectedServers.add(servers.get(name));
-        affectedServers.forEach(server -> server.stop(force));
+        affectedServers.forEach(s -> ((CloudServer) s).stop(force));
         return Promise.resolved(affectedServers);
     }
-    
-    public Promise<Collection<CloudServer>> stopAll(boolean force) {
-        Collection<CloudServer> all = getAll();
-        all.forEach(server -> server.stop(force));
+
+    @Override
+    public Promise<Collection<ICloudServer>> stopAll(boolean force) {
+        Collection<ICloudServer> all = getAll();
+        all.forEach(s -> ((CloudServer) s).stop(force));
         return Promise.resolved(all);
     }
 
     @Override
     public boolean check(String name) {
-        return false;
+        return servers.containsKey(name);
     }
 
     @Override
     public boolean check(UUID uuid) {
-        return false;
+        return servers.values().stream().anyMatch(s -> s.uuid().equals(uuid));
     }
 
+    @Override
     public boolean checkCapacity(ITemplate template) {
         return query(ServerSearchQuery.create().ofTemplate(template)).size() < template.settings().maxServerCount();
     }
@@ -194,7 +205,7 @@ public final class CloudServerManager implements Tickable, IServerProvider<Cloud
 
     @Override
     public void tick(long currentTick) {
-        servers.values().forEach(server -> server.tick(currentTick));
+        servers.values().forEach(server -> ((CloudServer) server).tick(currentTick));
 
 
         /**
@@ -256,43 +267,65 @@ public final class CloudServerManager implements Tickable, IServerProvider<Cloud
         Benchmark.stopTiming("check_server_start_queue");
     }
 
-    public Optional<CloudServer> get(String name) {
-        return Optional.ofNullable(servers.getOrDefault(name,
-            servers.values().stream()
+    @Override
+    public Optional<ICloudServer> get(String name) {
+        return Optional.ofNullable(servers.getOrDefault(name, servers.values().stream()
                 .filter(s -> s.name().startsWith(name))
                 .findFirst().orElse(null)
         ));
     }
 
-    public Optional<CloudServer> get(UUID uuid) {
-        return servers.values().stream().filter(s -> s.uuid().compareTo(uuid) == 0).findFirst();
-    }
-
-    public Optional<CloudServer> getFreeLobby() {
-        return servers.values().stream()
-                .filter(s -> s.template().settings().lobby() && s.playerCount() < s.data().maxPlayers())
-                .min(Comparator.comparingInt(CloudServer::playerCount));
-    }
-
-    public Optional<CloudServer> getLatest(Template template) {
-        String latestName = latestServerStartTimes.get(template.name());
-        if (latestName == null) return Optional.empty();
-        return Optional.ofNullable(servers.getOrDefault(latestName, null));
+    @Override
+    public Optional<ICloudServer> get(UUID uuid) {
+        return widen(servers.values()).stream().filter(s -> s.uuid().compareTo(uuid) == 0).findFirst();
     }
 
     @Override
-    public Collection<CloudServer> query(SearchQuery<? extends ICloudServer> searchQuery) {
-        return filter(searchQuery);
+    public ICloudServer current() {
+        throw new RuntimeException("There is no \"current\" server on the cloud side");
+    }
+
+    public Optional<ICloudServer> getFreeLobby() {
+        return widen(servers.values()).stream()
+                .filter(s -> s.template().settings().lobby() && s.playerCount() < s.data().maxPlayers())
+                .min(Comparator.comparingInt(ICloudServer::playerCount));
+    }
+
+    public Optional<ICloudServer> getLatest(ITemplate template) {
+        String latestName = latestServerStartTimes.get(template.name());
+        if (latestName == null) return Optional.empty();
+        return Optional.ofNullable(servers.get(latestName));
+    }
+
+    @Override
+    public Collection<ICloudServer> query(ServerSearchQuery searchQuery) {
+        return widen(servers.values().stream()
+                .filter(searchQuery::matches)
+                .toList());
+    }
+
+    @Override
+    public Collection<ICloudServer> query(Consumer<ServerSearchQuery> queryConsumer) {
+        ServerSearchQuery searchQuery = new ServerSearchQuery();
+        queryConsumer.accept(searchQuery);
+        return query(searchQuery);
+    }
+
+    @Override
+    public Collection<ICloudServer> getAll() {
+        return widen(servers.values().stream().toList());
     }
 
     @SuppressWarnings("unchecked")
-    private <T extends ICloudServer> Collection<CloudServer> filter(SearchQuery<T> searchQuery) {
-        return servers.values().stream()
-                .filter(o -> searchQuery.matches((T) o))
-                .toList();
+    private <T extends ICloudServer> Collection<ICloudServer> widen(Collection<T> collection) {
+        return (Collection<ICloudServer>) collection;
     }
 
-    public Set<CloudServer> getAll() {
-        return new HashSet<>(servers.values());
+    private CloudServer requireCloudServer(ICloudServer server) {
+        if (!(server instanceof CloudServer cloudServer)) {
+            throw new IllegalArgumentException("Unsupported ICloudServer implementation: " + server.getClass().getName());
+        }
+
+        return cloudServer;
     }
 }

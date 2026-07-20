@@ -1,29 +1,29 @@
 package de.pocketcloud.common.cache;
 
-import java.util.Collection;
-import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
-public interface LocalCache<T> {
+public interface LocalCache<K, V> {
 
-    /**
-     * Replaces local elements with elements {@param T cache}, mainly used for first time fetching (e.g. from db)
-     */
-    void syncIn(List<T> cache);
+    void syncIn(Map<K, V> cache);
 
-    /**
-     * Pushes cache to sub-server instances
-     */
     void syncOut();
 
-    void add(T element);
+    void add(K id, V element);
 
-    void remove(T element);
+    void remove(K id);
 
-    boolean contains(T element);
+    void clear();
 
-    Collection<T> getAll();
+    boolean contains(K id);
 
-    static <C extends LocalCache<?>> C get(Class<C> clazz) {
+    int size();
+
+    Optional<V> get(K id);
+
+    Map<K, V> getAll();
+
+    static <C extends LocalCache<?, ?>> C get(Class<C> clazz) {
         return LocalCacheRegistry.get(clazz);
     }
 }

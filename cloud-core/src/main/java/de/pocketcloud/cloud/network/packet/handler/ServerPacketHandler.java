@@ -10,11 +10,10 @@ import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.event.impl.server.ServerPostVerificationEvent;
 import de.pocketcloud.cloud.event.impl.server.ServerVerifyEvent;
 import de.pocketcloud.cloud.network.client.ServerClient;
+import de.pocketcloud.cloud.server.CloudServer;
 import de.pocketcloud.cloud.server.CloudServersHandler;
-import de.pocketcloud.network.packet.impl.CloudSyncServerStoragePacket;
 import de.pocketcloud.network.packet.impl.DisconnectPacket;
 import de.pocketcloud.network.packet.impl.KeepAlivePacket;
-import de.pocketcloud.network.packet.impl.ServerChangeStatusPacket;
 import de.pocketcloud.network.packet.impl.request.ServerHandshakeRequestPacket;
 import de.pocketcloud.network.packet.impl.request.ServerSaveRequestPacket;
 import de.pocketcloud.network.packet.impl.request.ServerStartRequestPacket;
@@ -23,7 +22,7 @@ import de.pocketcloud.network.packet.impl.response.ServerHandshakeResponsePacket
 import de.pocketcloud.network.packet.impl.response.ServerSaveResponsePacket;
 import de.pocketcloud.network.packet.impl.response.ServerStartResponsePacket;
 import de.pocketcloud.network.packet.impl.response.ServerStopResponsePacket;
-import de.pocketcloud.network.packet.type.ActionFailureReason;
+import de.pocketcloud.shared.network.packet.type.ActionFailureReason;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -32,7 +31,7 @@ public final class ServerPacketHandler implements PacketListener {
 
     @PacketHandler({ServerHandshakeRequestPacket.class})
     public void handle(ServerHandshakeRequestPacket packet, ServerClient sender) {
-        var server = PocketCloud.instance().servers().get(packet.getServerName()).orElse(null);
+        var server = (CloudServer) PocketCloud.instance().servers().get(packet.getServerName()).orElse(null);
         if (server == null) return;
         if (PocketCloud.instance().clients().getServer(sender).isEmpty()) {
             var ev = new ServerVerifyEvent(server);
@@ -42,7 +41,7 @@ public final class ServerPacketHandler implements PacketListener {
                 return;
             }
 
-            float elapsed = Duration.between(server.startTime(), Instant.now()).toSeconds();
+            float elapsed = Duration.between(server.startTime(), Instant.now()).toMillis() * 1000;
 
             PocketCloud.instance().clients().add(server, sender);
             CloudLogger.get().success("The server §b{} §rhas §aconnected §rto the cloud. §8(§rTook §b{}§rs§8)", server.name(), elapsed);
@@ -82,7 +81,7 @@ public final class ServerPacketHandler implements PacketListener {
             return;
         }
 
-        PocketCloud.instance().servers().save(cloudServer.get())
+        PocketCloud.instance().servers().save((CloudServer) cloudServer.get())
             .thenSuccess(_ -> packet.sendResponse(ServerSaveResponsePacket.create(ActionFailureReason.NONE), sender))
             .failure(_ -> packet.sendResponse(ServerSaveResponsePacket.create(ActionFailureReason.REQUEST_TIMEOUT), sender));
     }
@@ -113,19 +112,5 @@ public final class ServerPacketHandler implements PacketListener {
                 packet.sendResponse(ServerStopResponsePacket.create(ActionFailureReason.NONE), sender);
             }
         });
-    }
-
-    @PacketHandler({CloudSyncServerStoragePacket.class})
-    public void handle(CloudSyncServerStoragePacket packet, ServerClient sender) {
-        var server = sender.server();
-        if (server != null) {
-            server.storage().clear();
-            server.storage().setAll(packet.getData());
-        }
-    }
-
-    @PacketHandler({ServerChangeStatusPacket.class})
-    public void handle(ServerChangeStatusPacket packet, ServerClient sender) {
-        PocketCloud.instance().servers().get(packet.getServerUuid()).ifPresent(server -> server.setStatus(packet.getStatus()));
     }
 }

@@ -1,21 +1,18 @@
 package de.pocketcloud.api.provider;
 
-import de.pocketcloud.api.model.group.IServerGroup;
-import de.pocketcloud.api.model.server.ICloudServer;
-import de.pocketcloud.api.model.template.ITemplate;
-import de.pocketcloud.api.search.SearchQuery;
+import de.pocketcloud.api.component.group.IServerGroup;
+import de.pocketcloud.api.component.server.ICloudServer;
+import de.pocketcloud.api.component.template.ITemplate;
+import de.pocketcloud.api.search.ServerSearchQuery;
 import de.pocketcloud.api.template.TemplateType;
 import de.pocketcloud.common.concurrent.Promise;
 
 import java.util.Collection;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Consumer;
 
-public interface IServerProvider<T extends ICloudServer> {
-
-    void add(T server);
-
-    void remove(T server);
+public interface IServerProvider {
 
     default Promise<Collection<String>> start(ITemplate template) {
         return start(template, 1);
@@ -23,43 +20,43 @@ public interface IServerProvider<T extends ICloudServer> {
 
     Promise<Collection<String>> start(ITemplate template, int count);
 
-    Promise<Void> save(T server);
+    Promise<Void> save(ICloudServer server);
 
-    default Promise<Collection<T>> stop(T server) {
+    default Promise<Collection<ICloudServer>> stop(ICloudServer server) {
         return stop(server, false);
     }
 
-    Promise<Collection<T>> stop(T server, boolean force);
+    Promise<Collection<ICloudServer>> stop(ICloudServer server, boolean force);
 
-    default Promise<Collection<T>> stop(ITemplate template) {
+    default Promise<Collection<ICloudServer>> stop(ITemplate template) {
         return stop(template, false);
     }
 
-    Promise<Collection<T>> stop(ITemplate template, boolean force);
+    Promise<Collection<ICloudServer>> stop(ITemplate template, boolean force);
 
-    default Promise<Collection<T>> stop(IServerGroup group) {
+    default Promise<Collection<ICloudServer>> stop(IServerGroup group) {
         return stop(group, false);
     }
 
-    Promise<Collection<T>> stop(IServerGroup group, boolean force);
+    Promise<Collection<ICloudServer>> stop(IServerGroup group, boolean force);
 
-    default Promise<Collection<T>> stop(TemplateType type) {
+    default Promise<Collection<ICloudServer>> stop(TemplateType type) {
         return stop(type, false);
     }
 
-    Promise<Collection<T>> stop(TemplateType type, boolean force);
+    Promise<Collection<ICloudServer>> stop(TemplateType type, boolean force);
 
-    default Promise<Collection<T>> stop(String name) {
+    default Promise<Collection<ICloudServer>> stop(String name) {
         return stop(name, false);
     }
 
-    Promise<Collection<T>> stop(String name, boolean force);
+    Promise<Collection<ICloudServer>> stop(String name, boolean force);
 
-    default Promise<Collection<T>> stopAll() {
+    default Promise<Collection<ICloudServer>> stopAll() {
         return stopAll(false);
     }
 
-    Promise<Collection<T>> stopAll(boolean force);
+    Promise<Collection<ICloudServer>> stopAll(boolean force);
 
     boolean check(String name);
 
@@ -67,11 +64,18 @@ public interface IServerProvider<T extends ICloudServer> {
 
     boolean checkCapacity(ITemplate template);
 
-    Optional<T> get(String name);
+    Optional<ICloudServer> get(String name);
 
-    Optional<T> get(UUID uuid);
+    Optional<ICloudServer> get(UUID uuid);
 
-    Collection<T> query(SearchQuery<? extends ICloudServer> searchQuery);
+    /**
+     * This method returns null on the cloud-side.
+     */
+    ICloudServer current();
 
-    Collection<T> getAll();
+    Collection<ICloudServer> query(ServerSearchQuery searchQuery);
+
+    Collection<ICloudServer> query(Consumer<ServerSearchQuery> queryConsumer);
+
+    Collection<ICloudServer> getAll();
 }

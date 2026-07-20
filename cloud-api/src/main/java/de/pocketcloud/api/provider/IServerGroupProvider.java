@@ -1,22 +1,24 @@
 package de.pocketcloud.api.provider;
 
-import de.pocketcloud.api.model.group.IServerGroup;
-import de.pocketcloud.api.search.SearchQuery;
+import de.pocketcloud.api.component.builder.IServerGroupBuilder;
+import de.pocketcloud.api.component.group.IServerGroup;
+import de.pocketcloud.api.search.ServerGroupSearchQuery;
 
 import java.util.Collection;
 import java.util.Optional;
+import java.util.function.Consumer;
 
-public interface IServerGroupProvider<T extends IServerGroup> {
+public interface IServerGroupProvider {
 
-    void add(T serverGroup);
-
-    void remove(T serverGroup);
+    IServerGroupBuilder builder();
 
     boolean check(String name);
 
-    Optional<T> get(String name);
+    Optional<IServerGroup> get(String name);
 
-    Collection<T> query(SearchQuery<? extends IServerGroup> searchQuery);
+    Collection<IServerGroup> query(ServerGroupSearchQuery searchQuery);
 
-    Collection<T> getAll();
+    Collection<IServerGroup> query(Consumer<ServerGroupSearchQuery> queryConsumer);
+
+    Collection<IServerGroup> getAll();
 }

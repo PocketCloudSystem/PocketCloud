@@ -14,6 +14,8 @@
         <module>cloud-network</module>
         <module>cloud-core</module>
         <module>cloud-api</module>
+        <module>cloud-bridge</module>
+        <module>cloud-shared</module>
     </modules>
 
     <name>PocketCloud Parent</name>
@@ -39,6 +41,16 @@
                 <version>4.2.15.Final</version>
             </dependency>
             <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-pkitesting</artifactId>
+                <version>4.2.15.Final</version>
+            </dependency>
+            <dependency>
+                <groupId>eu.okaeri</groupId>
+                <artifactId>okaeri-configs-yaml-snakeyaml</artifactId>
+                <version>5.0.13</version>
+            </dependency>
+            <dependency>
                 <groupId>org.projectlombok</groupId>
                 <artifactId>lombok</artifactId>
                 <version>1.18.46</version>
@@ -62,11 +74,6 @@
                 <groupId>com.zaxxer</groupId>
                 <artifactId>HikariCP</artifactId>
                 <version>7.0.2</version>
-            </dependency>
-            <dependency>
-                <groupId>de.pocketcloud.configlib</groupId>
-                <artifactId>configlib</artifactId>
-                <version>1.0.2</version>
             </dependency>
             <dependency>
                 <groupId>org.jline</groupId>
@@ -102,6 +109,21 @@
                 <groupId>org.reflections</groupId>
                 <artifactId>reflections</artifactId>
                 <version>0.10.2</version>
+            </dependency>
+            <dependency>
+                <groupId>org.powernukkitx</groupId>
+                <artifactId>server</artifactId>
+                <version>nightly-SNAPSHOT</version>
+            </dependency>
+            <dependency>
+                <groupId>dev.waterdog.waterdogpe</groupId>
+                <artifactId>waterdog</artifactId>
+                <version>2.0.4-SNAPSHOT</version>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-api</artifactId>
+                <version>6.1.1</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

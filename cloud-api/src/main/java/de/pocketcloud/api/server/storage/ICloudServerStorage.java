@@ -1,12 +1,13 @@
 package de.pocketcloud.api.server.storage;
 
-import de.pocketcloud.api.model.server.ICloudServer;
+import de.pocketcloud.api.component.server.ICloudServer;
+import de.pocketcloud.api.sync.SyncingElement;
 
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface ICloudServerStorage {
+public interface ICloudServerStorage extends SyncingElement<Map<String, Object>> {
 
     UUID serverUuid();
 
@@ -16,7 +17,11 @@ public interface ICloudServerStorage {
 
     ICloudServerStorage remove(String key);
 
-    void clear();
+    ICloudServerStorage clear();
+
+    default void push() {
+        syncOut();
+    }
 
     boolean has(String key);
 
@@ -28,7 +33,7 @@ public interface ICloudServerStorage {
 
     int size();
 
-    Optional<? extends ICloudServer> server();
+    Optional<ICloudServer> server();
 
     Map<String, Object> getAll();
 }

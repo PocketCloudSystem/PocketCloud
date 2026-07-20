@@ -1,11 +1,11 @@
 package de.pocketcloud.cloud.server.crash.impl;
 
 import com.google.gson.reflect.TypeToken;
+import de.pocketcloud.api.component.software.IServerSoftware;
 import de.pocketcloud.api.template.TemplateType;
 import de.pocketcloud.cloud.server.CloudServer;
 import de.pocketcloud.cloud.server.crash.CrashData;
 import de.pocketcloud.cloud.server.crash.CrashHandler;
-import de.pocketcloud.cloud.server.software.ServerSoftware;
 import de.pocketcloud.cloud.server.software.ServerSoftwareManager;
 import de.pocketcloud.cloud.template.util.TemplateTypeHelper;
 import de.pocketcloud.common.util.FileUtils;
@@ -25,9 +25,9 @@ public final class PocketMineCrashHandler implements CrashHandler {
 
     public static final String LOG_EXTENSION = "log";
 
-    @SuppressWarnings("unchecked")
     @Nullable
     @Override
+    @SuppressWarnings("unchecked")
     public CrashData retrieveCrashData(CloudServer server) {
         Path path = server.path().resolve("crashdumps/");
         TemplateType type = server.template().templateType();
@@ -97,7 +97,7 @@ public final class PocketMineCrashHandler implements CrashHandler {
     }
 
     @Override
-    public List<ServerSoftware> applicableSoftware() {
+    public List<IServerSoftware> applicableSoftware() {
         return List.of(ServerSoftwareManager.DEFAULTS.getFirst());
     }
 }

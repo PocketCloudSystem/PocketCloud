@@ -1,18 +1,20 @@
 package de.pocketcloud.cloud.template;
 
-import de.pocketcloud.api.model.template.ITemplate;
-import de.pocketcloud.api.provider.ITemplateProvider;
-import de.pocketcloud.api.search.SearchQuery;
+import de.pocketcloud.api.component.builder.ITemplateBuilder;
+import de.pocketcloud.api.component.server.ICloudServer;
+import de.pocketcloud.api.component.template.ITemplate;
+import de.pocketcloud.api.provider.write.IWriteTemplateProvider;
 import de.pocketcloud.api.search.ServerSearchQuery;
+import de.pocketcloud.api.search.TemplateSearchQuery;
 import de.pocketcloud.api.template.TemplateType;
 import de.pocketcloud.api.template.util.TemplateEditData;
 import de.pocketcloud.cloud.PocketCloud;
+import de.pocketcloud.cloud.builder.TemplateBuilder;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.event.impl.template.TemplateCreateEvent;
 import de.pocketcloud.cloud.event.impl.template.TemplateEditEvent;
 import de.pocketcloud.cloud.event.impl.template.TemplateRemoveEvent;
 import de.pocketcloud.cloud.provider.CloudProvider;
-import de.pocketcloud.cloud.server.CloudServer;
 import de.pocketcloud.cloud.template.util.TemplateTypeHelper;
 import de.pocketcloud.cloud.util.benchmark.Benchmark;
 import de.pocketcloud.cloud.util.benchmark.BenchmarkTiming;
@@ -20,7 +22,6 @@ import de.pocketcloud.common.lifecycle.Loadable;
 import de.pocketcloud.common.lifecycle.Tickable;
 import de.pocketcloud.common.util.FileUtils;
 import de.pocketcloud.common.util.NumberUtils;
-import de.pocketcloud.network.packet.impl.TemplateSyncPacket;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -28,8 +29,9 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 
-public final class TemplateManager implements Tickable, Loadable, ITemplateProvider<Template> {
+public final class TemplateManager implements Tickable, Loadable, IWriteTemplateProvider {
 
     private final Map<String, Template> templates = new HashMap<>();
 
@@ -38,7 +40,7 @@ public final class TemplateManager implements Tickable, Loadable, ITemplateProvi
         CloudLogger.get().info("Loading templates...");
         for (TemplateType type : TemplateType.values()) FileUtils.createDir(TemplateTypeHelper.globalTemplatePath(type));
         CloudProvider.current().getTemplates()
-                .thenSuccess(this.templates::putAll)
+                .thenSuccess(templates::putAll)
                 .thenSuccess(_ -> PocketCloud.instance().serverGroups().load());
     }
 
@@ -49,7 +51,9 @@ public final class TemplateManager implements Tickable, Loadable, ITemplateProvi
         PocketCloud.instance().serverGroups().unload();
     }
 
-    public void add(Template template) {
+    @Override
+    public void create(ITemplateBuilder builder) {
+        Template template = (Template) builder.build();
         Benchmark.startTiming("template_creation");
         try {
             TemplateCreateEvent ev = new TemplateCreateEvent(template);
@@ -61,10 +65,10 @@ public final class TemplateManager implements Tickable, Loadable, ITemplateProvi
 
             CloudProvider.current().addTemplate(template);
             if (!Files.isDirectory(template.path())) Files.createDirectories(template.path());
-            templates.put(template.name(), template);
+            add(template);
             BenchmarkTiming res = Benchmark.stopTiming("template_creation");
             CloudLogger.get().success("Successfully §acreated §rthe template §b{}§r. §8(§rTook §b{}ms§8)", template.name(), NumberUtils.formatNumber(res.duration(), 2));
-            TemplateSyncPacket.create(template, false).broadcast();
+            template.syncOut();
         } catch (IOException e) {
             CloudLogger.get().exception("Failed to create template {}", e, template.name());
             Benchmark.stopTiming("template_creation");
@@ -72,26 +76,33 @@ public final class TemplateManager implements Tickable, Loadable, ITemplateProvi
         }
     }
 
-    public void edit(Template template, TemplateEditData editData) {
+    @Override
+    public void add(ITemplate template) {
+        templates.put(template.name(), requireTemplate(template));
+    }
+
+    @Override
+    public void edit(ITemplate template, TemplateEditData editData) {
+        Template temp = requireTemplate(template);
         Benchmark.startTiming("template_editing");
-        TemplateEditEvent ev = new TemplateEditEvent(template, editData);
+        TemplateEditEvent ev = new TemplateEditEvent(temp, editData);
         ev.call();
         if (ev.isCancelled()) {
             Benchmark.stopTiming("template_editing");
             return;
         }
 
-        editData.applyTo(template);
-        CloudProvider.current().editTemplate(template, template.write());
+        editData.applyTo(temp);
+        CloudProvider.current().editTemplate(temp, temp.write());
         BenchmarkTiming res = Benchmark.stopTiming("template_editing");
-        CloudLogger.get().success("Successfully §eedited §rthe template §b{}§r. §8(§rTook §b{}ms§8)", template.name(), NumberUtils.formatNumber(res.duration(), 2));
-        TemplateSyncPacket.create(template, false).broadcast();
-        if (template.settings().maintenance()) {
-            template.players().forEach(player -> {
+        CloudLogger.get().success("Successfully §eedited §rthe template §b{}§r. §8(§rTook §b{}ms§8)", temp.name(), NumberUtils.formatNumber(res.duration(), 2));
+        temp.syncOut();
+        if (temp.settings().maintenance()) {
+            temp.players().forEach(player -> {
                 if (template.settings().lobby()) {
                     player.kick("MAINTENANCE");
                 } else {
-                    Optional<CloudServer> lobbyServer = PocketCloud.instance().servers().getFreeLobby();
+                    Optional<ICloudServer> lobbyServer = PocketCloud.instance().servers().getFreeLobby();
                     if (lobbyServer.isEmpty()) player.kick("MAINTENANCE");
                     else player.transfer(lobbyServer.get());
                 }
@@ -99,37 +110,56 @@ public final class TemplateManager implements Tickable, Loadable, ITemplateProvi
         }
     }
 
-    public void remove(Template template) {
+    @Override
+    public void remove(ITemplate template) {
+        templates.remove(template.name());
+    }
+
+    @Override
+    public void delete(ITemplate template) {
+        Template temp = requireTemplate(template);
         Benchmark.startTiming("template_removal");
-        TemplateRemoveEvent ev = new TemplateRemoveEvent(template);
+        TemplateRemoveEvent ev = new TemplateRemoveEvent(temp);
         ev.call();
         if (ev.isCancelled()) {
             Benchmark.stopTiming("template_removal");
             return;
         }
 
-        CloudProvider.current().removeTemplate(template);
-        if (Files.isDirectory(template.path())) {
+        CloudProvider.current().removeTemplate(temp);
+        if (Files.isDirectory(temp.path())) {
             try {
-                FileUtils.removeDirectory(template.path());
+                FileUtils.removeDirectory(temp.path());
             } catch (Exception e) {
-                CloudLogger.get().exception("Failed to remove template directory of {}", e, template.name());
+                CloudLogger.get().exception("Failed to remove template directory of {}", e, temp.name());
             }
         }
 
-        templates.remove(template.name());
+        remove(temp);
         BenchmarkTiming res = Benchmark.stopTiming("template_removal");
-        CloudLogger.get().success("Successfully §cremoved §rthe template §b{}§r. §8(§rTook §b{}ms§8)", template.name(), NumberUtils.formatNumber(res.duration(), 2));
+        CloudLogger.get().success("Successfully §cremoved §rthe template §b{}§r. §8(§rTook §b{}ms§8)", temp.name(), NumberUtils.formatNumber(res.duration(), 2));
+        temp.markForRemoval().syncOut();
     }
 
+    @Override
+    public ITemplateBuilder builder() {
+        return new TemplateBuilder();
+    }
+
+    @Override
     public boolean check(String name) {
         return templates.containsKey(name);
     }
 
     @Override
+    public ITemplate current() {
+        throw new RuntimeException("There is no \"current\" template on the cloud side");
+    }
+
+    @Override
     public void tick(long currentTick) {
         if (!PocketCloud.instance().serverGroups().isLoaded()) return;
-        for (Template template : templates.values()) {
+        for (ITemplate template : templates.values()) {
             if (template.settings().autoStart()) {
                 int runningServers = PocketCloud.instance().servers().query(ServerSearchQuery.create().ofTemplate(template)).size();
                 if (runningServers < template.settings().maxServerCount() && runningServers < template.settings().minServerCount()) {
@@ -139,7 +169,7 @@ public final class TemplateManager implements Tickable, Loadable, ITemplateProvi
                 }
             }
 
-            CloudServer latest = PocketCloud.instance().servers().getLatest(template).orElse(null);
+            ICloudServer latest = PocketCloud.instance().servers().getLatest(template).orElse(null);
             if (latest != null) {
                 double requiredPercentage = template.settings().startNewPercentage();
                 if (requiredPercentage <= 0) continue;
@@ -152,24 +182,40 @@ public final class TemplateManager implements Tickable, Loadable, ITemplateProvi
         }
     }
 
-    public Optional<Template> get(String name) {
-        return Optional.ofNullable(templates.getOrDefault(name, null));
+    @Override
+    public Optional<ITemplate> get(String name) {
+        return Optional.ofNullable(templates.get(name));
     }
 
     @Override
-    public Collection<Template> query(SearchQuery<? extends ITemplate> searchQuery) {
-        return filter(searchQuery);
+    public Collection<ITemplate> query(TemplateSearchQuery searchQuery) {
+        return widen(templates.values().stream()
+                .filter(searchQuery::matches)
+                .toList());
+    }
+
+    @Override
+    public Collection<ITemplate> query(Consumer<TemplateSearchQuery> queryConsumer) {
+        TemplateSearchQuery searchQuery = new TemplateSearchQuery();
+        queryConsumer.accept(searchQuery);
+        return query(searchQuery);
+    }
+
+    @Override
+    public Collection<ITemplate> getAll() {
+        return widen(templates.values().stream().toList());
     }
 
     @SuppressWarnings("unchecked")
-    private <T extends ITemplate> Collection<Template> filter(SearchQuery<T> query) {
-        return templates.values().stream()
-                .filter(o -> query.matches((T) o))
-                .toList();
+    private <T extends ITemplate> Collection<ITemplate> widen(Collection<T> collection) {
+        return (Collection<ITemplate>) collection;
     }
 
-    @Override
-    public Collection<Template> getAll() {
-        return templates.values().stream().toList();
+    private Template requireTemplate(ITemplate template) {
+        if (!(template instanceof Template tmp)) {
+            throw new IllegalArgumentException("Unsupported ICloudServer implementation: " + template.getClass().getName());
+        }
+
+        return tmp;
     }
 }

@@ -1,62 +1,66 @@
 package de.pocketcloud.cloud.player;
 
-import de.pocketcloud.api.model.player.ICloudPlayer;
-import de.pocketcloud.api.provider.IPlayerProvider;
-import de.pocketcloud.api.search.SearchQuery;
+import de.pocketcloud.api.component.player.ICloudPlayer;
+import de.pocketcloud.api.provider.write.IWritePlayerProvider;
+import de.pocketcloud.api.search.PlayerSearchQuery;
 import de.pocketcloud.api.search.ServerSearchQuery;
 import de.pocketcloud.api.template.TemplateType;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.event.impl.player.PlayerConnectEvent;
 import de.pocketcloud.cloud.event.impl.player.PlayerDisconnectEvent;
-import de.pocketcloud.cloud.notification.Notifier;
-import de.pocketcloud.network.packet.impl.PlayerSyncPacket;
-import de.pocketcloud.network.packet.type.NotificationType;
+import de.pocketcloud.cloud.server.CloudServer;
+import de.pocketcloud.shared.network.packet.type.NotificationType;
 
 import java.util.*;
+import java.util.function.Consumer;
 
-public final class CloudPlayerManager implements IPlayerProvider<CloudPlayer> {
+public final class CloudPlayerManager implements IWritePlayerProvider {
 
     private final Map<String, CloudPlayer> players = new LinkedHashMap<>();
 
-    public void add(CloudPlayer player) {
+    @Override
+    public void add(ICloudPlayer player) {
+        CloudPlayer cloudPlayer = requireCloudPlayer(player);
         boolean anyProxies = !PocketCloud.instance().servers().query(ServerSearchQuery.create().ofType(TemplateType.PROXY)).isEmpty();
-        if (anyProxies && player.currentProxy().isEmpty()) {
-            player.kick("Joined via sub-server instead of a proxy.", "Please do not join via sub-servers.");
+        if (anyProxies && cloudPlayer.currentProxy().isEmpty()) {
+            cloudPlayer.kick("Joined via sub-server instead of a proxy.", "Please do not join via sub-servers.");
             return;
         }
 
-        if (Notifier.canLog(NotificationType.PLAYER_JOINED)) {
-            String via = player.currentProxyName() != null ? player.currentProxyName() : player.currentServerName();
-            CloudLogger.get().info("Player §b{} §rhas §aconnected §rvia §b{}§r.", player.name(), via);
+        if (PocketCloud.instance().notifications().canLog(NotificationType.PLAYER_JOINED)) {
+            String via = cloudPlayer.currentProxyName() != null ? cloudPlayer.currentProxyName() : cloudPlayer.currentServerName();
+            CloudLogger.get().info("Player §b{} §rhas §aconnected §rvia §b{}§r.", cloudPlayer.name(), via);
         }
 
-        players.put(player.name(), player);
-        PlayerSyncPacket.create(player, false).broadcast();
-        String serverOrProxy = player.currentServerName() != null ? player.currentServerName() : player.currentProxyName();
-        Notifier.notify(NotificationType.PLAYER_JOINED, Map.of("player", player.name(), "server", serverOrProxy), Map.of());
+        players.put(cloudPlayer.name(), cloudPlayer);
+        cloudPlayer.syncOut();
+        String serverOrProxy = cloudPlayer.currentServerName() != null ? cloudPlayer.currentServerName() : cloudPlayer.currentProxyName();
+        PocketCloud.instance().notifications().notify(NotificationType.PLAYER_JOINED, Map.of("player", cloudPlayer.name(), "server", serverOrProxy), Map.of());
 
         var joinTarget = player.currentServer().orElse(player.currentProxy().orElse(null));
-        new PlayerConnectEvent(player, joinTarget).call();
+        new PlayerConnectEvent(cloudPlayer, (CloudServer) joinTarget).call();
     }
 
-    public void remove(CloudPlayer player) {
-        if (Notifier.canLog(NotificationType.PLAYER_JOINED)) {
-            String from = player.currentServerName() != null ? player.currentServerName() : player.currentProxyName();
-            CloudLogger.get().info("Player §b{} §cdisconnected §rfrom §b{}§r.", player.name(), from);
+    @Override
+    public void remove(ICloudPlayer player) {
+        CloudPlayer cloudPlayer = requireCloudPlayer(player);
+        if (PocketCloud.instance().notifications().canLog(NotificationType.PLAYER_JOINED)) {
+            String from = player.currentServerName() != null ? player.currentServerName() : cloudPlayer.currentProxyName();
+            CloudLogger.get().info("Player §b{} §cdisconnected §rfrom §b{}§r.", cloudPlayer.name(), from);
         }
 
-        players.remove(player.name());
+        players.remove(cloudPlayer.name());
 
-        String serverOrProxy = player.currentServerName() != null ? player.currentServerName() : player.currentProxyName();
-        Notifier.notify(NotificationType.PLAYER_LEFT, Map.of("player", player.name(), "server", serverOrProxy), Map.of());
+        String serverOrProxy = cloudPlayer.currentServerName() != null ? cloudPlayer.currentServerName() : cloudPlayer.currentProxyName();
+        PocketCloud.instance().notifications().notify(NotificationType.PLAYER_LEFT, Map.of("player", cloudPlayer.name(), "server", serverOrProxy), Map.of());
 
-        var disconnectTarget = player.currentServer().orElse(player.currentProxy().orElse(null));
-        new PlayerDisconnectEvent(player, disconnectTarget, serverOrProxy).call();
+        var disconnectTarget = cloudPlayer.currentServer().orElse(cloudPlayer.currentProxy().orElse(null));
+        new PlayerDisconnectEvent(cloudPlayer, (CloudServer) disconnectTarget, serverOrProxy).call();
 
-        player.setCurrentServer(null);
-        player.setCurrentProxy(null);
-        PlayerSyncPacket.create(player, true).broadcast();
+        cloudPlayer.resetCurrentServer();
+        cloudPlayer.resetCurrentProxy();
+        cloudPlayer.markForRemoval().syncOut();
     }
 
     @Override
@@ -69,31 +73,48 @@ public final class CloudPlayerManager implements IPlayerProvider<CloudPlayer> {
         return players.values().stream().anyMatch(p -> p.uniqueId().equals(uuid));
     }
 
-    public Optional<CloudPlayer> get(String nameOrXuid) {
+    @Override
+    public Optional<ICloudPlayer> get(String nameOrXuid) {
         if (players.containsKey(nameOrXuid)) return Optional.of(players.get(nameOrXuid));
-        return players.values().stream()
+        return widen(players.values()).stream()
             .filter(p -> p.xboxUserId().equals(nameOrXuid))
             .findFirst();
     }
 
     @Override
-    public Optional<CloudPlayer> get(UUID uuid) {
-        return players.values().stream().filter(p -> p.uniqueId().equals(uuid)).findFirst();
+    public Optional<ICloudPlayer> get(UUID uuid) {
+        return widen(players.values()).stream().filter(p -> p.uniqueId().equals(uuid)).findFirst();
     }
 
     @Override
-    public Collection<CloudPlayer> query(SearchQuery<? extends ICloudPlayer> searchQuery) {
-        return filter(searchQuery);
+    public Collection<ICloudPlayer> query(PlayerSearchQuery searchQuery) {
+        return widen(players.values().stream()
+                .filter(searchQuery::matches)
+                .toList());
+    }
+
+    @Override
+    public Collection<ICloudPlayer> query(Consumer<PlayerSearchQuery> queryConsumer) {
+        PlayerSearchQuery searchQuery = new PlayerSearchQuery();
+        queryConsumer.accept(searchQuery);
+        return query(searchQuery);
+    }
+
+    @Override
+    public Collection<ICloudPlayer> getAll() {
+        return widen(players.values().stream().toList());
     }
 
     @SuppressWarnings("unchecked")
-    private <T extends ICloudPlayer> Collection<CloudPlayer> filter(SearchQuery<T> searchQuery) {
-        return players.values().stream()
-                .filter(o -> searchQuery.matches((T) o))
-                .toList();
+    private <T extends ICloudPlayer> Collection<ICloudPlayer> widen(Collection<T> collection) {
+        return (Collection<ICloudPlayer>) collection;
     }
 
-    public Collection<CloudPlayer> getAll() {
-        return players.values().stream().toList();
+    private CloudPlayer requireCloudPlayer(ICloudPlayer player) {
+        if (!(player instanceof CloudPlayer cloudPlayer)) {
+            throw new IllegalArgumentException("Unsupported ICloudServer implementation: " + player.getClass().getName());
+        }
+
+        return cloudPlayer;
     }
 }

@@ -27,7 +27,7 @@ public class CommandUtilityHolder {
     }
 
     public Optional<CommandFlag> getFlag(String fullFlag) {
-        return Optional.ofNullable(flags.getOrDefault(fullFlag, null));
+        return Optional.ofNullable(flags.get(fullFlag));
     }
 
     public Collection<CommandFlag> getFlags() {

@@ -1,9 +1,9 @@
 package de.pocketcloud.cloud.server.config.impl;
 
+import de.pocketcloud.api.component.software.IServerSoftware;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.server.CloudServer;
 import de.pocketcloud.cloud.server.config.ServerProperties;
-import de.pocketcloud.cloud.server.software.ServerSoftware;
 import de.pocketcloud.common.util.ArrayUtils;
 
 import java.util.LinkedHashMap;
@@ -106,7 +106,7 @@ public final class PocketMineConfig extends ServerProperties {
     }
 
     @Override
-    public ServerSoftware getServerSoftware() {
-        return PocketCloud.instance().software().get("pmmp-latest");
+    public IServerSoftware getServerSoftware() {
+        return PocketCloud.instance().softwareList().get("pmmp-latest");
     }
 }

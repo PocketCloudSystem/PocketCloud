@@ -1,7 +1,7 @@
 package de.pocketcloud.cloud.server.config;
 
+import de.pocketcloud.api.component.software.IServerSoftware;
 import de.pocketcloud.cloud.server.CloudServer;
-import de.pocketcloud.cloud.server.software.ServerSoftware;
 
 import java.util.Map;
 
@@ -19,5 +19,5 @@ public interface IServerProperties {
 
     String getFileName();
 
-    ServerSoftware getServerSoftware();
+    IServerSoftware getServerSoftware();
 }

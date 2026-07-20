@@ -1,6 +1,6 @@
 package de.pocketcloud.cloud.console.output.util;
 
-import de.pocketcloud.cloud.console.log.ILogger;
+import de.pocketcloud.api.logging.ILogger;
 
 import java.util.ArrayList;
 import java.util.List;

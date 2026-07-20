@@ -80,7 +80,7 @@ public final class ServerClient implements IServerClient {
     }
 
     public CloudServer server() {
-        return PocketCloud.instance().clients().getServer(this).orElse(null);
+        return (CloudServer) PocketCloud.instance().clients().getServer(this).orElse(null);
     }
 
     @Override

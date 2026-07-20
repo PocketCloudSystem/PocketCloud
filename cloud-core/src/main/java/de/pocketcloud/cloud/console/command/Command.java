@@ -1,5 +1,6 @@
 package de.pocketcloud.cloud.console.command;
 
+import de.pocketcloud.api.logging.CloudLogLevel;
 import de.pocketcloud.cloud.console.command.ctx.CommandContext;
 import de.pocketcloud.cloud.console.command.desc.CommandDescription;
 import de.pocketcloud.cloud.console.command.exception.ArgumentParseException;
@@ -10,7 +11,6 @@ import de.pocketcloud.cloud.console.command.holder.CommandUtilityHolder;
 import de.pocketcloud.cloud.console.command.parameter.BaseCommandParameter;
 import de.pocketcloud.cloud.console.command.sender.CommandSender;
 import de.pocketcloud.cloud.console.command.sub.SubCommand;
-import de.pocketcloud.cloud.console.log.CloudLogLevel;
 import lombok.Getter;
 import org.jetbrains.annotations.Nullable;
 
@@ -168,7 +168,7 @@ public abstract class Command extends CommandUtilityHolder {
 
     @Nullable
     public SubCommand getSubCommand(String name) {
-        return subCommands.getOrDefault(name.toLowerCase(), null);
+        return subCommands.get(name.toLowerCase());
     }
 
     public boolean mustUseSubCommands() {

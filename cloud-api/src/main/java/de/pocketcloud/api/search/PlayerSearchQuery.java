@@ -1,16 +1,16 @@
 package de.pocketcloud.api.search;
 
 import de.pocketcloud.api.CloudAPI;
-import de.pocketcloud.api.model.group.IServerGroup;
-import de.pocketcloud.api.model.player.ICloudPlayer;
-import de.pocketcloud.api.model.server.ICloudServer;
-import de.pocketcloud.api.model.template.ITemplate;
+import de.pocketcloud.api.component.group.IServerGroup;
+import de.pocketcloud.api.component.player.ICloudPlayer;
+import de.pocketcloud.api.component.server.ICloudServer;
+import de.pocketcloud.api.component.template.ITemplate;
 import de.pocketcloud.api.server.ServerStatus;
 import de.pocketcloud.api.server.VerificationStatus;
 import de.pocketcloud.api.template.TemplateType;
 import org.jetbrains.annotations.NotNull;
 
-public final class PlayerSearchQuery implements SearchQuery<ICloudPlayer> {
+public final class PlayerSearchQuery implements ISearchQuery<ICloudPlayer> {
 
     public static PlayerSearchQuery create() {
         return new PlayerSearchQuery();

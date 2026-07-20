@@ -1,5 +1,6 @@
 package de.pocketcloud.network.packet.data;
 
+import com.google.gson.reflect.TypeToken;
 import de.pocketcloud.api.network.packet.data.IPacketData;
 import de.pocketcloud.common.serialization.Writable;
 import io.netty.buffer.ByteBuf;
@@ -194,10 +195,14 @@ public final class PacketData implements IPacketData {
     }
 
     public <T> List<T> readArray(Class<T> type) {
+        return readArray(TypeToken.get(type));
+    }
+
+    public <T> List<T> readArray(TypeToken<T> typeToken) {
         List<Object> raw = readArray();
         List<T> result = new ArrayList<>(raw.size());
         for (Object item : raw) {
-            result.add(coerce(item, type));
+            result.add(coerce(item, typeToken));
         }
         return result;
     }
@@ -210,6 +215,10 @@ public final class PacketData implements IPacketData {
     }
 
     public <T> Map<String, T> readMap(Class<T> valueType) {
+        return readMap(TypeToken.get(valueType));
+    }
+
+    public <T> Map<String, T> readMap(TypeToken<T> valueType) {
         Map<String, Object> raw = readMap();
         Map<String, T> result = new LinkedHashMap<>(raw.size());
         for (Map.Entry<String, Object> entry : raw.entrySet()) {
@@ -227,6 +236,12 @@ public final class PacketData implements IPacketData {
         }
     }
 
+    public PacketData copyRemaining() {
+        ByteBuf copy = Unpooled.buffer(buffer.readableBytes());
+        buffer.readBytes(copy, buffer.readableBytes());
+        return new PacketData(copy);
+    }
+
     public boolean isEmpty() {
         return !buffer.isReadable();
     }
@@ -238,6 +253,7 @@ public final class PacketData implements IPacketData {
     public ByteBuf buffer() {
         return buffer;
     }
+
     public byte[] toByteArray() {
         ByteBuf dup = buffer.duplicate();
         byte[] bytes = new byte[dup.readableBytes()];
@@ -308,6 +324,25 @@ public final class PacketData implements IPacketData {
         }
 
         throw new PacketDecodeException(type.getSimpleName(), item);
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> T coerce(Object item, TypeToken<T> typeToken) {
+        if (item == null) return null;
+
+        Class<T> rawType = (Class<T>) typeToken.getRawType();
+        if (rawType.isInstance(item)) return (T) item;
+
+        if (Number.class.isAssignableFrom(rawType) && item instanceof Number number) {
+            if (rawType == Integer.class) return (T) Integer.valueOf(number.intValue());
+            if (rawType == Long.class) return (T) Long.valueOf(number.longValue());
+            if (rawType == Double.class) return (T) Double.valueOf(number.doubleValue());
+            if (rawType == Float.class) return (T) Float.valueOf(number.floatValue());
+            if (rawType == Short.class) return (T) Short.valueOf(number.shortValue());
+            if (rawType == Byte.class) return (T) Byte.valueOf(number.byteValue());
+        }
+
+        throw new PacketDecodeException(rawType.getSimpleName(), item);
     }
 
     public static final class PacketDecodeException extends RuntimeException {

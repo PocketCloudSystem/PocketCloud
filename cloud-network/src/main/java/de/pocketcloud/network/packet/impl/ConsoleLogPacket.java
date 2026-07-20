@@ -5,7 +5,7 @@ import de.pocketcloud.api.network.packet.ClientboundPacket;
 import de.pocketcloud.api.network.packet.CloudboundPacket;
 import de.pocketcloud.api.network.packet.data.IPacketData;
 import de.pocketcloud.network.packet.CloudPacket;
-import de.pocketcloud.network.packet.type.LogType;
+import de.pocketcloud.shared.network.packet.type.LogType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 

@@ -1,27 +1,26 @@
 package de.pocketcloud.api.provider;
 
-import de.pocketcloud.api.model.player.ICloudPlayer;
-import de.pocketcloud.api.search.SearchQuery;
+import de.pocketcloud.api.component.player.ICloudPlayer;
+import de.pocketcloud.api.search.PlayerSearchQuery;
 
 import java.util.Collection;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Consumer;
 
-public interface IPlayerProvider<T extends ICloudPlayer> {
-
-    void add(T player);
-
-    void remove(T player);
+public interface IPlayerProvider {
 
     boolean check(String nameOrXuid);
 
     boolean check(UUID uuid);
 
-    Optional<T> get(String nameOrXuid);
+    Optional<ICloudPlayer> get(String nameOrXuid);
 
-    Optional<T> get(UUID uuid);
+    Optional<ICloudPlayer> get(UUID uuid);
 
-    Collection<T> query(SearchQuery<? extends ICloudPlayer> searchQuery);
+    Collection<ICloudPlayer> query(PlayerSearchQuery searchQuery);
 
-    Collection<T> getAll();
+    Collection<ICloudPlayer> query(Consumer<PlayerSearchQuery> queryConsumer);
+
+    Collection<ICloudPlayer> getAll();
 }

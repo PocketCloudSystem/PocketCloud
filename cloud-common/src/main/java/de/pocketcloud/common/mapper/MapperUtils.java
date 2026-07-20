@@ -16,6 +16,23 @@ public final class MapperUtils {
 
     private static final Map<Class<? extends MapKeyConverter<?, ?>>, MapKeyConverter<?, ?>> CONVERTER_CACHE = new ConcurrentHashMap<>();
 
+    private static final Map<Class<?>, MapKeyConverter<?, ?>> TYPE_CONVERTERS = new ConcurrentHashMap<>();
+
+    public static <T, R> void registerConverter(Class<T> type, MapKeyConverter<T, R> converter) {
+        Objects.requireNonNull(type, "type must not be null");
+        Objects.requireNonNull(converter, "converter must not be null");
+        TYPE_CONVERTERS.put(type, converter);
+    }
+
+    public static void unregisterConverter(Class<?> type) {
+        TYPE_CONVERTERS.remove(type);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T, R> MapKeyConverter<T, R> getTypeConverter(Class<?> type) {
+        return (MapKeyConverter<T, R>) TYPE_CONVERTERS.get(type);
+    }
+
     public static Map<String, Object> toMap(Object obj) {
         Objects.requireNonNull(obj, "obj must not be null");
         try {
@@ -42,7 +59,12 @@ public final class MapperUtils {
                     String name = mapKey.name().isBlank() ? field.getName() : mapKey.name();
                     map.put(name, converter.toValue(value));
                 } else {
-                    map.put(field.getName(), convertToMap(value));
+                    MapKeyConverter<Object, Object> typeConverter = getTypeConverter(field.getType());
+                    if (typeConverter != null) {
+                        map.put(field.getName(), typeConverter.toValue(value));
+                    } else {
+                        map.put(field.getName(), convertToMap(value));
+                    }
                 }
             }
             return map;
@@ -74,7 +96,12 @@ public final class MapperUtils {
                     String name = mapKey.name().isBlank() ? component.getName() : mapKey.name();
                     map.put(name, converter.toValue(value));
                 } else {
-                    map.put(component.getName(), convertToMap(value));
+                    MapKeyConverter<Object, Object> typeConverter = getTypeConverter(component.getType());
+                    if (typeConverter != null) {
+                        map.put(component.getName(), typeConverter.toValue(value));
+                    } else {
+                        map.put(component.getName(), convertToMap(value));
+                    }
                 }
             }
             return map;
@@ -106,7 +133,12 @@ public final class MapperUtils {
                         MapKeyConverter<Object, Object> converter = getConverter(mapKey.converter());
                         field.set(instance, converter.fromValue(value));
                     } else {
-                        field.set(instance, convertFromMap(value, field.getType()));
+                        MapKeyConverter<Object, Object> typeConverter = getTypeConverter(field.getType());
+                        if (typeConverter != null) {
+                            field.set(instance, typeConverter.fromValue(value));
+                        } else {
+                            field.set(instance, convertFromMap(value, field.getType()));
+                        }
                     }
                 }
             }
@@ -139,7 +171,12 @@ public final class MapperUtils {
                     MapKeyConverter<Object, Object> converter = getConverter(mapKey.converter());
                     args[i] = value == null ? null : converter.fromValue(value);
                 } else {
-                    args[i] = value == null ? null : convertFromMap(value, component.getType());
+                    MapKeyConverter<Object, Object> typeConverter = getTypeConverter(component.getType());
+                    if (typeConverter != null) {
+                        args[i] = value == null ? null : typeConverter.fromValue(value);
+                    } else {
+                        args[i] = value == null ? null : convertFromMap(value, component.getType());
+                    }
                 }
             }
         }
@@ -173,7 +210,7 @@ public final class MapperUtils {
             throw new RuntimeException("Cannot instantiate " + clazz.getName() + ": no no-arg constructor, Unsafe unavailable, and ReflectionFactory failed.", e);
         }
     }
-    
+
     @SuppressWarnings("unchecked")
     private static <T, R> MapKeyConverter<T, R> getConverter(Class<? extends MapKeyConverter<?, ?>> clazz) {
         return (MapKeyConverter<T, R>) CONVERTER_CACHE.computeIfAbsent(clazz, c -> {
@@ -189,18 +226,18 @@ public final class MapperUtils {
 
     private static Field[] getFields(Class<?> clazz) {
         return FIELD_CACHE.computeIfAbsent(clazz, c -> {
-            List<Field> fields = new ArrayList<>();
+            Map<String, Field> fields = new LinkedHashMap<>();
             Class<?> current = c;
             while (current != null && current != Object.class) {
                 for (Field f : current.getDeclaredFields()) {
                     int mod = f.getModifiers();
                     if (!Modifier.isStatic(mod) && !Modifier.isTransient(mod)) {
-                        fields.add(f);
+                        fields.putIfAbsent(f.getName(), f);
                     }
                 }
                 current = current.getSuperclass();
             }
-            return fields.toArray(Field[]::new);
+            return fields.values().toArray(Field[]::new);
         });
     }
 
@@ -246,6 +283,12 @@ public final class MapperUtils {
 
     private static Object convertToMap(Object value) {
         if (value == null) return null;
+
+        MapKeyConverter<Object, Object> typeConverter = getTypeConverter(value.getClass());
+        if (typeConverter != null) {
+            return typeConverter.toValue(value);
+        }
+
         if (isPrimitive(value.getClass())) return value;
 
         if (value instanceof Enum<?> e) {
@@ -277,9 +320,14 @@ public final class MapperUtils {
         return toMap(value);
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "rawtypes"})
     private static Object convertFromMap(Object value, Class<?> targetType) {
         if (value == null) return null;
+
+        MapKeyConverter<Object, Object> typeConverter = getTypeConverter(targetType);
+        if (typeConverter != null) {
+            return typeConverter.fromValue(value);
+        }
 
         if (isPrimitive(targetType)) return castValue(value, targetType);
         if (targetType.isEnum()) return Enum.valueOf((Class<Enum>) targetType, value.toString());

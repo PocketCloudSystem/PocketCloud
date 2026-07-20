@@ -73,14 +73,6 @@ public final class DefaultMessages {
         MESSAGES_EN.put("inGame.text.successful.toast_notification", "{PREFIX}§aYou have successfully sent a §etoast notification §ato §e%0%§a!");
         MESSAGES_EN.put("inGame.console.log.successful", "{PREFIX}§aThe message was successfully sent to the §bCloud§a!");
 
-        // modules
-        MESSAGES_EN.put("inGame.module.enabled", "{PREFIX}§aThe module §e%0% §awas successfully enabled!");
-        MESSAGES_EN.put("inGame.module.already.enabled", "{PREFIX}§cThe module §e%0% §cis already enabled!");
-        MESSAGES_EN.put("inGame.module.disabled", "{PREFIX}§aThe module §e%0% §awas successfully disabled!");
-        MESSAGES_EN.put("inGame.module.already.disabled", "{PREFIX}§cThe module §e%0% §cis already disabled!");
-        MESSAGES_EN.put("inGame.module.no.enabled", "{PREFIX}§cNo modules are enabled!");
-        MESSAGES_EN.put("inGame.module.no.disabled", "{PREFIX}§cNo modules are disabled!");
-
         // cloudnpc
         MESSAGES_EN.put("inGame.cloudnpc.created", "{PREFIX}§aCloud NPC was created!");
         MESSAGES_EN.put("inGame.cloudnpc.removed", "{PREFIX}§cCloud NPC was removed!");
@@ -116,7 +108,6 @@ public final class DefaultMessages {
         MESSAGES_EN.put("inGame.ui.cloud.main.text", "§7Choose an option");
         MESSAGES_EN.put("inGame.ui.cloud.main.button.manage_server", "§eManage the servers");
         MESSAGES_EN.put("inGame.ui.cloud.main.button.manage_player", "§bManage the players");
-        MESSAGES_EN.put("inGame.ui.cloud.main.button.manage_module", "§dManage the modules");
         MESSAGES_EN.put("inGame.ui.cloud.main.button.manage_template", "§6Manage the templates");
         MESSAGES_EN.put("inGame.ui.cloud.main.button.save_server", "§aSave the server");
         MESSAGES_EN.put("inGame.ui.cloud.main.button.cloud_log_console", "§fMessage to §bCloud §fconsole");
@@ -125,19 +116,6 @@ public final class DefaultMessages {
         MESSAGES_EN.put("inGame.ui.cloud_log_console.title", "§bCloud Console");
         MESSAGES_EN.put("inGame.ui.cloud_log_console.element.message.text", "§7Message");
         MESSAGES_EN.put("inGame.ui.cloud_log_console.element.log_type.text", "§7Log type");
-
-        // ui - manage module
-        MESSAGES_EN.put("inGame.ui.manage_module.title", "§dManage Modules");
-        MESSAGES_EN.put("inGame.ui.manage_module.text", "§7Choose an option");
-        MESSAGES_EN.put("inGame.ui.manage_module.button.enable", "§aEnable a module");
-        MESSAGES_EN.put("inGame.ui.manage_module.button.disable", "§cDisable a module");
-        MESSAGES_EN.put("inGame.ui.manage_module.button.list", "§eList all modules");
-        MESSAGES_EN.put("inGame.ui.manage_module.sub.enable.title", "§aEnable Module");
-        MESSAGES_EN.put("inGame.ui.manage_module.sub.enable.name.text", "§7Module Name");
-        MESSAGES_EN.put("inGame.ui.manage_module.sub.enable.dropdown.text", "§7Select Module");
-        MESSAGES_EN.put("inGame.ui.manage_module.sub.disable.title", "§cDisable Module");
-        MESSAGES_EN.put("inGame.ui.manage_module.sub.disable.name.text", "§7Module Name");
-        MESSAGES_EN.put("inGame.ui.manage_module.sub.disable.dropdown.text", "§7Select Module");
 
         // ui - manage player
         MESSAGES_EN.put("inGame.ui.manage_player.title", "§bManage Players");
@@ -326,14 +304,6 @@ public final class DefaultMessages {
         MESSAGES_GER.put("inGame.text.successful.toast_notification", "{PREFIX}§aDu hast §e%0% §aerfolgreich eine §eToast-Benachrichtigung §ageschickt!");
         MESSAGES_GER.put("inGame.console.log.successful", "{PREFIX}§aText wurde erfolgreich an die §bCloud §ageschickt!");
 
-        // modules
-        MESSAGES_GER.put("inGame.module.enabled", "{PREFIX}§aDas Modul §e%0% §awurde erfolgreich aktiviert!");
-        MESSAGES_GER.put("inGame.module.already.enabled", "{PREFIX}§cDas Modul §e%0% §cist bereits aktiviert!");
-        MESSAGES_GER.put("inGame.module.disabled", "{PREFIX}§aDas Modul §e%0% §awurde erfolgreich deaktiviert!");
-        MESSAGES_GER.put("inGame.module.already.disabled", "{PREFIX}§cDas Modul §e%0% §cist bereits deaktiviert!");
-        MESSAGES_GER.put("inGame.module.no.enabled", "{PREFIX}§cEs sind keine Module aktiviert!");
-        MESSAGES_GER.put("inGame.module.no.disabled", "{PREFIX}§cEs sind keine Module deaktiviert!");
-
         // cloudnpc
         MESSAGES_GER.put("inGame.cloudnpc.created", "{PREFIX}§aCloudNPC wurde erstellt!");
         MESSAGES_GER.put("inGame.cloudnpc.removed", "{PREFIX}§cCloudNPC wurde entfernt!");
@@ -369,7 +339,6 @@ public final class DefaultMessages {
         MESSAGES_GER.put("inGame.ui.cloud.main.text", "§7Wähle eine Option aus");
         MESSAGES_GER.put("inGame.ui.cloud.main.button.manage_server", "§eVerwalte die Server");
         MESSAGES_GER.put("inGame.ui.cloud.main.button.manage_player", "§bVerwalte die Spieler");
-        MESSAGES_GER.put("inGame.ui.cloud.main.button.manage_module", "§dVerwalte die Module");
         MESSAGES_GER.put("inGame.ui.cloud.main.button.manage_template", "§6Verwalte die Templates");
         MESSAGES_GER.put("inGame.ui.cloud.main.button.save_server", "§aSpeichere den Server");
         MESSAGES_GER.put("inGame.ui.cloud.main.button.cloud_log_console", "§fNachricht zur §bCloud §fKonsole");
@@ -378,19 +347,6 @@ public final class DefaultMessages {
         MESSAGES_GER.put("inGame.ui.cloud_log_console.title", "§bCloud Konsole");
         MESSAGES_GER.put("inGame.ui.cloud_log_console.element.message.text", "§7Nachricht");
         MESSAGES_GER.put("inGame.ui.cloud_log_console.element.log_type.text", "§7Log-Typ");
-
-        // ui - manage module
-        MESSAGES_GER.put("inGame.ui.manage_module.title", "§dModule verwalten");
-        MESSAGES_GER.put("inGame.ui.manage_module.text", "§7Wähle eine Option");
-        MESSAGES_GER.put("inGame.ui.manage_module.button.enable", "§aAktiviere ein Modul");
-        MESSAGES_GER.put("inGame.ui.manage_module.button.disable", "§cDeaktiviere ein Modul");
-        MESSAGES_GER.put("inGame.ui.manage_module.button.list", "§eListe alle Module");
-        MESSAGES_GER.put("inGame.ui.manage_module.sub.enable.title", "§aModul aktivieren");
-        MESSAGES_GER.put("inGame.ui.manage_module.sub.enable.name.text", "§7Modulname");
-        MESSAGES_GER.put("inGame.ui.manage_module.sub.enable.dropdown.text", "§7Modul auswählen");
-        MESSAGES_GER.put("inGame.ui.manage_module.sub.disable.title", "§cModul deaktivieren");
-        MESSAGES_GER.put("inGame.ui.manage_module.sub.disable.name.text", "§7Modulname");
-        MESSAGES_GER.put("inGame.ui.manage_module.sub.disable.dropdown.text", "§7Modul auswählen");
 
         // ui - manage player
         MESSAGES_GER.put("inGame.ui.manage_player.title", "§bSpieler verwalten");

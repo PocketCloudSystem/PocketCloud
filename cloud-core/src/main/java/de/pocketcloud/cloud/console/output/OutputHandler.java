@@ -1,6 +1,6 @@
 package de.pocketcloud.cloud.console.output;
 
-import de.pocketcloud.cloud.console.log.ILogger;
+import de.pocketcloud.api.logging.ILogger;
 import org.jetbrains.annotations.NotNull;
 
 public interface OutputHandler {

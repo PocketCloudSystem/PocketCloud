@@ -1,72 +1,67 @@
 package de.pocketcloud.cloud.template;
 
 import com.google.gson.annotations.JsonAdapter;
-import de.pocketcloud.api.model.template.ITemplate;
-import de.pocketcloud.api.search.PlayerSearchQuery;
-import de.pocketcloud.api.search.ServerGroupSearchQuery;
+import de.pocketcloud.api.component.software.IServerSoftware;
+import de.pocketcloud.api.sync.SyncingElement;
 import de.pocketcloud.api.template.TemplateType;
 import de.pocketcloud.api.template.settings.TemplateSettings;
-import de.pocketcloud.cloud.PocketCloud;
-import de.pocketcloud.cloud.player.CloudPlayer;
-import de.pocketcloud.cloud.server.software.ServerSoftware;
-import de.pocketcloud.cloud.template.group.ServerGroup;
 import de.pocketcloud.cloud.template.util.conv.ServerSoftwareConverter;
-import de.pocketcloud.cloud.template.util.conv.TemplateTypeConverter;
 import de.pocketcloud.cloud.util.PocketCloudPaths;
 import de.pocketcloud.cloud.util.gson.TemplateJsonSerializer;
 import de.pocketcloud.common.mapper.MapInline;
 import de.pocketcloud.common.mapper.MapKey;
 import de.pocketcloud.common.mapper.MapperUtils;
-import de.pocketcloud.common.serialization.Writable;
-import lombok.experimental.Accessors;
+import de.pocketcloud.network.packet.impl.SyncPacket;
+import de.pocketcloud.shared.component.BaseTemplate;
+import de.pocketcloud.shared.sync.SyncType;
 
 import java.nio.file.Path;
-import java.util.Collection;
 import java.util.Map;
 
 @JsonAdapter(TemplateJsonSerializer.class)
-@Accessors(fluent = true)
-public record Template(String name, @MapInline TemplateSettings settings,
-                       @MapKey(converter = TemplateTypeConverter.class) TemplateType templateType,
-                       @MapKey(converter = ServerSoftwareConverter.class) ServerSoftware serverSoftware) implements Writable<Map<String, Object>>, ITemplate {
+public final class Template extends BaseTemplate implements SyncingElement<Template> {
 
-    public boolean isParentGroup(ServerGroup serverGroup) {
-        return isParentGroup(serverGroup.name());
+    /**
+     * Only meant for the SyncPacket
+     */
+    private transient boolean markedForRemoval = false;
+
+    @MapInline
+    private final TemplateSettings settings;
+    @MapKey(converter = ServerSoftwareConverter.class)
+    private final IServerSoftware serverSoftware;
+
+    public Template(String name, TemplateSettings settings, TemplateType templateType, IServerSoftware serverSoftware) {
+        super(name, settings, templateType, serverSoftware);
+        this.settings = settings;
+        this.serverSoftware = serverSoftware;
     }
 
-    public boolean isParentGroup(String serverGroupName) {
-        return !PocketCloud.instance().serverGroups().query(ServerGroupSearchQuery.create()
-                .nameStartsWith(serverGroupName)
-                .withTemplates(this)).isEmpty();
+    public Template markForRemoval() {
+        this.markedForRemoval = true;
+        return this;
     }
 
-    public boolean isTypeOf(TemplateType type) {
-        return this.templateType.equals(type);
+    @Override
+    public void syncIn(Template data) {}
+
+    @Override
+    public void syncOut() {
+        SyncPacket.create(SyncType.TEMPLATE, data -> data.write(this), Map.of("removal", markedForRemoval)).broadcast();
     }
 
-    public boolean isCompatibleWith(ServerSoftware software) {
-        return this.serverSoftware.name().equals(software.name());
+    @Override
+    public TemplateSettings settings() {
+        return settings;
     }
 
-    public Collection<CloudPlayer> players() {
-        return PocketCloud.instance().players().query(PlayerSearchQuery.create().ofTemplate(this));
-    }
-
-    public long playerCount() {
-        return players().size();
-    }
-
-    public Collection<ServerGroup> parentGroups() {
-        return PocketCloud.instance().serverGroups().query(ServerGroupSearchQuery.create().withTemplates(this));
+    @Override
+    public IServerSoftware serverSoftware() {
+        return serverSoftware;
     }
 
     public Path path() {
         return PocketCloudPaths.templates().with(name).asPath();
-    }
-
-    @Override
-    public Map<String, Object> write() {
-        return MapperUtils.toMap(this);
     }
 
     public static Template read(Map<String, Object> map) {

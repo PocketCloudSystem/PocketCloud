@@ -1,25 +1,29 @@
 package de.pocketcloud.api.provider;
 
-import de.pocketcloud.api.model.template.ITemplate;
-import de.pocketcloud.api.search.SearchQuery;
-import de.pocketcloud.api.template.util.TemplateEditData;
+import de.pocketcloud.api.component.builder.ITemplateBuilder;
+import de.pocketcloud.api.component.template.ITemplate;
+import de.pocketcloud.api.search.TemplateSearchQuery;
 
 import java.util.Collection;
 import java.util.Optional;
+import java.util.function.Consumer;
 
-public interface ITemplateProvider<T extends ITemplate> {
+public interface ITemplateProvider {
 
-    void add(T template);
-
-    void edit(T template, TemplateEditData newData);
-
-    void remove(T template);
+    ITemplateBuilder builder();
 
     boolean check(String name);
 
-    Optional<T> get(String name);
+    /**
+     * This method returns null on the cloud-side.
+     */
+    ITemplate current();
 
-    Collection<T> query(SearchQuery<? extends ITemplate> searchQuery);
+    Optional<ITemplate> get(String name);
 
-    Collection<T> getAll();
+    Collection<ITemplate> query(TemplateSearchQuery searchQuery);
+
+    Collection<ITemplate> query(Consumer<TemplateSearchQuery> queryConsumer);
+
+    Collection<ITemplate> getAll();
 }

@@ -1,9 +1,10 @@
 package de.pocketcloud.cloud.server.start;
 
+import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.server.CloudServer;
-import de.pocketcloud.cloud.server.software.ServerSoftware;
 import de.pocketcloud.common.concurrent.Promise;
+import de.pocketcloud.shared.component.software.ServerSoftware;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
@@ -22,10 +23,10 @@ public final class ProcessServerStartMethod implements ServerStartMethod {
         return Promise.supplyAsync(() -> {
             Map<String, Long> pids = new HashMap<>();
             for (CloudServer server : servers) {
-                ServerSoftware software = server.template().serverSoftware();
+                ServerSoftware software = (ServerSoftware) server.template().serverSoftware();
                 String startCommand = software.download().startCommand()
-                        .replace("{BINARY_PATH}", software.binary().directoryPath().toAbsolutePath() + File.separator)
-                        .replace("{SOFTWARE_PATH}", software.directoryPath().toAbsolutePath() + File.separator);
+                        .replace("{BINARY_PATH}", PocketCloud.instance().software().binaryDirectoryPath(software).toAbsolutePath() + File.separator)
+                        .replace("{SOFTWARE_PATH}", PocketCloud.instance().software().directoryPath(software).toAbsolutePath() + File.separator);
 
                 try {
                     Process process = new ProcessBuilder(startCommand.split(" "))

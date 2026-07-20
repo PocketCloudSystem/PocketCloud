@@ -1,131 +1,69 @@
 package de.pocketcloud.cloud.player;
 
-import de.pocketcloud.api.model.player.ICloudPlayer;
-import de.pocketcloud.cloud.PocketCloud;
+import de.pocketcloud.api.sync.SyncingElement;
 import de.pocketcloud.cloud.console.log.CloudLogger;
-import de.pocketcloud.cloud.event.impl.player.PlayerKickEvent;
-import de.pocketcloud.cloud.server.CloudServer;
 import de.pocketcloud.common.mapper.MapperUtils;
-import de.pocketcloud.common.serialization.Writable;
-import de.pocketcloud.network.packet.impl.PlayerKickPacket;
-import de.pocketcloud.network.packet.impl.PlayerSyncPacket;
-import de.pocketcloud.network.packet.impl.PlayerTextPacket;
-import de.pocketcloud.network.packet.impl.PlayerTransferPacket;
-import de.pocketcloud.network.packet.type.TextType;
-import lombok.Getter;
-import lombok.experimental.Accessors;
+import de.pocketcloud.network.packet.impl.SyncPacket;
+import de.pocketcloud.shared.component.BaseCloudPlayer;
+import de.pocketcloud.shared.sync.SyncType;
 
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 
-@Getter
-@Accessors(fluent = true)
-public final class CloudPlayer implements Writable<Map<String, Object>>, ICloudPlayer {
+public final class CloudPlayer extends BaseCloudPlayer implements SyncingElement<CloudPlayer> {
 
-    private final String name;
-    private final String address;
-    private final String xboxUserId;
-    private final UUID uniqueId;
-    private final int protocolVersion;
-    private final String gameVersion;
-    private String currentServerName;
-    private String currentProxyName;
+    /**
+     * Only meant for the SyncPacket
+     */
+    private transient boolean markedForRemoval = false;
 
     public CloudPlayer(String name, String address, String xboxUserId, UUID uniqueId, int protocolVersion, String gameVersion, String currentServerName, String currentProxyName) {
-        this.name = name;
-        this.address = address;
-        this.xboxUserId = xboxUserId;
-        this.uniqueId = uniqueId;
-        this.protocolVersion = protocolVersion;
-        this.gameVersion = gameVersion;
-        this.currentServerName = currentServerName;
-        this.currentProxyName = currentProxyName;
+        super(name, address, xboxUserId, uniqueId, protocolVersion, gameVersion, currentServerName, currentProxyName);
     }
 
     public CloudPlayer(String name, String address, String xboxUserId, UUID uniqueId, int protocolVersion, String gameVersion) {
-        this(name, address, xboxUserId, uniqueId, protocolVersion, gameVersion, null, null);
+        super(name, address, xboxUserId, uniqueId, protocolVersion, gameVersion);
     }
 
-    public void setCurrentServer(CloudServer currentServer) {
-        CloudLogger.get().debug("Changing current server of " + name + " to " + (currentServer != null ? currentServer.name() : "NULL"));
-        this.currentServerName = currentServer != null ? currentServer.name() : null;
-        PlayerSyncPacket.create(this, false).broadcast();
-    }
-
-    public void setCurrentProxy(CloudServer currentProxy) {
-        CloudLogger.get().debug("Changing current proxy of " + name + " to " + (currentProxy != null ? currentProxy.name() : "NULL"));
-        this.currentProxyName = currentProxy != null ? currentProxy.name() : null;
-    }
-
-    public void kick(String reason, String disconnectScreenMessage) {
-        if (currentServer().isEmpty()) return;
-        CloudLogger.get().debug("Kicking {}, reason: {}", name, reason.isEmpty() ? "NULL" : reason);
-        var ev = new PlayerKickEvent(this, reason, disconnectScreenMessage);
-        ev.call();
-        if (ev.isCancelled()) return;
-        currentServer().flatMap(CloudServer::client).ifPresent(c -> PlayerKickPacket.create(name, reason, disconnectScreenMessage).sendPacket(c));
-    }
-
-    public void kick(String reason) {
-        kick(reason, "");
-    }
-
-    public void transfer(CloudServer server) {
-        var proxy = currentProxy();
-        var current = currentServer();
-
-        proxy.ifPresentOrElse(
-                p -> p.sendPacket(PlayerTransferPacket.create(name, server.name())),
-                () -> current.ifPresent(c -> c.sendPacket(PlayerTransferPacket.create(name, server.name())))
-        );
-    }
-
-    public void send(String message, TextType textType) {
-        if (currentServer().isEmpty() && currentProxy().isEmpty()) return;
-        CloudLogger.get().debug("Sending text ({}) to {}", textType.name(), name);
-        var target = currentProxy().orElse(currentServer().orElse(null));
-        if (target == null) return;
-        target.client().ifPresent(c -> PlayerTextPacket.create(name, message, textType).sendPacket(c));
-    }
-
-    public void sendMessage(String message) {
-        send(message, TextType.MESSAGE);
-    }
-
-    public void sendPopup(String message) {
-        send(message, TextType.POPUP);
-    }
-
-    public void sendTip(String message) {
-        send(message, TextType.TIP);
-    }
-
-    public void sendTitle(String message) {
-        send(message, TextType.TITLE);
-    }
-
-    public void sendActionBarMessage(String message) {
-        send(message, TextType.ACTION_BAR);
-    }
-
-    public void sendToastNotification(String title, String body) {
-        send(title + "\n" + body, TextType.TOAST);
+    public CloudPlayer markForRemoval() {
+        this.markedForRemoval = true;
+        return this;
     }
 
     @Override
-    public Optional<CloudServer> currentServer() {
-        return currentServerName != null ? PocketCloud.instance().servers().get(currentServerName) : Optional.empty();
+    public void syncIn(CloudPlayer data) {}
+
+    @Override
+    public void syncOut() {
+        SyncPacket.create(SyncType.PLAYER, data -> data.write(this), Map.of("removal", markedForRemoval)).broadcast();
     }
 
     @Override
-    public Optional<CloudServer> currentProxy() {
-        return currentProxyName != null ? PocketCloud.instance().servers().get(currentProxyName) : Optional.empty();
+    public void changeCurrentServer(String serverName) {
+        CloudLogger.get().debug("Changing current server of " + name + " to " + serverName);
+        this.currentServerName = serverName;
+        syncOut();
     }
 
     @Override
-    public Map<String, Object> write() {
-        return MapperUtils.toMap(this);
+    public void resetCurrentServer() {
+        CloudLogger.get().debug("Changing current server of " + name + " to NULL");
+        super.resetCurrentServer();
+        syncOut();
+    }
+
+    @Override
+    public void changeCurrentProxy(String serverName) {
+        CloudLogger.get().debug("Changing current proxy of " + name + " to " + serverName);
+        this.currentProxyName = serverName;
+        syncOut();
+    }
+
+    @Override
+    public void resetCurrentProxy() {
+        CloudLogger.get().debug("Changing current proxy of " + name + " to NULL");
+        super.resetCurrentProxy();
+        syncOut();
     }
 
     public static CloudPlayer read(Map<String, Object> data) {

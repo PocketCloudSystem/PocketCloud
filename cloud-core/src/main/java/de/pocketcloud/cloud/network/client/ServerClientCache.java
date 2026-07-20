@@ -1,5 +1,6 @@
 package de.pocketcloud.cloud.network.client;
 
+import de.pocketcloud.api.component.server.ICloudServer;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.network.broadcaster.PacketBroadcaster;
@@ -76,18 +77,18 @@ public final class ServerClientCache implements Tickable {
     }
 
     public synchronized Optional<ServerClient> getByChannel(Channel channel) {
-        return Optional.ofNullable(clientsByAddress.getOrDefault(channel.remoteAddress().toString(), null));
+        return Optional.ofNullable(clientsByAddress.get(channel.remoteAddress().toString()));
     }
 
     public synchronized Optional<ServerClient> getByAddress(SocketAddress address) {
-        return Optional.ofNullable(clientsByAddress.getOrDefault(address.toString(), null));
+        return Optional.ofNullable(clientsByAddress.get(address.toString()));
     }
 
     public synchronized Optional<ServerClient> get(CloudServer server) {
-        return Optional.ofNullable(clientsByServer.getOrDefault(server.uuid(), null));
+        return Optional.ofNullable(clientsByServer.get(server.uuid()));
     }
 
-    public synchronized Optional<CloudServer> getServer(ServerClient client) {
+    public synchronized Optional<ICloudServer> getServer(ServerClient client) {
         UUID serverUuid = serversByClient.get(client.toString());
         if (serverUuid == null) return Optional.empty();
         return PocketCloud.instance().servers().get(serverUuid);

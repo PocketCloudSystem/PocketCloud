@@ -38,6 +38,7 @@ public final class CommandManager implements Loadable {
     }
 
     public void call(CommandSender sender, String line) {
+        if (line.isBlank()) return;
         List<String> args = ArrayUtils.parseQuoteAware(line);
         String name = args.removeFirst();
 

@@ -87,6 +87,12 @@ public abstract class RequestPacket extends CloudPacket {
         return this;
     }
 
+    @SuppressWarnings("unchecked")
+    public <T extends ResponsePacket> RequestPacket then(Consumer<T> responseConsumer, Class<T> responseClass) {
+        this.responseConsumer = (Consumer<ResponsePacket>) responseConsumer;
+        return this;
+    }
+
     public RequestPacket failure(TriConsumer<RequestPacket, Throwable, RequestPacketFailureReason> failureConsumer) {
         this.failureConsumer = failureConsumer;
         return this;

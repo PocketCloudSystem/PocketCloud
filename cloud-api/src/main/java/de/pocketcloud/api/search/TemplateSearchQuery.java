@@ -1,11 +1,11 @@
 package de.pocketcloud.api.search;
 
 import de.pocketcloud.api.CloudAPI;
-import de.pocketcloud.api.model.group.IServerGroup;
-import de.pocketcloud.api.model.template.ITemplate;
+import de.pocketcloud.api.component.group.IServerGroup;
+import de.pocketcloud.api.component.template.ITemplate;
 import de.pocketcloud.api.template.TemplateType;
 
-public final class TemplateSearchQuery implements SearchQuery<ITemplate> {
+public final class TemplateSearchQuery implements ISearchQuery<ITemplate> {
 
     public static TemplateSearchQuery create() {
         return new TemplateSearchQuery();

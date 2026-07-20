@@ -1,9 +1,9 @@
 package de.pocketcloud.cloud.server.config.impl;
 
+import de.pocketcloud.api.component.software.IServerSoftware;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.server.CloudServer;
 import de.pocketcloud.cloud.server.config.ServerProperties;
-import de.pocketcloud.cloud.server.software.ServerSoftware;
 import de.pocketcloud.cloud.template.util.TemplateTypeHelper;
 import de.pocketcloud.common.util.ArrayUtils;
 
@@ -36,14 +36,14 @@ public final class WaterdogConfig extends ServerProperties {
                 Map.entry("%server_port%", server.data().port()),
                 Map.entry("%max_players%", server.template().settings().maxPlayerCount()),
                 Map.entry("%template%", server.templateName()),
-                Map.entry("%address%", PocketCloud.instance().config().getNetworkAddress().getHostString()),
-                Map.entry("%port%", PocketCloud.instance().config().getNetworkAddress().getPort()),
-                Map.entry("%encryption%", PocketCloud.instance().config().isNetworkEncryptionEnabled()),
-                Map.entry("%language%", PocketCloud.instance().config().getLanguage()),
+                Map.entry("%address%", PocketCloud.instance().config().network().address()),
+                Map.entry("%port%", PocketCloud.instance().config().network().port()),
+                Map.entry("%encryption%", PocketCloud.instance().config().network().encryption()),
+                Map.entry("%language%", PocketCloud.instance().config().language()),
                 Map.entry("%cloud_path%", System.getProperty("user.dir")),
                 Map.entry("%timeout%", TemplateTypeHelper.timeout(server.template().templateType())),
                 Map.entry("%auth_key%", PocketCloud.instance().network().authToken()),
-                Map.entry("%packet_size_limit%", PocketCloud.instance().config().getNetworkPacketSizeLimit())
+                Map.entry("%packet_size_limit%", PocketCloud.instance().config().network().packetSizeLimit())
         ));
     }
 
@@ -114,7 +114,7 @@ public final class WaterdogConfig extends ServerProperties {
     }
 
     @Override
-    public ServerSoftware getServerSoftware() {
-        return PocketCloud.instance().software().get("waterdogpe-latest");
+    public IServerSoftware getServerSoftware() {
+        return PocketCloud.instance().softwareList().get("waterdogpe-latest");
     }
 }

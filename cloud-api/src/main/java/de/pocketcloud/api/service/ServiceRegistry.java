@@ -1,11 +1,11 @@
 package de.pocketcloud.api.service;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class ServiceRegistry {
 
-    private final Map<Class<?>, Object> services = new HashMap<>();
+    private final Map<Class<?>, Object> services = new ConcurrentHashMap<>();
 
     public <T> T register(Class<T> serviceClass, T serviceInstance) {
         if (services.containsKey(serviceClass)) throw new IllegalStateException("Service " + serviceClass.getName() + " is already registered!");

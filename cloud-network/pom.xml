@@ -19,6 +19,7 @@
         <maven.compiler.source>22</maven.compiler.source>
         <maven.compiler.target>22</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <skip.jar>true</skip.jar>
     </properties>
 
     <dependencies>
@@ -30,6 +31,11 @@
         <dependency>
             <groupId>de.pocketcloud</groupId>
             <artifactId>cloud-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>de.pocketcloud</groupId>
+            <artifactId>cloud-shared</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -45,23 +51,31 @@
     </dependencies>
 
     <build>
-        <directory>${project.basedir}/../target-minimal/${project.artifactId}</directory>
+        <directory>${project.basedir}/../target/${project.artifactId}</directory>
+        <finalName>compiled/${project.artifactId}</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
                 <version>3.4.2</version>
                 <configuration>
-                    <skip>true</skip>
+                    <skip>${skip.jar}</skip>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
                 <configuration>
-                    <skip>true</skip>
+                    <skip>${skip.jar}</skip>
                 </configuration>
             </plugin>
         </plugins>
     </build>
+
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <url>https://maven.pkg.github.com/PocketCloudSystem/PocketCloud</url>
+        </repository>
+    </distributionManagement>
 </project>

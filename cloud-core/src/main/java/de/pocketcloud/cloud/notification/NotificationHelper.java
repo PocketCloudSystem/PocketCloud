@@ -1,7 +1,7 @@
 package de.pocketcloud.cloud.notification;
 
 import de.pocketcloud.api.language.LanguageKey;
-import de.pocketcloud.network.packet.type.NotificationType;
+import de.pocketcloud.shared.network.packet.type.NotificationType;
 
 public final class NotificationHelper {
 

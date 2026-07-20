@@ -180,6 +180,38 @@ public final class FileUtils {
         return decodeJson(fileGetContents(filePath), typeToken);
     }
 
+    public static String encodeJson(Object obj, Gson gson) {
+        return gson.toJson(obj);
+    }
+
+    public static boolean encodeJsonFile(Path filePath, Object obj, Gson gson) {
+        return filePutContents(filePath, encodeJson(obj, gson));
+    }
+
+    public static <T> T decodeJson(String json, Class<T> clazz, Gson gson) {
+        return gson.fromJson(json, clazz);
+    }
+
+    public static <T> T decodeJson(String json, Type type, Gson gson) {
+        return gson.fromJson(json, type);
+    }
+
+    public static <T> T decodeJson(String json, TypeToken<T> typeToken, Gson gson) {
+        return gson.fromJson(json, typeToken);
+    }
+
+    public static <T> T decodeJsonFile(Path filePath, Class<T> clazz, Gson gson) {
+        return decodeJson(fileGetContents(filePath), clazz, gson);
+    }
+
+    public static <T> T decodeJsonFile(Path filePath, Type type, Gson gson) {
+        return decodeJson(fileGetContents(filePath), type, gson);
+    }
+
+    public static <T> T decodeJsonFile(Path filePath, TypeToken<T> typeToken, Gson gson) {
+        return decodeJson(fileGetContents(filePath), typeToken, gson);
+    }
+
     public static String emitYaml(Object data) {
         try {
             return YAML.writerWithDefaultPrettyPrinter().writeValueAsString(data);
@@ -270,6 +302,22 @@ public final class FileUtils {
 
     public static <T> CompletableFuture<T> decodeJsonFileAsync(Path filePath, TypeToken<T> typeToken) {
         return CompletableFuture.supplyAsync(() -> decodeJsonFile(filePath, typeToken), IO_EXECUTOR);
+    }
+
+    public static CompletableFuture<Boolean> encodeJsonFileAsync(Path filePath, Object obj, Gson gson) {
+        return CompletableFuture.supplyAsync(() -> encodeJsonFile(filePath, obj, gson), IO_EXECUTOR);
+    }
+
+    public static <T> CompletableFuture<T> decodeJsonFileAsync(Path filePath, Class<T> clazz, Gson gson) {
+        return CompletableFuture.supplyAsync(() -> decodeJsonFile(filePath, clazz, gson), IO_EXECUTOR);
+    }
+
+    public static <T> CompletableFuture<T> decodeJsonFileAsync(Path filePath, Type type, Gson gson) {
+        return CompletableFuture.supplyAsync(() -> decodeJsonFile(filePath, type, gson), IO_EXECUTOR);
+    }
+
+    public static <T> CompletableFuture<T> decodeJsonFileAsync(Path filePath, TypeToken<T> typeToken, Gson gson) {
+        return CompletableFuture.supplyAsync(() -> decodeJsonFile(filePath, typeToken, gson), IO_EXECUTOR);
     }
 
     public static CompletableFuture<Boolean> emitYamlFileAsync(Path filePath, Object data) {

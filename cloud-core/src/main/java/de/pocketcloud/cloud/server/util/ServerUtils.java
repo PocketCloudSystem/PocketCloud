@@ -1,8 +1,7 @@
 package de.pocketcloud.cloud.server.util;
 
-import de.pocketcloud.api.model.template.ITemplate;
+import de.pocketcloud.api.component.template.ITemplate;
 import de.pocketcloud.api.template.TemplateType;
-import de.pocketcloud.cloud.config.ServerSettingsConfig;
 import de.pocketcloud.cloud.template.util.TemplateTypeHelper;
 import de.pocketcloud.common.util.NetUtils;
 
@@ -44,7 +43,7 @@ public final class ServerUtils {
     }
 
     public static int getFreePort(TemplateType type) {
-        ServerSettingsConfig.ServerPortRange portRange = TemplateTypeHelper.serverPortRange(type);
+        ServerPortRange portRange = TemplateTypeHelper.serverPortRange(type);
         int start = portRange.start();
         int end = portRange.end();
         boolean randomPorts = portRange.random();

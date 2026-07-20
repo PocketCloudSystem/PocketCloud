@@ -37,6 +37,19 @@ public final class TemplateSettings implements Writable<Map<String, Object>> {
         this.autoStart = autoStart;
     }
 
+    public void applyFrom(TemplateSettings templateSettings) {
+        this.lobby = templateSettings.lobby;
+        this.maintenance = templateSettings.maintenance;
+        this.staticServers = templateSettings.staticServers;
+        this.alwaysCopyToStaticServers = templateSettings.alwaysCopyToStaticServers;
+        this.saveOnShutdown = templateSettings.saveOnShutdown;
+        this.maxPlayerCount = templateSettings.maxPlayerCount;
+        this.minServerCount = templateSettings.minServerCount;
+        this.maxServerCount = templateSettings.maxServerCount;
+        this.startNewPercentage = templateSettings.startNewPercentage;
+        this.autoStart = templateSettings.autoStart;
+    }
+
     @Override
     public Map<String, Object> write() {
         return MapperUtils.toMap(this);

@@ -1,7 +1,7 @@
 package de.pocketcloud.cloud.console.log.def;
 
-import de.pocketcloud.cloud.console.log.CloudLogLevel;
-import de.pocketcloud.cloud.console.log.ILogger;
+import de.pocketcloud.api.logging.CloudLogLevel;
+import de.pocketcloud.api.logging.ILogger;
 import lombok.Getter;
 import lombok.Setter;
 

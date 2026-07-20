@@ -1,13 +1,12 @@
 package de.pocketcloud.api.provider;
 
-import de.pocketcloud.api.network.client.IServerClient;
 import de.pocketcloud.api.network.handler.PacketListener;
 import de.pocketcloud.api.network.packet.Packet;
 
 import java.util.Collection;
 import java.util.function.BiConsumer;
 
-public interface IPacketRegistry<T extends IServerClient> {
+public interface IPacketRegistry<T> {
 
     void registerPacket(Class<? extends Packet> packetClass);
 

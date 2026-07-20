@@ -2,8 +2,9 @@ package de.pocketcloud.cloud.provider;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import de.pocketcloud.api.component.group.IServerGroup;
+import de.pocketcloud.api.component.template.ITemplate;
 import de.pocketcloud.cloud.PocketCloud;
-import de.pocketcloud.cloud.cache.ActiveInGameModuleCache;
 import de.pocketcloud.cloud.cache.NotificationListCache;
 import de.pocketcloud.cloud.cache.WhitelistCache;
 import de.pocketcloud.cloud.console.log.CloudLogger;
@@ -11,57 +12,45 @@ import de.pocketcloud.cloud.provider.database.DatabaseQueries;
 import de.pocketcloud.cloud.provider.database.MySqlSettings;
 import de.pocketcloud.cloud.template.Template;
 import de.pocketcloud.cloud.template.group.ServerGroup;
+import de.pocketcloud.common.cache.LocalCache;
 import de.pocketcloud.common.concurrent.Promise;
 import de.pocketcloud.common.util.FileUtils;
 
 import javax.sql.DataSource;
 import java.sql.*;
 import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public final class CloudMySqlProvider extends CloudProvider {
 
     private final DataSource connectionPool;
 
     public CloudMySqlProvider() {
-        this.connectionPool = buildConnectionPool(PocketCloud.instance().config().getMysqlSettings());
+        this.connectionPool = buildConnectionPool(PocketCloud.instance().config().mysqlSettings().asSettings());
 
         executeAsync(DatabaseQueries.createTables()).thenSuccess(_ -> {
-            //TODO migration
-//            MigratorManager.instance().getAll(
-//                (IMigrator m) -> m.id().startsWith("migrate-json-")
-//            ).forEach(migrator -> {
-//                if (migrator.requiresMigration()) {
-//                    MigratorManager.instance().migrate(migrator);
-//                }
-//            });
+            getWhitelist().thenSuccess(list -> LocalCache.get(WhitelistCache.class).syncIn(list.stream()
+                    .collect(Collectors.toMap(Function.identity(), _ -> true))));
+
+            getNotificationList().thenSuccess(list -> LocalCache.get(NotificationListCache.class).syncIn(list.stream()
+                    .collect(Collectors.toMap(Function.identity(), _ -> true))));
         });
-
-        de.pocketcloud.common.cache.LocalCache.get(ActiveInGameModuleCache.class).getAll().forEach(module -> getModuleState(module).thenSuccess(enabled -> {
-            Boolean realEnabled = enabled.orElse(false);
-            if (enabled.isEmpty()) {
-                executeAsync(DatabaseQueries.insertModuleState(), module, false);
-            }
-
-            de.pocketcloud.common.cache.LocalCache.get(ActiveInGameModuleCache.class).set(module, realEnabled);
-        }));
-
-        getWhitelist().thenSuccess(de.pocketcloud.common.cache.LocalCache.get(WhitelistCache.class)::syncIn);
-        getNotificationList().thenSuccess(de.pocketcloud.common.cache.LocalCache.get(NotificationListCache.class)::syncIn);
     }
 
     @Override
-    public Promise<Void> addTemplate(Template template) {
+    public Promise<Void> addTemplate(ITemplate template) {
         Map<String, Object> data = template.write();
         return executeAsync(DatabaseQueries.addTemplate(), data.values().toArray());
     }
 
     @Override
-    public Promise<Void> removeTemplate(Template template) {
+    public Promise<Void> removeTemplate(ITemplate template) {
         return executeAsync(DatabaseQueries.removeTemplate(), template.name());
     }
 
     @Override
-    public Promise<Void> editTemplate(Template template, Map<String, Object> newData) {
+    public Promise<Void> editTemplate(ITemplate template, Map<String, Object> newData) {
         Object[] params = buildUpdateParams(newData, template.name());
         return executeAsync(DatabaseQueries.editTemplate(newData), params);
     }
@@ -114,19 +103,19 @@ public final class CloudMySqlProvider extends CloudProvider {
     }
 
     @Override
-    public Promise<Void> addServerGroup(ServerGroup serverGroup) {
+    public Promise<Void> addServerGroup(IServerGroup serverGroup) {
         Map<String, Object> data = serverGroup.write();
         if (data.get("templates") instanceof List) data.put("templates", FileUtils.encodeJson(data.get("templates")));
         return executeAsync(DatabaseQueries.addServerGroup(), data.values().toArray());
     }
 
     @Override
-    public Promise<Void> removeServerGroup(ServerGroup serverGroup) {
+    public Promise<Void> removeServerGroup(IServerGroup serverGroup) {
         return executeAsync(DatabaseQueries.removeServerGroup(), serverGroup.name());
     }
 
     @Override
-    public Promise<Void> editServerGroup(ServerGroup serverGroup, Map<String, Object> newData) {
+    public Promise<Void> editServerGroup(IServerGroup serverGroup, Map<String, Object> newData) {
         if (newData.get("templates") instanceof List) newData.put("templates", FileUtils.encodeJson(newData.get("templates")));
         Object[] params = buildUpdateParams(newData, serverGroup.name());
         return executeAsync(DatabaseQueries.editServerGroup(newData), params);
@@ -180,41 +169,14 @@ public final class CloudMySqlProvider extends CloudProvider {
     }
 
     @Override
-    public Promise<Void> setModuleState(String module, boolean enabled) {
-        Promise<Void> promise = new Promise<>();
-        de.pocketcloud.common.cache.LocalCache.get(ActiveInGameModuleCache.class).set(module, enabled);
-        countAsync(DatabaseQueries.checkModuleState(), module).thenSuccess(count -> {
-            String sql = count > 0 ? DatabaseQueries.setModuleState() : DatabaseQueries.insertModuleState();
-            executeAsync(sql, enabled, module)
-                    .thenSuccess(_ -> promise.resolve(null))
-                    .failure(promise::reject);
-        });
-
-        return promise;
-    }
-
-    @Override
-    public Promise<Optional<Boolean>> getModuleState(String module) {
-        Promise<Optional<Boolean>> promise = new Promise<>();
-        queryAsync(DatabaseQueries.getModuleState(), module).thenSuccess(rows -> {
-            if (rows.isEmpty()) {
-                promise.resolve(Optional.empty());
-            } else {
-                Object enabled = rows.getFirst().get("enabled");
-                promise.resolve(Optional.of(Integer.valueOf(1).equals(enabled) || Boolean.TRUE.equals(enabled)));
-            }
-        }).failure(promise::reject);
-        
-        return promise;
-    }
-
-    @Override
     public Promise<Void> enablePlayerNotifications(String player) {
+        LocalCache.get(NotificationListCache.class).add(player, true);
         return executeAsync(DatabaseQueries.enablePlayerNotifications(), player);
     }
 
     @Override
     public Promise<Void> disablePlayerNotifications(String player) {
+        LocalCache.get(NotificationListCache.class).remove(player);
         return executeAsync(DatabaseQueries.disablePlayerNotifications(), player);
     }
 
@@ -242,13 +204,13 @@ public final class CloudMySqlProvider extends CloudProvider {
 
     @Override
     public Promise<Void> addToWhitelist(String player) {
-        de.pocketcloud.common.cache.LocalCache.get(WhitelistCache.class).add(player);
+        LocalCache.get(WhitelistCache.class).add(player, true);
         return executeAsync(DatabaseQueries.addToWhitelist(), player);
     }
 
     @Override
     public Promise<Void> removeFromWhitelist(String player) {
-        de.pocketcloud.common.cache.LocalCache.get(WhitelistCache.class).remove(player);
+        LocalCache.get(WhitelistCache.class).remove(player);
         return executeAsync(DatabaseQueries.removeFromWhitelist(), player);
     }
 

@@ -4,7 +4,7 @@ import de.pocketcloud.api.server.ServerStatus;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.event.impl.server.ServerDisconnectEvent;
-import de.pocketcloud.network.packet.type.ServerDisconnectReason;
+import de.pocketcloud.shared.network.packet.type.ServerDisconnectReason;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

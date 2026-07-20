@@ -1,5 +1,7 @@
 package de.pocketcloud.cloud.provider;
 
+import de.pocketcloud.api.component.group.IServerGroup;
+import de.pocketcloud.api.component.template.ITemplate;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.template.Template;
 import de.pocketcloud.cloud.template.group.ServerGroup;
@@ -13,11 +15,11 @@ public abstract class CloudProvider {
 
     private static CloudProvider current = null;
 
-    public abstract Promise<Void> addTemplate(Template template);
+    public abstract Promise<Void> addTemplate(ITemplate template);
 
-    public abstract Promise<Void> removeTemplate(Template template);
+    public abstract Promise<Void> removeTemplate(ITemplate template);
 
-    public abstract Promise<Void> editTemplate(Template template, Map<String, Object> newData);
+    public abstract Promise<Void> editTemplate(ITemplate template, Map<String, Object> newData);
 
     public abstract Promise<Optional<Template>> getTemplate(String template);
 
@@ -25,21 +27,17 @@ public abstract class CloudProvider {
 
     public abstract Promise<Map<String, Template>> getTemplates();
 
-    public abstract Promise<Void> addServerGroup(ServerGroup serverGroup);
+    public abstract Promise<Void> addServerGroup(IServerGroup serverGroup);
 
-    public abstract Promise<Void> removeServerGroup(ServerGroup serverGroup);
+    public abstract Promise<Void> removeServerGroup(IServerGroup serverGroup);
 
-    public abstract Promise<Void> editServerGroup(ServerGroup serverGroup, Map<String, Object> newData);
+    public abstract Promise<Void> editServerGroup(IServerGroup serverGroup, Map<String, Object> newData);
 
     public abstract Promise<Optional<ServerGroup>> getServerGroup(String serverGroup);
 
     public abstract Promise<Boolean> checkServerGroup(String serverGroup);
 
     public abstract Promise<Map<String, ServerGroup>> getServerGroups();
-
-    public abstract Promise<Void> setModuleState(String module, boolean enabled);
-
-    public abstract Promise<Optional<Boolean>> getModuleState(String module);
 
     public abstract Promise<Void> enablePlayerNotifications(String player);
 
@@ -58,7 +56,7 @@ public abstract class CloudProvider {
     public abstract Promise<List<String>> getWhitelist();
 
     public static void select() {
-        String provider = PocketCloud.instance().config().getProvider();
+        String provider = PocketCloud.instance().config().provider();
         current = switch (provider) {
             case "mysql" -> new CloudMySqlProvider();
             default -> new CloudJsonProvider();

@@ -1,6 +1,6 @@
 package de.pocketcloud.api.template.util;
 
-import de.pocketcloud.api.model.template.ITemplate;
+import de.pocketcloud.api.component.template.ITemplate;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 

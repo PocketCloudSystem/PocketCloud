@@ -27,10 +27,6 @@ public final class DatabaseQueries {
                 "name VARCHAR(50) PRIMARY KEY," +
                 "templates TEXT" +
             "); " +
-            "CREATE TABLE IF NOT EXISTS " + DatabaseTables.MODULES + " (" +
-                "module VARCHAR(100) PRIMARY KEY," +
-                "enabled BOOL" +
-            "); " +
             "CREATE TABLE IF NOT EXISTS " + DatabaseTables.NOTIFICATIONS + " (" +
                 "player VARCHAR(16) PRIMARY KEY" +
             "); " +
@@ -85,22 +81,6 @@ public final class DatabaseQueries {
 
     public static String getServerGroups() {
         return "SELECT name, templates FROM " + DatabaseTables.SERVER_GROUPS;
-    }
-
-    public static String insertModuleState() {
-        return "INSERT INTO " + DatabaseTables.MODULES + " (module, enabled) VALUES (?, ?)";
-    }
-
-    public static String setModuleState() {
-        return "UPDATE " + DatabaseTables.MODULES + " SET enabled = ? WHERE module = ?";
-    }
-
-    public static String checkModuleState() {
-        return "SELECT COUNT(*) FROM " + DatabaseTables.MODULES + " WHERE module = ?";
-    }
-
-    public static String getModuleState() {
-        return "SELECT enabled FROM " + DatabaseTables.MODULES + " WHERE module = ?";
     }
 
     public static String enablePlayerNotifications() {

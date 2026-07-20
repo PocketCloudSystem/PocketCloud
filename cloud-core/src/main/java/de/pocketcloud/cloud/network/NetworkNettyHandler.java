@@ -15,7 +15,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 
-import java.net.SocketException;
+import java.io.IOException;
 
 public class NetworkNettyHandler extends SimpleChannelInboundHandler<CloudPacket> {
 
@@ -58,11 +58,10 @@ public class NetworkNettyHandler extends SimpleChannelInboundHandler<CloudPacket
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        if (cause instanceof SocketException) {
-            if (cause.getMessage().equals("Connection reset")) {
-                disconnectChannel(ctx.channel());
-                return;
-            }
+        if (cause instanceof IOException) {
+            disconnectChannel(ctx.channel());
+            ctx.close();
+            return;
         }
 
         CloudLogger.get().error("Unhandled exception caused by §b{}§r. §8(§renable §edebug §rto view full stack trace§8)", ctx.channel().remoteAddress());

@@ -2,13 +2,17 @@ package de.pocketcloud.cloud.network.packet;
 
 import de.pocketcloud.api.network.handler.PacketHandler;
 import de.pocketcloud.api.network.handler.PacketListener;
+import de.pocketcloud.api.network.packet.ClientboundPacket;
 import de.pocketcloud.api.network.packet.Packet;
 import de.pocketcloud.api.provider.IPacketRegistry;
+import de.pocketcloud.cloud.network.broadcaster.PacketBroadcaster;
 import de.pocketcloud.cloud.network.client.ServerClient;
 import de.pocketcloud.cloud.network.packet.handler.NormalPacketHandler;
 import de.pocketcloud.cloud.network.packet.handler.PlayerPacketHandler;
 import de.pocketcloud.cloud.network.packet.handler.ServerPacketHandler;
+import de.pocketcloud.cloud.network.packet.handler.SyncPacketHandler;
 import de.pocketcloud.common.lifecycle.Loadable;
+import de.pocketcloud.network.packet.broadcast.InternalPacketBroadcaster;
 import org.reflections.Reflections;
 
 import java.lang.reflect.InvocationTargetException;
@@ -27,6 +31,13 @@ public final class PacketRegistry implements IPacketRegistry<ServerClient>, Load
         registerPacketListener(new NormalPacketHandler());
         registerPacketListener(new ServerPacketHandler());
         registerPacketListener(new PlayerPacketHandler());
+        registerPacketListener(new SyncPacketHandler());
+
+        InternalPacketBroadcaster.setBroadcasterHandler((pk, ex) -> {
+            if (pk instanceof ClientboundPacket p) {
+                PacketBroadcaster.broadcast(p, ex::applyTo);
+            }
+        });
     }
 
     @Override
@@ -59,7 +70,20 @@ public final class PacketRegistry implements IPacketRegistry<ServerClient>, Load
                 for (Class<? extends Packet> packet : packets) {
                     this.registerPacketHandler(packet, (p, c) -> {
                         try {
-                            method.invoke(packetListener, p, c);
+                            switch (method.getParameterCount()) {
+                                case 0: {
+                                    method.invoke(packetListener);
+                                    break;
+                                }
+                                case 1: {
+                                    method.invoke(packetListener, p);
+                                    break;
+                                }
+                                default: {
+                                    method.invoke(packetListener, p, c);
+                                    break;
+                                }
+                            }
                         } catch (IllegalAccessException | InvocationTargetException e) {
                             throw new RuntimeException(e);
                         }
@@ -69,8 +93,8 @@ public final class PacketRegistry implements IPacketRegistry<ServerClient>, Load
         }
     }
 
-    @SuppressWarnings("unchecked")
     @Override
+    @SuppressWarnings("unchecked")
     public <U extends Packet> void registerPacketHandler(Class<U> packet, BiConsumer<U, ServerClient> handler) {
         if (!handlers.containsKey(packet)) handlers.put(packet, Collections.synchronizedList(new ArrayList<>()));
         List<BiConsumer<Packet, ServerClient>> methods = handlers.get(packet);
@@ -79,13 +103,13 @@ public final class PacketRegistry implements IPacketRegistry<ServerClient>, Load
 
     @Override
     public void invokeHandlers(Packet packet, ServerClient sender) {
-        for (BiConsumer<Packet, ServerClient> handler : handlers.get(packet.getClass())) {
+        for (BiConsumer<Packet, ServerClient> handler : handlers.getOrDefault(packet.getClass(), new ArrayList<>())) {
             handler.accept(packet, sender);
         }
     }
 
-    @SuppressWarnings("unchecked")
     @Override
+    @SuppressWarnings("unchecked")
     public <T extends Packet> T get(String packetName, Class<T> expectedPacket) {
         Packet packet = get(packetName);
         if (packet == null) return null;
@@ -94,7 +118,7 @@ public final class PacketRegistry implements IPacketRegistry<ServerClient>, Load
 
     @Override
     public Packet get(String packetName) {
-        Class<? extends Packet> packetClass = packets.getOrDefault(packetName, null);
+        Class<? extends Packet> packetClass = packets.get(packetName);
         if (packetClass == null) return null;
         try {
             return packetClass.getDeclaredConstructor().newInstance();

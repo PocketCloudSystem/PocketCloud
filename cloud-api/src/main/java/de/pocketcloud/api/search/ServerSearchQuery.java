@@ -1,14 +1,14 @@
 package de.pocketcloud.api.search;
 
 import de.pocketcloud.api.CloudAPI;
-import de.pocketcloud.api.model.group.IServerGroup;
-import de.pocketcloud.api.model.server.ICloudServer;
-import de.pocketcloud.api.model.template.ITemplate;
+import de.pocketcloud.api.component.group.IServerGroup;
+import de.pocketcloud.api.component.server.ICloudServer;
+import de.pocketcloud.api.component.template.ITemplate;
 import de.pocketcloud.api.server.ServerStatus;
 import de.pocketcloud.api.server.VerificationStatus;
 import de.pocketcloud.api.template.TemplateType;
 
-public final class ServerSearchQuery implements SearchQuery<ICloudServer> {
+public final class ServerSearchQuery implements ISearchQuery<ICloudServer> {
 
     public static ServerSearchQuery create() {
         return new ServerSearchQuery();
@@ -17,6 +17,7 @@ public final class ServerSearchQuery implements SearchQuery<ICloudServer> {
     private String namePrefix = null;
     private String templateName = null;
     private String serverGroupName = null;
+    private Boolean lobby = null;
     private ServerStatus status = null;
     private VerificationStatus verificationStatus = null;
     private TemplateType templateType = null;
@@ -42,6 +43,11 @@ public final class ServerSearchQuery implements SearchQuery<ICloudServer> {
 
     public ServerSearchQuery inGroup(String serverGroupName) {
         this.serverGroupName = serverGroupName;
+        return this;
+    }
+
+    public ServerSearchQuery lobby(boolean lobby) {
+        this.lobby = lobby;
         return this;
     }
 
@@ -74,6 +80,8 @@ public final class ServerSearchQuery implements SearchQuery<ICloudServer> {
             if (group == null) return false;
             if (!group.templates().contains(s.templateName())) return false;
         }
+
+        if (lobby != null && !s.template().settings().lobby()) return false;
 
         if (status != null && !s.status().equals(status)) return false;
         if (verificationStatus != null && !s.verificationStatus().equals(verificationStatus)) return false;

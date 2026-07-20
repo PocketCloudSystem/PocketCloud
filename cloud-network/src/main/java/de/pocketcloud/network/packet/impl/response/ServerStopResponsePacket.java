@@ -3,7 +3,7 @@ package de.pocketcloud.network.packet.impl.response;
 import de.pocketcloud.api.network.packet.ClientboundPacket;
 import de.pocketcloud.api.network.packet.data.IPacketData;
 import de.pocketcloud.network.packet.ResponsePacket;
-import de.pocketcloud.network.packet.type.ActionFailureReason;
+import de.pocketcloud.shared.network.packet.type.ActionFailureReason;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 

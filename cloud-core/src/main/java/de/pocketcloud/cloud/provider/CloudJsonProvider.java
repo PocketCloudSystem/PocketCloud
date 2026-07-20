@@ -1,7 +1,8 @@
 package de.pocketcloud.cloud.provider;
 
+import de.pocketcloud.api.component.group.IServerGroup;
+import de.pocketcloud.api.component.template.ITemplate;
 import de.pocketcloud.cloud.PocketCloud;
-import de.pocketcloud.cloud.cache.ActiveInGameModuleCache;
 import de.pocketcloud.cloud.cache.NotificationListCache;
 import de.pocketcloud.cloud.cache.WhitelistCache;
 import de.pocketcloud.cloud.console.log.CloudLogger;
@@ -12,7 +13,6 @@ import de.pocketcloud.common.cache.LocalCache;
 import de.pocketcloud.common.concurrent.Promise;
 import de.pocketcloud.common.config.Config;
 import de.pocketcloud.common.config.exception.UnsupportedFileExtensionException;
-import de.pocketcloud.common.config.type.JsonConfigType;
 
 import java.io.IOException;
 import java.util.*;
@@ -22,7 +22,6 @@ public final class CloudJsonProvider extends CloudProvider {
 
     private Config templatesConfig;
     private Config serverGroupsConfig;
-    private Config modulesConfig;
     private Config notificationsList;
     private Config maintenanceList;
 
@@ -30,18 +29,12 @@ public final class CloudJsonProvider extends CloudProvider {
         try {
             this.templatesConfig = new Config(PocketCloudPaths.templates().with("templates.json").asPath());
             this.serverGroupsConfig = new Config(PocketCloudPaths.groups().with("groups.json").asPath());
-            this.modulesConfig = new Config(PocketCloudPaths.storage().inGame().with("modules.json").asPath(), new JsonConfigType(), Map.of(
-                    ActiveInGameModuleCache.SIGN_MODULE, false,
-                    ActiveInGameModuleCache.NPC_MODULE, false,
-                    ActiveInGameModuleCache.HUB_COMMAND_MODULE, false
-            ));
 
             this.notificationsList = new Config(PocketCloudPaths.storage().inGame().with("notificationList.json").asPath());
             this.maintenanceList = new Config(PocketCloudPaths.storage().inGame().with("maintenanceList.json").asPath());
 
-            maintenanceList.getAll().keySet().stream().filter(p -> maintenanceList.get(p, false)).forEach(p -> LocalCache.get(WhitelistCache.class).add(p));
-            notificationsList.getAll().keySet().stream().filter(p -> notificationsList.get(p, false)).forEach(p -> LocalCache.get(NotificationListCache.class).add(p));
-            modulesConfig.getAll().keySet().stream().filter(m -> modulesConfig.get(m, false)).forEach(m -> LocalCache.get(ActiveInGameModuleCache.class).add(m));
+            maintenanceList.getAll().keySet().stream().filter(p -> maintenanceList.get(p, false)).forEach(p -> LocalCache.get(WhitelistCache.class).add(p, true));
+            notificationsList.getAll().keySet().stream().filter(p -> notificationsList.get(p, false)).forEach(p -> LocalCache.get(NotificationListCache.class).add(p, true));
         } catch (IOException | UnsupportedFileExtensionException e) {
             CloudLogger.get().exception("Unable to load CloudJsonProvider", e);
             PocketCloud.instance().shutdown();
@@ -49,19 +42,19 @@ public final class CloudJsonProvider extends CloudProvider {
     }
     
     @Override
-    public Promise<Void> addTemplate(Template template) {
+    public Promise<Void> addTemplate(ITemplate template) {
         templatesConfig.set(template.name(), template.write());
         return saveConfig(templatesConfig);
     }
 
     @Override
-    public Promise<Void> removeTemplate(Template template) {
+    public Promise<Void> removeTemplate(ITemplate template) {
         templatesConfig.remove(template.name());
         return saveConfig(templatesConfig);
     }
 
     @Override
-    public Promise<Void> editTemplate(Template template, Map<String, Object> newData) {
+    public Promise<Void> editTemplate(ITemplate template, Map<String, Object> newData) {
         templatesConfig.set(template.name(), newData);
         return saveConfig(templatesConfig);
     }
@@ -101,19 +94,19 @@ public final class CloudJsonProvider extends CloudProvider {
     }
     
     @Override
-    public Promise<Void> addServerGroup(ServerGroup serverGroup) {
+    public Promise<Void> addServerGroup(IServerGroup serverGroup) {
         serverGroupsConfig.set(serverGroup.name(), serverGroup.write());
         return saveConfig(serverGroupsConfig);
     }
 
     @Override
-    public Promise<Void> removeServerGroup(ServerGroup serverGroup) {
+    public Promise<Void> removeServerGroup(IServerGroup serverGroup) {
         serverGroupsConfig.remove(serverGroup.name());
         return saveConfig(serverGroupsConfig);
     }
 
     @Override
-    public Promise<Void> editServerGroup(ServerGroup serverGroup, Map<String, Object> newData) {
+    public Promise<Void> editServerGroup(IServerGroup serverGroup, Map<String, Object> newData) {
         serverGroupsConfig.set(serverGroup.name(), newData);
         return saveConfig(serverGroupsConfig);
     }
@@ -151,21 +144,9 @@ public final class CloudJsonProvider extends CloudProvider {
     }
 
     @Override
-    public Promise<Void> setModuleState(String module, boolean enabled) {
-        modulesConfig.set(module, enabled);
-        LocalCache.get(ActiveInGameModuleCache.class).set(module, enabled);
-        return saveConfig(modulesConfig);
-    }
-
-    @Override
-    public Promise<Optional<Boolean>> getModuleState(String module) {
-        return Promise.resolved(Optional.ofNullable(modulesConfig.get(module, null)));
-    }
-
-    @Override
     public Promise<Void> enablePlayerNotifications(String player) {
         notificationsList.set(player, true);
-        LocalCache.get(NotificationListCache.class).add(player);
+        LocalCache.get(NotificationListCache.class).add(player, true);
         return saveConfig(notificationsList);
     }
 
@@ -189,7 +170,7 @@ public final class CloudJsonProvider extends CloudProvider {
     @Override
     public Promise<Void> addToWhitelist(String player) {
         maintenanceList.set(player, true);
-        LocalCache.get(WhitelistCache.class).add(player);
+        LocalCache.get(WhitelistCache.class).add(player, true);
         return saveConfig(notificationsList);
     }
 

@@ -16,17 +16,21 @@ import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import io.netty.util.concurrent.GlobalEventExecutor;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
-import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 
+@Getter
+@Accessors(fluent = true)
 public class NetworkNettyServer {
 
-    private final InetSocketAddress address;
+    private final SocketAddress address;
+    private final boolean encryption;
+    private final int packetSizeLimit;
+    @Getter(AccessLevel.NONE)
     private final ChannelGroup channels = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
-    @Getter
-    @Accessors(fluent = true)
     private final String authToken = StringUtils.generate(15);
 
     private final EventLoopGroup bossGroup = new MultiThreadIoEventLoopGroup(
@@ -39,8 +43,10 @@ public class NetworkNettyServer {
             Epoll.isAvailable() ? EpollIoHandler.newFactory() : NioIoHandler.newFactory()
     );
 
-    public NetworkNettyServer(InetSocketAddress address) {
+    public NetworkNettyServer(SocketAddress address, boolean encryption, int packetSizeLimit) {
         this.address = address;
+        this.encryption = encryption;
+        this.packetSizeLimit = packetSizeLimit;
     }
 
     public void start() {

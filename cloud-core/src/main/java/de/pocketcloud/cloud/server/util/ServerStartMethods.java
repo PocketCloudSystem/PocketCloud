@@ -25,7 +25,7 @@ public final class ServerStartMethods {
     }
 
     public static Optional<ServerStartMethod> get(String name) {
-        return Optional.ofNullable(serverStartMethods.getOrDefault(name, null));
+        return Optional.ofNullable(serverStartMethods.get(name));
     }
 
     public static ServerStartMethod current() {

@@ -21,6 +21,10 @@
             <id>jitpack.io</id>
             <url>https://jitpack.io</url>
         </repository>
+        <repository>
+            <id>okaeri-releases</id>
+            <url>https://repo.okaeri.cloud/releases</url>
+        </repository>
     </repositories>
 
     <dependencies>
@@ -39,25 +43,38 @@
             <artifactId>cloud-api</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>de.pocketcloud</groupId>
+            <artifactId>cloud-shared</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <!-- External -->
         <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-all</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-pkitesting</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>eu.okaeri</groupId>
+            <artifactId>okaeri-configs-yaml-snakeyaml</artifactId>
         </dependency>
         <dependency>
             <groupId>org.jline</groupId>
             <artifactId>jline</artifactId>
         </dependency>
         <dependency>
-            <groupId>de.pocketcloud.configlib</groupId>
-            <artifactId>configlib</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.zaxxer</groupId>
             <artifactId>HikariCP</artifactId>
         </dependency>
-
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-compress</artifactId>
@@ -96,7 +113,7 @@
     </dependencies>
 
     <build>
-        <directory>${project.basedir}/../target/</directory>
+        <directory>${project.basedir}/../target/${project.artifactId}</directory>
         <finalName>compiled/pocketcloud</finalName>
         <resources>
             <resource>
@@ -124,10 +141,27 @@
                                     <mainClass>de.pocketcloud.cloud.bootstrap.Bootstrap</mainClass>
                                 </transformer>
                             </transformers>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
         </plugins>
     </build>
+
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <url>https://maven.pkg.github.com/PocketCloudSystem/PocketCloud</url>
+        </repository>
+    </distributionManagement>
 </project>

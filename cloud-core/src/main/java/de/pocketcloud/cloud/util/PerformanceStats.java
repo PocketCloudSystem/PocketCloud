@@ -22,8 +22,8 @@ public final class PerformanceStats {
     private double tickUsage = 0;
 
     private long processMaxMemory = 0;
-    private long processFreeMemory = 0;
     private long processTotalMemory = 0;
+    private long processFreeMemory = 0;
     private long processUsedMemory = 0;
     private long processPeakUsedMemory = 0;
     private double processCpuUsage = 0;
@@ -63,12 +63,12 @@ public final class PerformanceStats {
         processPeakUsedMemory = Math.max(processPeakUsedMemory, processUsedMemory);
         if (tick % 40 == 0) {
             processCpuUsage = Math.max(0, osBean.getProcessCpuLoad() * 100);
-            systemCpuUsage = Math.max(0, osBean.getCpuLoad() * 100);
             availableProcessors = osBean.getAvailableProcessors();
             systemTotalMemory = osBean.getTotalMemorySize();
             systemFreeMemory = osBean.getFreeMemorySize();
             systemUsedMemory = systemTotalMemory - systemFreeMemory;
             systemPeakUsedMemory = Math.max(systemPeakUsedMemory, systemUsedMemory);
+            systemCpuUsage = Math.max(0, osBean.getCpuLoad() * 100);
         }
     }
 }

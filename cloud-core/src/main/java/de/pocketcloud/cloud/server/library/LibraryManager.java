@@ -1,14 +1,15 @@
 package de.pocketcloud.cloud.server.library;
 
 import com.google.gson.reflect.TypeToken;
+import de.pocketcloud.api.component.software.IServerSoftware;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.server.CloudServer;
-import de.pocketcloud.cloud.server.software.ServerSoftware;
 import de.pocketcloud.cloud.util.PocketCloudPaths;
 import de.pocketcloud.common.lifecycle.Loadable;
 import de.pocketcloud.common.util.FileUtils;
-import de.pocketcloud.network.packet.impl.LibrarySyncPacket;
+import de.pocketcloud.network.packet.impl.SyncPacket;
+import de.pocketcloud.shared.sync.SyncType;
 
 import java.nio.file.Files;
 import java.util.*;
@@ -44,7 +45,7 @@ public final class LibraryManager implements Loadable {
         }
     }
 
-    public LibrarySyncPacket buildSyncPacket(CloudServer server) {
+    public SyncPacket buildSyncPacket(CloudServer server) {
         List<LinkedHashMap<String, String>> data = new ArrayList<>();
         for (Library lib : PocketCloud.instance().libraries().getAll().values()) {
             if (!lib.isAvailableFor(server.template().serverSoftware())) continue;
@@ -56,7 +57,7 @@ public final class LibraryManager implements Loadable {
             data.add(libData);
         }
 
-        return LibrarySyncPacket.create(data);
+        return SyncPacket.create(SyncType.LIBRARIES, pData -> pData.write(data));
     }
 
     public void loadLibrary(Library library) {
@@ -82,7 +83,7 @@ public final class LibraryManager implements Loadable {
         return Optional.ofNullable(libraries.get(name));
     }
 
-    public List<Library> getFor(ServerSoftware software) {
+    public List<Library> getFor(IServerSoftware software) {
         return libraries.values().stream()
                 .filter(lib -> lib.isAvailableFor(software))
                 .toList();

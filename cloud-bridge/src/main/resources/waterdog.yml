@@ -1,0 +1,5 @@
+name: CloudBridge
+version: 5.0.0
+main: de.pocketcloud.bridge.platform.wdpe.WaterdogPEPlugin
+author: r3pt1s
+description: PocketCloud CloudBridge for WaterdogPE

@@ -1,5 +1,7 @@
 package de.pocketcloud.api.language;
 
+import de.pocketcloud.api.CloudAPI;
+
 public enum LanguageKey {
 
     RAW_YES("raw.yes"),
@@ -214,7 +216,16 @@ public enum LanguageKey {
         this.langKey = langKey;
     }
 
+    public String translate(Object... args) {
+        return CloudAPI.instance().language().current().translate(langKey, args);
+    }
+
     public String langKey() {
         return langKey;
+    }
+
+    @Override
+    public String toString() {
+        return translate();
     }
 }

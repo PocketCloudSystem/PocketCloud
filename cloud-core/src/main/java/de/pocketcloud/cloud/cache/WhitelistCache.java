@@ -1,26 +1,26 @@
 package de.pocketcloud.cloud.cache;
 
+import de.pocketcloud.api.sync.SyncingElement;
 import de.pocketcloud.cloud.network.broadcaster.PacketBroadcaster;
 import de.pocketcloud.common.cache.LocalCache;
-import de.pocketcloud.network.packet.impl.MaintenanceListSyncPacket;
+import de.pocketcloud.network.packet.impl.SyncPacket;
+import de.pocketcloud.shared.sync.SyncType;
+import org.jetbrains.annotations.NotNull;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
-public final class WhitelistCache implements LocalCache<String> {
+public final class WhitelistCache implements LocalCache<String, Boolean>, SyncingElement<Map<String, Boolean>> {
 
-    private final Set<String> whitelist = new HashSet<>();
+    private final Map<String, Boolean> whitelist = new HashMap<>();
 
     @Override
-    public void syncIn(List<String> cache) {
+    public void syncIn(Map<String, Boolean> cache) {
         whitelist.clear();
-        whitelist.addAll(cache);
+        whitelist.putAll(cache);
     }
 
-    public MaintenanceListSyncPacket buildSyncPacket() {
-        return MaintenanceListSyncPacket.create(whitelist);
+    public SyncPacket buildSyncPacket() {
+        return SyncPacket.create(SyncType.WHITELIST, data -> data.write(whitelist));
     }
 
     @Override
@@ -29,22 +29,40 @@ public final class WhitelistCache implements LocalCache<String> {
     }
 
     @Override
-    public void add(String element) {
-        whitelist.add(element);
+    public void add(String key, @NotNull Boolean value) {
+        whitelist.put(key, value);
+        syncOut();
     }
 
     @Override
     public void remove(String element) {
-        whitelist.remove(element);
+        if (whitelist.remove(element) != null)
+            syncOut();
+    }
+
+    @Override
+    public void clear() {
+        whitelist.clear();
+        syncOut();
     }
 
     @Override
     public boolean contains(String element) {
-        return whitelist.contains(element);
+        return whitelist.containsKey(element);
     }
 
     @Override
-    public Collection<String> getAll() {
-        return whitelist.stream().toList();
+    public int size() {
+        return whitelist.size();
+    }
+
+    @Override
+    public Optional<Boolean> get(String id) {
+        return Optional.ofNullable(whitelist.get(id));
+    }
+
+    @Override
+    public Map<String, Boolean> getAll() {
+        return Collections.unmodifiableMap(whitelist);
     }
 }

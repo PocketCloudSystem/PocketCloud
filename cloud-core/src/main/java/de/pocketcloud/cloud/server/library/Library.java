@@ -1,9 +1,9 @@
 package de.pocketcloud.cloud.server.library;
 
+import de.pocketcloud.api.component.software.IServerSoftware;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.console.util.DownloadProgressBar;
-import de.pocketcloud.cloud.server.software.ServerSoftware;
 import de.pocketcloud.cloud.util.PocketCloudPaths;
 import de.pocketcloud.common.util.FileUtils;
 import de.pocketcloud.common.util.NetUtils;
@@ -127,7 +127,7 @@ public record Library(
                 !Files.isDirectory(directoryPath().resolve(namespaceFolder));
     }
 
-    public boolean isAvailableFor(ServerSoftware software) {
+    public boolean isAvailableFor(IServerSoftware software) {
         return softwareList.isEmpty() || softwareList.contains(software.name());
     }
 

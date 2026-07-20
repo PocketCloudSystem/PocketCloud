@@ -1,6 +1,6 @@
 package de.pocketcloud.cloud.console.command.sender;
 
-import de.pocketcloud.cloud.console.log.CloudLogLevel;
+import de.pocketcloud.api.logging.CloudLogLevel;
 
 public interface CommandSender {
 

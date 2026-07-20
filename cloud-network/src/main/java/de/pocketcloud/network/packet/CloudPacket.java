@@ -4,9 +4,9 @@ import de.pocketcloud.api.network.client.IServerClient;
 import de.pocketcloud.api.network.packet.ClientboundPacket;
 import de.pocketcloud.api.network.packet.CloudboundPacket;
 import de.pocketcloud.api.network.packet.Packet;
-import de.pocketcloud.api.network.packet.PacketExcluder;
 import de.pocketcloud.api.network.packet.data.IPacketData;
 import de.pocketcloud.network.packet.broadcast.InternalPacketBroadcaster;
+import de.pocketcloud.shared.network.packet.PacketExcluder;
 import lombok.Getter;
 import lombok.Setter;
 

@@ -1,6 +1,6 @@
 package de.pocketcloud.network.packet.impl;
 
-import de.pocketcloud.api.model.server.ICloudServer;
+import de.pocketcloud.api.component.server.ICloudServer;
 import de.pocketcloud.api.network.packet.ClientboundPacket;
 import de.pocketcloud.api.network.packet.data.IPacketData;
 import de.pocketcloud.network.packet.CloudPacket;

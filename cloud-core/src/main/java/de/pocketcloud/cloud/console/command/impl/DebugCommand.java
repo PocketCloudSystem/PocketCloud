@@ -15,11 +15,11 @@ public final class DebugCommand extends Command {
 
     @Override
     public boolean run(CommandSender sender, CommandContext ctx) {
-        PocketCloud.instance().logSettingsConfig().setDebugMode(!PocketCloud.instance().logSettingsConfig().isDebugMode());
+        PocketCloud.instance().logSettingsConfig().debugMode(!PocketCloud.instance().logSettingsConfig().debugMode());
         PocketCloud.instance().logSettingsConfig().save();
-        CloudLogger.get().setDebugMode(PocketCloud.instance().logSettingsConfig().isDebugMode());
+        CloudLogger.get().setDebugMode(PocketCloud.instance().logSettingsConfig().debugMode());
 
-        if (PocketCloud.instance().logSettingsConfig().isDebugMode()) {
+        if (PocketCloud.instance().logSettingsConfig().debugMode()) {
             sender.success("Successfully §aenabled §rthe §6debug mode§r.");
         } else {
             sender.success("Successfully §cdisabled §rthe §6debug mode§r.");

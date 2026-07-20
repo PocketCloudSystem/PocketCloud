@@ -1,11 +1,11 @@
 package de.pocketcloud.cloud.server.config;
 
+import de.pocketcloud.api.component.software.IServerSoftware;
 import de.pocketcloud.api.template.TemplateType;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.server.config.impl.PocketMineConfig;
 import de.pocketcloud.cloud.server.config.impl.PocketMineServerProperties;
 import de.pocketcloud.cloud.server.config.impl.WaterdogConfig;
-import de.pocketcloud.cloud.server.software.ServerSoftware;
 import de.pocketcloud.cloud.template.util.TemplateTypeHelper;
 import de.pocketcloud.cloud.util.PocketCloudPaths;
 import de.pocketcloud.common.lifecycle.Loadable;
@@ -76,7 +76,7 @@ public final class ServerPropertiesGenerator implements Loadable {
         defaultConfigFiles.get(properties.getServerSoftware().name()).remove(properties);
     }
 
-    public List<IServerProperties> getAll(ServerSoftware software) {
+    public List<IServerProperties> getAll(IServerSoftware software) {
         if (software == null) return defaultConfigFiles.values().stream().flatMap(List::stream).toList();
         return defaultConfigFiles.getOrDefault(software.name(), null);
     }
