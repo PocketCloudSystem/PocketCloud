@@ -8,6 +8,18 @@ public enum VerificationStatus implements Writable<String> {
     VERIFIED,
     PENDING;
 
+    public boolean isVerified() {
+        return this == VERIFIED;
+    }
+
+    public boolean isDenied() {
+        return this == DENIED;
+    }
+
+    public boolean isPending() {
+        return this == PENDING;
+    }
+
     @Override
     public String write() {
         return name();

@@ -62,10 +62,8 @@ public class MainLogger implements ILogger {
 
     @Override
     public ILogger echo(String message) {
-        if (saveLogs) {
-            LogMessagesCache.save(ConsoleColor.clean(message));
-        }
-        OutputManager.get().handleOutput(ConsoleColor.convert(message));
+        if (saveLogs) LogMessagesCache.save(ConsoleColor.clean(message));
+        if (OutputManager.get().canOutput(this)) OutputManager.get().handleOutput(ConsoleColor.convert(message));
         return this;
     }
 

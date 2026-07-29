@@ -27,9 +27,12 @@ public final class PacketRegistry implements IPacketRegistry<Channel>, Loadable 
     public void preload() {
         registerPacketListener(new NormalPacketHandler());
 
-        InternalPacketBroadcaster.setBroadcasterHandler((pk, ex) -> {
+        InternalPacketBroadcaster.setBroadcasterHandler((pk, _) -> {
             if (pk instanceof CloudboundPacket p) {
-                CloudBridge.instance().network().sendPacket(p);
+                CloudBridge.instance().network().sendPacket(p).exceptionally(e -> {
+                    CloudBridge.instance().logger().exception("Failed to send packet " + pk.getName(), e);
+                    return null;
+                });
             }
         });
     }

@@ -18,7 +18,9 @@ public final class ServerSaveRequestPacket extends RequestPacket implements Auth
     }
 
     @Override
-    public void encodePayload(IPacketData packetData) {}
+    public void encodePayload(IPacketData packetData) {
+        packetData.writeAll(server);
+    }
 
     @Override
     public void decodePayload(IPacketData packetData) {

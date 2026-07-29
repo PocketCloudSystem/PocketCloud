@@ -22,7 +22,9 @@ public final class PlayerWhitelistCheckResponsePacket extends ResponsePacket imp
     }
 
     @Override
-    public void decodePayload(IPacketData packetData) {}
+    public void decodePayload(IPacketData packetData) {
+        whitelisted = packetData.readBool();
+    }
 
     public static PlayerWhitelistCheckResponsePacket create(boolean whitelisted) {
         return new PlayerWhitelistCheckResponsePacket(whitelisted);

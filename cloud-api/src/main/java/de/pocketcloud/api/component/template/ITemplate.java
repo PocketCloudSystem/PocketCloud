@@ -3,11 +3,12 @@ package de.pocketcloud.api.component.template;
 import de.pocketcloud.api.CloudAPI;
 import de.pocketcloud.api.component.group.IServerGroup;
 import de.pocketcloud.api.component.player.ICloudPlayer;
+import de.pocketcloud.api.component.server.ICloudServer;
 import de.pocketcloud.api.component.software.IServerSoftware;
 import de.pocketcloud.api.search.ServerGroupSearchQuery;
 import de.pocketcloud.api.template.TemplateType;
 import de.pocketcloud.api.template.settings.TemplateSettings;
-import de.pocketcloud.common.mapper.MapperUtils;
+import de.pocketcloud.common.serialization.MapperUtils;
 import de.pocketcloud.common.serialization.Writable;
 
 import java.util.Collection;
@@ -37,8 +38,16 @@ public interface ITemplate extends Writable<Map<String, Object>> {
         return CloudAPI.instance().players().query(q -> q.ofTemplate(this));
     }
 
-    default long playerCount() {
+    default int playerCount() {
         return players().size();
+    }
+
+    default Collection<ICloudServer> servers() {
+        return CloudAPI.instance().servers().query(q -> q.ofTemplate(this));
+    }
+
+    default int serverCount() {
+        return servers().size();
     }
 
     String name();

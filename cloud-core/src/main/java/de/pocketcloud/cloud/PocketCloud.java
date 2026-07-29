@@ -21,6 +21,7 @@ import de.pocketcloud.cloud.console.screen.ScreenManager;
 import de.pocketcloud.cloud.event.EventManager;
 import de.pocketcloud.cloud.event.impl.cloud.CloudReadyEvent;
 import de.pocketcloud.cloud.http.HttpServer;
+import de.pocketcloud.cloud.http.traffic.HttpTrafficMonitor;
 import de.pocketcloud.cloud.language.LanguageManager;
 import de.pocketcloud.cloud.load.Loader;
 import de.pocketcloud.cloud.network.NetworkNettyServer;
@@ -33,6 +34,7 @@ import de.pocketcloud.cloud.plugin.CloudPluginManager;
 import de.pocketcloud.cloud.provider.CloudProvider;
 import de.pocketcloud.cloud.server.CloudServerManager;
 import de.pocketcloud.cloud.server.config.ServerPropertiesGenerator;
+import de.pocketcloud.cloud.server.crash.CrashHandlerRegistry;
 import de.pocketcloud.cloud.server.library.LibraryManager;
 import de.pocketcloud.cloud.server.software.ServerSoftwareManager;
 import de.pocketcloud.cloud.server.software.SoftwareService;
@@ -57,12 +59,12 @@ import lombok.Getter;
 import lombok.experimental.Accessors;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Getter
 @Accessors(fluent = true)
@@ -72,6 +74,7 @@ public final class PocketCloud implements CloudAPI {
     private static PocketCloud instance = null;
 
     private boolean running;
+    private boolean firstRun = false;
     private boolean hasStopped = false;
     private Instant startTime = null;
 
@@ -94,10 +97,66 @@ public final class PocketCloud implements CloudAPI {
             return;
         }
 
+        System.out.println("Cleaning tmp/ folder...");
+        FileUtils.removeDirectory(PocketCloudPaths.tmp().asPath());
+
+        createDirectories();
+
+        System.out.println("Checking version...");
+        Path firstRunPath = PocketCloudPaths.storage().with(".first_run").asPath();
+        if (!Files.exists(firstRunPath)) {
+            firstRun = true;
+            try {
+                System.out.println("You are using an incompatible folder structure of PocketCloud.");
+                System.out.println("All your important files will be backed up inside the new storage/backups/.");
+                SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
+                String backupId = "backup-" + format.format(new Date());
+                Path backupPath = PocketCloudPaths.storage().backups().with(backupId).asPath();
+                FileUtils.createDir(backupPath);
+
+                List<String> oldFolders = List.of(
+                        "servers",
+                        "templates",
+                        "software",
+                        "groups",
+                        "storage/software",
+                        "storage/plugins",
+                        "storage/staticServers",
+                        "storage/config.json",
+                        "storage/log_settings.yml",
+                        "storage/server_settings.yml",
+                        "storage/binaries",
+                        "storage/libraries",
+                        "storage/inGame"
+                );
+
+                for (String name : oldFolders) {
+                    Path folder = Path.of(name);
+
+                    if (Files.exists(folder)) {
+                        FileUtils.copyDirectory(
+                                folder,
+                                backupPath.resolve(name),
+                                Set.of()
+                        );
+
+                        FileUtils.removeDirectory(folder);
+                    }
+                }
+
+                createDirectories();
+
+                FileUtils.filePutContents(firstRunPath, String.valueOf(System.currentTimeMillis()));
+            } catch (Exception e) {
+                System.err.println("An error occurred during the backup process.");
+                e.printStackTrace();
+                return;
+            }
+        }
+
         services.register(Ticker.class, new Ticker());
 
         Benchmark.startTiming("cloud_start");
-        createDirectories();
 
         services.register(Loader.class, new Loader());
         services.register(MainConfig.class, loadYmlConfig(MainConfig.class, PocketCloudPaths.storage().configs().with("config.yml").asPath()));
@@ -137,6 +196,9 @@ public final class PocketCloud implements CloudAPI {
         services.register(TrafficMonitorManager.class, new TrafficMonitorManager());
         services.register(CloudPluginManager.class, new CloudPluginManager());
         services.register(EventManager.class, new EventManager());
+        services.register(CrashHandlerRegistry.class, new CrashHandlerRegistry());
+
+        traffic().registerTrafficMonitorType(HttpTrafficMonitor.class, "http");
 
         for (Object obj : services.getAll().values()) {
             if (obj instanceof Tickable tickable) {
@@ -164,7 +226,7 @@ public final class PocketCloud implements CloudAPI {
 
         loader().loadAll();
 
-        if (softwareList().getAll().isEmpty()) {
+        if (softwares().getAll().isEmpty()) {
             CloudLogger.get().warn("No software found, therefore no server can be started.");
         }
 
@@ -273,7 +335,7 @@ public final class PocketCloud implements CloudAPI {
         CloudLogger.get().info("Shutting down...");
 
         CloudLogger.get().info("§cStopping §rall servers...");
-        servers().stopAll();
+        servers().stopAllAndWait(10 * 1000);
 
         loader().unloadAll();
         network().close();
@@ -327,7 +389,7 @@ public final class PocketCloud implements CloudAPI {
         return services.get(CommandManager.class);
     }
 
-    public ServerSoftwareManager softwareList() {
+    public ServerSoftwareManager softwares() {
         return services.get(ServerSoftwareManager.class);
     }
 
@@ -341,6 +403,10 @@ public final class PocketCloud implements CloudAPI {
 
     public ServerPropertiesGenerator properties() {
         return services.get(ServerPropertiesGenerator.class);
+    }
+
+    public CrashHandlerRegistry crashHandlers() {
+        return services.get(CrashHandlerRegistry.class);
     }
 
     @Override

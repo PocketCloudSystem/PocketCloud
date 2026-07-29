@@ -1,44 +1,28 @@
 package de.pocketcloud.cloud.util.benchmark;
 
-public final class BenchmarkTimingsSummary {
-
-    private final String name;
-    private final long count;
-    private final double avg;
-    private final double min;
-    private final double max;
-    private final long lastTick;
-
-    public BenchmarkTimingsSummary(String name, long count, double avg, double min, double max, long lastTick) {
-        this.name = name;
-        this.count = count;
-        this.avg = avg;
-        this.min = min;
-        this.max = max;
-        this.lastTick = lastTick;
-    }
+public record BenchmarkTimingsSummary(String name, long count, double avg, double min, double max, long lastTick) {
 
     public String format(int precision, boolean colorful) {
         String fmt = "%." + precision + "fms";
         if (colorful) {
             return String.format(
-                "Name: §b%s §8| §rCount: §b%d §8| §rLast: §btick %d §8| §rAvg: §b%s §8| §rMin: §b%s §8| §rMax: §b%s",
-                name,
-                count,
-                lastTick,
-                String.format(fmt, avg),
-                String.format(fmt, min),
-                String.format(fmt, max)
+                    "Name: §b%s §8| §rCount: §b%d §8| §rLast: §btick %d §8| §rAvg: §b%s §8| §rMin: §b%s §8| §rMax: §b%s",
+                    name,
+                    count,
+                    lastTick,
+                    String.format(fmt, avg),
+                    String.format(fmt, min),
+                    String.format(fmt, max)
             );
         } else {
             return String.format(
-                "Name: %s | Count: %d | Last: tick %d | Avg: %s | Min: %s | Max: %s",
-                name,
-                count,
-                lastTick,
-                String.format(fmt, avg),
-                String.format(fmt, min),
-                String.format(fmt, max)
+                    "Name: %s | Count: %d | Last: tick %d | Avg: %s | Min: %s | Max: %s",
+                    name,
+                    count,
+                    lastTick,
+                    String.format(fmt, avg),
+                    String.format(fmt, min),
+                    String.format(fmt, max)
             );
         }
     }

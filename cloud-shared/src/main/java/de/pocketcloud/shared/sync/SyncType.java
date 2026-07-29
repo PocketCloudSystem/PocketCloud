@@ -25,6 +25,7 @@ public record SyncType(String type) implements Writable<String> {
     public static final SyncType LIBRARIES = new SyncType("LIBRARIES");
     public static final SyncType WHITELIST = new SyncType("WHITELIST");
     public static final SyncType NOTIFICATION_LIST = new SyncType("NOTIFICATION_LIST");
+    public static final SyncType SOFTWARES = new SyncType("SOFTWARES");
 
     static {
         register(SERVER);
@@ -43,6 +44,7 @@ public record SyncType(String type) implements Writable<String> {
         register(LIBRARIES);
         register(WHITELIST);
         register(NOTIFICATION_LIST);
+        register(SOFTWARES);
     }
 
     @Override

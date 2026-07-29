@@ -33,6 +33,18 @@ public final class TemplateHelper {
     public static final Map<String, Object> DEFAULT_VALUES = new HashMap<>();
     public static final Map<String, Class<?>> KEY_TYPES = new HashMap<>();
 
+    private static final Map<String, String> CONVERSION = Map.of(
+            "staticservers", "staticServers",
+            "alwayscopytostaticservers", "alwaysCopyToStaticServers",
+            "maxplayercount", "maxPlayerCount",
+            "minservercount", "minServerCount",
+            "maxservercount", "maxServerCount",
+            "startnewpercentage", "startNewPercentage",
+            "autostart", "autoStart",
+            "templatetype", "templateType",
+            "serversoftware", "serverSoftware"
+    );
+
     static {
         DEFAULT_VALUES.put("lobby", false);
         DEFAULT_VALUES.put("maintenance", true);
@@ -41,7 +53,7 @@ public final class TemplateHelper {
         DEFAULT_VALUES.put("maxPlayerCount", 20);
         DEFAULT_VALUES.put("minServerCount", 0);
         DEFAULT_VALUES.put("maxServerCount", 2);
-        DEFAULT_VALUES.put("startNewPercentage", 100.0f);
+        DEFAULT_VALUES.put("startNewPercentage", 1.0f);
         DEFAULT_VALUES.put("autoStart", true);
 
         KEY_TYPES.put("lobby", Boolean.class);
@@ -59,17 +71,9 @@ public final class TemplateHelper {
 
     private static final Set<String> EDITABLE_KEYS_SET = Set.copyOf(EDITABLE_KEYS);
 
-    private static final Map<String, String> CONVERSION = Map.of(
-            "staticservers", "staticServers",
-            "alwayscopytostaticservers", "alwaysCopyToStaticServers",
-            "maxplayercount", "maxPlayerCount",
-            "minservercount", "minServerCount",
-            "maxservercount", "maxServerCount",
-            "startnewpercentage", "startNewPercentage",
-            "autostart", "autoStart",
-            "templatetype", "templateType",
-            "serversoftware", "serverSoftware"
-    );
+    public static String convert(String key) {
+        return CONVERSION.getOrDefault(key.toLowerCase(), key);
+    }
 
     public static void fillKeys(Map<String, Object> data) {
         for (String key : UNNECESSARY_KEYS) {
@@ -126,8 +130,8 @@ public final class TemplateHelper {
         return EDITABLE_KEYS_SET.contains(key);
     }
 
-    public static String convert(String key) {
-        return CONVERSION.getOrDefault(key.toLowerCase(), key);
+    public static Class<?> getKeyType(String key) {
+        return KEY_TYPES.get(key);
     }
 
     private static boolean isNumeric(String value) {

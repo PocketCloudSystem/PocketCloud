@@ -1,11 +1,14 @@
 package de.pocketcloud.cloud.server;
 
+import de.pocketcloud.api.CloudAPI;
 import de.pocketcloud.api.component.group.IServerGroup;
+import de.pocketcloud.api.component.player.ICloudPlayer;
 import de.pocketcloud.api.component.server.ICloudServer;
+import de.pocketcloud.api.component.software.IServerSoftware;
+import de.pocketcloud.api.component.template.ITemplate;
 import de.pocketcloud.api.network.packet.ClientboundPacket;
 import de.pocketcloud.api.search.ServerSearchQuery;
 import de.pocketcloud.api.server.ServerStatus;
-import de.pocketcloud.api.server.VerificationStatus;
 import de.pocketcloud.api.sync.SyncingElement;
 import de.pocketcloud.api.template.TemplateType;
 import de.pocketcloud.cloud.PocketCloud;
@@ -14,15 +17,12 @@ import de.pocketcloud.cloud.cache.WhitelistCache;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.console.log.def.PrefixedLogger;
 import de.pocketcloud.cloud.event.impl.server.ServerPrepareEvent;
-import de.pocketcloud.cloud.event.impl.server.ServerStartEvent;
+import de.pocketcloud.cloud.event.impl.server.ServerSaveEvent;
+import de.pocketcloud.cloud.event.impl.server.ServerSendCommandEvent;
 import de.pocketcloud.cloud.event.impl.server.ServerStopEvent;
 import de.pocketcloud.cloud.network.client.ServerClient;
 import de.pocketcloud.cloud.server.config.IServerProperties;
-import de.pocketcloud.cloud.server.util.CloudServerStorage;
-import de.pocketcloud.cloud.server.util.LatestPacketInfo;
-import de.pocketcloud.cloud.server.util.ServerCommandExecutionRequest;
-import de.pocketcloud.cloud.server.util.ServerStartMethods;
-import de.pocketcloud.cloud.server.util.conv.InstantConverter;
+import de.pocketcloud.cloud.server.util.*;
 import de.pocketcloud.cloud.template.Template;
 import de.pocketcloud.cloud.template.group.ServerGroup;
 import de.pocketcloud.cloud.template.util.TemplateTypeHelper;
@@ -32,8 +32,9 @@ import de.pocketcloud.common.concurrent.Promise;
 import de.pocketcloud.common.config.Config;
 import de.pocketcloud.common.config.exception.UnsupportedFileExtensionException;
 import de.pocketcloud.common.lifecycle.Tickable;
-import de.pocketcloud.common.mapper.MapKey;
-import de.pocketcloud.common.mapper.MapperUtils;
+import de.pocketcloud.common.serialization.MapperUtils;
+import de.pocketcloud.common.serialization.annotation.MapCreator;
+import de.pocketcloud.common.serialization.annotation.MapKey;
 import de.pocketcloud.common.util.FileUtils;
 import de.pocketcloud.common.util.ProcessUtils;
 import de.pocketcloud.common.util.StringUtils;
@@ -46,6 +47,9 @@ import de.pocketcloud.network.packet.impl.response.client.CommandExecuteResponse
 import de.pocketcloud.shared.component.BaseCloudServer;
 import de.pocketcloud.shared.component.data.CloudServerData;
 import de.pocketcloud.shared.component.software.ServerSoftware;
+import de.pocketcloud.shared.component.storage.BaseCloudServerStorage;
+import de.pocketcloud.shared.event.server.ServerChangedStatusEvent;
+import de.pocketcloud.shared.event.server.ServerStartingEvent;
 import de.pocketcloud.shared.network.packet.type.NotificationType;
 import de.pocketcloud.shared.network.packet.type.ServerCommandExecutionResult;
 import de.pocketcloud.shared.network.packet.type.ServerDisconnectReason;
@@ -61,6 +65,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -87,38 +92,23 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
     private transient long lastPidLookupTime = 0;
     private transient int lastPidLookupCounter = 0;
 
-    private transient final LatestPacketInfo latestPacketInfo = new LatestPacketInfo();
+    private final transient LatestPacketInfo latestPacketInfo = new LatestPacketInfo();
 
-    private transient final PrefixedLogger logger;
+    private final transient PrefixedLogger logger = CloudLogger.prefixed("§8[§b" + name() + "§r§8]§r");
     @Setter
-    private VerificationStatus verificationStatus = VerificationStatus.PENDING;
-    private ServerStatus status = ServerStatus.PENDING;
-    private final CloudServerStorage storage;
-    @Setter
-    private transient Long lastKeepAlive = null;
-    @Setter
-    @MapKey(converter = InstantConverter.class)
-    private Instant startTime = null;
-    @Setter
-    @MapKey(converter = InstantConverter.class)
-    private Instant verifiedTime = null;
-    private transient Long stopTime = null;
+    private transient Instant lastKeepAlive = null;
+    private transient Instant stopTime = null;
     private transient Config mainProperties = null;
 
-    public CloudServer(int id, UUID uuid, String templateName, CloudServerData data) {
-        super(id, uuid, templateName, data, new CloudServerStorage(uuid));
-        this.storage = (CloudServerStorage) super.storage();
-        this.logger = CloudLogger.prefixed("§8[§b" + name() + "§r§8]§r");
-    }
-
-    public CloudServer(int id, UUID uuid, String templateName, CloudServerData data, ServerStatus status) {
-        this(id, uuid, templateName, data);
-        this.status = status;
-    }
-
-    public CloudServer(int id, UUID uuid, String templateName, CloudServerData data, Map<String, Object> storage) {
-        this(id, uuid, templateName, data);
-        this.storage.setAll(storage);
+    @MapCreator
+    public CloudServer(
+            @MapKey(name = "id") int id,
+            @MapKey(name = "uuid") UUID uuid,
+            @MapKey(name = "templateName") String templateName,
+            @MapKey(name = "data") CloudServerData data,
+            @MapKey(name = "storage", impl = CloudServerStorage.class) BaseCloudServerStorage storage
+    ) {
+        super(id, uuid, templateName, data, storage);
     }
 
     public CloudServer markForRemoval() {
@@ -131,7 +121,7 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
 
     @Override
     public void syncOut() {
-        SyncPacket.create(SyncType.SERVER, data -> data.write(this), Map.of("removal", markedForRemoval)).broadcast();
+        SyncPacket.create(SyncType.SERVER, data -> data.writeAll(this, markedForRemoval)).broadcast();
     }
 
     @Override
@@ -159,6 +149,19 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
                     request.promise().reject(new TimeoutException("Request timed out"));
                     commandExecutionOrders.remove(entry.getKey());
                 }
+            }
+
+            int baseTimeout = TemplateTypeHelper.timeout(template().templateType());
+            double tps = PocketCloud.instance().performanceStats().currentTPS();
+            double loadFactor = Math.max(1.0, 20 / Math.max(1.0, tps));
+            int effectiveTimeout = (int) (baseTimeout * loadFactor);
+            Instant lastKeepAliveTime = lastKeepAlive == null ? startTime : lastKeepAlive;
+            if (Duration.between(lastKeepAliveTime, Instant.now()).compareTo(Duration.ofSeconds(effectiveTimeout)) > 0) {
+                CloudServersHandler.handleTimeout(this);
+            }
+        } else if (status.isStopping()) {
+            if ((stopTime.toEpochMilli() + 10_000) <= System.currentTimeMillis()) {
+                CloudServersHandler.handleStopTimeout(this);
             }
         }
     }
@@ -252,10 +255,10 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
 
     public CloudServer start() {
         startTime = Instant.now();
-        setStatus(ServerStatus.STARTING);
-        new ServerStartEvent(this).call();
+        CloudAPI.instance().events().call(new ServerStartingEvent(this));
+        status(ServerStatus.STARTING);
         CloudLogger.get().info("§aStarting §b{} §8[§ruuid={}, path={}, port={}§8]§r...", name(), uuid.toString(), path().toString(), data.port());
-        PocketCloud.instance().notifications().notify(NotificationType.SERVER_STARTING, Map.of("server", name()), Map.of());
+        PocketCloud.instance().notifications().sendNotification(NotificationType.SERVER_STARTING, Map.of("server", name()), Map.of());
         return this;
     }
 
@@ -267,19 +270,18 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
 
     public void stop(boolean force) {
         new ServerStopEvent(this, force).call();
-        PocketCloud.instance().notifications().notify(NotificationType.SERVER_STOPPING, Map.of("server", name()), Map.of());
-        stopTime = System.currentTimeMillis();
+        PocketCloud.instance().notifications().sendNotification(NotificationType.SERVER_STOPPING, Map.of("server", name()), Map.of());
+        stopTime = Instant.now();
 
         if (force) {
             CloudLogger.get().info("§cStopped §b{} §rforcefully.", name());
-            setStatus(ServerStatus.OFFLINE);
+            status(ServerStatus.OFFLINE);
             kill();
             remove();
-            //todo checkforCrash
             deleteTmpDir();
         } else {
             CloudLogger.get().info("§cStopping §b{}§r...", name());
-            setStatus(ServerStatus.STOPPING);
+            status(ServerStatus.STOPPING);
             sendPacket(DisconnectPacket.create(ServerDisconnectReason.SERVER_SHUTDOWN));
         }
     }
@@ -312,6 +314,7 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
     }
 
     public Promise<Void> save() {
+        if (!new ServerSaveEvent(this).call().isCancelled()) return Promise.rejected(new RuntimeException("Event cancelled"));
         return Promise.supplyAsync(() -> {
             for (String file : template().serverSoftware().config().savableFiles()) {
                 Path filePath = path().resolve(file);
@@ -357,9 +360,10 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
     public Promise<ServerCommandExecutionResult> dispatch(String commandLine) {
         Optional<ServerClient> client = client();
         if (client.isEmpty()) return Promise.rejected(new IllegalStateException("Not verified yet"));
+        if (new ServerSendCommandEvent(this, commandLine).call().isCancelled()) return Promise.rejected(new RuntimeException("Event cancelled"));
         String id = "command-" + StringUtils.generate(10);
         Promise<ServerCommandExecutionResult> promise = new Promise<>();
-        CommandExecuteRequestPacket requestPacket = (CommandExecuteRequestPacket) CommandExecuteRequestPacket.create(commandLine, id).sendRequest(client.get()).then(response -> {
+        CommandExecuteRequestPacket.create(commandLine, id).sendRequest(client.get()).then(response -> {
             if (response instanceof CommandExecuteResponsePacket p) {
                 promise.resolve(p.getCommandExecutionResult());
             } else {
@@ -369,7 +373,7 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
             commandExecutionOrders.remove(id);
         }).failure((_, e, reason) -> promise.reject(Objects.requireNonNullElseGet(e, () -> new RuntimeException("RequestActionFailureReason: " + reason.name()))));
 
-        commandExecutionOrders.put(id, new ServerCommandExecutionRequest(id, promise, requestPacket.getSentTimestamp()));
+        commandExecutionOrders.put(id, new ServerCommandExecutionRequest(id, promise, System.currentTimeMillis()));
 
         return promise;
     }
@@ -387,7 +391,7 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
     }
 
     public void sync() {
-        List<ClientboundPacket> syncPackets = new ArrayList<ClientboundPacket>(List.of(
+        List<ClientboundPacket> syncPackets = new ArrayList<>(List.of(
                 PocketCloud.instance().libraries().buildSyncPacket(this),
                 LocalCache.get(WhitelistCache.class).buildSyncPacket(),
                 LocalCache.get(NotificationListCache.class).buildSyncPacket(),
@@ -396,9 +400,10 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
                     pData.write(PocketCloud.instance().language().current().messages());
                 }),
                 SyncPacket.create(SyncType.SERVERS, pData -> pData.write(PocketCloud.instance().servers().getAll().stream().map(ICloudServer::write).toList())),
-                SyncPacket.create(SyncType.TEMPLATES, pData -> pData.write(PocketCloud.instance().servers().getAll().stream().map(ICloudServer::write).toList())),
-                SyncPacket.create(SyncType.PLAYERS, pData -> pData.write(PocketCloud.instance().servers().getAll().stream().map(ICloudServer::write).toList())),
-                SyncPacket.create(SyncType.SERVER_GROUPS, pData -> pData.write(PocketCloud.instance().servers().getAll().stream().map(ICloudServer::write).toList()))
+                SyncPacket.create(SyncType.TEMPLATES, pData -> pData.write(PocketCloud.instance().templates().getAll().stream().map(ITemplate::write).toList())),
+                SyncPacket.create(SyncType.PLAYERS, pData -> pData.write(PocketCloud.instance().players().getAll().stream().map(ICloudPlayer::write).toList())),
+                SyncPacket.create(SyncType.SERVER_GROUPS, pData -> pData.write(PocketCloud.instance().serverGroups().getAll().stream().map(IServerGroup::write).toList())),
+                SyncPacket.create(SyncType.SOFTWARES, pData -> pData.write(PocketCloud.instance().softwares().getAll().stream().map(IServerSoftware::write).toList()))
         ));
 
         if (template().templateType().isProxy()) {
@@ -429,14 +434,27 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
         return client().get().sendDelayedPacket(packet, ticks);
     }
 
-    public void setStatus(ServerStatus status) {
+    @Override
+    public void status(ServerStatus status) {
+        ServerStatus oldStatus = this.status;
         this.status = status;
         syncOut();
+        CloudAPI.instance().events().call(new ServerChangedStatusEvent(this, oldStatus, status));
+    }
+
+    public ServerLogStream openLogStream() {
+        return new ServerLogStream(this);
+    }
+
+    public boolean isAlive() {
+        if (data.usableProcessId() == null) return false;
+        Optional<ProcessHandle> proc = ProcessHandle.of(data.usableProcessId());
+        return proc.isPresent() && proc.get().isAlive();
     }
 
     @Override
     public CloudServerStorage storage() {
-        return (CloudServerStorage) storage;
+        return (CloudServerStorage) super.storage;
     }
 
     @Override
@@ -446,11 +464,15 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
 
     public Path path() {
         if (template().settings().staticServers()) return PocketCloudPaths.storage().staticServers().with(name()).asPath();
-        return PocketCloudPaths.tmp().with(uuid.toString()).asPath();
+        return PocketCloudPaths.tmp().with(name() + "_" + uuid.toString()).asPath();
     }
 
     public Path logFilePath() {
         return path().resolve(template().serverSoftware().config().relativeLogFileLocation());
+    }
+
+    public Path customLogFilePath() {
+        return path().resolve(".cloud.console.log");
     }
 
     public Config properties() {

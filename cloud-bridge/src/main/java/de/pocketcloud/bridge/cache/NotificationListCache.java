@@ -3,7 +3,10 @@ package de.pocketcloud.bridge.cache;
 import de.pocketcloud.common.cache.LocalCache;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * Local notification cache for the server

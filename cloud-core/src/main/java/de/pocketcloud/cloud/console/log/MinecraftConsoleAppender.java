@@ -16,7 +16,7 @@ public final class MinecraftConsoleAppender extends AppenderBase<ILoggingEvent> 
     @Override
     protected void append(ILoggingEvent event) {
         String formatted = layout.doLayout(event);
-        LogMessagesCache.save(ConsoleColor.clean(formatted));
-        OutputManager.get().handleOutput(formatted);
+        if (CloudLogger.get().isSaveLogs()) LogMessagesCache.save(ConsoleColor.clean(formatted));
+        if (OutputManager.get().canOutput(CloudLogger.get())) OutputManager.get().handleOutput(formatted);
     }
 }

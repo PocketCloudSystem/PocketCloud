@@ -4,6 +4,7 @@ import de.pocketcloud.api.network.handler.PacketHandler;
 import de.pocketcloud.api.network.handler.PacketListener;
 import de.pocketcloud.api.network.packet.data.IPacketData;
 import de.pocketcloud.api.server.ServerStatus;
+import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.network.client.ServerClient;
 import de.pocketcloud.cloud.provider.CloudProvider;
 import de.pocketcloud.network.packet.impl.SyncPacket;
@@ -17,30 +18,28 @@ public final class SyncPacketHandler implements PacketListener {
     public void handle(SyncPacket packet, ServerClient sender) {
         SyncType syncType = packet.getSyncType();
         IPacketData data = packet.getRemainingData();
-        Map<String, Object> customProperties = packet.getCustomProperties();
 
         if (syncType == SyncType.SERVER_STATUS) {
-            handleServerStatus(data, sender, customProperties);
+            handleServerStatus(data, sender);
         } else if (syncType == SyncType.SERVER_STORAGE) {
-            handleServerStorage(data, sender, customProperties);
+            handleServerStorage(data, sender);
         } else if (syncType == SyncType.PLAYER_NOTIFICATION_STATE) {
-            handlePlayerUpdateNotificationState(data, sender, customProperties);
+            handlePlayerUpdateNotificationState(data, sender);
         } else if (syncType == SyncType.PLAYER_WHITELIST_STATE) {
-            handlePlayerUpdateWhitelistState(data, sender, customProperties);
+            handlePlayerUpdateWhitelistState(data, sender);
         }
     }
 
-    public void handleServerStatus(IPacketData data, ServerClient sender, Map<String, Object> customProperties) {
-
-        sender.server().setStatus(ServerStatus.valueOf(data.toString()));
+    public void handleServerStatus(IPacketData data, ServerClient sender) {
+        PocketCloud.instance().servers().get(data.readString()).ifPresent(server -> server.status(ServerStatus.valueOf(data.readString())));
     }
 
-    public void handleServerStorage(IPacketData data, ServerClient sender, Map<String, Object> customProperties) {
+    public void handleServerStorage(IPacketData data, ServerClient sender) {
         Map<String, Object> storage = data.readMap();
         sender.server().storage().syncIn(storage);
     }
 
-    public void handlePlayerUpdateNotificationState(IPacketData data, ServerClient sender, Map<String, Object> customProperties) {
+    public void handlePlayerUpdateNotificationState(IPacketData data, ServerClient sender) {
         String playerName = data.readString();
         boolean value = data.readBool();
 
@@ -48,7 +47,7 @@ public final class SyncPacketHandler implements PacketListener {
         else CloudProvider.current().disablePlayerNotifications(playerName);
     }
 
-    public void handlePlayerUpdateWhitelistState(IPacketData data, ServerClient sender, Map<String, Object> customProperties) {
+    public void handlePlayerUpdateWhitelistState(IPacketData data, ServerClient sender) {
         String playerName = data.readString();
         boolean value = data.readBool();
 

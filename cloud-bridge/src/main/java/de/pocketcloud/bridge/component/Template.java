@@ -5,11 +5,21 @@ import de.pocketcloud.api.component.template.ITemplate;
 import de.pocketcloud.api.sync.SyncingElement;
 import de.pocketcloud.api.template.TemplateType;
 import de.pocketcloud.api.template.settings.TemplateSettings;
+import de.pocketcloud.common.serialization.annotation.MapCreator;
+import de.pocketcloud.common.serialization.annotation.MapKey;
 import de.pocketcloud.shared.component.BaseTemplate;
+import de.pocketcloud.shared.component.software.ServerSoftware;
+import de.pocketcloud.shared.converter.SoftwareConverter;
 
 public final class Template extends BaseTemplate implements SyncingElement<ITemplate> {
 
-    public Template(String name, TemplateSettings settings, TemplateType templateType, IServerSoftware serverSoftware) {
+    @MapCreator
+    public Template(
+            @MapKey(name = "name") String name,
+            @MapKey(name = "settings") TemplateSettings settings,
+            @MapKey(name = "templateType") TemplateType templateType,
+            @MapKey(name = "serverSoftware", converter = SoftwareConverter.class) IServerSoftware serverSoftware
+    ) {
         super(name, settings, templateType, serverSoftware);
     }
 
@@ -19,7 +29,10 @@ public final class Template extends BaseTemplate implements SyncingElement<ITemp
     }
 
     @Override
-    public void syncOut() {
+    public void syncOut() {}
 
+    @Override
+    public ServerSoftware serverSoftware() {
+        return (ServerSoftware) serverSoftware;
     }
 }

@@ -14,8 +14,20 @@ public record CommandContext(String label, Map<String, Object> args, Map<String,
         return flags.containsKey(name);
     }
 
+    public Object arg(String name) {
+        return args.get(name);
+    }
+
+    public Object arg(String name, Object defaultValue) {
+        return args.getOrDefault(name, defaultValue);
+    }
+
     public <T> T arg(String name, Class<T> type) {
         return type.cast(args.get(name));
+    }
+
+    public <T> T arg(String name, Class<T> type, T defaultValue) {
+        return type.cast(args.getOrDefault(name, defaultValue));
     }
 
     public String argString(String name) {

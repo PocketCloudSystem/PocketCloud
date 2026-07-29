@@ -12,6 +12,6 @@ public class SoftwareDownload implements ISoftwareDownload {
 
     protected final String url;
     protected final String filename;
-    protected final String startCommand;
+    protected final String[] startCommand;
     protected final boolean checkForUpdates;
 }

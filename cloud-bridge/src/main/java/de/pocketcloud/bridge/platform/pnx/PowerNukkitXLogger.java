@@ -3,7 +3,6 @@ package de.pocketcloud.bridge.platform.pnx;
 import de.pocketcloud.api.logging.CloudLogLevel;
 import de.pocketcloud.api.logging.ILogger;
 import de.pocketcloud.common.util.FormatUtils;
-import org.apache.commons.lang3.NotImplementedException;
 import org.powernukkitx.plugin.PluginLogger;
 import org.powernukkitx.utils.LogLevel;
 
@@ -43,31 +42,31 @@ public final class PowerNukkitXLogger implements ILogger {
 
     @Override
     public ILogger withoutFormat(String message, Object... params) {
-        throw new NotImplementedException();
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public ILogger echo(String message) {
-        throw new NotImplementedException();
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public ILogger setDebugMode(boolean debugMode) {
-        throw new NotImplementedException();
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public boolean isDebugMode() {
-        throw new NotImplementedException();
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public ILogger setSaveLogs(boolean enabled) {
-        throw new NotImplementedException();
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public boolean isSaveLogs() {
-        throw new NotImplementedException();
+        throw new UnsupportedOperationException();
     }
 }

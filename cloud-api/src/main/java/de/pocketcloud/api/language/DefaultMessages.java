@@ -27,6 +27,7 @@ public final class DefaultMessages {
         MESSAGES_EN.put("inGame.prefix", "§8[§l§3Pocket§bCloud§r§8] §r");
         MESSAGES_EN.put("inGame.no.permission", "{PREFIX}§cYou don't have permission to use this command!");
         MESSAGES_EN.put("inGame.template.kick.maintenance", "§cThis template is currently under maintenance.");
+        MESSAGES_EN.put("inGame.request.timed.out", "{PREFIX}§cRequest with id §e%0% §8(§b%1%§8) §ctimed out.");
 
         // notify messages
         MESSAGES_EN.put("inGame.notify.message.server_starting", "{PREFIX}§fThe server §b%server% §fis §astarting§r...");
@@ -72,27 +73,6 @@ public final class DefaultMessages {
         MESSAGES_EN.put("inGame.text.successful.action_bar", "{PREFIX}§aYou have successfully sent an §eaction bar message §ato §e%0%§a!");
         MESSAGES_EN.put("inGame.text.successful.toast_notification", "{PREFIX}§aYou have successfully sent a §etoast notification §ato §e%0%§a!");
         MESSAGES_EN.put("inGame.console.log.successful", "{PREFIX}§aThe message was successfully sent to the §bCloud§a!");
-
-        // cloudnpc
-        MESSAGES_EN.put("inGame.cloudnpc.created", "{PREFIX}§aCloud NPC was created!");
-        MESSAGES_EN.put("inGame.cloudnpc.removed", "{PREFIX}§cCloud NPC was removed!");
-        MESSAGES_EN.put("inGame.cloudnpc.select", "{PREFIX}§7Hit a Cloud NPC to remove it!");
-        MESSAGES_EN.put("inGame.cloudnpc.process.cancelled", "{PREFIX}§cThe process was cancelled!");
-        MESSAGES_EN.put("inGame.cloudnpc.quickjoin.no_server", "{PREFIX}§cNo server found!");
-        MESSAGES_EN.put("inGame.cloudnpc.name_tag", "§e%1%\n§8» §7%0% playing.");
-        MESSAGES_EN.put("inGame.cloudnpc.name_tag.maintenance", "§e%1% §8- §c§lMAINTENANCE§r\n§8» §7%0% playing.");
-
-        // template groups
-        MESSAGES_EN.put("inGame.template_group.exists", "{PREFIX}§cA template group with the id §e%0% §calready exists!");
-        MESSAGES_EN.put("inGame.template_group.created", "{PREFIX}§aThe template group with the id §e%0% §awas created!");
-        MESSAGES_EN.put("inGame.template_group.removed", "{PREFIX}§cThe template group with the id §e%0% §cwas removed!");
-
-        // skin models
-        MESSAGES_EN.put("inGame.skin_model.created", "{PREFIX}§aThe model with the id §e%0% §awas created!");
-        MESSAGES_EN.put("inGame.skin_model.edited", "{PREFIX}§aThe model with the id §e%0% §awas edited!");
-        MESSAGES_EN.put("inGame.skin_model.removed", "{PREFIX}§cThe model with the id §e%0% §cwas removed!");
-        MESSAGES_EN.put("inGame.skin_model.failed", "{PREFIX}§cThe model with the id §e%0% §ccould not be created because the paths are incorrect!");
-        MESSAGES_EN.put("inGame.skin_model.exists", "{PREFIX}§cThe model with the id §e%0% §calready exists!");
 
         // proxy
         MESSAGES_EN.put("inGame.proxy.stopped", "§f§lProxy shutting down...");
@@ -166,76 +146,6 @@ public final class DefaultMessages {
 
         // kick
         MESSAGES_EN.put("inGame.kick.successful", "{PREFIX}§aYou have successfully kicked §e%0%§a!");
-
-        // ui - cloudnpc
-        MESSAGES_EN.put("inGame.ui.cloudnpc.main.title", "§eManage NPCs");
-        MESSAGES_EN.put("inGame.ui.cloudnpc.main.text", "§7Choose an option");
-        MESSAGES_EN.put("inGame.ui.cloudnpc.main.button.create", "§aCreate an NPC");
-        MESSAGES_EN.put("inGame.ui.cloudnpc.main.button.remove", "§cRemove an NPC");
-        MESSAGES_EN.put("inGame.ui.cloudnpc.main.button.list", "§eList all NPCs");
-        MESSAGES_EN.put("inGame.ui.cloudnpc.main.button.models", "§6Manage skin models");
-        MESSAGES_EN.put("inGame.ui.cloudnpc.create.title", "§aCreate NPC");
-        MESSAGES_EN.put("inGame.ui.cloudnpc.create.element.name.text", "§7Template");
-        MESSAGES_EN.put("inGame.ui.cloudnpc.create.element.model.text", "§7Skin model");
-        MESSAGES_EN.put("inGame.ui.cloudnpc.create.element.headRotation.text", "§7Head rotation?");
-        MESSAGES_EN.put("inGame.ui.cloudnpc.list.title", "§eNPC List");
-        MESSAGES_EN.put("inGame.ui.cloudnpc.list.text", "§7Currently §e%0% §7NPC(s) available.");
-        MESSAGES_EN.put("inGame.ui.cloudnpc.list_view.title", "§e%0%");
-        MESSAGES_EN.put("inGame.ui.cloudnpc.list_view.button.teleport", "§aTeleport");
-        MESSAGES_EN.put("inGame.ui.cloudnpc.list_view.button.back", "§cBack");
-        MESSAGES_EN.put("inGame.ui.cloudnpc.choose_server.title", "§e%0%");
-        MESSAGES_EN.put("inGame.ui.cloudnpc.choose_server.text", "§e%0% §7server(s) with the template §e%1% §7available.");
-        MESSAGES_EN.put("inGame.ui.cloudnpc.choose_server.no.server", "§cNo servers available");
-        MESSAGES_EN.put("inGame.ui.cloudnpc.choose_server.button.server", "§e%0%\n§a%1%§8/§c%2%");
-        MESSAGES_EN.put("inGame.ui.cloudnpc.choose_template.title", "§e%0%");
-        MESSAGES_EN.put("inGame.ui.cloudnpc.choose_template.text", "§7Choose a template from the group §e%0%§7.");
-        MESSAGES_EN.put("inGame.ui.cloudnpc.choose_template.button.template", "§e%0%\n§a%1%§8/§c%2%");
-
-        // ui - template group
-        MESSAGES_EN.put("inGame.ui.template_group.main.title", "§6Manage Template Groups");
-        MESSAGES_EN.put("inGame.ui.template_group.main.text", "§7Choose an option");
-        MESSAGES_EN.put("inGame.ui.template_group.main.button.create", "§aCreate");
-        MESSAGES_EN.put("inGame.ui.template_group.main.button.edit", "§6Edit");
-        MESSAGES_EN.put("inGame.ui.template_group.main.button.remove", "§cRemove");
-        MESSAGES_EN.put("inGame.ui.template_group.main.button.list", "§eList");
-        MESSAGES_EN.put("inGame.ui.template_group.create.title", "§aCreate Template Group");
-        MESSAGES_EN.put("inGame.ui.template_group.create.element.id.text", "§7Group ID");
-        MESSAGES_EN.put("inGame.ui.template_group.create.element.display.text", "§7Display Name");
-        MESSAGES_EN.put("inGame.ui.template_group.remove.title", "§cRemove Template Group");
-        MESSAGES_EN.put("inGame.ui.template_group.remove.text", "§7Choose a template group");
-        MESSAGES_EN.put("inGame.ui.template_group.edit_selection.title", "§6Select Group");
-        MESSAGES_EN.put("inGame.ui.template_group.edit_selection.text", "§7Choose an option");
-        MESSAGES_EN.put("inGame.ui.template_group.edit.text", "§7Choose an option");
-        MESSAGES_EN.put("inGame.ui.template_group.edit.button.add_template", "§aAdd a template");
-        MESSAGES_EN.put("inGame.ui.template_group.edit.button.remove_template", "§cRemove a template");
-        MESSAGES_EN.put("inGame.ui.template_group.edit.button.change_display", "§fChange display name");
-        MESSAGES_EN.put("inGame.ui.template_group.add_template.title", "§aAdd Template");
-        MESSAGES_EN.put("inGame.ui.template_group.add_template.text", "§7Choose a template");
-        MESSAGES_EN.put("inGame.ui.template_group.remove_template.title", "§cRemove Template");
-        MESSAGES_EN.put("inGame.ui.template_group.remove_template.text", "§7Choose a template");
-        MESSAGES_EN.put("inGame.ui.template_group.change_display.title", "§fEdit Display Name");
-        MESSAGES_EN.put("inGame.ui.template_group.change_display.element.display", "§7New display name");
-
-        // ui - skin model
-        MESSAGES_EN.put("inGame.ui.skin_model.main.title", "§6Manage Skin Models");
-        MESSAGES_EN.put("inGame.ui.skin_model.main.text", "§7Choose an option");
-        MESSAGES_EN.put("inGame.ui.skin_model.main.button.create", "§aCreate");
-        MESSAGES_EN.put("inGame.ui.skin_model.main.button.edit", "§6Edit");
-        MESSAGES_EN.put("inGame.ui.skin_model.main.button.remove", "§cRemove");
-        MESSAGES_EN.put("inGame.ui.skin_model.main.button.list", "§eList");
-        MESSAGES_EN.put("inGame.ui.skin_model.edit_selection.title", "§6Select Model");
-        MESSAGES_EN.put("inGame.ui.skin_model.edit_selection.text", "§7Choose an option");
-        MESSAGES_EN.put("inGame.ui.skin_model.create.title", "§aCreate Model");
-        MESSAGES_EN.put("inGame.ui.skin_model.create.element.id.text", "§7ID of the model");
-        MESSAGES_EN.put("inGame.ui.skin_model.create.element.skin_file.text", "§7Texture path §8(§c./ §8= §eplugin_data folder§8)");
-        MESSAGES_EN.put("inGame.ui.skin_model.create.element.geo_name.text", "§7Geometry identifier");
-        MESSAGES_EN.put("inGame.ui.skin_model.create.element.geo_file.text", "§7Geometry path §8(§c./ §8= §eplugin_data folder§8)");
-        MESSAGES_EN.put("inGame.ui.skin_model.remove.title", "§cRemove Model");
-        MESSAGES_EN.put("inGame.ui.skin_model.remove.text", "§7Choose an option");
-        MESSAGES_EN.put("inGame.ui.skin_model.edit.title", "§6Edit Model");
-        MESSAGES_EN.put("inGame.ui.skin_model.edit.element.skin_file.text", "§7Texture path §8(§c./ §8= §eplugin_data folder§8)");
-        MESSAGES_EN.put("inGame.ui.skin_model.edit.element.geo_name.text", "§7Geometry identifier");
-        MESSAGES_EN.put("inGame.ui.skin_model.edit.element.geo_file.text", "§7Geometry path §8(§c./ §8= §eplugin_data folder§8)");
     }
 
     static {
@@ -250,14 +160,13 @@ public final class DefaultMessages {
         MESSAGES_GER.put("inGame.command.description.cloud", "Verwalte die Cloud");
         MESSAGES_GER.put("inGame.command.description.cloud_notify", "Aktiviere/Deaktiviere Benachrichtigungen");
         MESSAGES_GER.put("inGame.command.description.hub", "Gehe zur Lobby");
-        MESSAGES_GER.put("inGame.command.description.cloudnpc", "Verwalte die Cloud-NPCs");
-        MESSAGES_GER.put("inGame.command.description.template_group", "Verwalte die Template-Gruppen");
         MESSAGES_GER.put("inGame.command.description.transfer", "Verbinde dich mit anderen Servern");
 
         // general
         MESSAGES_GER.put("inGame.prefix", "§8[§l§3Pocket§bCloud§r§8] §r");
         MESSAGES_GER.put("inGame.no.permission", "{PREFIX}§cDafür hast du keine Rechte!");
         MESSAGES_GER.put("inGame.template.kick.maintenance", "§cDieses Template befindet sich momentan in Wartung.");
+        MESSAGES_GER.put("inGame.request.timed.out", "{PREFIX}§cAnfrage mit der Id §e%0% §8(§b%1%§8) §cist abgelaufen.");
 
         // notify messages
         MESSAGES_GER.put("inGame.notify.message.server_starting", "{PREFIX}§fDer Server §b%server% §fwird §agestartet§r...");
@@ -303,27 +212,6 @@ public final class DefaultMessages {
         MESSAGES_GER.put("inGame.text.successful.action_bar", "{PREFIX}§aDu hast §e%0% §aerfolgreich eine §eActionbar-Nachricht §ageschickt!");
         MESSAGES_GER.put("inGame.text.successful.toast_notification", "{PREFIX}§aDu hast §e%0% §aerfolgreich eine §eToast-Benachrichtigung §ageschickt!");
         MESSAGES_GER.put("inGame.console.log.successful", "{PREFIX}§aText wurde erfolgreich an die §bCloud §ageschickt!");
-
-        // cloudnpc
-        MESSAGES_GER.put("inGame.cloudnpc.created", "{PREFIX}§aCloudNPC wurde erstellt!");
-        MESSAGES_GER.put("inGame.cloudnpc.removed", "{PREFIX}§cCloudNPC wurde entfernt!");
-        MESSAGES_GER.put("inGame.cloudnpc.select", "{PREFIX}§7Schlage einen CloudNPC, um ihn zu entfernen!");
-        MESSAGES_GER.put("inGame.cloudnpc.process.cancelled", "{PREFIX}§cProzess wurde abgebrochen!");
-        MESSAGES_GER.put("inGame.cloudnpc.quickjoin.no_server", "{PREFIX}§cKein Server gefunden!");
-        MESSAGES_GER.put("inGame.cloudnpc.name_tag", "§e%1%\n§8» §7%0% spielen.");
-        MESSAGES_GER.put("inGame.cloudnpc.name_tag.maintenance", "§e%1% §8- §c§lWARTUNG§r\n§8» §7%0% spielen.");
-
-        // template groups
-        MESSAGES_GER.put("inGame.template_group.exists", "{PREFIX}§cEine Template-Gruppe mit der Id §e%0% §cexistiert bereits!");
-        MESSAGES_GER.put("inGame.template_group.created", "{PREFIX}§aDie Template-Gruppe mit der Id §e%0% §awurde erstellt!");
-        MESSAGES_GER.put("inGame.template_group.removed", "{PREFIX}§cDie Template-Gruppe mit der Id §e%0% §cwurde entfernt!");
-
-        // skin models
-        MESSAGES_GER.put("inGame.skin_model.created", "{PREFIX}§aDas Model mit der Id §e%0% §awurde erstellt!");
-        MESSAGES_GER.put("inGame.skin_model.edited", "{PREFIX}§aDas Model mit der Id §e%0% §awurde bearbeitet!");
-        MESSAGES_GER.put("inGame.skin_model.removed", "{PREFIX}§cDas Model mit der Id §e%0% §cwurde entfernt!");
-        MESSAGES_GER.put("inGame.skin_model.failed", "{PREFIX}§cDas Model mit der Id §e%0% §ckonnte nicht erstellt werden, da die Pfade nicht korrekt sind!");
-        MESSAGES_GER.put("inGame.skin_model.exists", "{PREFIX}§cDas Model mit der Id §e%0% §cexistiert bereits!");
 
         // proxy
         MESSAGES_GER.put("inGame.proxy.stopped", "§f§lProxy wird heruntergefahren...");
@@ -397,76 +285,6 @@ public final class DefaultMessages {
 
         // kick
         MESSAGES_GER.put("inGame.kick.successful", "{PREFIX}§aDu hast §e%0% §aerfolgreich gekickt!");
-
-        // ui - cloudnpc
-        MESSAGES_GER.put("inGame.ui.cloudnpc.main.title", "§eNPCs verwalten");
-        MESSAGES_GER.put("inGame.ui.cloudnpc.main.text", "§7Wähle eine Option");
-        MESSAGES_GER.put("inGame.ui.cloudnpc.main.button.create", "§aErstelle einen NPC");
-        MESSAGES_GER.put("inGame.ui.cloudnpc.main.button.remove", "§cEntferne einen NPC");
-        MESSAGES_GER.put("inGame.ui.cloudnpc.main.button.list", "§eListe alle NPCs");
-        MESSAGES_GER.put("inGame.ui.cloudnpc.main.button.models", "§6Verwalte Skin-Modelle");
-        MESSAGES_GER.put("inGame.ui.cloudnpc.create.title", "§aNPC erstellen");
-        MESSAGES_GER.put("inGame.ui.cloudnpc.create.element.name.text", "§7Template");
-        MESSAGES_GER.put("inGame.ui.cloudnpc.create.element.model.text", "§7Skin-Modell");
-        MESSAGES_GER.put("inGame.ui.cloudnpc.create.element.headRotation.text", "§7Kopf-Rotation?");
-        MESSAGES_GER.put("inGame.ui.cloudnpc.list.title", "§eNPC Liste");
-        MESSAGES_GER.put("inGame.ui.cloudnpc.list.text", "§7Aktuell sind §e%0% NPC(s) §7verfügbar.");
-        MESSAGES_GER.put("inGame.ui.cloudnpc.list_view.title", "§e%0%");
-        MESSAGES_GER.put("inGame.ui.cloudnpc.list_view.button.teleport", "§aTeleportieren");
-        MESSAGES_GER.put("inGame.ui.cloudnpc.list_view.button.back", "§cZurück");
-        MESSAGES_GER.put("inGame.ui.cloudnpc.choose_server.title", "§e%0%");
-        MESSAGES_GER.put("inGame.ui.cloudnpc.choose_server.text", "§e%0% Server §7mit dem Template §e%1% §7verfügbar.");
-        MESSAGES_GER.put("inGame.ui.cloudnpc.choose_server.no.server", "§cKeine Server verfügbar");
-        MESSAGES_GER.put("inGame.ui.cloudnpc.choose_server.button.server", "§e%0%\n§a%1%§8/§c%2%");
-        MESSAGES_GER.put("inGame.ui.cloudnpc.choose_template.title", "§e%0%");
-        MESSAGES_GER.put("inGame.ui.cloudnpc.choose_template.text", "§7Wähle ein Template aus der Gruppe §e%0% §7aus.");
-        MESSAGES_GER.put("inGame.ui.cloudnpc.choose_template.button.template", "§e%0%\n§a%1%§8/§c%2%");
-
-        // ui - template group
-        MESSAGES_GER.put("inGame.ui.template_group.main.title", "§6Template-Gruppen verwalten");
-        MESSAGES_GER.put("inGame.ui.template_group.main.text", "§7Wähle eine Option");
-        MESSAGES_GER.put("inGame.ui.template_group.main.button.create", "§aErstellen");
-        MESSAGES_GER.put("inGame.ui.template_group.main.button.edit", "§6Bearbeiten");
-        MESSAGES_GER.put("inGame.ui.template_group.main.button.remove", "§cEntfernen");
-        MESSAGES_GER.put("inGame.ui.template_group.main.button.list", "§eListe");
-        MESSAGES_GER.put("inGame.ui.template_group.create.title", "§aGruppe erstellen");
-        MESSAGES_GER.put("inGame.ui.template_group.create.element.id.text", "§7Gruppen-ID");
-        MESSAGES_GER.put("inGame.ui.template_group.create.element.display.text", "§7Anzeigename");
-        MESSAGES_GER.put("inGame.ui.template_group.remove.title", "§cGruppe entfernen");
-        MESSAGES_GER.put("inGame.ui.template_group.remove.text", "§7Wähle eine Template-Gruppe");
-        MESSAGES_GER.put("inGame.ui.template_group.edit_selection.title", "§6Gruppe auswählen");
-        MESSAGES_GER.put("inGame.ui.template_group.edit_selection.text", "§7Wähle eine Option");
-        MESSAGES_GER.put("inGame.ui.template_group.edit.text", "§7Wähle eine Option");
-        MESSAGES_GER.put("inGame.ui.template_group.edit.button.add_template", "§aTemplate hinzufügen");
-        MESSAGES_GER.put("inGame.ui.template_group.edit.button.remove_template", "§cTemplate entfernen");
-        MESSAGES_GER.put("inGame.ui.template_group.edit.button.change_display", "§fAnzeigename ändern");
-        MESSAGES_GER.put("inGame.ui.template_group.add_template.title", "§aTemplate hinzufügen");
-        MESSAGES_GER.put("inGame.ui.template_group.add_template.text", "§7Wähle ein Template");
-        MESSAGES_GER.put("inGame.ui.template_group.remove_template.title", "§cTemplate entfernen");
-        MESSAGES_GER.put("inGame.ui.template_group.remove_template.text", "§7Wähle ein Template");
-        MESSAGES_GER.put("inGame.ui.template_group.change_display.title", "§fAnzeigename bearbeiten");
-        MESSAGES_GER.put("inGame.ui.template_group.change_display.element.display", "§7Neuer Anzeigename");
-
-        // ui - skin model
-        MESSAGES_GER.put("inGame.ui.skin_model.main.title", "§6Skin-Modelle verwalten");
-        MESSAGES_GER.put("inGame.ui.skin_model.main.text", "§7Wähle eine Option");
-        MESSAGES_GER.put("inGame.ui.skin_model.main.button.create", "§aErstellen");
-        MESSAGES_GER.put("inGame.ui.skin_model.main.button.edit", "§6Bearbeiten");
-        MESSAGES_GER.put("inGame.ui.skin_model.main.button.remove", "§cEntfernen");
-        MESSAGES_GER.put("inGame.ui.skin_model.main.button.list", "§eListe");
-        MESSAGES_GER.put("inGame.ui.skin_model.edit_selection.title", "§6Modell auswählen");
-        MESSAGES_GER.put("inGame.ui.skin_model.edit_selection.text", "§7Wähle eine Option");
-        MESSAGES_GER.put("inGame.ui.skin_model.create.title", "§aModell erstellen");
-        MESSAGES_GER.put("inGame.ui.skin_model.create.element.id.text", "§7ID des Modells");
-        MESSAGES_GER.put("inGame.ui.skin_model.create.element.skin_file.text", "§7Textur-Dateipfad §8(§c./ §8= §eplugin_data Ordner§8)");
-        MESSAGES_GER.put("inGame.ui.skin_model.create.element.geo_name.text", "§7Geometrie-Bezeichner");
-        MESSAGES_GER.put("inGame.ui.skin_model.create.element.geo_file.text", "§7Geometrie-Dateipfad §8(§c./ §8= §eplugin_data Ordner§8)");
-        MESSAGES_GER.put("inGame.ui.skin_model.remove.title", "§cModell entfernen");
-        MESSAGES_GER.put("inGame.ui.skin_model.remove.text", "§7Wähle eine Option");
-        MESSAGES_GER.put("inGame.ui.skin_model.edit.title", "§6Modell bearbeiten");
-        MESSAGES_GER.put("inGame.ui.skin_model.edit.element.skin_file.text", "§7Textur-Dateipfad §8(§c./ §8= §eplugin_data Ordner§8)");
-        MESSAGES_GER.put("inGame.ui.skin_model.edit.element.geo_name.text", "§7Geometrie-Bezeichner");
-        MESSAGES_GER.put("inGame.ui.skin_model.edit.element.geo_file.text", "§7Geometrie-Dateipfad §8(§c./ §8= §eplugin_data Ordner§8)");
     }
 
     private DefaultMessages() {}

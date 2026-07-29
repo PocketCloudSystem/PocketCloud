@@ -43,31 +43,42 @@ public enum ConsoleColor {
     }
 
     public static String convert(@NotNull String input) {
-        StringBuilder result = new StringBuilder();
-        String[] parts = input.split(String.valueOf(SYMBOL));
+        return convert(input, true);
+    }
+
+    public static String convert(@NotNull String input, boolean appendReset) {
+        if (input.isEmpty()) return appendReset ? RESET.ansiCode().toString() : "";
+
+        StringBuilder result = new StringBuilder(input.length() * 2);
+        String[] parts = input.split(String.valueOf(SYMBOL), -1);
 
         result.append(parts[0]);
 
         for (int i = 1; i < parts.length; i++) {
             String part = parts[i];
-            if (part.isEmpty()) continue;
+            if (part.isEmpty()) {
+                result.append(SYMBOL);
+                continue;
+            }
 
             char code = Character.toLowerCase(part.charAt(0));
             String remaining = part.substring(1);
 
             ConsoleColor color = fromCode(code);
-            if (color != null && color.ansiCode() != null) {
+            if (color != null) {
                 result.append(color.ansiCode());
+                result.append(remaining);
+            } else {
+                result.append(SYMBOL).append(part.charAt(0)).append(remaining);
             }
-            result.append(remaining);
         }
 
-        result.append(ConsoleColor.RESET.ansiCode());
+        if (appendReset) result.append(RESET.ansiCode());
         return result.toString();
     }
 
     public static String clean(@NotNull String input) {
-        return input.replaceAll(SYMBOL + "[0-9a-ur-t]", "");
+        return input.replaceAll(SYMBOL + "[0-9a-fk-or]", "");
     }
 
     @Nullable

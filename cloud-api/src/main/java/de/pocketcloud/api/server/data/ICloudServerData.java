@@ -21,17 +21,17 @@ public interface ICloudServerData {
 
     @Nullable Long tempProcessId();
 
-    @Nullable Double tps();
+    Double tps();
 
-    @Nullable Double avgTps();
+    Double avgTps();
 
-    @Nullable Double memoryUsage();
+    Long memoryUsage();
 
-    @Nullable Double memoryPeak();
+    Long memoryPeak();
 
-    @Nullable Double memoryLimit();
+    Long memoryLimit();
 
-    @Nullable Double cpuUsage();
+    Double cpuUsage();
 
     ICloudServerData processId(Long processId);
 
@@ -41,11 +41,11 @@ public interface ICloudServerData {
 
     ICloudServerData avgTps(Double avgTps);
 
-    ICloudServerData memoryUsage(Double memoryUsage);
+    ICloudServerData memoryUsage(Long memoryUsage);
 
-    ICloudServerData memoryPeak(Double memoryPeak);
+    ICloudServerData memoryPeak(Long memoryPeak);
 
-    ICloudServerData memoryLimit(Double memoryLimit);
+    ICloudServerData memoryLimit(Long memoryLimit);
 
     ICloudServerData cpuUsage(Double cpuUsage);
 }

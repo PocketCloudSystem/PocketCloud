@@ -2,6 +2,7 @@ package de.pocketcloud.api.provider;
 
 import de.pocketcloud.api.language.ILanguage;
 
+import java.util.Collection;
 import java.util.Optional;
 
 public interface ILanguageProvider {
@@ -15,4 +16,6 @@ public interface ILanguageProvider {
     ILanguage fallback();
 
     Optional<ILanguage> get(String name);
+
+    Collection<ILanguage> getAll();
 }

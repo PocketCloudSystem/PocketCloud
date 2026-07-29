@@ -20,7 +20,9 @@ public final class PlayerSwitchServerPacket extends CloudPacket implements Cloud
     }
 
     @Override
-    public void encodePayload(IPacketData packetData) {}
+    public void encodePayload(IPacketData packetData) {
+        packetData.writeAll(player, newServer);
+    }
 
     @Override
     public void decodePayload(IPacketData packetData) {

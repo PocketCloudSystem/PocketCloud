@@ -21,34 +21,34 @@ public abstract class TrafficMonitor {
     @Getter
     protected final long timestamp;
     protected volatile Long monitoringDuration = null;
-    protected final Map<TrafficDirection, List<TriConsumer<Channel, Object, Long>>> handlers = new ConcurrentHashMap<>();
-    protected final Map<TrafficDirection, TrafficWindow> windows = new ConcurrentHashMap<>();
+    protected final Map<de.pocketcloud.api.network.traffic.TrafficDirection, List<TriConsumer<Channel, Object, Long>>> handlers = new ConcurrentHashMap<>();
+    protected final Map<de.pocketcloud.api.network.traffic.TrafficDirection, TrafficWindow> windows = new ConcurrentHashMap<>();
     protected volatile Consumer<Object[]> stopMonitoringHandler = null;
 
     protected TrafficMonitor() {
         this.timestamp = TimeUtils.currentSeconds();
 
-        for (TrafficDirection direction : TrafficDirection.values()) {
+        for (de.pocketcloud.api.network.traffic.TrafficDirection direction : de.pocketcloud.api.network.traffic.TrafficDirection.values()) {
             windows.put(direction, new TrafficWindow(WINDOW_SECONDS));
             handlers.put(direction, new CopyOnWriteArrayList<>());
         }
     }
 
     public TrafficMonitor monitorIn(TriConsumer<Channel, Object, Long> handler) {
-        return addHandler(TrafficDirection.IN, handler);
+        return addHandler(de.pocketcloud.api.network.traffic.TrafficDirection.IN, handler);
     }
 
     public TrafficMonitor monitorOut(TriConsumer<Channel, Object, Long> handler) {
-        return addHandler(TrafficDirection.OUT, handler);
+        return addHandler(de.pocketcloud.api.network.traffic.TrafficDirection.OUT, handler);
     }
 
-    protected TrafficMonitor addHandler(TrafficDirection direction, TriConsumer<Channel, Object, Long> handler) {
+    protected TrafficMonitor addHandler(de.pocketcloud.api.network.traffic.TrafficDirection direction, TriConsumer<Channel, Object, Long> handler) {
         if (!handlers.containsKey(direction)) handlers.put(direction, new CopyOnWriteArrayList<>());
         handlers.get(direction).add(handler);
         return this;
     }
 
-    public void pushBytes(TrafficDirection direction, long bytes) {
+    public void pushBytes(de.pocketcloud.api.network.traffic.TrafficDirection direction, long bytes) {
         if (!active.get()) return;
         windows.get(direction).push(bytes);
     }
@@ -57,7 +57,7 @@ public abstract class TrafficMonitor {
         windows.values().forEach(TrafficWindow::cleanup);
     }
 
-    public void callHandlers(TrafficDirection direction, Channel address, Object buffer, Long bytes) {
+    public void callHandlers(de.pocketcloud.api.network.traffic.TrafficDirection direction, Channel address, Object buffer, Long bytes) {
         if (!active.get()) return;
         if (!handlers.containsKey(direction)) return;
         handlers.get(direction).forEach(handler -> handler.accept(address, buffer, bytes));
@@ -95,18 +95,18 @@ public abstract class TrafficMonitor {
     }
 
     public long getTotalBytes() {
-        return getTotalBytes(TrafficDirection.IN) + getTotalBytes(TrafficDirection.OUT);
+        return getTotalBytes(de.pocketcloud.api.network.traffic.TrafficDirection.IN) + getTotalBytes(de.pocketcloud.api.network.traffic.TrafficDirection.OUT);
     }
 
-    public long getTotalBytes(TrafficDirection direction) {
+    public long getTotalBytes(de.pocketcloud.api.network.traffic.TrafficDirection direction) {
         return windows.get(direction).total();
     }
 
     public long getAverageTotalBytes() {
-        return getAverageBytes(TrafficDirection.IN) + getAverageBytes(TrafficDirection.OUT);
+        return getAverageBytes(de.pocketcloud.api.network.traffic.TrafficDirection.IN) + getAverageBytes(de.pocketcloud.api.network.traffic.TrafficDirection.OUT);
     }
 
-    public long getAverageBytes(TrafficDirection direction) {
+    public long getAverageBytes(de.pocketcloud.api.network.traffic.TrafficDirection direction) {
         return windows.get(direction).windowSum();
     }
 

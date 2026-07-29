@@ -1,14 +1,14 @@
 package de.pocketcloud.cloud.server.start;
 
-import de.pocketcloud.cloud.PocketCloud;
+import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.server.CloudServer;
 import de.pocketcloud.common.concurrent.Promise;
 import de.pocketcloud.common.util.TerminalUtils;
 import de.pocketcloud.shared.component.software.ServerSoftware;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.*;
 
 import static de.pocketcloud.cloud.server.CloudServerManager.SERVER_EXECUTOR;
@@ -24,16 +24,22 @@ public final class TmuxServerStartMethod implements ServerStartMethod {
             for (CloudServer server : servers) {
                 String paneName = server.name() + "-" + server.uuid().toString();
                 ServerSoftware software = (ServerSoftware) server.template().serverSoftware();
-                String startCommand = software.download().startCommand()
-                        .replace("{BINARY_PATH}", PocketCloud.instance().software().binaryDirectoryPath(software).toAbsolutePath() + File.separator)
-                        .replace("{SOFTWARE_PATH}", PocketCloud.instance().software().directoryPath(software).toAbsolutePath() + File.separator);
+                String startCommand = prepareStartCommand(software, server);
+                Path loggingPath = server.customLogFilePath();
 
-                commands.add("cd " + TerminalUtils.shellEscape(server.path().toAbsolutePath().toString()) +
-                        " " +
-                        "&&" +
-                        "tmux new-session -d -s " + TerminalUtils.shellEscape(paneName) +
-                        " " +
-                        "bash -lc " + TerminalUtils.shellEscape("exec " + startCommand));
+                commands.add(
+                        "cd " + TerminalUtils.shellEscape(server.path().toAbsolutePath().toString()) +
+                                " && " +
+                                "tmux new-session -d -s " + TerminalUtils.shellEscape(paneName) +
+                                " bash -lc " + TerminalUtils.shellEscape("exec " + startCommand) +
+                                " && " +
+                                "tmux pipe-pane -t " + TerminalUtils.shellEscape(paneName) +
+                                " -o " +
+                                TerminalUtils.shellEscape("cat >> " + loggingPath.toAbsolutePath())
+                );
+
+                CloudLogger.get().debug("Starting {} with {}", server.name(), commands.getLast());
+
                 map.put(paneName, null);
             }
 

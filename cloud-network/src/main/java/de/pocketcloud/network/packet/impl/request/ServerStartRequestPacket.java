@@ -20,7 +20,9 @@ public final class ServerStartRequestPacket extends RequestPacket implements Aut
     }
 
     @Override
-    public void encodePayload(IPacketData packetData) {}
+    public void encodePayload(IPacketData packetData) {
+        packetData.writeAll(templateName, count);
+    }
 
     @Override
     public void decodePayload(IPacketData packetData) {

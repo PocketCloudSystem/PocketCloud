@@ -14,7 +14,6 @@ import lombok.experimental.Accessors;
 
 import java.util.List;
 
-
 @Getter
 @Setter
 @Accessors(fluent = true)
@@ -31,6 +30,9 @@ public final class MainConfig extends OkaeriConfig implements ICloudConfig {
 
     @Comment({"The data provider used for storing data.", "Available providers are: json, mysql"})
     private String provider = "json";
+
+    @Comment({"Whether the recorded timings should be written into a file on cloud shutdown."})
+    private boolean writeTimingsOnShutdown = true;
 
     @Comment({"The network configuration for the cloud."})
     private NetworkConfiguration network = new NetworkConfiguration();

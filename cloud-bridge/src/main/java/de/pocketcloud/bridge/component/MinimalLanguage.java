@@ -2,7 +2,6 @@ package de.pocketcloud.bridge.component;
 
 import de.pocketcloud.api.language.ILanguage;
 import lombok.experimental.Accessors;
-import org.apache.commons.lang3.NotImplementedException;
 
 import java.nio.file.Path;
 import java.util.Map;
@@ -12,7 +11,7 @@ public record MinimalLanguage(String id, Map<String, String> messages) implement
 
     @Override
     public void fetchAndRepair() {
-        throw new NotImplementedException();
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -25,11 +24,11 @@ public record MinimalLanguage(String id, Map<String, String> messages) implement
 
     @Override
     public Map<String, String> defaultMessages() {
-        throw new NotImplementedException();
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public Path filePath() {
-        throw new NotImplementedException();
+        throw new UnsupportedOperationException();
     }
 }

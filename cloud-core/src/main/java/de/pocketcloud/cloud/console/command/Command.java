@@ -1,6 +1,7 @@
 package de.pocketcloud.cloud.console.command;
 
 import de.pocketcloud.api.logging.CloudLogLevel;
+import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.command.ctx.CommandContext;
 import de.pocketcloud.cloud.console.command.desc.CommandDescription;
 import de.pocketcloud.cloud.console.command.exception.ArgumentParseException;
@@ -11,6 +12,7 @@ import de.pocketcloud.cloud.console.command.holder.CommandUtilityHolder;
 import de.pocketcloud.cloud.console.command.parameter.BaseCommandParameter;
 import de.pocketcloud.cloud.console.command.sender.CommandSender;
 import de.pocketcloud.cloud.console.command.sub.SubCommand;
+import de.pocketcloud.common.concurrent.Promise;
 import lombok.Getter;
 import org.jetbrains.annotations.Nullable;
 
@@ -41,6 +43,14 @@ public abstract class Command extends CommandUtilityHolder {
         aliases = annotation.aliases();
 
         prepare();
+    }
+
+    public Promise<Boolean> awaitConfirmation(CommandSender sender, String prompt) {
+        return awaitConfirmation(sender, prompt, 10);
+    }
+
+    public Promise<Boolean> awaitConfirmation(CommandSender sender, String prompt, int timeoutInSeconds) {
+        return PocketCloud.instance().commands().awaitConfirmation(this, sender, prompt, timeoutInSeconds);
     }
 
     abstract public void prepare();
@@ -131,17 +141,19 @@ public abstract class Command extends CommandUtilityHolder {
             usage.append("\n");
         }
 
-        usage.append(getName());
+        if (!mustUseSubCommands()) {
+            usage.append(getName());
 
-        for (BaseCommandParameter parameter : parameters) {
-            usage.append(parameter.isOptional()
-                    ? " [" + parameter.getName() + ": " + parameter.getType() + "]"
-                    : " <" + parameter.getName() + ": " + parameter.getType() + ">"
-            );
-        }
+            for (BaseCommandParameter parameter : parameters) {
+                usage.append(parameter.isOptional()
+                        ? " [" + parameter.getName() + ": " + parameter.getType() + "]"
+                        : " <" + parameter.getName() + ": " + parameter.getType() + ">"
+                );
+            }
 
-        for (CommandFlag flag : flags.values()) {
-            usage.append(" ").append(flag.buildUsage());
+            for (CommandFlag flag : flags.values()) {
+                usage.append(" ").append(flag.buildUsage());
+            }
         }
 
         return usage.toString();

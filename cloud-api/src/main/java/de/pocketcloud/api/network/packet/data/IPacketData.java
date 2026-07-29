@@ -15,6 +15,10 @@ public interface IPacketData {
 
     Object peek();
 
+    Object readLast();
+
+    Object peekLast();
+
     String readString();
 
     Integer readInt();

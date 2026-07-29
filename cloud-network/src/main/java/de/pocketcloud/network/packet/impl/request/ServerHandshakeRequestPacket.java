@@ -21,7 +21,9 @@ public final class ServerHandshakeRequestPacket extends RequestPacket implements
     }
 
     @Override
-    public void encodePayload(IPacketData packetData) {}
+    public void encodePayload(IPacketData packetData) {
+        packetData.writeAll(serverName, processId, maxPlayers);
+    }
 
     @Override
     public void decodePayload(IPacketData packetData) {

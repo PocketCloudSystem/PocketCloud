@@ -20,7 +20,9 @@ public final class ServerStopRequestPacket extends RequestPacket implements Auth
     }
 
     @Override
-    public void encodePayload(IPacketData packetData) {}
+    public void encodePayload(IPacketData packetData) {
+        packetData.writeAll(server, forcefully);
+    }
 
     @Override
     public void decodePayload(IPacketData packetData) {

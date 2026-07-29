@@ -31,7 +31,7 @@ public class NetworkNettyServer {
     private final int packetSizeLimit;
     @Getter(AccessLevel.NONE)
     private final ChannelGroup channels = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
-    private final String authToken = StringUtils.generate(15);
+    private final String authToken = StringUtils.generate(32);
 
     private final EventLoopGroup bossGroup = new MultiThreadIoEventLoopGroup(
             new DefaultThreadFactory("boss-group"),

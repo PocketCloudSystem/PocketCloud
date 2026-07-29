@@ -1,6 +1,9 @@
 package de.pocketcloud.cloud.http.io;
 
 import com.google.gson.JsonObject;
+import de.pocketcloud.api.network.traffic.TrafficDirection;
+import de.pocketcloud.cloud.PocketCloud;
+import de.pocketcloud.cloud.http.traffic.HttpTrafficMonitor;
 import de.pocketcloud.common.util.FileUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -181,6 +184,7 @@ public final class HttpResponse {
 
         response.headers().set(HttpHeaderNames.CONTENT_TYPE, contentType + "; charset=UTF-8");
         response.headers().set(HttpHeaderNames.CONTENT_LENGTH, content.readableBytes());
+        PocketCloud.instance().traffic().pushBytes(HttpTrafficMonitor.class, TrafficDirection.OUT, content.readableBytes());
 
         if (keepAlive) {
             response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);

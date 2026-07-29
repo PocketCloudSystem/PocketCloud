@@ -14,7 +14,7 @@ public interface PacketTrafficListener {
 
     default void onUnknownPacket(Channel address, byte[] payload, int length) {}
 
-    default void onTooLargePacket(Channel address, @Nullable Packet packet, int length, TrafficDirection direction) {}
+    default void onTooLargePacket(Channel address, @Nullable Packet packet, int length, de.pocketcloud.api.network.traffic.TrafficDirection direction) {}
 
     PacketTrafficListener NOOP = new PacketTrafficListener() {
 

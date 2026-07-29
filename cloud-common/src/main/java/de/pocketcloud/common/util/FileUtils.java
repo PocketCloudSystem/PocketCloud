@@ -24,7 +24,7 @@ import java.util.stream.Stream;
 public final class FileUtils {
 
     public static final ExecutorService IO_EXECUTOR = Executors.newFixedThreadPool(
-            Runtime.getRuntime().availableProcessors(),
+            Math.max(2, Runtime.getRuntime().availableProcessors() / 4),
             r -> {
                 Thread t = new Thread(r, "I/O-Worker");
                 t.setDaemon(true);

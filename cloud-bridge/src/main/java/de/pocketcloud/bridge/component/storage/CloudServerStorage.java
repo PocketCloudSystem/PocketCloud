@@ -13,10 +13,6 @@ public final class CloudServerStorage extends BaseCloudServerStorage {
         super(serverUuid);
     }
 
-    public CloudServerStorage(UUID serverUuid, Map<String, Object> storage) {
-        super(serverUuid, storage);
-    }
-
     @Override
     public void syncIn(Map<String, Object> data) {
         storage.clear();

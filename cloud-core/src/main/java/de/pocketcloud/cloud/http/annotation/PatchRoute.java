@@ -19,4 +19,6 @@ public @interface PatchRoute {
     Class<? extends IAuthentication> authentication() default DefaultAuthentication.class;
 
     Class<? extends AuthenticationFailedHandler> onAuthFailed() default DefaultAuthFailedHandler.class;
+
+    int version() default -1;
 }

@@ -3,8 +3,8 @@ package de.pocketcloud.cloud.server.config;
 import de.pocketcloud.api.component.software.IServerSoftware;
 import de.pocketcloud.api.template.TemplateType;
 import de.pocketcloud.cloud.console.log.CloudLogger;
-import de.pocketcloud.cloud.server.config.impl.PocketMineConfig;
-import de.pocketcloud.cloud.server.config.impl.PocketMineServerProperties;
+import de.pocketcloud.cloud.server.config.impl.PowerNukkitXCloudConfig;
+import de.pocketcloud.cloud.server.config.impl.PowerNukkitXConfig;
 import de.pocketcloud.cloud.server.config.impl.WaterdogConfig;
 import de.pocketcloud.cloud.template.util.TemplateTypeHelper;
 import de.pocketcloud.cloud.util.PocketCloudPaths;
@@ -26,8 +26,8 @@ public final class ServerPropertiesGenerator implements Loadable {
 
     @Override
     public void load() {
-        register(new PocketMineConfig());
-        register(new PocketMineServerProperties());
+        register(new PowerNukkitXConfig());
+        register(new PowerNukkitXCloudConfig());
         register(new WaterdogConfig());
     }
 

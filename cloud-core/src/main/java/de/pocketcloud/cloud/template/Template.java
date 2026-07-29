@@ -5,14 +5,14 @@ import de.pocketcloud.api.component.software.IServerSoftware;
 import de.pocketcloud.api.sync.SyncingElement;
 import de.pocketcloud.api.template.TemplateType;
 import de.pocketcloud.api.template.settings.TemplateSettings;
-import de.pocketcloud.cloud.template.util.conv.ServerSoftwareConverter;
 import de.pocketcloud.cloud.util.PocketCloudPaths;
 import de.pocketcloud.cloud.util.gson.TemplateJsonSerializer;
-import de.pocketcloud.common.mapper.MapInline;
-import de.pocketcloud.common.mapper.MapKey;
-import de.pocketcloud.common.mapper.MapperUtils;
+import de.pocketcloud.common.serialization.MapperUtils;
+import de.pocketcloud.common.serialization.annotation.MapCreator;
+import de.pocketcloud.common.serialization.annotation.MapKey;
 import de.pocketcloud.network.packet.impl.SyncPacket;
 import de.pocketcloud.shared.component.BaseTemplate;
+import de.pocketcloud.shared.converter.SoftwareConverter;
 import de.pocketcloud.shared.sync.SyncType;
 
 import java.nio.file.Path;
@@ -26,15 +26,14 @@ public final class Template extends BaseTemplate implements SyncingElement<Templ
      */
     private transient boolean markedForRemoval = false;
 
-    @MapInline
-    private final TemplateSettings settings;
-    @MapKey(converter = ServerSoftwareConverter.class)
-    private final IServerSoftware serverSoftware;
-
-    public Template(String name, TemplateSettings settings, TemplateType templateType, IServerSoftware serverSoftware) {
+    @MapCreator
+    public Template(
+            @MapKey(name = "name") String name,
+            @MapKey(name = "settings") TemplateSettings settings,
+            @MapKey(name = "templateType") TemplateType templateType,
+            @MapKey(name = "serverSoftware", converter = SoftwareConverter.class) IServerSoftware serverSoftware
+    ) {
         super(name, settings, templateType, serverSoftware);
-        this.settings = settings;
-        this.serverSoftware = serverSoftware;
     }
 
     public Template markForRemoval() {
@@ -47,7 +46,7 @@ public final class Template extends BaseTemplate implements SyncingElement<Templ
 
     @Override
     public void syncOut() {
-        SyncPacket.create(SyncType.TEMPLATE, data -> data.write(this), Map.of("removal", markedForRemoval)).broadcast();
+        SyncPacket.create(SyncType.TEMPLATE, data -> data.writeAll(this, markedForRemoval)).broadcast();
     }
 
     @Override

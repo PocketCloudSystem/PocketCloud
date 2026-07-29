@@ -1,11 +1,11 @@
 package de.pocketcloud.cloud.event.impl.cloud;
 
-import de.pocketcloud.cloud.event.Event;
+import de.pocketcloud.cloud.event.CloudEvent;
 import lombok.Getter;
 
 import java.time.Instant;
 
-public class CloudReadyEvent extends Event {
+public class CloudReadyEvent extends CloudEvent {
 
     @Getter
     private final Instant time;

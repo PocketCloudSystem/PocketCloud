@@ -1,13 +1,14 @@
 package de.pocketcloud.cloud.network.packet.handler;
 
+import de.pocketcloud.api.CloudAPI;
 import de.pocketcloud.api.component.player.ICloudPlayer;
+import de.pocketcloud.api.component.server.ICloudServer;
 import de.pocketcloud.api.network.handler.PacketHandler;
 import de.pocketcloud.api.network.handler.PacketListener;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.cache.NotificationListCache;
 import de.pocketcloud.cloud.cache.WhitelistCache;
 import de.pocketcloud.cloud.console.log.CloudLogger;
-import de.pocketcloud.cloud.event.impl.player.PlayerSwitchServerEvent;
 import de.pocketcloud.cloud.network.client.ServerClient;
 import de.pocketcloud.cloud.player.CloudPlayer;
 import de.pocketcloud.cloud.server.CloudServer;
@@ -17,6 +18,7 @@ import de.pocketcloud.network.packet.impl.request.PlayerNotificationCheckRequest
 import de.pocketcloud.network.packet.impl.request.PlayerWhitelistCheckRequestPacket;
 import de.pocketcloud.network.packet.impl.response.PlayerNotificationCheckResponsePacket;
 import de.pocketcloud.network.packet.impl.response.PlayerWhitelistCheckResponsePacket;
+import de.pocketcloud.shared.event.player.PlayerTransferredEvent;
 import de.pocketcloud.shared.network.packet.type.NotificationType;
 
 import java.util.Map;
@@ -72,6 +74,7 @@ public final class PlayerPacketHandler implements PacketListener {
         if (cloudPlayer != null) {
             var server = PocketCloud.instance().servers().get(packet.getNewServer()).orElse(null);
             if (server != null) {
+                ICloudServer oldServer = cloudPlayer.currentServer().orElse(null);
                 if (PocketCloud.instance().notifications().canLog(NotificationType.PLAYER_SWITCHED_SERVER)) {
                     if (cloudPlayer.currentServerName() == null) {
                         CloudLogger.get().info("Player §b{} §rperformed an initial connect on §b{}§r.", cloudPlayer.name(), server.name());
@@ -79,13 +82,13 @@ public final class PlayerPacketHandler implements PacketListener {
                         CloudLogger.get().info("Player §b{} §rperformed a server switch from §b{} §rto §b{}§r.", cloudPlayer.name(), cloudPlayer.currentServerName(), server.name());
                     }
                 }
-                PocketCloud.instance().notifications().notify(NotificationType.PLAYER_SWITCHED_SERVER, Map.of(
+                PocketCloud.instance().notifications().sendNotification(NotificationType.PLAYER_SWITCHED_SERVER, Map.of(
                     "player", packet.getPlayer(),
                     "old_server", cloudPlayer.currentServerName() != null ? cloudPlayer.currentServerName() : "None",
                     "new_server", packet.getNewServer()
                 ), Map.of());
-                new PlayerSwitchServerEvent(cloudPlayer, (CloudServer) cloudPlayer.currentServer().orElse(null), (CloudServer) server).call();
-                cloudPlayer.changeCurrentProxy(server);
+                cloudPlayer.changeCurrentServer(server);
+                CloudAPI.instance().events().call(new PlayerTransferredEvent(cloudPlayer, oldServer, server));
             }
         }
     }

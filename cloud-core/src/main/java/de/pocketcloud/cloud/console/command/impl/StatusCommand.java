@@ -1,12 +1,12 @@
 package de.pocketcloud.cloud.console.command.impl;
 
+import de.pocketcloud.api.network.traffic.TrafficDirection;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.command.Command;
 import de.pocketcloud.cloud.console.command.ctx.CommandContext;
 import de.pocketcloud.cloud.console.command.desc.CommandDescription;
 import de.pocketcloud.cloud.console.command.sender.CommandSender;
 import de.pocketcloud.common.util.FormatUtils;
-import de.pocketcloud.network.traffic.TrafficDirection;
 import de.pocketcloud.network.traffic.TrafficMonitor;
 
 import java.lang.management.ManagementFactory;

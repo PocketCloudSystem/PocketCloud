@@ -24,7 +24,10 @@ public final class CommandExecuteRequestPacket extends RequestPacket implements 
     }
 
     @Override
-    public void decodePayload(IPacketData packetData) {}
+    public void decodePayload(IPacketData packetData) {
+        commandLine = packetData.readString();
+        id = packetData.readString();
+    }
 
     public static CommandExecuteRequestPacket create(String commandLine, String id) {
         return new CommandExecuteRequestPacket(commandLine, id);

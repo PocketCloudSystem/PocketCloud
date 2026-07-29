@@ -7,8 +7,7 @@ import de.pocketcloud.api.provider.write.IWriteServerProvider;
 import de.pocketcloud.api.search.ServerSearchQuery;
 import de.pocketcloud.api.template.TemplateType;
 import de.pocketcloud.cloud.console.log.CloudLogger;
-import de.pocketcloud.cloud.server.start.ServerStartMethod;
-import de.pocketcloud.cloud.server.util.ServerStartMethods;
+import de.pocketcloud.cloud.server.util.CloudServerStorage;
 import de.pocketcloud.cloud.server.util.ServerUtils;
 import de.pocketcloud.cloud.util.benchmark.Benchmark;
 import de.pocketcloud.common.concurrent.Promise;
@@ -23,6 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
 
 @Getter
@@ -30,7 +30,7 @@ import java.util.function.Consumer;
 public final class CloudServerManager implements Tickable, IWriteServerProvider {
 
     public static final ExecutorService SERVER_EXECUTOR = Executors.newFixedThreadPool(
-            Runtime.getRuntime().availableProcessors(),
+            Math.max(2, Runtime.getRuntime().availableProcessors() / 4),
             r -> {
                 Thread t = new Thread(r, "Server-Worker");
                 t.setDaemon(false);
@@ -38,10 +38,15 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
             }
     );
 
-    private static final int MULTI_START_BATCH_SIZE = 5;
-    private static final int MULTI_START_THRESHOLD = 5;
-
+    private static final int MAX_PARALLEL_PREPARES = 2;
     private static final int MAX_PARALLEL_STARTS = 2;
+    private static final long START_STALL_THRESHOLD_MS = 5000;
+
+    @Getter(AccessLevel.NONE)
+    private final Map<String, Long> startingServerTimestamps = new ConcurrentHashMap<>();
+
+    @Getter(AccessLevel.NONE)
+    private final Map<String, Long> preparingServerTimestamps = new ConcurrentHashMap<>();
 
     @Getter(AccessLevel.NONE)
     private final Map<String, CloudServer> servers = new ConcurrentHashMap<>();
@@ -49,8 +54,8 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
 
     private long lastServerStartTime = 0;
     private long lastServerStopTime = 0;
-    private long nextServerStartTime = 0;
 
+    @Getter(AccessLevel.NONE)
     private final Map<String, String> latestServerStartTimes = new ConcurrentHashMap<>();
 
     @Getter(AccessLevel.NONE)
@@ -69,6 +74,7 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
     @Override
     public void remove(ICloudServer server) {
         servers.remove(server.name());
+        if (startingServerTimestamps.remove(server.name()) != null) startingServers.decrementAndGet();
         ServerUtils.removeId(server.template(), server.id());
         ServerUtils.removePort(server.data().port());
         this.lastServerStopTime = System.currentTimeMillis();
@@ -78,14 +84,16 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
     @Override
     public Promise<Collection<String>> start(ITemplate template, int count) {
         Collection<String> startedServers = new ArrayList<>();
-
         if (!checkCapacity(template)) {
             CloudLogger.get().warn("Failed to start any more servers of §b{} §rdue to the max amount of servers already being reached.", template.name());
             return Promise.resolved(startedServers);
         }
 
+        int currentCount = query(ServerSearchQuery.create().ofTemplate(template)).size();
+        int maxCount = template.settings().maxServerCount();
+
         for (int i = 0; i < count; i++) {
-            if (!checkCapacity(template)) break;
+            if (currentCount >= maxCount) break;
             this.lastServerStartTime = System.currentTimeMillis();
 
             int id = ServerUtils.getFreeId(template);
@@ -102,13 +110,15 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
                 id,
                 uuid,
                 template.name(),
-                new CloudServerData(uuid, port, template.settings().maxPlayerCount())
+                new CloudServerData(uuid, port, template.settings().maxPlayerCount()),
+                new CloudServerStorage(uuid)
             );
 
             latestServerStartTimes.put(template.name(), server.name());
             add(server);
             serverPrepareQueue.offer(server);
             startedServers.add(server.name());
+            currentCount++;
         }
 
         return Promise.resolved(startedServers);
@@ -176,6 +186,20 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
         return Promise.resolved(all);
     }
 
+    public void stopAllAndWait(int timeoutMs) {
+        stopAll();
+        long start = System.currentTimeMillis();
+        while ((System.currentTimeMillis() - start) < timeoutMs) {
+            if (servers.isEmpty()) break;
+            LockSupport.parkNanos(1_000_000);
+        }
+
+        if (!servers.isEmpty()) {
+            CloudLogger.get().warn("Some servers still running after trying to shut them down, force stopping...");
+            stopAll(true);
+        }
+    }
+
     @Override
     public boolean check(String name) {
         return servers.containsKey(name);
@@ -201,70 +225,70 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
         Throwable exception = crashData.length > 1 ? (Throwable) crashData[1] : null;
         CloudLogger.get().warn("§cFailed to prepare server §e{}§8: §e{}", server.name(), exception != null ? exception.getMessage() : "Unknown error");
         if (exception != null) CloudLogger.get().exception(exception);
+        if (startingServerTimestamps.remove(server.name()) != null) startingServers.decrementAndGet();
     }
 
     @Override
     public void tick(long currentTick) {
-        servers.values().forEach(server -> ((CloudServer) server).tick(currentTick));
+        servers.values().forEach(server -> server.tick(currentTick));
 
+        Benchmark.startTiming("check_server_prepare_queue");
 
-        /**
-         * TODO
-         * <pr>How the cloud should actually start servers to save CPU</pr>
-         * {constant MAX_PARALLEL_STARTS = 2;}
-         * The cloud starts 2 servers and waits until they connected to the cloud + sent the respective HandshakePacket.
-         * The amount of servers currently starting is being saved to an AtomicInteger - which when reaching anything below 2, the cloud starts a new amount of servers by this formula:
-         * MAX_PARALLEL_STARTS - AtomicInteger.get() = n
-         *
-         * If a boot sequence of a server takes too long (not the server timeout specified inside the ServerSoftware) by a fixed amount of seconds (most likely 5), the cloud will just
-         * start another server.
-         *
-         */
-
-        if (!serverPrepareQueue.isEmpty()) {
-            Benchmark.startTiming("check_server_prepare_queue");
-
+        int prepareSlots = MAX_PARALLEL_PREPARES - activePreparingSlots();
+        while (prepareSlots > 0 && !serverPrepareQueue.isEmpty()) {
             CloudServer server = serverPrepareQueue.poll();
-            server.prepare()
-                .thenSuccess(_ -> addToStartQueue(server))
-                .failure(e -> onStartFailed(new Object[]{server, e}));
+            if (server == null) break;
 
-            Benchmark.stopTiming("check_server_prepare_queue");
-            return;
+            preparingServerTimestamps.put(server.name(), System.currentTimeMillis());
+            server.prepare()
+                    .thenSuccess(_ -> {
+                        preparingServerTimestamps.remove(server.name());
+                        addToStartQueue(server);
+                    })
+                    .failure(e -> {
+                        preparingServerTimestamps.remove(server.name());
+                        onStartFailed(new Object[]{server, e});
+                    });
+
+            prepareSlots--;
         }
 
+        Benchmark.stopTiming("check_server_prepare_queue");
+
         Benchmark.startTiming("check_server_start_queue");
-        if (currentTick >= nextServerStartTime && !serverStartQueue.isEmpty()) {
-            ServerStartMethod method = ServerStartMethods.current();
-            int queueSize = serverStartQueue.size();
-            if (queueSize >= MULTI_START_THRESHOLD) {
-                Collection<CloudServer> batch = new ArrayList<>();
-                int limit = Math.min(queueSize, MULTI_START_BATCH_SIZE);
-                for (int i = 0; i < limit; i++) batch.add(serverStartQueue.poll());
 
-                batch.forEach(CloudServer::start);
-                method.start(batch.toArray(new CloudServer[0])).thenSuccess(map -> {
-                    for (CloudServer server : batch) {
-                        if (map.containsKey(server.name())) {
-                            CloudServersHandler.handleStartSuccess(server, map.get(server.name()));
-                        } else {
-                            CloudServersHandler.handleStartFailure(server, null, true);
-                        }
-                    }
-                }).failure(ex -> {
-                    CloudLogger.get().exception("Failed to start servers", ex);
-                    for (CloudServer server : batch) {
-                        CloudServersHandler.handleStartFailure(server, ex, true);
-                    }
-                });
-            } else {
-                Objects.requireNonNull(serverStartQueue.poll()).start().boot();
-            }
+        int availableSlots = MAX_PARALLEL_STARTS - activeStartingSlots();
+        while (availableSlots > 0 && !serverStartQueue.isEmpty()) {
+            CloudServer server = serverStartQueue.poll();
+            if (server == null) break;
 
-            nextServerStartTime = currentTick + 10;
+            startingServerTimestamps.put(server.name(), System.currentTimeMillis());
+            startingServers.incrementAndGet();
+            server.start().boot();
+            availableSlots--;
         }
 
         Benchmark.stopTiming("check_server_start_queue");
+    }
+
+    private int activePreparingSlots() {
+        long now = System.currentTimeMillis();
+        return (int) preparingServerTimestamps.values().stream()
+                .filter(startedAt -> now - startedAt < START_STALL_THRESHOLD_MS)
+                .count();
+    }
+
+    private int activeStartingSlots() {
+        long now = System.currentTimeMillis();
+        return (int) startingServerTimestamps.values().stream()
+                .filter(startedAt -> now - startedAt < START_STALL_THRESHOLD_MS)
+                .count();
+    }
+
+    public void handleHandshakeReceived(String serverName) {
+        if (startingServerTimestamps.remove(serverName) != null) {
+            startingServers.decrementAndGet();
+        }
     }
 
     @Override

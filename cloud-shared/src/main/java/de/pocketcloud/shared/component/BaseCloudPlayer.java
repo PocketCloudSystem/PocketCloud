@@ -2,7 +2,6 @@ package de.pocketcloud.shared.component;
 
 import de.pocketcloud.api.component.player.ICloudPlayer;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -12,7 +11,6 @@ import java.util.UUID;
 @Getter
 @Setter
 @Accessors(fluent = true)
-@AllArgsConstructor
 public class BaseCloudPlayer implements ICloudPlayer {
 
     protected final String name;

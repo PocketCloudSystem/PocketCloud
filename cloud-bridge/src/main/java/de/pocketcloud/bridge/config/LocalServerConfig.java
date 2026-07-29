@@ -6,8 +6,10 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 
+import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.UUID;
 
 @Getter
@@ -40,5 +42,20 @@ public final class LocalServerConfig implements IEnvironmentConfig {
         this.localServerTimeout = localServerTimeout;
         this.cloudPath = cloudPath;
         this.language = language;
+    }
+
+    public static LocalServerConfig fromMap(Map<String, Object> map) {
+        return new LocalServerConfig(
+                new InetSocketAddress(map.get("network-address").toString(), Integer.parseInt(map.get("network-port").toString())),
+                map.get("network-auth-key").toString(),
+                Boolean.parseBoolean(map.get("network-encryption").toString()),
+                Integer.parseInt(map.get("network-packet-size-limit").toString()),
+                map.get("server-name").toString(),
+                UUID.fromString(map.get("server-uuid").toString()),
+                map.get("template-name").toString(),
+                Integer.parseInt(map.get("server-timeout").toString()),
+                Path.of(map.get("cloud-path").toString()),
+                map.get("cloud-language").toString()
+        );
     }
 }

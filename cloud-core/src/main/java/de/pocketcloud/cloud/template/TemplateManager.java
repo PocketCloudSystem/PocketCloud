@@ -1,5 +1,6 @@
 package de.pocketcloud.cloud.template;
 
+import de.pocketcloud.api.CloudAPI;
 import de.pocketcloud.api.component.builder.ITemplateBuilder;
 import de.pocketcloud.api.component.server.ICloudServer;
 import de.pocketcloud.api.component.template.ITemplate;
@@ -22,6 +23,10 @@ import de.pocketcloud.common.lifecycle.Loadable;
 import de.pocketcloud.common.lifecycle.Tickable;
 import de.pocketcloud.common.util.FileUtils;
 import de.pocketcloud.common.util.NumberUtils;
+import de.pocketcloud.shared.event.template.TemplateCreatedEvent;
+import de.pocketcloud.shared.event.template.TemplateDeletedEvent;
+import de.pocketcloud.shared.event.template.TemplateEditedEvent;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -69,6 +74,7 @@ public final class TemplateManager implements Tickable, Loadable, IWriteTemplate
             BenchmarkTiming res = Benchmark.stopTiming("template_creation");
             CloudLogger.get().success("Successfully §acreated §rthe template §b{}§r. §8(§rTook §b{}ms§8)", template.name(), NumberUtils.formatNumber(res.duration(), 2));
             template.syncOut();
+            CloudAPI.instance().events().call(new TemplateCreatedEvent(template));
         } catch (IOException e) {
             CloudLogger.get().exception("Failed to create template {}", e, template.name());
             Benchmark.stopTiming("template_creation");
@@ -77,6 +83,7 @@ public final class TemplateManager implements Tickable, Loadable, IWriteTemplate
     }
 
     @Override
+    @ApiStatus.Internal
     public void add(ITemplate template) {
         templates.put(template.name(), requireTemplate(template));
     }
@@ -97,6 +104,7 @@ public final class TemplateManager implements Tickable, Loadable, IWriteTemplate
         BenchmarkTiming res = Benchmark.stopTiming("template_editing");
         CloudLogger.get().success("Successfully §eedited §rthe template §b{}§r. §8(§rTook §b{}ms§8)", temp.name(), NumberUtils.formatNumber(res.duration(), 2));
         temp.syncOut();
+        CloudAPI.instance().events().call(new TemplateEditedEvent(template, editData));
         if (temp.settings().maintenance()) {
             temp.players().forEach(player -> {
                 if (template.settings().lobby()) {
@@ -111,6 +119,7 @@ public final class TemplateManager implements Tickable, Loadable, IWriteTemplate
     }
 
     @Override
+    @ApiStatus.Internal
     public void remove(ITemplate template) {
         templates.remove(template.name());
     }
@@ -126,6 +135,7 @@ public final class TemplateManager implements Tickable, Loadable, IWriteTemplate
             return;
         }
 
+        PocketCloud.instance().servers().stop(template);
         CloudProvider.current().removeTemplate(temp);
         if (Files.isDirectory(temp.path())) {
             try {
@@ -139,6 +149,7 @@ public final class TemplateManager implements Tickable, Loadable, IWriteTemplate
         BenchmarkTiming res = Benchmark.stopTiming("template_removal");
         CloudLogger.get().success("Successfully §cremoved §rthe template §b{}§r. §8(§rTook §b{}ms§8)", temp.name(), NumberUtils.formatNumber(res.duration(), 2));
         temp.markForRemoval().syncOut();
+        CloudAPI.instance().events().call(new TemplateDeletedEvent(template));
     }
 
     @Override
@@ -174,7 +185,7 @@ public final class TemplateManager implements Tickable, Loadable, IWriteTemplate
                 double requiredPercentage = template.settings().startNewPercentage();
                 if (requiredPercentage <= 0) continue;
                 int players = latest.playerCount();
-                double percentage = (double) (100 * players) / latest.data().maxPlayers();
+                double percentage = (double) players / latest.data().maxPlayers();
                 if (percentage >= requiredPercentage && PocketCloud.instance().servers().checkCapacity(template)) {
                     PocketCloud.instance().servers().start(template, 1);
                 }

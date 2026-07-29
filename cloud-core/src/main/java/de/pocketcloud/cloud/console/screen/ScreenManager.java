@@ -21,7 +21,7 @@ public final class ScreenManager implements Tickable {
     }
 
     public void reset() {
-        currentScreen = new DefaultScreen();
+        set(new DefaultScreen());
     }
 
     public Screen get() {

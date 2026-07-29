@@ -2,6 +2,7 @@ package de.pocketcloud.bridge;
 
 import de.pocketcloud.api.CloudAPI;
 import de.pocketcloud.api.config.IEnvironmentConfig;
+import de.pocketcloud.api.event.EventService;
 import de.pocketcloud.api.executor.IPlayerExecutor;
 import de.pocketcloud.api.language.LanguageKey;
 import de.pocketcloud.api.logging.ILogger;
@@ -15,6 +16,10 @@ import de.pocketcloud.bridge.network.NetworkNettyClient;
 import de.pocketcloud.bridge.network.packet.PacketRegistry;
 import de.pocketcloud.bridge.notification.NotificationService;
 import de.pocketcloud.bridge.provider.*;
+import de.pocketcloud.bridge.task.ChangeStatusTask;
+import de.pocketcloud.bridge.task.RequestTimeoutTask;
+import de.pocketcloud.bridge.task.ServerTimeoutTask;
+import de.pocketcloud.bridge.task.UpdatePerformanceStatsTask;
 import de.pocketcloud.bridge.util.ProcessPerformanceStats;
 import de.pocketcloud.common.cache.LocalCache;
 import de.pocketcloud.network.packet.impl.DisconnectPacket;
@@ -22,17 +27,19 @@ import de.pocketcloud.network.packet.impl.KeepAlivePacket;
 import de.pocketcloud.network.packet.impl.request.ServerHandshakeRequestPacket;
 import de.pocketcloud.network.packet.impl.response.ServerHandshakeResponsePacket;
 import de.pocketcloud.network.request.RequestManager;
+import de.pocketcloud.network.traffic.TrafficMonitorManager;
 import de.pocketcloud.shared.network.packet.type.ServerDisconnectReason;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
 @Getter
+@Accessors(fluent = true)
 public final class CloudBridge implements CloudAPI {
 
     @Getter
-    @Accessors(fluent = true)
     private static CloudBridge instance;
 
+    private VerificationStatus status = VerificationStatus.PENDING;
     private final ServiceRegistry registry = new ServiceRegistry();
 
     public CloudBridge(IPlatformPlugin platformPlugin, ILogger logger, IEnvironmentConfig config, NativePlayerAdapter<?> nativePlayerAdapter) {
@@ -48,9 +55,11 @@ public final class CloudBridge implements CloudAPI {
         registry.register(BridgePlayerExecutor.class, new BridgePlayerExecutor());
         registry.register(NotificationService.class, new NotificationService());
 
+        registry.register(TrafficMonitorManager.class, new TrafficMonitorManager());
         registry.register(NetworkNettyClient.class, new NetworkNettyClient(config.cloudNetworkAddress()));
         registry.register(RequestManager.class, new RequestManager());
         registry.register(PacketRegistry.class, new PacketRegistry());
+        registry.register(EventService.class, new EventService<>());
 
         packets().preload();
         packets().load();
@@ -59,17 +68,22 @@ public final class CloudBridge implements CloudAPI {
         registry.register(TemplateProvider.class, new TemplateProvider());
         registry.register(ServerGroupProvider.class, new ServerGroupProvider());
         registry.register(PlayerProvider.class, new PlayerProvider());
+        registry.register(SoftwareProvider.class, new SoftwareProvider());
         registry.register(LanguageProvider.class, new LanguageProvider());
 
         network().start();
+
+        platformPlugin.startTask(new RequestTimeoutTask(), 10);
+
         ServerHandshakeRequestPacket.create(
                 environmentConfig().localServerName(),
                 ProcessHandle.current().pid(),
                 platformPlugin.maxPlayers()
         ).sendRequest().then(res -> {
+            status = res.getVerificationStatus();
             if (res.getVerificationStatus() == VerificationStatus.VERIFIED) {
                 LocalCache.get(RandomCache.class).add(RandomCache.KEY_LAST_KEEP_ALIVE, System.currentTimeMillis());
-                platformPlugin.startTasks();
+                startOtherTasks();
                 logger.info(LanguageKey.INGAME_SERVER_VERIFIED.translate());
                 constructKeepAlive().sendPacket();
             } else {
@@ -81,6 +95,12 @@ public final class CloudBridge implements CloudAPI {
             if (t != null) logger.exception(t);
             shutdown();
         });
+    }
+
+    private void startOtherTasks() {
+        platformPlugin().startTask(new ChangeStatusTask(), 10);
+        platformPlugin().startTask(new ServerTimeoutTask(), 10);
+        platformPlugin().startTask(new UpdatePerformanceStatsTask(), 10);
     }
 
     public void shutdown() {
@@ -112,6 +132,11 @@ public final class CloudBridge implements CloudAPI {
 
     public ProcessPerformanceStats performanceStats() {
         return registry.get(ProcessPerformanceStats.class);
+    }
+
+    @SuppressWarnings("unchecked")
+    public EventService<Object> events() {
+        return (EventService<Object>) registry.get(EventService.class);
     }
 
     @Override
@@ -146,6 +171,11 @@ public final class CloudBridge implements CloudAPI {
     @Override
     public TemplateProvider templates() {
         return registry.get(TemplateProvider.class);
+    }
+
+    @Override
+    public SoftwareProvider softwares() {
+        return registry.get(SoftwareProvider.class);
     }
 
     @Override

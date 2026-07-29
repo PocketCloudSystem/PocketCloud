@@ -23,7 +23,9 @@ public final class ServerSaveResponsePacket extends ResponsePacket implements Cl
     }
 
     @Override
-    public void decodePayload(IPacketData packetData) {}
+    public void decodePayload(IPacketData packetData) {
+        errorReason = packetData.readEnum(ActionFailureReason.class);
+    }
 
     public static ServerSaveResponsePacket create(ActionFailureReason errorReason) {
         return new ServerSaveResponsePacket(errorReason);

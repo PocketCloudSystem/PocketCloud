@@ -6,7 +6,11 @@ public interface ISoftwareDownload {
 
     String filename();
 
-    String startCommand();
+    String[] startCommand();
+
+    default String realStartCommand() {
+        return String.join(" ", startCommand());
+    }
 
     boolean checkForUpdates();
 }

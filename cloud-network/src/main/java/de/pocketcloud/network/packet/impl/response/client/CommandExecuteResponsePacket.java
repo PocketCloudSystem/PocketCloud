@@ -19,7 +19,9 @@ public final class CommandExecuteResponsePacket extends ResponsePacket implement
     }
 
     @Override
-    public void encodePayload(IPacketData packetData) {}
+    public void encodePayload(IPacketData packetData) {
+        packetData.writeAll(commandExecutionResult);
+    }
 
     @Override
     public void decodePayload(IPacketData packetData) {

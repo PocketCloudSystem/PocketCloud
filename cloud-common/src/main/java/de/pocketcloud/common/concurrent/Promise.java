@@ -81,6 +81,10 @@ public final class Promise<T> {
         return future.completeExceptionally(error != null ? error : new RuntimeException("rejected with null error"));
     }
 
+    public boolean reject(String error) {
+        return future.completeExceptionally(error != null ? new RuntimeException(error) : new RuntimeException("rejected with null error"));
+    }
+
     public Promise<T> thenSuccess(Consumer<T> consumer) {
         future.thenAccept(value -> {
             if (consumer == null) return;

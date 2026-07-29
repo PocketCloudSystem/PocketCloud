@@ -8,12 +8,14 @@ import java.util.UUID;
 
 public final class CloudPlayer extends BaseCloudPlayer implements SyncingElement<ICloudPlayer> {
 
-    public CloudPlayer(String name, String address, String xboxUserId, UUID uniqueId, int protocolVersion, String gameVersion, String currentServerName, String currentProxyName) {
-        super(name, address, xboxUserId, uniqueId, protocolVersion, gameVersion, currentServerName, currentProxyName);
-    }
-
     public CloudPlayer(String name, String address, String xboxUserId, UUID uniqueId, int protocolVersion, String gameVersion) {
         super(name, address, xboxUserId, uniqueId, protocolVersion, gameVersion);
+    }
+
+    public CloudPlayer(String name, String address, String xboxUserId, UUID uniqueId, int protocolVersion, String gameVersion, String currentServerName, String currentProxyName) {
+        super(name, address, xboxUserId, uniqueId, protocolVersion, gameVersion);
+        this.currentServerName = currentServerName;
+        this.currentProxyName = currentProxyName;
     }
 
     @Override
@@ -23,7 +25,5 @@ public final class CloudPlayer extends BaseCloudPlayer implements SyncingElement
     }
 
     @Override
-    public void syncOut() {
-
-    }
+    public void syncOut() {}
 }

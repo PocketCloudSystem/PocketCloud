@@ -5,15 +5,17 @@ import de.pocketcloud.cloud.template.Template;
 import de.pocketcloud.cloud.template.group.ServerGroup;
 import lombok.Getter;
 
-import java.util.List;
+import java.util.Collection;
 
+@Getter
 public class ServerGroupEditEvent extends ServerGroupEvent {
 
-    @Getter
-    private final List<Template> newTemplates;
+    private final Collection<Template> oldTemplates;
+    private final Collection<Template> newTemplates;
 
-    public ServerGroupEditEvent(ServerGroup serverGroup, List<Template> newTemplates) {
+    public ServerGroupEditEvent(ServerGroup serverGroup, Collection<Template> oldTemplates, Collection<Template> newTemplates) {
         super(serverGroup);
+        this.oldTemplates = oldTemplates;
         this.newTemplates = newTemplates;
     }
 }

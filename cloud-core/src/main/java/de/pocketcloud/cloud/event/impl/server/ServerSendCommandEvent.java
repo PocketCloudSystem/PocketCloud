@@ -4,9 +4,9 @@ import de.pocketcloud.cloud.event.Cancelable;
 import de.pocketcloud.cloud.server.CloudServer;
 import lombok.Getter;
 
+@Getter
 public class ServerSendCommandEvent extends ServerEvent implements Cancelable {
 
-    @Getter
     private final String commandLine;
 
     public ServerSendCommandEvent(CloudServer server, String commandLine) {

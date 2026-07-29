@@ -4,11 +4,14 @@ import de.pocketcloud.cloud.event.Cancelable;
 import de.pocketcloud.cloud.player.CloudPlayer;
 import lombok.Getter;
 
+/**
+ * This event is called when you kick a CloudPlayer directly via the cloud with {@link CloudPlayer#kick()}
+ */
+
+@Getter
 public class PlayerKickEvent extends PlayerEvent implements Cancelable {
 
-    @Getter
     private final String reason;
-    @Getter
     private final String disconnectScreenMessage;
 
     public PlayerKickEvent(CloudPlayer player, String reason, String disconnectScreenMessage) {

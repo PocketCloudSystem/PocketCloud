@@ -19,11 +19,6 @@ public abstract class BaseCloudServerStorage implements ICloudServerStorage {
         this.serverUuid = serverUuid;
     }
 
-    public BaseCloudServerStorage(UUID serverUuid, Map<String, Object> storage) {
-        this.serverUuid = serverUuid;
-        this.storage.putAll(storage);
-    }
-
     @Override
     public BaseCloudServerStorage setAll(Map<String, Object> storage) {
         this.storage.putAll(storage);

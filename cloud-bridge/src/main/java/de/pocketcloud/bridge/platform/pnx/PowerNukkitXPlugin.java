@@ -7,16 +7,15 @@ import de.pocketcloud.bridge.CloudBridge;
 import de.pocketcloud.bridge.adapter.NativePlayerAdapter;
 import de.pocketcloud.bridge.api.IPlatformPlugin;
 import de.pocketcloud.bridge.config.LocalServerConfig;
+import de.pocketcloud.bridge.platform.pnx.handler.ServerPacketHandler;
 import de.pocketcloud.bridge.platform.pnx.listener.PlayerListener;
-import de.pocketcloud.bridge.task.ChangeStatusTask;
-import de.pocketcloud.bridge.task.RequestTimeoutTask;
-import de.pocketcloud.bridge.task.ServerTimeoutTask;
-import de.pocketcloud.bridge.task.UpdatePerformanceStatsTask;
 import de.pocketcloud.network.packet.impl.PlayerTransferPacket;
 import org.powernukkitx.Player;
 import org.powernukkitx.Server;
 import org.powernukkitx.plugin.PluginBase;
+import org.powernukkitx.utils.Config;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -25,6 +24,7 @@ public final class PowerNukkitXPlugin extends PluginBase implements IPlatformPlu
     @Override
     public void onLoad() {
         CloudAPIHolder.setInstance(new CloudBridge(this, craftPlatformLogger(), fetchEnvironmentConfig(), buildNativePlayerAdapter()));
+        CloudBridge.instance().packets().registerPacketListener(new ServerPacketHandler());
     }
 
     @Override
@@ -38,11 +38,8 @@ public final class PowerNukkitXPlugin extends PluginBase implements IPlatformPlu
     }
 
     @Override
-    public void startTasks() {
-        getServer().getScheduler().scheduleRepeatingTask(new ChangeStatusTask(), 10);
-        getServer().getScheduler().scheduleRepeatingTask(new RequestTimeoutTask(), 10);
-        getServer().getScheduler().scheduleRepeatingTask(new ServerTimeoutTask(), 10);
-        getServer().getScheduler().scheduleRepeatingTask(new UpdatePerformanceStatsTask(), 10);
+    public void startTask(Runnable runnable, int period) {
+        getServer().getScheduler().scheduleRepeatingTask(runnable, period);
     }
 
     @Override
@@ -50,8 +47,10 @@ public final class PowerNukkitXPlugin extends PluginBase implements IPlatformPlu
         return new PowerNukkitXLogger(getLogger());
     }
 
+    @Override
     public LocalServerConfig fetchEnvironmentConfig() {
-        return null;
+        Map<String, Object> environmentSettings = new Config(Server.getInstance().getDataPath() + "/pnx_cloud.yml").getAll();
+        return LocalServerConfig.fromMap(environmentSettings);
     }
 
     public NativePlayerAdapter<Player> buildNativePlayerAdapter() {

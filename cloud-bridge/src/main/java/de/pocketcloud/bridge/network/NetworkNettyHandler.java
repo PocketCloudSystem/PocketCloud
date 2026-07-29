@@ -1,12 +1,11 @@
 package de.pocketcloud.bridge.network;
 
+import de.pocketcloud.api.network.traffic.TrafficDirection;
 import de.pocketcloud.bridge.CloudBridge;
 import de.pocketcloud.network.packet.CloudPacket;
 import de.pocketcloud.network.packet.ResponsePacket;
-import de.pocketcloud.network.traffic.TrafficDirection;
 import de.pocketcloud.network.traffic.TrafficMonitorManager;
 import de.pocketcloud.network.traffic.impl.NetworkTrafficMonitor;
-import dev.waterdog.waterdogpe.ProxyServer;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 
@@ -22,11 +21,9 @@ public class NetworkNettyHandler extends SimpleChannelInboundHandler<CloudPacket
                 CloudBridge.instance().requests().resolve(responsePacket);
             }
 
-            //packet.handle(ctx.channel());
+            CloudBridge.instance().packets().invokeHandlers(packet, ctx.channel());
         } catch (Exception e) {
-            CloudBridge.instance().logger().error("Unhandled exception while processing packet §b{} §rsent by §b{}§r. §8(§renable §edebug §rto view full stack trace§8)", packet.getName(), ctx.channel().remoteAddress());
-            if (ProxyServer.getInstance().getConfiguration().isDebug()) CloudBridge.instance().logger().error("Exception:", e);
-            else CloudBridge.instance().logger().error(e.getMessage());
+            CloudBridge.instance().logger().exception("Unhandled exception while processing packet §b{} §rsent by §b{}§r.", e, packet.getName(), ctx.channel().remoteAddress());
         }
     }
 
@@ -34,13 +31,11 @@ public class NetworkNettyHandler extends SimpleChannelInboundHandler<CloudPacket
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         if (cause instanceof SocketException) {
             if (cause.getMessage().equals("Connection reset")) {
-                ProxyServer.getInstance().shutdown();
+                CloudBridge.instance().shutdown();
                 return;
             }
         }
 
-        CloudBridge.instance().logger().error("Unhandled exception caused by §b{}§r. §8(§renable §edebug §rto view full stack trace§8)", ctx.channel().remoteAddress());
-        if (ProxyServer.getInstance().getConfiguration().isDebug()) CloudBridge.instance().logger().error("Exception:", cause);
-        else CloudBridge.instance().logger().error(cause.getMessage());
+        CloudBridge.instance().logger().exception("Unhandled exception caused by §b{}§r. §8(§renable §edebug §rto view full stack trace§8)", cause, ctx.channel().remoteAddress());
     }
 }

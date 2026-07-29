@@ -1,6 +1,6 @@
 package de.pocketcloud.cloud.console.log.cache;
 
-import de.pocketcloud.cloud.console.log.CloudLogger;
+import de.pocketcloud.cloud.PocketCloud;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -24,7 +24,7 @@ public final class LogMessagesCache {
 
     public static synchronized void print() {
         for (String line : savedLines) {
-            CloudLogger.get().echo(line);
+            PocketCloud.instance().console().print(line);
         }
     }
 }

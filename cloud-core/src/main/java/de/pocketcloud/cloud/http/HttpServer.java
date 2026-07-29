@@ -1,12 +1,14 @@
 package de.pocketcloud.cloud.http;
 
+import de.pocketcloud.api.network.traffic.TrafficDirection;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.config.sub.SslConfiguration;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.http.handler.RouterInboundHandler;
+import de.pocketcloud.cloud.http.traffic.HttpTrafficMonitor;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
+import io.netty.buffer.ByteBufHolder;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.SocketChannel;
@@ -27,7 +29,6 @@ import lombok.Getter;
 import lombok.experimental.Accessors;
 
 import java.net.SocketAddress;
-import java.nio.charset.StandardCharsets;
 
 @Getter
 @Accessors(fluent = true)
@@ -75,6 +76,34 @@ public final class HttpServer {
                         @Override
                         protected void initChannel(SocketChannel ch) {
                             ChannelPipeline p = ch.pipeline();
+
+                            p.addFirst("traffic-counter", new ChannelDuplexHandler() {
+
+                                @Override
+                                public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+                                    if (msg instanceof ByteBuf byteBuf) {
+                                        PocketCloud.instance().traffic().pushBytes(HttpTrafficMonitor.class, TrafficDirection.IN, byteBuf.readableBytes());
+                                    }
+
+                                    super.channelRead(ctx, msg);
+                                }
+
+                                @Override
+                                public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+                                    int bytes = 0;
+                                    if (msg instanceof ByteBuf byteBuf) {
+                                        bytes = byteBuf.readableBytes();
+                                    } else if (msg instanceof ByteBufHolder holder) {
+                                        bytes = holder.content().readableBytes();
+                                    }
+
+                                    if (bytes > 0) {
+                                        PocketCloud.instance().traffic().pushBytes(HttpTrafficMonitor.class, TrafficDirection.OUT, bytes);
+                                    }
+
+                                    super.write(ctx, msg, promise);
+                                }
+                            });
 
                             if (sslContext != null) {
                                 p.addLast(sslContext.newHandler(ch.alloc()));

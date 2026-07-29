@@ -23,7 +23,9 @@ public final class ServerHandshakeResponsePacket extends ResponsePacket implemen
     }
 
     @Override
-    public void decodePayload(IPacketData packetData) {}
+    public void decodePayload(IPacketData packetData) {
+        verificationStatus = packetData.readEnum(VerificationStatus.class);
+    }
 
     public static ServerHandshakeResponsePacket create(VerificationStatus verificationStatus) {
         return new ServerHandshakeResponsePacket(verificationStatus);

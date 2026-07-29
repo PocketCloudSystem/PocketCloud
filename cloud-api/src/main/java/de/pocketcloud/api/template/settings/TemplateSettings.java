@@ -1,7 +1,8 @@
 package de.pocketcloud.api.template.settings;
 
-import de.pocketcloud.common.mapper.MapperUtils;
+import de.pocketcloud.common.serialization.MapperUtils;
 import de.pocketcloud.common.serialization.Writable;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -11,6 +12,7 @@ import java.util.Map;
 @Getter
 @Setter
 @Accessors(fluent = true)
+@AllArgsConstructor
 public final class TemplateSettings implements Writable<Map<String, Object>> {
 
     private boolean lobby;
@@ -23,19 +25,7 @@ public final class TemplateSettings implements Writable<Map<String, Object>> {
     private int maxServerCount;
     private double startNewPercentage;
     private boolean autoStart;
-
-    public TemplateSettings(boolean lobby, boolean maintenance, boolean staticServers, boolean alwaysCopyToStaticServers, boolean saveOnShutdown, int maxPlayerCount, int minServerCount, int maxServerCount, double startNewPercentage, boolean autoStart) {
-        this.lobby = lobby;
-        this.maintenance = maintenance;
-        this.staticServers = staticServers;
-        this.alwaysCopyToStaticServers = alwaysCopyToStaticServers;
-        this.saveOnShutdown = saveOnShutdown;
-        this.maxPlayerCount = maxPlayerCount;
-        this.minServerCount = minServerCount;
-        this.maxServerCount = maxServerCount;
-        this.startNewPercentage = startNewPercentage;
-        this.autoStart = autoStart;
-    }
+    private int maxMemory;
 
     public void applyFrom(TemplateSettings templateSettings) {
         this.lobby = templateSettings.lobby;
@@ -48,6 +38,7 @@ public final class TemplateSettings implements Writable<Map<String, Object>> {
         this.maxServerCount = templateSettings.maxServerCount;
         this.startNewPercentage = templateSettings.startNewPercentage;
         this.autoStart = templateSettings.autoStart;
+        this.maxMemory = templateSettings.maxMemory;
     }
 
     @Override

@@ -70,7 +70,7 @@ public final class HttpRequest {
 
     public String queryParam(String key) {
         List<String> values = queryDecoder().parameters().get(key);
-        return (values == null || values.isEmpty()) ? null : values.get(0);
+        return (values == null || values.isEmpty()) ? null : values.getFirst();
     }
 
     public String queryParam(String key, String defaultValue) {

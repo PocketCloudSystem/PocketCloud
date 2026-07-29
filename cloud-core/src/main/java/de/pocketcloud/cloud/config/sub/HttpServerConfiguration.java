@@ -3,7 +3,7 @@ package de.pocketcloud.cloud.config.sub;
 import de.pocketcloud.api.config.ICloudConfig;
 import de.pocketcloud.api.logging.CloudLogLevel;
 import de.pocketcloud.cloud.PocketCloud;
-import de.pocketcloud.common.util.StringUtils;
+import de.pocketcloud.cloud.http.util.AuthTokenGenerator;
 import eu.okaeri.configs.OkaeriConfig;
 import eu.okaeri.configs.annotation.Comment;
 import eu.okaeri.configs.annotation.CustomKey;
@@ -30,7 +30,7 @@ public final class HttpServerConfiguration extends OkaeriConfig implements IClou
 
     @CustomKey("auth-key")
     @Comment({"Authorization key for incoming HTTP requests"})
-    private String authKey = StringUtils.generate(32);
+    private String authKey = AuthTokenGenerator.generateAuthToken(32);
 
     @Comment({"TLS/HTTPS configuration for the HTTP server"})
     private SslConfiguration ssl = new SslConfiguration();

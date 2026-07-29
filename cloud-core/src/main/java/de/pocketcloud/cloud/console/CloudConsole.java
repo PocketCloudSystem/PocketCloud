@@ -1,6 +1,7 @@
 package de.pocketcloud.cloud.console;
 
 import de.pocketcloud.cloud.PocketCloud;
+import de.pocketcloud.cloud.console.util.InterruptionResult;
 import de.pocketcloud.common.lifecycle.Tickable;
 import lombok.Getter;
 import lombok.Setter;
@@ -8,27 +9,38 @@ import org.jline.reader.EndOfFileException;
 import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
 import org.jline.reader.UserInterruptException;
+import org.jline.reader.impl.LineReaderImpl;
 import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
+import org.jline.utils.AttributedString;
 import org.jline.utils.InfoCmp;
+import org.jline.utils.Status;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.function.Supplier;
 
 @Getter
 public final class CloudConsole extends Thread implements Tickable {
 
-    @Setter
-    private String prompt = "";
+    private final static String DEFAULT_PROMPT = "§c" + System.getProperty("user.name").toLowerCase() + "§8@§bcloud §8» §r";
 
     private final BlockingQueue<String> consoleQueue = new LinkedBlockingQueue<>();
+    @Setter
+    private Supplier<InterruptionResult> interruptionHandler = () -> PocketCloud.instance().screens().get().onCancel(PocketCloud.instance().currentTick());
+
+    private final Object readerLock = new Object();
     private Terminal terminal;
     private LineReader reader;
+    private Status status;
+    private String prompt = DEFAULT_PROMPT;
 
     public CloudConsole install() throws IOException {
-        resetPrompt();
         terminal = TerminalBuilder.builder()
                 .color(true)
                 .encoding(StandardCharsets.UTF_8)
@@ -45,48 +57,63 @@ public final class CloudConsole extends Thread implements Tickable {
                 .build();
 
         terminal.flush();
+        status = Status.getStatus(terminal);
 
-        terminal.handle(Terminal.Signal.INT, _ -> PocketCloud.instance().screens().get().onCancel(PocketCloud.instance().currentTick()));
+        setPromptInternal(prompt);
+
         return this;
     }
 
     public void uninstall() {
         this.interrupt();
 
-        try {
-            if (reader != null) {
-                reader.getBuffer().clear();
-                reader.callWidget(LineReader.REDRAW_LINE);
-                reader.callWidget(LineReader.REDISPLAY);
-                reader.getTerminal().close();
-            }
-        } catch (Exception _) {}
+        synchronized (readerLock) {
+            try {
+                if (reader != null) {
+                    reader.getBuffer().clear();
+                    reader.callWidget(LineReader.REDRAW_LINE);
+                    reader.callWidget(LineReader.REDISPLAY);
+                    reader.getTerminal().close();
+                }
+            } catch (Exception _) {}
 
-        try {
-            if (terminal != null) {
-                terminal.puts(InfoCmp.Capability.carriage_return);
-                terminal.puts(InfoCmp.Capability.clr_eol);
-                terminal.flush();
-                terminal.close();
-            }
-        } catch (Exception _) {}
+            try {
+                if (terminal != null) {
+                    terminal.puts(InfoCmp.Capability.carriage_return);
+                    terminal.puts(InfoCmp.Capability.clr_eol);
+                    terminal.flush();
+                    terminal.close();
+                }
+            } catch (Exception _) {}
+        }
     }
 
     public void clear() {
-        try {
-            terminal.puts(InfoCmp.Capability.clear_screen);
-            terminal.flush();
-        } catch (Exception _) {}
+        synchronized (readerLock) {
+            try {
+                if (terminal != null) {
+                    terminal.puts(InfoCmp.Capability.clear_screen);
+                    terminal.puts(InfoCmp.Capability.cursor_home);
+                    terminal.flush();
+
+                    reader.callWidget(LineReader.REDRAW_LINE);
+                }
+            } catch (Exception _) {}
+        }
     }
 
     @Override
     public void run() {
         while (PocketCloud.instance().running()) {
             try {
-                String line = reader.readLine(ConsoleColor.convert(prompt));
+                String line = reader.readLine(ConsoleColor.convert(prompt, false));
                 if (line == null) continue;
                 consoleQueue.offer(line);
-            } catch (UserInterruptException | EndOfFileException _) {
+            } catch (UserInterruptException _) {
+                InterruptionResult res = interruptionHandler.get();
+                if (res == InterruptionResult.INTERRUPT) break;
+            } catch (EndOfFileException _) {
+                PocketCloud.instance().screens().reset();
                 consoleQueue.offer("exit -y");
                 break;
             }
@@ -94,13 +121,14 @@ public final class CloudConsole extends Thread implements Tickable {
     }
 
     public void print(String line) {
-        CloudConsole console = PocketCloud.instance().console();
-        if (console != null) {
-            LineReader reader = console.getReader();
-            if (reader != null) {
-                reader.printAbove(line);
-            } else System.out.println(line);
-        } else System.out.println(line);
+        if (reader == null) {
+            System.out.println(line);
+            return;
+        }
+
+        synchronized (readerLock) {
+            reader.printAbove(AttributedString.fromAnsi(ConsoleColor.convert(line)));
+        }
     }
 
     @Override
@@ -116,19 +144,36 @@ public final class CloudConsole extends Thread implements Tickable {
     }
 
     public void enableHistory(boolean enabled) {
-        reader.setVariable(LineReader.DISABLE_HISTORY, !enabled);
+        synchronized (readerLock) {
+            if (reader != null) {
+                reader.setVariable(LineReader.DISABLE_HISTORY, !enabled);
+            }
+        }
     }
 
     public void showCursor(boolean enabled) {
-        terminal.puts(InfoCmp.Capability.cursor_invisible, enabled);
+        synchronized (readerLock) {
+            if (terminal != null) {
+                terminal.puts(InfoCmp.Capability.cursor_invisible, enabled ? 0 : 1);
+                terminal.flush();
+            }
+        }
     }
 
     public void showTyping(boolean enabled) {
-        terminal.echo(enabled);
+        synchronized (readerLock) {
+            if (terminal != null) {
+                terminal.echo(enabled);
+            }
+        }
     }
 
     public void enableCompletion(boolean enabled) {
-        reader.setVariable(LineReader.DISABLE_COMPLETION, !enabled);
+        synchronized (readerLock) {
+            if (reader != null) {
+                reader.setVariable(LineReader.DISABLE_COMPLETION, !enabled);
+            }
+        }
     }
 
     public void enableHistory() {
@@ -163,7 +208,60 @@ public final class CloudConsole extends Thread implements Tickable {
         enableCompletion(false);
     }
 
+    public void showStatus(String... lines) {
+        if (terminal == null) return;
+        synchronized (readerLock) {
+            List<AttributedString> rendered = Arrays.stream(lines)
+                    .map(ConsoleColor::convert)
+                    .map(AttributedString::fromAnsi)
+                    .toList();
+            status.update(rendered);
+        }
+    }
+
+    public void hideStatus() {
+        if (terminal == null || reader == null) return;
+        synchronized (readerLock) {
+            if (status != null) status.update(Collections.emptyList());
+        }
+    }
+
+    public void setInput(String input) {
+        if (reader == null) return;
+        synchronized (readerLock) {
+            try {
+                reader.getBuffer().clear();
+                reader.getBuffer().write(input);
+                reader.callWidget(LineReader.REDRAW_LINE);
+                reader.callWidget(LineReader.REDISPLAY);
+            } catch (Exception _) {}
+        }
+    }
+
+    public void setPrompt(String prompt) {
+        this.prompt = prompt;
+        setPromptInternal(prompt);
+    }
+
+    private void setPromptInternal(String prompt) {
+        if (reader == null) return;
+        synchronized (readerLock) {
+            ((LineReaderImpl) reader).setPrompt(ConsoleColor.convert(prompt, false));
+            try {
+                terminal.puts(InfoCmp.Capability.carriage_return);
+                terminal.puts(InfoCmp.Capability.clr_eol);
+                terminal.flush();
+                reader.callWidget(LineReader.REDRAW_LINE);
+                reader.callWidget(LineReader.REDISPLAY);
+            } catch (Exception ignored) {}
+        }
+    }
+
     public void resetPrompt() {
-        this.prompt = "§c" + System.getProperty("user.name").toLowerCase() + "§8@§bcloud §8» §r";
+        setPrompt(DEFAULT_PROMPT);
+    }
+
+    public void resetInterruptionHandler() {
+        interruptionHandler = () -> PocketCloud.instance().screens().get().onCancel(PocketCloud.instance().currentTick());
     }
 }

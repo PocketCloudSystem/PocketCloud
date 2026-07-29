@@ -25,7 +25,10 @@ public final class ProxyRegisterServerPacket extends CloudPacket implements Clie
     }
 
     @Override
-    public void decodePayload(IPacketData packetData) {}
+    public void decodePayload(IPacketData packetData) {
+        serverName = packetData.readString();
+        port = packetData.readInt();
+    }
 
     public static ProxyRegisterServerPacket create(String serverName, int port) {
         return new ProxyRegisterServerPacket(serverName, port);

@@ -22,7 +22,9 @@ public final class PlayerNotificationCheckResponsePacket extends ResponsePacket 
     }
 
     @Override
-    public void decodePayload(IPacketData packetData) {}
+    public void decodePayload(IPacketData packetData) {
+        enabled = packetData.readBool();
+    }
 
     public static PlayerNotificationCheckResponsePacket create(boolean enabled) {
         return new PlayerNotificationCheckResponsePacket(enabled);

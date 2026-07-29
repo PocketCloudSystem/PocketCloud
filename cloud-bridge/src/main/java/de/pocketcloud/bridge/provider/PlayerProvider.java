@@ -1,14 +1,16 @@
 package de.pocketcloud.bridge.provider;
 
+import de.pocketcloud.api.CloudAPI;
 import de.pocketcloud.api.component.player.ICloudPlayer;
 import de.pocketcloud.api.provider.write.IWritePlayerProvider;
 import de.pocketcloud.api.search.PlayerSearchQuery;
+import de.pocketcloud.bridge.CloudBridge;
 import de.pocketcloud.bridge.component.CloudPlayer;
+import de.pocketcloud.shared.event.player.PlayerJoinedEvent;
+import de.pocketcloud.shared.event.player.PlayerLeftEvent;
+import de.pocketcloud.shared.event.player.PlayerTransferredEvent;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
@@ -18,13 +20,22 @@ public final class PlayerProvider implements IWritePlayerProvider {
 
     @Override
     public void add(ICloudPlayer player) {
+        boolean verified = CloudBridge.instance().status().isVerified();
         if (players.containsKey(player.name())) {
-            ((CloudPlayer) players.get(player.name())).syncIn(player);
-        } else players.put(player.name(), player);
+            CloudPlayer localPlayer = (CloudPlayer) players.get(player.name());
+            String oldServerName = localPlayer.currentServerName();
+            localPlayer.syncIn(player);
+            if (verified && !Objects.equals(oldServerName, localPlayer.currentServerName())) CloudAPI.instance().events().call(new PlayerTransferredEvent(localPlayer, CloudAPI.instance().servers().get(oldServerName).orElse(null), localPlayer.currentServer().orElse(null)));
+        } else {
+            players.put(player.name(), player);
+            if (verified) CloudAPI.instance().events().call(new PlayerJoinedEvent(player, player.currentServer().orElse(null)));
+        }
     }
 
     @Override
     public void remove(ICloudPlayer player) {
+        CloudPlayer localPlayer = (CloudPlayer) players.get(player.name());
+        if (CloudBridge.instance().status().isVerified()) CloudAPI.instance().events().call(new PlayerLeftEvent(localPlayer, localPlayer.currentServer().orElse(null)));
         players.remove(player.name());
     }
 

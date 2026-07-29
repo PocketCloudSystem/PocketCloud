@@ -30,7 +30,9 @@ public final class PlayerConnectPacket extends CloudPacket implements Cloudbound
     }
 
     @Override
-    public void encodePayload(IPacketData packetData) {}
+    public void encodePayload(IPacketData packetData) {
+        packetData.writeAll(playerName, address, xboxUserId, uniqueId.toString(), protocolVersion, gameVersion);
+    }
 
     @Override
     public void decodePayload(IPacketData packetData) {

@@ -1,6 +1,6 @@
 import de.pocketcloud.api.component.player.ICloudPlayer;
 import de.pocketcloud.cloud.player.CloudPlayer;
-import de.pocketcloud.common.mapper.MapperUtils;
+import de.pocketcloud.common.serialization.MapperUtils;
 import de.pocketcloud.common.util.StringUtils;
 import org.junit.jupiter.api.Test;
 

@@ -18,7 +18,9 @@ public final class PlayerDisconnectPacket extends CloudPacket implements Cloudbo
     }
 
     @Override
-    public void encodePayload(IPacketData packetData) {}
+    public void encodePayload(IPacketData packetData) {
+        packetData.writeAll(player);
+    }
 
     @Override
     public void decodePayload(IPacketData packetData) {

@@ -29,7 +29,7 @@ public final class LibraryManager implements Loadable {
                     FileUtils.PRETTY_GSON.toJson(DEFAULTS)
             );
 
-            List<Library> libs = FileUtils.decodeJsonFile(PocketCloudPaths.storage().libraries().with("libraries.json").asPath(), new TypeToken<List<Library>>(){});
+            List<Library> libs = FileUtils.decodeJsonFile(PocketCloudPaths.storage().libraries().with("libraries.json").asPath(), new TypeToken<>(){});
             for (Library lib : libs) {
                 loadLibrary(lib);
             }

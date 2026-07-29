@@ -2,7 +2,7 @@ package de.pocketcloud.api.component.player;
 
 import de.pocketcloud.api.CloudAPI;
 import de.pocketcloud.api.component.server.ICloudServer;
-import de.pocketcloud.common.mapper.MapperUtils;
+import de.pocketcloud.common.serialization.MapperUtils;
 import de.pocketcloud.common.serialization.Writable;
 
 import java.util.Map;

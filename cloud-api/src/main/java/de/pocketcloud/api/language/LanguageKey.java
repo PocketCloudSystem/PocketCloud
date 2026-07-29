@@ -18,6 +18,7 @@ public enum LanguageKey {
     INGAME_PREFIX("inGame.prefix"),
     INGAME_NO_PERMISSION("inGame.no.permission"),
     INGAME_TEMPLATE_KICK_MAINTENANCE("inGame.template.kick.maintenance"),
+    INGAME_REQUEST_TIMED_OUT("inGame.request.timed.out"),
     INGAME_NOTIFY_MESSAGE_SERVER_STARTING("inGame.notify.message.server_starting"),
     INGAME_NOTIFY_MESSAGE_SERVER_STOPPING("inGame.notify.message.server_stopping"),
     INGAME_NOTIFY_MESSAGE_SERVER_TIMED_OUT("inGame.notify.message.server_timed_out"),

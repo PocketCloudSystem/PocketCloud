@@ -11,9 +11,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class StressTest {
 
     // CONFIG
-    private static final String URL = "http://localhost:8080/test/123";
+    private static final String URL = "https://lydoxmc.net:12382/test/123";
     private static final int THREADS = 25;
-    private static final int REQUESTS_PER_THREAD = 20000;
+    private static final int REQUESTS_PER_THREAD = 500;
 
     public static void main(String[] args) throws Exception {
 
@@ -38,6 +38,7 @@ public class StressTest {
                         HttpRequest request = HttpRequest.newBuilder()
                                 .uri(URI.create(URL))
                                 .GET()
+                                .header("Authorization", "Bearer nf7dAWErkLcPhAjrBj90nLzRvE9_vo3PNGQIJWiCo6U")
                                 .timeout(Duration.ofSeconds(10))
                                 .build();
 
@@ -47,6 +48,9 @@ public class StressTest {
                         int code = response.statusCode();
 
                         if (code >= 200 && code < 300) {
+                            if (success.get() == 1) {
+                                System.out.println(response.body());
+                            }
                             success.incrementAndGet();
                         } else {
                             failed.incrementAndGet();

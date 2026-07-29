@@ -23,7 +23,9 @@ public final class ProxyUnregisterServerPacket extends CloudPacket implements Cl
     }
 
     @Override
-    public void decodePayload(IPacketData packetData) {}
+    public void decodePayload(IPacketData packetData) {
+        serverName = packetData.readString();
+    }
 
     public static ProxyUnregisterServerPacket create(String serverName) {
         return new ProxyUnregisterServerPacket(serverName);

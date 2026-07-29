@@ -1,10 +1,10 @@
 package de.pocketcloud.cloud.event.impl.player;
 
-import de.pocketcloud.cloud.event.Event;
+import de.pocketcloud.cloud.event.CloudEvent;
 import de.pocketcloud.cloud.player.CloudPlayer;
 import lombok.Getter;
 
-public abstract class PlayerEvent extends Event {
+public abstract class PlayerEvent extends CloudEvent {
 
     @Getter
     private final CloudPlayer player;

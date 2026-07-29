@@ -18,6 +18,10 @@ public final class ServerGroupBuilder implements IServerGroupBuilder {
     private String name;
     private final Collection<String> templates = new HashSet<>();
 
+    public static ServerGroupBuilder create() {
+        return new ServerGroupBuilder();
+    }
+
     @Override
     public IServerGroupBuilder template(String templateName) {
         templates.add(templateName);

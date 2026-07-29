@@ -14,12 +14,12 @@ public final class KeepAlivePacket extends CloudPacket implements ClientboundPac
 
     private double tps;
     private double avgTps;
-    private double memoryUsage;
-    private double memoryPeak;
-    private double memoryLimit;
+    private long memoryUsage;
+    private long memoryPeak;
+    private long memoryLimit;
     private double cpuUsage;
 
-    public KeepAlivePacket(double tps, double avgTps, double memoryUsage, double memoryPeak, double memoryLimit, double cpuUsage) {
+    public KeepAlivePacket(double tps, double avgTps, long memoryUsage, long memoryPeak, long memoryLimit, double cpuUsage) {
         this.tps = tps;
         this.avgTps = avgTps;
         this.memoryUsage = memoryUsage;
@@ -37,13 +37,13 @@ public final class KeepAlivePacket extends CloudPacket implements ClientboundPac
     public void decodePayload(IPacketData packetData) {
         this.tps = packetData.readDouble();
         this.avgTps = packetData.readDouble();
-        this.memoryUsage = packetData.readDouble();
-        this.memoryPeak = packetData.readDouble();
-        this.memoryLimit = packetData.readDouble();
+        this.memoryUsage = packetData.readLong();
+        this.memoryPeak = packetData.readLong();
+        this.memoryLimit = packetData.readLong();
         this.cpuUsage = packetData.readDouble();
     }
 
-    public static KeepAlivePacket create(double tps, double avgTps, double memoryUsage, double memoryPeak, double memoryLimit, double cpuUsage) {
+    public static KeepAlivePacket create(double tps, double avgTps, long memoryUsage, long memoryPeak, long memoryLimit, double cpuUsage) {
         return new KeepAlivePacket(tps, avgTps, memoryUsage, memoryPeak, memoryLimit, cpuUsage);
     }
 }

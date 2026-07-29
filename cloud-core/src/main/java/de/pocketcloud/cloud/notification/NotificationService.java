@@ -4,7 +4,7 @@ import de.pocketcloud.api.search.ServerSearchQuery;
 import de.pocketcloud.api.template.TemplateType;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.log.CloudLogger;
-import de.pocketcloud.cloud.server.util.ServerCrashData;
+import de.pocketcloud.cloud.server.crash.CrashData;
 import de.pocketcloud.network.packet.impl.CloudNotificationPacket;
 import de.pocketcloud.shared.network.packet.type.NotificationType;
 import de.r3pt1s.discord.webhook.Webhook;
@@ -18,7 +18,7 @@ import java.util.Optional;
 
 public final class NotificationService {
 
-    public boolean notify(NotificationType type, Map<String, Object> args, Map<Object, Object> extraArgs) {
+    public boolean sendNotification(NotificationType type, Map<String, Object> args, Map<String, Object> extraArgs) {
         if (!canNotify(type)) return false;
         if (canSendWebhook(type)) {
             Message message = craftDiscordMessage(type, args, extraArgs);
@@ -39,18 +39,17 @@ public final class NotificationService {
         return true;
     }
 
-    public Message craftDiscordMessage(NotificationType type, Map<String, Object> args, Map<Object, Object> extraArgs) {
+    public Message craftDiscordMessage(NotificationType type, Map<String, Object> args, Map<String, Object> extraArgs) {
         Message message = new Message().wait(false);
         switch (type) {
             case SERVER_CRASHED -> {
                 @SuppressWarnings("unchecked")
-                ServerCrashData crashData = ServerCrashData.read((Map<String, Object>) extraArgs.getOrDefault("crashData", Map.of()));
-                String line = crashData.line() == null ? "No line found." : crashData.line().toString();
+                CrashData crashData = CrashData.read((Map<String, Object>) extraArgs.getOrDefault("crashData", Map.of()));
                 message.addEmbed(Embed.create()
                         .setTitle("Notification | Server Crash Report")
                         .setDescription("`The cloud detected a crash on the following server:`")
                         .setColor(Color.RED)
-                        .addField("**Affected Server**", "> " + args.getOrDefault("server", "Unknown"), false)
+                        .addField("**Affected Server**", "> " + crashData.serverName(), false)
                         .setFooter("Notification Type: " + type.name(), null, null)
                 ).addEmbedIf(() -> crashData == null, Embed.create()
                         .setTitle("Crash Data")
@@ -58,10 +57,10 @@ public final class NotificationService {
                         .setColor(Color.RED)
                 ).addEmbedIf(() -> crashData != null, Embed.create()
                         .setTitle("Crash Data")
-                        .addField("**Error Type**", "> " + Optional.ofNullable(crashData.type()).orElse("No error type found."), true)
-                        .addField("**File**", "> " + Optional.ofNullable(crashData.file()).orElse("No file found.") + " (L: " + line + ")", true)
+                        .addField("**Error Type**", "> " + Optional.ofNullable(crashData.errorType()).orElse("No error type found."), true)
+                        .addField("**File**", "> " + Optional.ofNullable(crashData.file()).orElse("No file found.") + " (L: " + (crashData.line() == null ? "No line found." : crashData.line().toString()) + ")", true)
                         .addField("**Message**", "> " + Optional.ofNullable(crashData.message()).orElse("No message found."), false)
-                        .addField("**Trace**", "> " + String.join("\n", Optional.ofNullable(crashData.stackTrace()).orElse(List.of())).substring(0, 1000), false)
+                        .addField("**Trace**", "> " + String.join("\n", Optional.ofNullable(crashData.trace()).orElse(List.of())).substring(0, 1000), false)
                 );
             }
             case SERVER_START_FAILED -> {

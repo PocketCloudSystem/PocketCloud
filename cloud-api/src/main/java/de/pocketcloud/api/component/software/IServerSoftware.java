@@ -1,7 +1,7 @@
 package de.pocketcloud.api.component.software;
 
 import de.pocketcloud.api.template.TemplateType;
-import de.pocketcloud.common.mapper.MapperUtils;
+import de.pocketcloud.common.serialization.MapperUtils;
 import de.pocketcloud.common.serialization.Writable;
 
 import java.util.Map;

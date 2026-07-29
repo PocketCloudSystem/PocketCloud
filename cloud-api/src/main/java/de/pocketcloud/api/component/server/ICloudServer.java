@@ -7,7 +7,7 @@ import de.pocketcloud.api.server.ServerStatus;
 import de.pocketcloud.api.server.VerificationStatus;
 import de.pocketcloud.api.server.data.ICloudServerData;
 import de.pocketcloud.api.server.storage.ICloudServerStorage;
-import de.pocketcloud.common.mapper.MapperUtils;
+import de.pocketcloud.common.serialization.MapperUtils;
 import de.pocketcloud.common.serialization.Writable;
 
 import java.time.Instant;

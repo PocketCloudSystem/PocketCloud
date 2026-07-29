@@ -1,8 +1,8 @@
 package de.pocketcloud.network.traffic.impl;
 
 import de.pocketcloud.api.network.packet.Packet;
+import de.pocketcloud.api.network.traffic.TrafficDirection;
 import de.pocketcloud.common.function.TriConsumer;
-import de.pocketcloud.network.traffic.TrafficDirection;
 import de.pocketcloud.network.traffic.TrafficMonitor;
 import io.netty.channel.Channel;
 

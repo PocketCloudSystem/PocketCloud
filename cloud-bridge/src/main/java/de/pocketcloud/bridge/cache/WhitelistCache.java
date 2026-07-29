@@ -4,7 +4,10 @@ import de.pocketcloud.api.sync.SyncingElement;
 import de.pocketcloud.common.cache.LocalCache;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * Local whitelist cache for the server

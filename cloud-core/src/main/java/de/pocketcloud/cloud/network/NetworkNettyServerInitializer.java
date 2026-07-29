@@ -1,16 +1,21 @@
 package de.pocketcloud.cloud.network;
 
+import de.pocketcloud.api.CloudAPI;
 import de.pocketcloud.api.network.packet.ClientboundPacket;
 import de.pocketcloud.api.network.packet.Packet;
+import de.pocketcloud.api.network.traffic.TrafficDirection;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.log.CloudLogger;
-import de.pocketcloud.cloud.event.impl.packet.*;
+import de.pocketcloud.cloud.event.impl.packet.PacketPreSendEvent;
+import de.pocketcloud.cloud.event.impl.packet.PacketReceivePreProcessEvent;
 import de.pocketcloud.network.codec.CloudPacketDecoder;
 import de.pocketcloud.network.codec.CloudPacketEncoder;
 import de.pocketcloud.network.packet.RequestPacket;
 import de.pocketcloud.network.traffic.PacketTrafficListener;
-import de.pocketcloud.network.traffic.TrafficDirection;
 import de.pocketcloud.network.traffic.impl.NetworkTrafficMonitor;
+import de.pocketcloud.shared.event.network.PacketSentEvent;
+import de.pocketcloud.shared.event.network.PacketTooLargeEvent;
+import de.pocketcloud.shared.event.network.UnknownPacketReceivedEvent;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
 import org.jetbrains.annotations.Nullable;
@@ -38,7 +43,7 @@ public class NetworkNettyServerInitializer extends ChannelInitializer<Channel> {
             }
 
             PocketCloud.instance().traffic().callHandlers(NetworkTrafficMonitor.class, NetworkTrafficMonitor.parsePacketMode(TrafficDirection.OUT, packet.getClass()), channel, packet, packet.getSize());
-            new PacketSentEvent(channel, (ClientboundPacket) packet).call();
+            CloudAPI.instance().events().call(new PacketSentEvent(packet, channel));
 
             return true;
         }
@@ -53,13 +58,13 @@ public class NetworkNettyServerInitializer extends ChannelInitializer<Channel> {
 
         @Override
         public void onUnknownPacket(Channel channel, byte[] payload, int length) {
-            new PacketReceiveUnknownEvent(channel, payload, length, PocketCloud.instance().config().network().encryption()).call();
+            CloudAPI.instance().events().call(new UnknownPacketReceivedEvent(channel, payload, length));
             CloudLogger.get().debug("Received unknown packet with size {} from {}", length, channel.remoteAddress().toString());
         }
 
         @Override
         public void onTooLargePacket(Channel channel, @Nullable Packet packet, int length, TrafficDirection direction) {
-            new PacketTooLargeEvent(channel, packet, length, direction).call();
+            CloudAPI.instance().events().call(new PacketTooLargeEvent(channel, packet, length, direction));
             if (direction.equals(TrafficDirection.IN)) {
                 CloudLogger.get().debug("Received a way too big packet with size {} from {}", length, channel.remoteAddress().toString());
             } else {

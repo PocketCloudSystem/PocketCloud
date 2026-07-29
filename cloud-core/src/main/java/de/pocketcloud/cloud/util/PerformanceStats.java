@@ -3,6 +3,8 @@ package de.pocketcloud.cloud.util;
 import com.sun.management.OperatingSystemMXBean;
 import lombok.Getter;
 import lombok.experimental.Accessors;
+import oshi.SystemInfo;
+import oshi.hardware.GlobalMemory;
 
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
@@ -13,6 +15,7 @@ import java.util.List;
 public final class PerformanceStats {
 
     private static final OperatingSystemMXBean osBean = (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
+    private static final SystemInfo systemInfo = new SystemInfo();
 
     private final List<Double> tickTimes = new ArrayList<>();
     private double tickTimesSum = 0;
@@ -32,7 +35,7 @@ public final class PerformanceStats {
     private long systemUsedMemory = 0;
     private long systemPeakUsedMemory = 0;
     private double systemCpuUsage = 0;
-    private int availableProcessors = 0;
+    private final int availableProcessors = osBean.getAvailableProcessors();
 
     public void updateTickStats(double tickStart, double tickEnd) {
         double timeSinceLastTick = tickStart - lastTickTime;
@@ -62,10 +65,10 @@ public final class PerformanceStats {
         processUsedMemory = processTotalMemory - processFreeMemory;
         processPeakUsedMemory = Math.max(processPeakUsedMemory, processUsedMemory);
         if (tick % 40 == 0) {
+            GlobalMemory memory = systemInfo.getHardware().getMemory();
             processCpuUsage = Math.max(0, osBean.getProcessCpuLoad() * 100);
-            availableProcessors = osBean.getAvailableProcessors();
-            systemTotalMemory = osBean.getTotalMemorySize();
-            systemFreeMemory = osBean.getFreeMemorySize();
+            systemTotalMemory = memory.getTotal();
+            systemFreeMemory = memory.getAvailable();
             systemUsedMemory = systemTotalMemory - systemFreeMemory;
             systemPeakUsedMemory = Math.max(systemPeakUsedMemory, systemUsedMemory);
             systemCpuUsage = Math.max(0, osBean.getCpuLoad() * 100);

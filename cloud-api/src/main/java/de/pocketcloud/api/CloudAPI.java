@@ -1,6 +1,7 @@
 package de.pocketcloud.api;
 
 import de.pocketcloud.api.config.IEnvironmentConfig;
+import de.pocketcloud.api.event.EventService;
 import de.pocketcloud.api.executor.IPlayerExecutor;
 import de.pocketcloud.api.logging.ILogger;
 import de.pocketcloud.api.provider.*;
@@ -24,7 +25,11 @@ public interface CloudAPI {
 
     ITemplateProvider templates();
 
+    ISoftwareProvider softwares();
+
     ILanguageProvider language();
+
+    EventService<?> events();
 
     ILogger logger();
 

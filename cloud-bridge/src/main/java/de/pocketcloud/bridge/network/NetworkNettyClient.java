@@ -1,16 +1,14 @@
 package de.pocketcloud.bridge.network;
 
-import de.pocketcloud.api.CloudAPI;
 import de.pocketcloud.api.network.packet.CloudboundPacket;
-import dev.waterdog.waterdogpe.ProxyServer;
+import de.pocketcloud.bridge.CloudBridge;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.MultiThreadIoEventLoopGroup;
 import io.netty.channel.epoll.Epoll;
-import io.netty.channel.epoll.EpollIoHandler;
+import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollSocketChannel;
-import io.netty.channel.nio.NioIoHandler;
+import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import lombok.Getter;
@@ -22,10 +20,9 @@ import java.util.concurrent.CompletableFuture;
 public final class NetworkNettyClient {
 
     private final SocketAddress address;
-    private final EventLoopGroup workerGroup = new MultiThreadIoEventLoopGroup(
-            new DefaultThreadFactory("worker-group"),
-            Epoll.isAvailable() ? EpollIoHandler.newFactory() : NioIoHandler.newFactory()
-    );
+    private final EventLoopGroup workerGroup = Epoll.isAvailable()
+            ? new EpollEventLoopGroup(new DefaultThreadFactory("worker-group"))
+            : new NioEventLoopGroup(new DefaultThreadFactory("worker-group"));
 
     private Channel channel;
 
@@ -43,10 +40,10 @@ public final class NetworkNettyClient {
                     .addListener(_ -> Thread.currentThread().setName("Network"))
                     .sync().channel();
 
-            CloudAPI.instance().logger().info("§bNetwork connection §rhas been §aestablished §rtowards §b{}§r.", address.toString());
+            CloudBridge.instance().logger().info("§bNetwork connection §rhas been §aestablished §rtowards §b{}§r.", address.toString());
         } catch (Exception e) {
-            CloudAPI.instance().logger().error("Failed to establish network connection, shutting down...", e);
-            ProxyServer.getInstance().shutdown();
+            CloudBridge.instance().logger().error("Failed to establish network connection, shutting down...", e);
+            CloudBridge.instance().shutdown();
         }
     }
 

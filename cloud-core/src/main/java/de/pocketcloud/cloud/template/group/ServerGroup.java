@@ -2,7 +2,7 @@ package de.pocketcloud.cloud.template.group;
 
 import de.pocketcloud.api.sync.SyncingElement;
 import de.pocketcloud.cloud.util.PocketCloudPaths;
-import de.pocketcloud.common.mapper.MapperUtils;
+import de.pocketcloud.common.serialization.MapperUtils;
 import de.pocketcloud.network.packet.impl.SyncPacket;
 import de.pocketcloud.shared.component.BaseServerGroup;
 import de.pocketcloud.shared.sync.SyncType;
@@ -32,7 +32,7 @@ public final class ServerGroup extends BaseServerGroup implements SyncingElement
 
     @Override
     public void syncOut() {
-        SyncPacket.create(SyncType.SERVER_GROUP, data -> data.write(this), Map.of("removal", markedForRemoval)).broadcast();
+        SyncPacket.create(SyncType.SERVER_GROUP, data -> data.writeAll(this, markedForRemoval)).broadcast();
     }
 
     public Path path() {

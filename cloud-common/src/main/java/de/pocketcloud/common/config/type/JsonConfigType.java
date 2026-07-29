@@ -14,6 +14,6 @@ public final class JsonConfigType implements ConfigType {
 
     @Override
     public String encode(Map<String, Object> content) {
-        return FileUtils.encodeJson(content);
+        return FileUtils.encodeJson(content, FileUtils.PRETTY_GSON);
     }
 }

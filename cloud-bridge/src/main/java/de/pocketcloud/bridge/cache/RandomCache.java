@@ -2,7 +2,10 @@ package de.pocketcloud.bridge.cache;
 
 import de.pocketcloud.common.cache.LocalCache;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
 public final class RandomCache implements LocalCache<String, Object> {
 

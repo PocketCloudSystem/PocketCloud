@@ -4,8 +4,9 @@ import de.pocketcloud.api.language.ILanguage;
 import de.pocketcloud.api.provider.ILanguageProvider;
 import de.pocketcloud.bridge.component.MinimalLanguage;
 import lombok.Setter;
-import org.apache.commons.lang3.NotImplementedException;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 public final class LanguageProvider implements ILanguageProvider {
@@ -18,12 +19,12 @@ public final class LanguageProvider implements ILanguageProvider {
 
     @Override
     public void register(ILanguage language) {
-        throw new NotImplementedException("You cannot register languages on cloud servers");
+        throw new UnsupportedOperationException("You cannot register languages on cloud servers");
     }
 
     @Override
     public void unregister(ILanguage language) {
-        throw new NotImplementedException("You cannot unregister languages on cloud servers");
+        throw new UnsupportedOperationException("You cannot unregister languages on cloud servers");
     }
 
     @Override
@@ -39,5 +40,10 @@ public final class LanguageProvider implements ILanguageProvider {
     @Override
     public Optional<ILanguage> get(String name) {
         return Optional.empty();
+    }
+
+    @Override
+    public Collection<ILanguage> getAll() {
+        return List.of(current());
     }
 }

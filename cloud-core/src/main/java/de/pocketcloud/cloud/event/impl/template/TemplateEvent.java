@@ -1,10 +1,10 @@
 package de.pocketcloud.cloud.event.impl.template;
 
-import de.pocketcloud.cloud.event.Event;
+import de.pocketcloud.cloud.event.CloudEvent;
 import de.pocketcloud.cloud.template.Template;
 import lombok.Getter;
 
-public abstract class TemplateEvent extends Event {
+public abstract class TemplateEvent extends CloudEvent {
 
     @Getter
     private final Template template;

@@ -14,6 +14,22 @@ public final class TestRoutes {
         response.status(200).json(obj -> obj.addProperty("id", id));
     }
 
+    @GetRoute(value = "/test/{id}", version = 1)
+    public void testV1(HttpRequest request, HttpResponse response, @PathVariable("id") String id) {
+        response.status(200).json(obj -> {
+            obj.addProperty("id", id);
+            obj.addProperty("version", 1);
+        });
+    }
+
+    @GetRoute(value = "/test/{id}", version = 2)
+    public void testV2(HttpRequest request, HttpResponse response, @PathVariable("id") String id) {
+        response.status(200).json(obj -> {
+            obj.addProperty("testId", id);
+            obj.addProperty("version", 2);
+        });
+    }
+
     @PostRoute("/test/")
     public void post(HttpRequest request, HttpResponse response, @RequestBody String body) {
         response.status(200).json(obj -> obj.addProperty("body", body));

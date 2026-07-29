@@ -94,17 +94,19 @@ public final class WaterdogConfig extends ServerProperties {
                 "default_idle_threads", -1,
                 "enable_statistics", true,
                 "enable_error_reporting", true,
-                "server-uuid", "%uuid%",
-                "cloud-address", "%address%",
-                "cloud-port", "%port%",
-                "server-name", "%name%",
-                "template", "%template%",
-                "network-encryption", "%encryption%",
-                "cloud-language", "%language%",
-                "cloud-path", "%cloud_path%",
-                "server-timeout", "%timeout%",
-                "auth-key", "%auth_key%",
-                "packet-size-limit", "%packet_size_limit%"
+                "environment-settings", ArrayUtils.orderedMap(
+                        "server-name", "%name%",
+                        "template-name", "%template%",
+                        "server-uuid", "%uuid%",
+                        "cloud-language", "%language%",
+                        "server-timeout", "%timeout%",
+                        "cloud-path", "%cloud_path%",
+                        "network-address", "%address%",
+                        "network-port", "%port%",
+                        "network-auth-key", "%auth_key%",
+                        "network-encryption", "%encryption%",
+                        "network-packet-size-limit", "%packet_size_limit%"
+                )
         );
     }
 
@@ -115,6 +117,6 @@ public final class WaterdogConfig extends ServerProperties {
 
     @Override
     public IServerSoftware getServerSoftware() {
-        return PocketCloud.instance().softwareList().get("waterdogpe-latest");
+        return PocketCloud.instance().softwares().get("waterdogpe-latest").orElseThrow(() -> new RuntimeException("Required software not found"));
     }
 }

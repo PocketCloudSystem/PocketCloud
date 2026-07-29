@@ -1,7 +1,9 @@
 package de.pocketcloud.cloud.network;
 
+import de.pocketcloud.api.CloudAPI;
 import de.pocketcloud.api.network.packet.AuthenticatedPacket;
 import de.pocketcloud.api.network.packet.CloudboundPacket;
+import de.pocketcloud.api.network.traffic.TrafficDirection;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.event.impl.packet.PacketReceiveEvent;
@@ -9,13 +11,14 @@ import de.pocketcloud.cloud.network.client.ServerClient;
 import de.pocketcloud.cloud.server.CloudServer;
 import de.pocketcloud.network.packet.CloudPacket;
 import de.pocketcloud.network.packet.ResponsePacket;
-import de.pocketcloud.network.traffic.TrafficDirection;
 import de.pocketcloud.network.traffic.impl.NetworkTrafficMonitor;
+import de.pocketcloud.shared.event.network.PacketReceivedEvent;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 
 import java.io.IOException;
+import java.time.Instant;
 
 public class NetworkNettyHandler extends SimpleChannelInboundHandler<CloudPacket> {
 
@@ -42,13 +45,15 @@ public class NetworkNettyHandler extends SimpleChannelInboundHandler<CloudPacket
                 return;
             }
 
+            CloudAPI.instance().events().call(new PacketReceivedEvent(packet, ctx.channel()));
+
             if (packet instanceof ResponsePacket responsePacket) {
                 PocketCloud.instance().requests().resolve(responsePacket);
             }
 
             PocketCloud.instance().packets().invokeHandlers(packet, c);
 
-            if (server != null) server.latestPacketInfo().setLatestPacket(System.currentTimeMillis(), packet.getClass());
+            if (server != null) server.latestPacketInfo().setLatestPacket(Instant.now(), packet.getClass());
         } catch (Exception e) {
             CloudLogger.get().error("Unhandled exception while processing packet §b{} §rsent by §b{}§r. §8(§renable §edebug §rto view full stack trace§8)", packet.getName(), ctx.channel().remoteAddress());
             if (CloudLogger.get().isDebugMode()) CloudLogger.get().exception(e);

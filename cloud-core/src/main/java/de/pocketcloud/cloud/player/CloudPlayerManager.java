@@ -1,5 +1,6 @@
 package de.pocketcloud.cloud.player;
 
+import de.pocketcloud.api.CloudAPI;
 import de.pocketcloud.api.component.player.ICloudPlayer;
 import de.pocketcloud.api.provider.write.IWritePlayerProvider;
 import de.pocketcloud.api.search.PlayerSearchQuery;
@@ -7,9 +8,9 @@ import de.pocketcloud.api.search.ServerSearchQuery;
 import de.pocketcloud.api.template.TemplateType;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.log.CloudLogger;
-import de.pocketcloud.cloud.event.impl.player.PlayerConnectEvent;
-import de.pocketcloud.cloud.event.impl.player.PlayerDisconnectEvent;
-import de.pocketcloud.cloud.server.CloudServer;
+import de.pocketcloud.shared.event.player.PlayerJoinFailedEvent;
+import de.pocketcloud.shared.event.player.PlayerJoinedEvent;
+import de.pocketcloud.shared.event.player.PlayerLeftEvent;
 import de.pocketcloud.shared.network.packet.type.NotificationType;
 
 import java.util.*;
@@ -25,6 +26,7 @@ public final class CloudPlayerManager implements IWritePlayerProvider {
         boolean anyProxies = !PocketCloud.instance().servers().query(ServerSearchQuery.create().ofType(TemplateType.PROXY)).isEmpty();
         if (anyProxies && cloudPlayer.currentProxy().isEmpty()) {
             cloudPlayer.kick("Joined via sub-server instead of a proxy.", "Please do not join via sub-servers.");
+            CloudAPI.instance().events().call(new PlayerJoinFailedEvent(player, cloudPlayer.currentServer().orElse(null), "Joined via sub-server instead of a proxy."));
             return;
         }
 
@@ -36,10 +38,10 @@ public final class CloudPlayerManager implements IWritePlayerProvider {
         players.put(cloudPlayer.name(), cloudPlayer);
         cloudPlayer.syncOut();
         String serverOrProxy = cloudPlayer.currentServerName() != null ? cloudPlayer.currentServerName() : cloudPlayer.currentProxyName();
-        PocketCloud.instance().notifications().notify(NotificationType.PLAYER_JOINED, Map.of("player", cloudPlayer.name(), "server", serverOrProxy), Map.of());
+        PocketCloud.instance().notifications().sendNotification(NotificationType.PLAYER_JOINED, Map.of("player", cloudPlayer.name(), "server", serverOrProxy), Map.of());
 
         var joinTarget = player.currentServer().orElse(player.currentProxy().orElse(null));
-        new PlayerConnectEvent(cloudPlayer, (CloudServer) joinTarget).call();
+        CloudAPI.instance().events().call(new PlayerJoinedEvent(player, joinTarget));
     }
 
     @Override
@@ -53,10 +55,10 @@ public final class CloudPlayerManager implements IWritePlayerProvider {
         players.remove(cloudPlayer.name());
 
         String serverOrProxy = cloudPlayer.currentServerName() != null ? cloudPlayer.currentServerName() : cloudPlayer.currentProxyName();
-        PocketCloud.instance().notifications().notify(NotificationType.PLAYER_LEFT, Map.of("player", cloudPlayer.name(), "server", serverOrProxy), Map.of());
+        PocketCloud.instance().notifications().sendNotification(NotificationType.PLAYER_LEFT, Map.of("player", cloudPlayer.name(), "server", serverOrProxy), Map.of());
 
         var disconnectTarget = cloudPlayer.currentServer().orElse(cloudPlayer.currentProxy().orElse(null));
-        new PlayerDisconnectEvent(cloudPlayer, (CloudServer) disconnectTarget, serverOrProxy).call();
+        CloudAPI.instance().events().call(new PlayerLeftEvent(player, disconnectTarget));
 
         cloudPlayer.resetCurrentServer();
         cloudPlayer.resetCurrentProxy();

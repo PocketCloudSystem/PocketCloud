@@ -117,6 +117,41 @@ public final class PacketData implements IPacketData {
         return value;
     }
 
+    public Object peekLast() {
+        if (!buffer.isReadable()) throw new IndexOutOfBoundsException("Buffer is empty");
+
+        ByteBuf dup = buffer.duplicate();
+        int currentStart = dup.readerIndex();
+
+        while (dup.isReadable()) {
+            currentStart = dup.readerIndex();
+            skipValue(dup);
+        }
+
+        dup.readerIndex(currentStart);
+        return readValue(dup);
+    }
+
+    public Object readLast() {
+        if (!buffer.isReadable()) throw new IndexOutOfBoundsException("Buffer is empty");
+
+        ByteBuf dup = buffer.duplicate();
+        int currentStart = dup.readerIndex();
+
+        while (dup.isReadable()) {
+            currentStart = dup.readerIndex();
+            skipValue(dup);
+        }
+
+        dup.readerIndex(currentStart);
+        Object value = readValue(dup);
+
+        buffer.writerIndex(currentStart);
+        if (elementCount > 0) elementCount--;
+
+        return value;
+    }
+
     private static Object readValue(ByteBuf buf) {
         byte type = buf.readByte();
         return switch (type) {

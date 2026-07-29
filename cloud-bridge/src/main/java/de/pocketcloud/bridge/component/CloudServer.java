@@ -2,29 +2,29 @@ package de.pocketcloud.bridge.component;
 
 import de.pocketcloud.api.component.server.ICloudServer;
 import de.pocketcloud.api.server.ServerStatus;
-import de.pocketcloud.api.server.VerificationStatus;
 import de.pocketcloud.api.sync.SyncingElement;
 import de.pocketcloud.bridge.component.storage.CloudServerStorage;
+import de.pocketcloud.common.serialization.annotation.MapCreator;
+import de.pocketcloud.common.serialization.annotation.MapKey;
 import de.pocketcloud.network.packet.impl.SyncPacket;
 import de.pocketcloud.shared.component.BaseCloudServer;
 import de.pocketcloud.shared.component.data.CloudServerData;
+import de.pocketcloud.shared.component.storage.BaseCloudServerStorage;
 import de.pocketcloud.shared.sync.SyncType;
 
-import java.time.Instant;
 import java.util.UUID;
 
 public final class CloudServer extends BaseCloudServer implements SyncingElement<ICloudServer> {
 
-    private final CloudServerStorage storage;
-
-    public CloudServer(int id, UUID uuid, String templateName, CloudServerData data, CloudServerStorage storage, ServerStatus status, VerificationStatus verificationStatus, Instant startTime, Instant verifiedTime) {
-        super(id, uuid, templateName, data, storage, status, verificationStatus, startTime, verifiedTime);
-        this.storage = storage;
-    }
-
-    public CloudServer(int id, UUID uuid, String templateName, CloudServerData data, CloudServerStorage storage) {
+    @MapCreator
+    public CloudServer(
+            @MapKey(name = "id") int id,
+            @MapKey(name = "uuid") UUID uuid,
+            @MapKey(name = "templateName") String templateName,
+            @MapKey(name = "data") CloudServerData data,
+            @MapKey(name = "storage", impl = CloudServerStorage.class) BaseCloudServerStorage storage
+    ) {
         super(id, uuid, templateName, data, storage);
-        this.storage = storage;
     }
 
     @Override
@@ -52,5 +52,10 @@ public final class CloudServer extends BaseCloudServer implements SyncingElement
     @Override
     public void syncOut() {
         SyncPacket.create(SyncType.SERVER_STATUS, pData -> pData.writeAll(name(), status)).sendPacket();
+    }
+
+    @Override
+    public CloudServerStorage storage() {
+        return (CloudServerStorage) super.storage();
     }
 }

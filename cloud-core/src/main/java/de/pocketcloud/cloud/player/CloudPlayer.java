@@ -2,7 +2,7 @@ package de.pocketcloud.cloud.player;
 
 import de.pocketcloud.api.sync.SyncingElement;
 import de.pocketcloud.cloud.console.log.CloudLogger;
-import de.pocketcloud.common.mapper.MapperUtils;
+import de.pocketcloud.common.serialization.MapperUtils;
 import de.pocketcloud.network.packet.impl.SyncPacket;
 import de.pocketcloud.shared.component.BaseCloudPlayer;
 import de.pocketcloud.shared.sync.SyncType;
@@ -17,12 +17,14 @@ public final class CloudPlayer extends BaseCloudPlayer implements SyncingElement
      */
     private transient boolean markedForRemoval = false;
 
-    public CloudPlayer(String name, String address, String xboxUserId, UUID uniqueId, int protocolVersion, String gameVersion, String currentServerName, String currentProxyName) {
-        super(name, address, xboxUserId, uniqueId, protocolVersion, gameVersion, currentServerName, currentProxyName);
-    }
-
     public CloudPlayer(String name, String address, String xboxUserId, UUID uniqueId, int protocolVersion, String gameVersion) {
         super(name, address, xboxUserId, uniqueId, protocolVersion, gameVersion);
+    }
+
+    public CloudPlayer(String name, String address, String xboxUserId, UUID uniqueId, int protocolVersion, String gameVersion, String currentServerName, String currentProxyName) {
+        super(name, address, xboxUserId, uniqueId, protocolVersion, gameVersion);
+        this.currentServerName = currentServerName;
+        this.currentProxyName = currentProxyName;
     }
 
     public CloudPlayer markForRemoval() {
@@ -35,7 +37,7 @@ public final class CloudPlayer extends BaseCloudPlayer implements SyncingElement
 
     @Override
     public void syncOut() {
-        SyncPacket.create(SyncType.PLAYER, data -> data.write(this), Map.of("removal", markedForRemoval)).broadcast();
+        SyncPacket.create(SyncType.PLAYER, data -> data.writeAll(this, markedForRemoval)).broadcast();
     }
 
     @Override

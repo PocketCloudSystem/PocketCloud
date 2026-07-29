@@ -7,7 +7,10 @@ import de.pocketcloud.network.packet.impl.SyncPacket;
 import de.pocketcloud.shared.sync.SyncType;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
 public final class NotificationListCache implements LocalCache<String, Boolean>, SyncingElement<Map<String, Boolean>> {
 
