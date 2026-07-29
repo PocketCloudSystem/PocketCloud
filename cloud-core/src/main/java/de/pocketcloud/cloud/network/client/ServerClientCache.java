@@ -12,13 +12,14 @@ import io.netty.channel.Channel;
 
 import java.net.SocketAddress;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
 public final class ServerClientCache implements Tickable {
 
-    private final Map<UUID, ServerClient> clientsByServer = new HashMap<>();
-    private final Map<String, UUID> serversByClient = new HashMap<>();
-    private final Map<String, ServerClient> clientsByAddress = new HashMap<>();
+    private final Map<UUID, ServerClient> clientsByServer = new ConcurrentHashMap<>();
+    private final Map<String, UUID> serversByClient = new ConcurrentHashMap<>();
+    private final Map<String, ServerClient> clientsByAddress = new ConcurrentHashMap<>();
 
     @Override
     public void tick(long currentTick) {

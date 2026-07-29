@@ -91,6 +91,12 @@ public final class ServerGroupManager implements Loadable, IWriteServerGroupProv
             return;
         }
 
+        if (group.is(template)) {
+            CloudLogger.get().warn("Template §b{} §ris already part of group §b{}§r.", template.name(), serverGroup.name());
+            Benchmark.stopTiming("server_group_add_template");
+            return;
+        }
+
         Collection<String> oldTemplates = new ArrayList<>(serverGroup.templates());
         Collection<String> templates = new ArrayList<>(serverGroup.templates());
         templates.add(template.name());
@@ -110,6 +116,12 @@ public final class ServerGroupManager implements Loadable, IWriteServerGroupProv
         ServerGroupRemoveTemplateEvent ev = new ServerGroupRemoveTemplateEvent(serverGroup, (Template) template);
         ev.call();
         if (ev.isCancelled()) {
+            Benchmark.stopTiming("server_group_remove_template");
+            return;
+        }
+
+        if (!group.is(template)) {
+            CloudLogger.get().warn("Template §b{} §ris not part of group §b{}§r.", template.name(), serverGroup.name());
             Benchmark.stopTiming("server_group_remove_template");
             return;
         }

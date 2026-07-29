@@ -1,7 +1,6 @@
 package de.pocketcloud.cloud.console.command.impl.group;
 
 import de.pocketcloud.api.component.group.IServerGroup;
-import de.pocketcloud.api.component.server.ICloudServer;
 import de.pocketcloud.api.component.template.ITemplate;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.builder.ServerGroupBuilder;
@@ -56,23 +55,19 @@ public final class GroupCommand extends Command {
             return true;
         }
 
-        String providedTemplates = ctx.argString("templates");
-        List<ITemplate> templates = new ArrayList<>();
-        if (providedTemplates != null) {
-            for (String template : providedTemplates.split(" ")) {
-                if (PocketCloud.instance().templates().check(template)) {
-                    templates.add(PocketCloud.instance().templates().get(template).get());
-                }
-            }
-        }
-
+        List<ITemplate> templates = providedTemplates(ctx, "templates");
         PocketCloud.instance().serverGroups().create(ServerGroupBuilder.create().name(name).templates(templates.toArray(ITemplate[]::new)));
         return true;
     }
 
     public boolean handleEditSub(CommandSender sender, CommandContext ctx) {
         ServerGroup group = ctx.arg("group", ServerGroup.class);
-        //TODO
+        String action = ctx.argString("action").toLowerCase();
+        List<ITemplate> templates = providedTemplates(ctx, "templates");
+        for (ITemplate template : templates) {
+            if (action.equals("add")) PocketCloud.instance().serverGroups().addTemplate(group, template);
+            else if (action.equals("remove")) PocketCloud.instance().serverGroups().removeTemplate(group, template);
+        }
         return true;
     }
 
@@ -97,5 +92,19 @@ public final class GroupCommand extends Command {
             sender.info("Name§8: §b{} §8| §rTemplates§8: §b{}", group.name(), String.join("§8, §b", group.templates()));
         }
         return true;
+    }
+
+    private List<ITemplate> providedTemplates(CommandContext ctx, String key) {
+        String providedTemplates = ctx.argString(key);
+        List<ITemplate> templates = new ArrayList<>();
+        if (providedTemplates != null) {
+            for (String template : providedTemplates.split(" ")) {
+                if (PocketCloud.instance().templates().check(template)) {
+                    templates.add(PocketCloud.instance().templates().get(template).get());
+                }
+            }
+        }
+
+        return templates;
     }
 }
