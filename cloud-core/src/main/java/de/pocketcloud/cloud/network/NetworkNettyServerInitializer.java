@@ -34,12 +34,12 @@ public class NetworkNettyServerInitializer extends ChannelInitializer<Channel> {
             PocketCloud.instance().traffic().pushBytes(NetworkTrafficMonitor.class, TrafficDirection.OUT, length);
             PocketCloud.instance().traffic().callHandlers(NetworkTrafficMonitor.class, TrafficDirection.OUT, channel, payload, packet.getSize());
 
-            if (new PacketPreSendEvent(channel, (ClientboundPacket) packet).call().isCancelled()) {
-                return false;
-            }
-
             if (packet instanceof RequestPacket p) {
                 PocketCloud.instance().requests().add(p);
+            }
+
+            if (new PacketPreSendEvent(channel, (ClientboundPacket) packet).call().isCancelled()) {
+                return false;
             }
 
             PocketCloud.instance().traffic().callHandlers(NetworkTrafficMonitor.class, NetworkTrafficMonitor.parsePacketMode(TrafficDirection.OUT, packet.getClass()), channel, packet, packet.getSize());

@@ -6,6 +6,7 @@ import de.pocketcloud.api.network.traffic.TrafficDirection;
 import de.pocketcloud.bridge.CloudBridge;
 import de.pocketcloud.network.codec.CloudPacketDecoder;
 import de.pocketcloud.network.codec.CloudPacketEncoder;
+import de.pocketcloud.network.packet.RequestPacket;
 import de.pocketcloud.network.traffic.PacketTrafficListener;
 import de.pocketcloud.network.traffic.TrafficMonitorManager;
 import de.pocketcloud.network.traffic.impl.NetworkTrafficMonitor;
@@ -27,6 +28,10 @@ public class NetworkNettyClientInitializer extends ChannelInitializer<Channel> {
 
         @Override
         public boolean onOutgoing(Channel channel, Packet packet, byte[] payload, int length) {
+            if (packet instanceof RequestPacket p) {
+                CloudBridge.instance().requests().add(p);
+            }
+
             TrafficMonitorManager.instance().pushBytes(NetworkTrafficMonitor.class, TrafficDirection.OUT, length);
             TrafficMonitorManager.instance().callHandlers(NetworkTrafficMonitor.class, TrafficDirection.OUT, channel, payload, packet.getSize());
             TrafficMonitorManager.instance().callHandlers(NetworkTrafficMonitor.class, NetworkTrafficMonitor.parsePacketMode(TrafficDirection.OUT, packet.getClass()), channel, packet, packet.getSize());

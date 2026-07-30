@@ -27,7 +27,7 @@ public final class CloudPacketDecoder extends ByteToMessageDecoder {
 
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) {
-        if (!in.isReadable()) return;
+        if (in.readableBytes() < 4) return;
 
         in.markReaderIndex();
         int length = in.readInt();

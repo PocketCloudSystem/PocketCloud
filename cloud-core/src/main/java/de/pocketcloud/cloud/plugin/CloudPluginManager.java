@@ -19,12 +19,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Getter
 public final class CloudPluginManager implements Tickable, Loadable {
 
-    private final Map<String, CloudPlugin> plugins = new HashMap<>();
+    private final Map<String, CloudPlugin> plugins = new ConcurrentHashMap<>();
     private final JarCloudPluginLoader pluginLoader = new JarCloudPluginLoader();
     private final Path pluginsFolder = Paths.get("storage/plugins");
 

@@ -7,6 +7,8 @@ import de.pocketcloud.bridge.CloudBridge;
 import de.pocketcloud.bridge.adapter.NativePlayerAdapter;
 import de.pocketcloud.bridge.api.IPlatformPlugin;
 import de.pocketcloud.bridge.config.LocalServerConfig;
+import de.pocketcloud.bridge.platform.pnx.command.CloudNotifyCommand;
+import de.pocketcloud.bridge.platform.pnx.command.TransferCommand;
 import de.pocketcloud.bridge.platform.pnx.handler.ServerPacketHandler;
 import de.pocketcloud.bridge.platform.pnx.listener.PlayerListener;
 import de.pocketcloud.network.packet.impl.PlayerTransferPacket;
@@ -15,6 +17,7 @@ import org.powernukkitx.Server;
 import org.powernukkitx.plugin.PluginBase;
 import org.powernukkitx.utils.Config;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -30,6 +33,9 @@ public final class PowerNukkitXPlugin extends PluginBase implements IPlatformPlu
     @Override
     public void onEnable() {
         getServer().getPluginManager().registerEvents(new PlayerListener(), this);
+        getServer().getCommandMap().registerAll("cloudBridge", List.of(
+                new TransferCommand(), new CloudNotifyCommand()
+        ));
     }
 
     @Override

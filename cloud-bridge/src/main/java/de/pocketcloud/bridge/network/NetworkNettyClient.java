@@ -30,21 +30,16 @@ public final class NetworkNettyClient {
         this.address = address;
     }
 
-    public void start() {
-        try {
-            channel = new Bootstrap()
-                    .channel(Epoll.isAvailable() ? EpollSocketChannel.class : NioSocketChannel.class)
-                    .group(workerGroup)
-                    .handler(new NetworkNettyClientInitializer())
-                    .connect(address)
-                    .addListener(_ -> Thread.currentThread().setName("Network"))
-                    .sync().channel();
+    public void start() throws InterruptedException {
+        channel = new Bootstrap()
+                .channel(Epoll.isAvailable() ? EpollSocketChannel.class : NioSocketChannel.class)
+                .group(workerGroup)
+                .handler(new NetworkNettyClientInitializer())
+                .connect(address)
+                .addListener(_ -> Thread.currentThread().setName("Network"))
+                .sync().channel();
 
-            CloudBridge.instance().logger().info("§bNetwork connection §rhas been §aestablished §rtowards §b{}§r.", address.toString());
-        } catch (Exception e) {
-            CloudBridge.instance().logger().error("Failed to establish network connection, shutting down...", e);
-            CloudBridge.instance().shutdown();
-        }
+        CloudBridge.instance().logger().info("§bNetwork connection §rhas been §aestablished §rtowards §b{}§r.", address.toString());
     }
 
     public CompletableFuture<Void> sendPacket(CloudboundPacket packet) {

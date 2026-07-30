@@ -60,7 +60,11 @@ public interface IPlayerExecutor {
 
     void kick(UUID uuid, String reason, String disconnectScreenMessage);
 
-    void transfer(UUID uuid, ICloudServer server);
+    default boolean transfer(UUID uuid, ICloudServer server) {
+        return transfer(uuid, server, false);
+    }
+
+    boolean transfer(UUID uuid, ICloudServer server, boolean useCustomPlayerCount);
 
     void sendMessage(String nameOrXuid, String message);
 
@@ -116,5 +120,9 @@ public interface IPlayerExecutor {
 
     void kick(String nameOrXuid, String reason, String disconnectScreenMessage);
 
-    void transfer(String nameOrXuid, ICloudServer server);
+    default boolean transfer(String nameOrXuid, ICloudServer server) {
+        return transfer(nameOrXuid, server, false);
+    }
+
+    boolean transfer(String nameOrXuid, ICloudServer server, boolean useCustomPlayerCount);
 }

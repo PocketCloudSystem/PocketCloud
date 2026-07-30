@@ -80,7 +80,7 @@ public interface ICloudPlayer extends Writable<Map<String, Object>> {
     }
 
     default void transfer(ICloudServer server) {
-        CloudAPI.instance().playerExecutor().transfer(uniqueId(), server);
+        CloudAPI.instance().playerExecutor().transfer(uniqueId(), server, false);
     }
     
     String name();

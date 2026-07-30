@@ -46,8 +46,12 @@ public final class BridgePlayerExecutor implements IPlayerExecutor {
     }
 
     @Override
-    public void transfer(UUID uuid, ICloudServer server) {
+    public boolean transfer(UUID uuid, ICloudServer server, boolean useCustomPlayerCount) {
+        if (!server.status().isOnline() || !server.verificationStatus().isVerified()) return false;
+        int maxPlayers = useCustomPlayerCount ? server.data().maxPlayers() : server.template().settings().maxPlayerCount();
+        if (server.playerCount() >= maxPlayers) return false;
         handle(uuid, (adapter, player) -> adapter.transfer(player, server));
+        return true;
     }
 
     @Override
@@ -86,8 +90,12 @@ public final class BridgePlayerExecutor implements IPlayerExecutor {
     }
 
     @Override
-    public void transfer(String nameOrXuid, ICloudServer server) {
+    public boolean transfer(String nameOrXuid, ICloudServer server, boolean useCustomPlayerCount) {
+        if (!server.status().isOnline() || !server.verificationStatus().isVerified()) return false;
+        int maxPlayers = useCustomPlayerCount ? server.data().maxPlayers() : server.template().settings().maxPlayerCount();
+        if (server.playerCount() >= maxPlayers) return false;
         handle(nameOrXuid, (adapter, player) -> adapter.transfer(player, server));
+        return true;
     }
 
     private <T> void handle(UUID uuid, BiConsumer<NativePlayerAdapter<T>, T> action) {
@@ -99,6 +107,7 @@ public final class BridgePlayerExecutor implements IPlayerExecutor {
         NativePlayerAdapter<T> adapter = adapter();
         adapter.find(nameOrXuid).ifPresent(player -> action.accept(adapter, player));
     }
+
 
     @SuppressWarnings("unchecked")
     private <T> NativePlayerAdapter<T> adapter() {

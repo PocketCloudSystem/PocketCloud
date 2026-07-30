@@ -1,5 +1,6 @@
 package de.pocketcloud.cloud.plugin;
 
+import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.console.log.def.PrefixedLogger;
 import de.pocketcloud.cloud.scheduler.TaskScheduler;
@@ -83,5 +84,9 @@ public abstract class CloudPlugin {
                 return new ByteArrayInputStream(stream.readAllBytes());
             }
         }
+    }
+
+    final public PocketCloud getCloud() {
+        return PocketCloud.instance();
     }
 }

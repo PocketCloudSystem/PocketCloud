@@ -143,9 +143,11 @@ public final class NormalPacketHandler implements PacketListener {
             if (removal) CloudBridge.instance().players().remove(player);
             else CloudBridge.instance().players().add(player);
         } else if (type == SyncType.LANGUAGE) {
+            String id = remainingData.readString();
+            Map<String, String> messages = remainingData.readMap(String.class);
             CloudBridge.instance().language().setCurrentLanguage(new MinimalLanguage(
-                    remainingData.readString(),
-                    remainingData.readMap(String.class)
+                    id,
+                    messages
             ));
         } else if (type == SyncType.WHITELIST) {
             LocalCache.get(WhitelistCache.class).syncIn(remainingData.readMap(Boolean.class));

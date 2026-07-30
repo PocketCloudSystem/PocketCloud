@@ -1,11 +1,13 @@
 package de.pocketcloud.cloud.player.executor;
 
+import de.pocketcloud.api.component.player.ICloudPlayer;
 import de.pocketcloud.api.component.server.ICloudServer;
 import de.pocketcloud.api.executor.IPlayerExecutor;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.event.impl.player.PlayerKickEvent;
 import de.pocketcloud.cloud.player.CloudPlayer;
 import de.pocketcloud.cloud.server.CloudServer;
+import de.pocketcloud.common.cache.LocalCache;
 import de.pocketcloud.network.packet.impl.PlayerKickPacket;
 import de.pocketcloud.network.packet.impl.PlayerTextPacket;
 import de.pocketcloud.network.packet.impl.PlayerTransferPacket;
@@ -94,14 +96,17 @@ public final class CloudPlayerExecutor implements IPlayerExecutor {
     }
 
     @Override
-    public void transfer(UUID uuid, ICloudServer server) {
-        PocketCloud.instance().players().get(uuid)
-                .ifPresent(p -> {
-                    CloudServer selectedServer = (CloudServer) p.currentProxy().orElse(p.currentServer().orElse(null));
-                    if (selectedServer != null) {
-                        selectedServer.sendPacket(PlayerTransferPacket.create(p.name(), server.name()));
-                    }
-                });
+    public boolean transfer(UUID uuid, ICloudServer server, boolean useCustomPlayerCount) {
+        if (!server.status().isOnline() || !server.verificationStatus().isVerified()) return false;
+        int maxPlayers = useCustomPlayerCount ? server.data().maxPlayers() : server.template().settings().maxPlayerCount();
+        if (server.playerCount() >= maxPlayers) return false;
+        ICloudPlayer player = PocketCloud.instance().players().get(uuid).orElse(null);
+        if (player == null) return false;
+        CloudServer selectedServer = (CloudServer) player.currentProxy().orElse(player.currentServer().orElse(null));
+        if (selectedServer != null) {
+            selectedServer.sendPacket(PlayerTransferPacket.create(player.name(), server.name()));
+        }
+        return false;
     }
 
     @Override
@@ -183,13 +188,16 @@ public final class CloudPlayerExecutor implements IPlayerExecutor {
     }
 
     @Override
-    public void transfer(String nameOrXuid, ICloudServer server) {
-        PocketCloud.instance().players().get(nameOrXuid)
-                .ifPresent(p -> {
-                    CloudServer selectedServer = (CloudServer) p.currentProxy().orElse(p.currentServer().orElse(null));
-                    if (selectedServer != null) {
-                        selectedServer.sendPacket(PlayerTransferPacket.create(p.name(), server.name()));
-                    }
-                });
+    public boolean transfer(String nameOrXuid, ICloudServer server, boolean useCustomPlayerCount) {
+        if (!server.status().isOnline() || !server.verificationStatus().isVerified()) return false;
+        int maxPlayers = useCustomPlayerCount ? server.data().maxPlayers() : server.template().settings().maxPlayerCount();
+        if (server.playerCount() >= maxPlayers) return false;
+        ICloudPlayer player = PocketCloud.instance().players().get(nameOrXuid).orElse(null);
+        if (player == null) return false;
+        CloudServer selectedServer = (CloudServer) player.currentProxy().orElse(player.currentServer().orElse(null));
+        if (selectedServer != null) {
+            selectedServer.sendPacket(PlayerTransferPacket.create(player.name(), server.name()));
+        }
+        return false;
     }
 }

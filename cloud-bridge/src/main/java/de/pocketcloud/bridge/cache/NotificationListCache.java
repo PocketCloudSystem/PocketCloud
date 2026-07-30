@@ -1,6 +1,8 @@
 package de.pocketcloud.bridge.cache;
 
 import de.pocketcloud.common.cache.LocalCache;
+import de.pocketcloud.network.packet.impl.SyncPacket;
+import de.pocketcloud.shared.sync.SyncType;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
@@ -27,13 +29,13 @@ public final class NotificationListCache implements LocalCache<String, Boolean> 
     @Override
     public void add(String key, @NotNull Boolean value) {
         notificationList.put(key, value);
-        syncOut();
+        SyncPacket.create(SyncType.PLAYER_NOTIFICATION_STATE, data -> data.writeAll(key, value));
     }
 
     @Override
     public void remove(String element) {
         notificationList.remove(element);
-        syncOut();
+        SyncPacket.create(SyncType.PLAYER_NOTIFICATION_STATE, data -> data.writeAll(element, false));
     }
 
     @Override

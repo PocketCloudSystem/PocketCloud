@@ -9,6 +9,7 @@ import de.pocketcloud.bridge.CloudBridge;
 import de.pocketcloud.bridge.network.packet.handler.NormalPacketHandler;
 import de.pocketcloud.common.lifecycle.Loadable;
 import de.pocketcloud.network.packet.broadcast.InternalPacketBroadcaster;
+import de.pocketcloud.network.packet.impl.SyncPacket;
 import io.netty.channel.Channel;
 import org.reflections.Reflections;
 

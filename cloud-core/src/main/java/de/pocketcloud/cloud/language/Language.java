@@ -45,10 +45,9 @@ public class Language implements ILanguage {
             if (affected.get() > 0) {
                 CloudLogger.get().info("Incomplete language file §b{}§r, completing the file with the missing language keys...", filePath.toString());
                 FileUtils.emitYamlFile(filePath, realMessages);
-
-                messages.clear();
-                messages.putAll(realMessages);
             }
+
+            this.messages.putAll(realMessages);
         } else {
             CloudLogger.get().info("Language file §b{} §rnot found, generating...", filePath.toString());
             messages.clear();

@@ -71,7 +71,13 @@ public final class CloudBridge implements CloudAPI {
         registry.register(SoftwareProvider.class, new SoftwareProvider());
         registry.register(LanguageProvider.class, new LanguageProvider());
 
-        network().start();
+        try {
+            network().start();
+        } catch (InterruptedException e) {
+            logger().error("Failed to establish network connection, shutting down...", e);
+            shutdown();
+            return;
+        }
 
         platformPlugin.startTask(new RequestTimeoutTask(), 10);
 

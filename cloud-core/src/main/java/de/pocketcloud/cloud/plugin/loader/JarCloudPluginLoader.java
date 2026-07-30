@@ -4,6 +4,7 @@ import de.pocketcloud.cloud.plugin.CloudPlugin;
 import de.pocketcloud.cloud.plugin.CloudPluginClassLoader;
 import de.pocketcloud.cloud.plugin.CloudPluginDescription;
 import de.pocketcloud.cloud.plugin.exception.PluginLoadFailedException;
+import de.pocketcloud.common.serialization.MapperUtils;
 import de.pocketcloud.common.util.FileUtils;
 
 import java.io.File;
@@ -13,6 +14,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Map;
 import java.util.Objects;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -40,7 +42,8 @@ public final class JarCloudPluginLoader {
         try (JarFile jarFile = new JarFile(pluginJar)) {
             JarEntry entry = jarFile.getJarEntry("plugin.yml");
             try (InputStream inputStream = jarFile.getInputStream(entry)) {
-                CloudPluginDescription description = FileUtils.YAML.readValue(inputStream, CloudPluginDescription.class);
+                Map<String, Object> raw = FileUtils.parseYaml(new String(inputStream.readAllBytes()));
+                CloudPluginDescription description = CloudPluginDescription.read(raw);
                 if (description.name() == null) throw new PluginLoadFailedException("No plugin name found in plugin.yml: " + path);
                 if (description.version() == null) throw new PluginLoadFailedException("No plugin version found in plugin.yml: " + path);
                 if (description.main() == null) throw new PluginLoadFailedException("No plugin main found in plugin.yml: " + path);

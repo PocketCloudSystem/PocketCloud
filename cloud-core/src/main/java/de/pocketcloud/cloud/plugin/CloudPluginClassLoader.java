@@ -22,8 +22,12 @@ public final class CloudPluginClassLoader extends URLClassLoader {
         synchronized (getClassLoadingLock(name)) {
             Class<?> clazz = findLoadedClass(name);
             if (clazz == null) {
-                if (name.startsWith("java.") || name.startsWith("javax.") || name.startsWith("de.pocketcloud.cloud.")) {
-                    clazz = getParent().loadClass(name);
+                if (name.startsWith("java.") || name.startsWith("javax.") || name.startsWith("de.pocketcloud.")) {
+                    try {
+                        clazz = getParent().loadClass(name);
+                    } catch (ClassNotFoundException ex) {
+                        clazz = findClass(name);
+                    }
                 } else {
                     try {
                         clazz = findClass(name);

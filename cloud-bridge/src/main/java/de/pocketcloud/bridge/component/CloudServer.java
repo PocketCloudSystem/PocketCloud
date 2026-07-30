@@ -38,7 +38,6 @@ public final class CloudServer extends BaseCloudServer implements SyncingElement
         data().memoryLimit(server.data().memoryLimit());
         data().cpuUsage(server.data().cpuUsage());
         status = server.status();
-        status(server.status());
         verificationStatus(server.verificationStatus());
         storage().syncIn(server.storage().getAll());
     }

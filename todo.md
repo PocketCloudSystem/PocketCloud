@@ -1,6 +1,6 @@
-- commands
+- commands (done)
 - ingame commands
-- event service (events)
+- event service (events, done)
 - http(s) routes
 - test the cloud
 - http api docs
