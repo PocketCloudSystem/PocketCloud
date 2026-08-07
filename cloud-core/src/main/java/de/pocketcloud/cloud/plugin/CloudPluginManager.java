@@ -1,5 +1,6 @@
 package de.pocketcloud.cloud.plugin;
 
+import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.event.impl.plugin.PluginDisableEvent;
 import de.pocketcloud.cloud.event.impl.plugin.PluginEnableEvent;
@@ -94,6 +95,7 @@ public final class CloudPluginManager implements Tickable, Loadable {
         CloudLogger.get().info("§cDisabling §rplugin §b{}§r...",  plugin.getDescription().name());
         plugins.remove(plugin.getDescription().name());
         plugin.setState(CloudPluginState.DISABLED);
+        PocketCloud.instance().events().unregisterAll(plugin);
         try {
             new PluginDisableEvent(plugin).call();
             plugin.onDisable();

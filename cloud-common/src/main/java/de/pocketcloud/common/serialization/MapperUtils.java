@@ -45,15 +45,16 @@ public final class MapperUtils {
             for (Field field : getFields(obj.getClass())) {
                 field.setAccessible(true);
                 Object value = field.get(obj);
-                if (value == null) {
-                    map.put(field.getName(), null);
-                    continue;
-                }
 
                 MapKey mapKey = field.getAnnotation(MapKey.class);
                 MapInline mapInline = field.getAnnotation(MapInline.class);
 
                 String name = mapKey != null && !mapKey.name().isBlank() ? mapKey.name() : field.getName();
+
+                if (value == null) {
+                    map.put(name, null);
+                    continue;
+                }
 
                 if (mapInline != null) {
                     map.putAll(toMap(value));
@@ -83,15 +84,15 @@ public final class MapperUtils {
                 accessor.setAccessible(true);
                 Object value = accessor.invoke(obj);
 
-                if (value == null) {
-                    map.put(component.getName(), null);
-                    continue;
-                }
-
                 MapKey mapKey = component.getAnnotation(MapKey.class);
                 MapInline mapInline = component.getAnnotation(MapInline.class);
 
                 String name = mapKey != null && !mapKey.name().isBlank() ? mapKey.name() : component.getName();
+
+                if (value == null) {
+                    map.put(name, null);
+                    continue;
+                }
 
                 if (mapInline != null) {
                     map.putAll(toMap(value));

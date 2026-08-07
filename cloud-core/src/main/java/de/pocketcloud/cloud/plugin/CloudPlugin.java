@@ -4,6 +4,8 @@ import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.console.log.def.PrefixedLogger;
 import de.pocketcloud.cloud.scheduler.TaskScheduler;
+import de.pocketcloud.common.config.Config;
+import de.pocketcloud.common.config.exception.UnsupportedFileExtensionException;
 import lombok.Getter;
 import lombok.Setter;
 import org.jetbrains.annotations.Nullable;
@@ -42,6 +44,14 @@ public abstract class CloudPlugin {
         this.dataFolder = dataFolder;
         this.pluginFilePath = pluginFilePath;
         this.logger = CloudLogger.prefixed("[" + description.name() + "]");
+    }
+
+    public boolean saveDefaultConfig() throws IOException {
+        return saveResource("config.yml", false);
+    }
+
+    public boolean saveResource(String relativePath) throws IOException {
+        return saveResource(relativePath, false);
     }
 
     public boolean saveResource(String relativePath, boolean overwrite) throws IOException {
@@ -83,6 +93,17 @@ public abstract class CloudPlugin {
             try (InputStream stream = jarFile.getInputStream(entry)) {
                 return new ByteArrayInputStream(stream.readAllBytes());
             }
+        }
+    }
+
+    @Nullable
+    public Config getConfig() {
+        if (!Files.exists(dataFolder.resolve("config.yml"))) return null;
+        try {
+            return new Config(dataFolder.resolve("config.yml"));
+        } catch (IOException | UnsupportedFileExtensionException e) {
+            getLogger().exception(e);
+            return null;
         }
     }
 
