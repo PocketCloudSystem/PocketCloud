@@ -7,7 +7,6 @@ import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.event.impl.player.PlayerKickEvent;
 import de.pocketcloud.cloud.player.CloudPlayer;
 import de.pocketcloud.cloud.server.CloudServer;
-import de.pocketcloud.common.cache.LocalCache;
 import de.pocketcloud.network.packet.impl.PlayerKickPacket;
 import de.pocketcloud.network.packet.impl.PlayerTextPacket;
 import de.pocketcloud.network.packet.impl.PlayerTransferPacket;

@@ -4,14 +4,14 @@ import de.pocketcloud.cloud.plugin.CloudPlugin;
 import de.pocketcloud.common.lifecycle.Tickable;
 import lombok.Getter;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 public final class TaskScheduler implements Tickable {
 
-    private final Map<Long, TaskHandler> tasks = new HashMap<>();
+    private final Map<Long, TaskHandler> tasks = new ConcurrentHashMap<>();
     @Getter
     private final CloudPlugin owner;
 

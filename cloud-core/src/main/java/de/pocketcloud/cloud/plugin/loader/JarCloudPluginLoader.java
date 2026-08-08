@@ -4,7 +4,6 @@ import de.pocketcloud.cloud.plugin.CloudPlugin;
 import de.pocketcloud.cloud.plugin.CloudPluginClassLoader;
 import de.pocketcloud.cloud.plugin.CloudPluginDescription;
 import de.pocketcloud.cloud.plugin.exception.PluginLoadFailedException;
-import de.pocketcloud.common.serialization.MapperUtils;
 import de.pocketcloud.common.util.FileUtils;
 
 import java.io.File;
