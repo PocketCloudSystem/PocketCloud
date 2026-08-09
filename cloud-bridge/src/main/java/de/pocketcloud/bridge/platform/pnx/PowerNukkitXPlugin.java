@@ -33,6 +33,10 @@ public final class PowerNukkitXPlugin extends PluginBase implements IPlatformPlu
     @Override
     public void onEnable() {
         getServer().getPluginManager().registerEvents(new PlayerListener(), this);
+    }
+
+    @Override
+    public void registerCommands() {
         getServer().getCommandMap().registerAll("cloudBridge", List.of(
                 new TransferCommand(), new CloudNotifyCommand()
         ));

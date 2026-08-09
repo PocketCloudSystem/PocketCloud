@@ -11,6 +11,7 @@ import de.pocketcloud.common.lifecycle.Loadable;
 import de.pocketcloud.network.packet.broadcast.InternalPacketBroadcaster;
 import io.netty.channel.Channel;
 import org.reflections.Reflections;
+import org.reflections.util.ConfigurationBuilder;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -39,7 +40,10 @@ public final class PacketRegistry implements IPacketRegistry<Channel>, Loadable 
 
     @Override
     public void load() {
-        Reflections reflections = new Reflections("de.pocketcloud.network.packet.impl");
+        Reflections reflections = new Reflections(new ConfigurationBuilder()
+                .forPackage("de.pocketcloud.network.packet.impl", CloudBridge.class.getClassLoader())
+                .addClassLoaders(CloudBridge.class.getClassLoader()));
+
         Set<Class<? extends Packet>> packetClasses = reflections.getSubTypesOf(Packet.class);
         for (Class<? extends Packet> packetClass : packetClasses) {
             registerPacket(packetClass);

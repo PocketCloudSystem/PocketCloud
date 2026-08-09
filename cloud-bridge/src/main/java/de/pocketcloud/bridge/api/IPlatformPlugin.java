@@ -6,6 +6,8 @@ import de.pocketcloud.bridge.config.LocalServerConfig;
 
 public interface IPlatformPlugin {
 
+    void registerCommands();
+
     void startTask(Runnable runnable, int period);
 
     ILogger craftPlatformLogger();

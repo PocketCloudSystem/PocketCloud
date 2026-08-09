@@ -41,7 +41,6 @@ public abstract class RequestPacket extends CloudPacket {
      * Only for cloud-bridge
      */
     public RequestPacket sendRequest() {
-        
         sendPacket();
         return this;
     }

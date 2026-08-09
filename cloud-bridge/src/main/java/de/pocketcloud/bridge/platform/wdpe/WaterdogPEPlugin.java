@@ -50,6 +50,9 @@ public final class WaterdogPEPlugin extends Plugin implements IPlatformPlugin {
     }
 
     @Override
+    public void registerCommands() {}
+
+    @Override
     public void startTask(Runnable runnable, int period) {
         getProxy().getScheduler().scheduleRepeating(runnable, period);
     }
