@@ -15,6 +15,7 @@ import java.util.UUID;
 public class CloudServerData implements ICloudServerData {
 
     protected final UUID serverUuid;
+    protected final String address;
     protected final int port;
     protected int maxPlayers;
 
@@ -27,8 +28,9 @@ public class CloudServerData implements ICloudServerData {
     protected Long memoryLimit = 0L;
     protected Double cpuUsage = 0.0;
 
-    public CloudServerData(UUID serverUuid, int port, int maxPlayers) {
+    public CloudServerData(UUID serverUuid, String address, int port, int maxPlayers) {
         this.serverUuid = serverUuid;
+        this.address = address;
         this.port = port;
         this.maxPlayers = maxPlayers;
     }

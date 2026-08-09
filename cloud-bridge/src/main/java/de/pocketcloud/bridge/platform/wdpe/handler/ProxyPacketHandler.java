@@ -27,11 +27,15 @@ public final class ProxyPacketHandler implements PacketListener {
 
     @PacketHandler(ProxyRegisterServerPacket.class)
     public void handle(ProxyRegisterServerPacket packet) {
+        if (ProxyServer.getInstance().getServerInfo(packet.getServerName()) != null) ProxyServer.getInstance().removeServerInfo(packet.getServerName());
         ProxyServer.getInstance().registerServerInfo(new BedrockServerInfo(
                 packet.getServerName(),
-                new InetSocketAddress(packet.getPort()),
+                new InetSocketAddress(packet.getAddress(), packet.getPort()),
                 null
         ));
+
+        System.out.println(ProxyServer.getInstance().getServerInfo(packet.getServerName()));
+        System.out.println(ProxyServer.getInstance().getServerInfo(packet.getServerName()).getResolvedAddress().toString());
     }
 
     @PacketHandler(ProxyUnregisterServerPacket.class)

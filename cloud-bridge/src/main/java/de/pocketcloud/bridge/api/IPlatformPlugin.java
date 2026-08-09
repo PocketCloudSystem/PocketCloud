@@ -6,7 +6,7 @@ import de.pocketcloud.bridge.config.LocalServerConfig;
 
 public interface IPlatformPlugin {
 
-    void registerCommands();
+    void onVerification();
 
     void startTask(Runnable runnable, int period);
 

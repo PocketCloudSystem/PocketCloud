@@ -8,6 +8,8 @@ public interface ICloudServerData {
 
     UUID serverUuid();
 
+    String address();
+
     int port();
 
     int maxPlayers();

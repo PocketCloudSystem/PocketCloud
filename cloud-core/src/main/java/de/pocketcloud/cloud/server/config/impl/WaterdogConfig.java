@@ -33,6 +33,7 @@ public final class WaterdogConfig extends ServerProperties {
         return new LinkedHashMap<>(Map.ofEntries(
                 Map.entry("%uuid%", server.uuid().toString()),
                 Map.entry("%name%", server.name()),
+                Map.entry("%server_ip%", server.data().address()),
                 Map.entry("%server_port%", server.data().port()),
                 Map.entry("%max_players%", server.template().settings().maxPlayerCount()),
                 Map.entry("%template%", server.templateName()),
@@ -52,9 +53,10 @@ public final class WaterdogConfig extends ServerProperties {
         return ArrayUtils.orderedMap(
                 "listener", ArrayUtils.orderedMap(
                         "motd", "%name%",
+                        "sub_motd", "WaterdogPE Proxy",
                         "name", "§bWaterdog§3PE",
                         "priorities", List.of(),
-                        "host", "0.0.0.0:%server_port%",
+                        "host", "%server_ip%:%server_port%",
                         "max_players", "%max_players%",
                         "forced_hosts", new LinkedHashMap<>(),
                         "additional_ports", List.of(),
@@ -69,8 +71,12 @@ public final class WaterdogConfig extends ServerProperties {
                         "max_user_mtu", 1400,
                         "enable_cookies", true,
                         "login_throttle", 2,
+                        "enable_proxy_protocol", false,
                         "max_downstream_mtu", 1400,
-                        "connection_timeout", 15
+                        "login_timeout", 10,
+                        "connection_timeout", 15,
+                        "error_timeout", 15,
+                        "random_downstream_loopback_address", false
                 ),
                 "permissions", new LinkedHashMap<>(),
                 "permissions_default", List.of(),
@@ -91,6 +97,9 @@ public final class WaterdogConfig extends ServerProperties {
                 "overwrite_client_packs", false,
                 "force_server_packs", false,
                 "pack_cache_size", 16,
+                "pack_cdn_urls", List.of(),
+                "disable_cdn_for", List.of(),
+                "force_disable_vibrant_visuals", false,
                 "default_idle_threads", -1,
                 "enable_statistics", true,
                 "enable_error_reporting", true,

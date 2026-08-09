@@ -6,7 +6,9 @@ import de.pocketcloud.cloud.server.CloudServer;
 import de.pocketcloud.cloud.server.config.ServerProperties;
 import de.pocketcloud.common.util.ArrayUtils;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 public final class PowerNukkitXConfig extends ServerProperties {
@@ -33,12 +35,7 @@ public final class PowerNukkitXConfig extends ServerProperties {
             Map.entry("%server_port%", server.data().port()),
             Map.entry("%max_players%", server.template().settings().maxPlayerCount()),
             Map.entry("%auto_save%", server.template().settings().saveOnShutdown() || server.template().settings().staticServers()),
-            Map.entry("%server_ip%", !PocketCloud.instance().clients().getAll(c -> {
-                if (c.hasServer()) {
-                    return c.server().template().templateType().isProxy();
-                }
-                return false;
-            }).isEmpty() ? "127.0.0.1" : "0.0.0.0")
+            Map.entry("%server_ip%", server.data().address())
         ));
     }
 
@@ -59,7 +56,8 @@ public final class PowerNukkitXConfig extends ServerProperties {
                 "autoSave", "%auto_save%",
                 "autosaveDelay", 6000,
                 "saveUnknownBlock", true,
-                "xboxAuth", false
+                "xboxAuth", false,
+                "waterdogpe", false
         );
 
         Map<String, Object> playerSettings = ArrayUtils.orderedMap(
@@ -92,18 +90,40 @@ public final class PowerNukkitXConfig extends ServerProperties {
                 "allowClientPacks", true,
                 "serverAuthoritativeMovement", "server-auth",
                 "allowVibrantVisuals", true,
+                "experiments", new ArrayList<>(List.of(
+                        "data_driven_biomes",
+                        "experimental_creator_cameras",
+                        "gametest",
+                        "jigsaw_structures",
+                        "upcoming_creator_features",
+                        "villager_trades_rebalance",
+                        "voxel_shapes"
+                )),
                 "cacheStructures", false,
                 "enableEducation", false,
                 "muteEmoteAnnouncements", false,
-                "enableMobAi", true
+                "enableMobAi", true,
+                "enableRecipes", true,
+                "enableCreativeInventory", true,
+                "enableDaylightCycle", true,
+                "enableWeather", true,
+                "enableEntitySpawning", true,
+                "enableBlockRandomTicking", true,
+                "enableLiquidFlow", true,
+                "enableItemDrops", true,
+                "enableXpOrbs", true,
+                "enableExplosionBlockDamage", true,
+                "enableBlockGravity", true,
+                "enableHunger", true
         );
 
         Map<String, Object> miscSettings = ArrayUtils.orderedMap(
                 "shutdownMessage", "Server closed",
                 "installSpark", false,
-                "enableTerra", false,
                 "bypassAPICheck", false,
                 "overrideServerAuthBlockBreaking", false,
+                "enableMetrics", true,
+                "enableTerra", false,
                 "disableMetrics", true
         );
 
@@ -130,7 +150,8 @@ public final class PowerNukkitXConfig extends ServerProperties {
                 "clearTickList", true,
                 "generationQueueSize", 8,
                 "saveGenerated", true,
-                "convertBDSChunks", false
+                "convertBDSChunks", false,
+                "disableBlockTicking", new ArrayList<>()
         );
 
         Map<String, Object> rateLimit = ArrayUtils.orderedMap(
@@ -176,6 +197,7 @@ public final class PowerNukkitXConfig extends ServerProperties {
                 "level", "INFO",
                 "command", false,
                 "mode", false,
+                "packetList", new ArrayList<>(),
                 "disableEncodingLimits", false
         );
 
@@ -184,7 +206,16 @@ public final class PowerNukkitXConfig extends ServerProperties {
                 "baseTps", 20,
                 "registryCacheEnabled", false,
                 "registryCachePath", "path/to/your/registry_cache.bin",
-                "forceGCpercentage", 1.0
+                "forceGCpercentage", 1.0,
+                "enable", true,
+                "slots", 32,
+                "defaultTemperature", 32,
+                "freezingPoint", 0,
+                "boilingPoint", 1024,
+                "absoluteZero", -256,
+                "melting", 16,
+                "singleOperation", 1,
+                "batchOperation", 32
         );
 
         Map<String, Object> config = ArrayUtils.orderedMap(

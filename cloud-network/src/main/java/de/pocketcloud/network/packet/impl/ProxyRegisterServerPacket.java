@@ -12,29 +12,32 @@ import lombok.NoArgsConstructor;
 public final class ProxyRegisterServerPacket extends CloudPacket implements ClientboundPacket {
 
     private String serverName;
+    private String address;
     private int port;
 
-    public ProxyRegisterServerPacket(String serverName, int port) {
+    public ProxyRegisterServerPacket(String serverName, String address, int port) {
         this.serverName = serverName != null ? serverName : "";
+        this.address = address;
         this.port = port;
     }
 
     @Override
     public void encodePayload(IPacketData packetData) {
-        packetData.writeAll(serverName, port);
+        packetData.writeAll(serverName, address, port);
     }
 
     @Override
     public void decodePayload(IPacketData packetData) {
         serverName = packetData.readString();
+        address = packetData.readString();
         port = packetData.readInt();
     }
 
-    public static ProxyRegisterServerPacket create(String serverName, int port) {
-        return new ProxyRegisterServerPacket(serverName, port);
+    public static ProxyRegisterServerPacket create(String serverName, String address, int port) {
+        return new ProxyRegisterServerPacket(serverName, address, port);
     }
 
     public static ProxyRegisterServerPacket create(ICloudServer server) {
-        return create(server.name(), server.data().port());
+        return create(server.name(), server.data().address(), server.data().port());
     }
 }

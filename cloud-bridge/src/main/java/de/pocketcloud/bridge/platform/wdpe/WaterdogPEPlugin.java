@@ -36,7 +36,6 @@ public final class WaterdogPEPlugin extends Plugin implements IPlatformPlugin {
     @Override
     public void onEnable() {
         getProxy().setJoinHandler(new JoinAndFallbackHandler());
-        getProxy().setForcedHostHandler(new JoinAndFallbackHandler());
         getProxy().setReconnectHandler(new JoinAndFallbackHandler());
         getProxy().getEventManager().subscribe(PlayerLoginEvent.class, PlayerListener::handle);
         getProxy().getEventManager().subscribe(PlayerDisconnectedEvent.class, PlayerListener::handle);
@@ -50,7 +49,7 @@ public final class WaterdogPEPlugin extends Plugin implements IPlatformPlugin {
     }
 
     @Override
-    public void registerCommands() {}
+    public void onVerification() {}
 
     @Override
     public void startTask(Runnable runnable, int period) {

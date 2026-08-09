@@ -90,7 +90,7 @@ public final class CloudBridge implements CloudAPI {
             if (res.getVerificationStatus() == VerificationStatus.VERIFIED) {
                 LocalCache.get(RandomCache.class).add(RandomCache.KEY_LAST_KEEP_ALIVE, System.currentTimeMillis());
                 startOtherTasks();
-                platformPlugin.registerCommands();
+                platformPlugin.onVerification();
                 logger.info(LanguageKey.INGAME_SERVER_VERIFIED.translate());
                 constructKeepAlive().sendPacket();
             } else {

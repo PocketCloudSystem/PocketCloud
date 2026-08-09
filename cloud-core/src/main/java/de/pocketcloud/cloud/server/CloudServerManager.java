@@ -110,7 +110,7 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
                 id,
                 uuid,
                 template.name(),
-                new CloudServerData(uuid, port, template.settings().maxPlayerCount()),
+                new CloudServerData(uuid, template.templateType().isServer() ? "127.0.0.1" : "0.0.0.0", port, template.settings().maxPlayerCount()),
                 new CloudServerStorage(uuid)
             );
 
