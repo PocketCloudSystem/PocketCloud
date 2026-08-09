@@ -59,8 +59,8 @@ public final class PluginCommand extends Command {
         sender.info("Description§8: §b{}", plugin.getDescription().description().isBlank() ? "Empty" :  plugin.getDescription().description());
         sender.info("Main§8: §b{}", plugin.getDescription().main());
         sender.info("Authors§8: §c{}", String.join("§8, §c", plugin.getDescription().authors().isEmpty() ? List.of("None") : plugin.getDescription().authors()));
-        sender.info("Data Folder§8: §b", plugin.getDataFolder().toAbsolutePath().toString());
-        sender.info("Plugin File Path§8: §b", plugin.getPluginFilePath().toAbsolutePath().toString());
+        sender.info("Data Folder§8: §b{}", plugin.getDataFolder().toAbsolutePath().toString());
+        sender.info("Plugin File Path§8: §b{}", plugin.getPluginFilePath().toAbsolutePath().toString());
         sender.info("Scheduled Tasks§8: §b{} tasks", tasks);
         return true;
     }
