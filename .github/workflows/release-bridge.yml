@@ -75,6 +75,7 @@ jobs:
           files: ${{ steps.jar.outputs.path }}
           target_commitish: ${{ github.sha }}
           fail_on_unmatched_files: true
+          make_latest: false
 
       - name: Move latest-bridge tag
         if: steps.check.outputs.exists == 'false'
