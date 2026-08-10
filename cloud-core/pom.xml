@@ -26,6 +26,10 @@
             <id>okaeri-releases</id>
             <url>https://repo.okaeri.cloud/releases</url>
         </repository>
+        <repository>
+            <id>github-pocketcloud</id>
+            <url>https://maven.pkg.github.com/PocketCloudSystem/java-discord-webhook</url>
+        </repository>
     </repositories>
 
     <dependencies>
