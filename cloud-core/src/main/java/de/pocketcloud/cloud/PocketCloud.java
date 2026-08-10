@@ -102,7 +102,7 @@ public final class PocketCloud implements CloudAPI {
 
         createDirectories();
 
-        System.out.println("Checking version...");
+        System.out.println("Checking for previous used versions...");
         Path firstRunPath = PocketCloudPaths.storage().with(".first_run").asPath();
         if (!Files.exists(firstRunPath)) {
             firstRun = true;

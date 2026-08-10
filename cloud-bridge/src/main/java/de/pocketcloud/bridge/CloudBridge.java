@@ -74,7 +74,7 @@ public final class CloudBridge implements CloudAPI {
         try {
             network().start();
         } catch (InterruptedException e) {
-            logger().error("Failed to establish network connection, shutting down...", e);
+            logger().error("Failed to establish network connection, shutting this server down...", e);
             shutdown();
             return;
         }
