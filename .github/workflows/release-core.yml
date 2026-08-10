@@ -53,7 +53,17 @@ jobs:
         if: steps.check.outputs.exists == 'false'
         id: jar
         run: |
-          JAR=$(find cloud-core/target -maxdepth 1 -name '*.jar' ! -name '*sources*' ! -name '*javadoc*' ! -name 'original-*' | head -n1)
+          find target -name '*.jar' -type f | head -20 || true
+          ls -la target/cloud-core/compiled/ 2>/dev/null || true
+          
+          JAR="target/cloud-core/compiled/pocketcloud.jar"
+          
+          if [ ! -f "$JAR" ]; then
+            echo "::error::JAR not found at $JAR"
+            exit 1
+          fi
+          
+          echo "Found JAR: $JAR"
           echo "path=$JAR" >> "$GITHUB_OUTPUT"
 
       - name: Create versioned release
@@ -64,6 +74,7 @@ jobs:
           name: cloud-core ${{ steps.version.outputs.version }}
           files: ${{ steps.jar.outputs.path }}
           target_commitish: ${{ github.sha }}
+          fail_on_unmatched_files: true
 
       - name: Move latest-core tag
         if: steps.check.outputs.exists == 'false'
