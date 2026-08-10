@@ -84,7 +84,8 @@ public record Library(
             }
 
             File sizeFile = sizeFilePath().toFile();
-            if (!sizeFile.exists() && !sizeFile.createNewFile()) throw new IOException("Failed to create .size file for library: " + name);
+            if (!sizeFile.exists() && !sizeFile.createNewFile())
+                throw new IOException("Failed to create .size file for library: " + name);
             FileUtils.filePutContents(sizeFilePath(), String.valueOf(archivePath.toFile().length()));
 
             progressBar.finish();

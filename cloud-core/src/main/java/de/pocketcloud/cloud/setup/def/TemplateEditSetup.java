@@ -114,7 +114,7 @@ public final class TemplateEditSetup extends Setup {
                         .recommendation("1024 Megabytes")
                         .defaultValue(String.valueOf(template.settings().maxMemory()), template.settings().maxMemory())
                         .build()
-                );
+        );
     }
 
     @Override

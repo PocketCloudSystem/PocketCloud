@@ -7,6 +7,8 @@ import java.lang.annotation.RetentionPolicy;
 public @interface SubCommandDescription {
 
     String name();
+
     String usage() default "";
+
     boolean optional() default false;
 }

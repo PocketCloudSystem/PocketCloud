@@ -33,9 +33,9 @@ public final class BenchmarkTiming {
         duration = (end - start) / 1_000_000.0;
     }
 
-    public boolean isDone() { return duration != null; }
+    public boolean isDone() {return duration != null;}
 
-    public double startInMs() { return start / 1_000_000.0; }
+    public double startInMs() {return start / 1_000_000.0;}
 
-    public double endInMs() { return end / 1_000_000.0; }
+    public double endInMs() {return end / 1_000_000.0;}
 }

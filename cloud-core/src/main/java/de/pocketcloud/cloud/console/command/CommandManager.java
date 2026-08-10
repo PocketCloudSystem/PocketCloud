@@ -30,7 +30,8 @@ public final class CommandManager implements Loadable, Tickable {
         for (Class<? extends Command> commandClass : commandClasses) {
             try {
                 register(commandClass.getDeclaredConstructor().newInstance());
-            } catch (InstantiationException | InvocationTargetException | NoSuchMethodException | IllegalAccessException e) {
+            } catch (InstantiationException | InvocationTargetException | NoSuchMethodException |
+                     IllegalAccessException e) {
                 throw new RuntimeException(e);
             }
         }
@@ -116,5 +117,6 @@ public final class CommandManager implements Loadable, Tickable {
         return commandPool.values().stream().toList();
     }
 
-    private record AwaitConfirmationData(String command, CommandSender sender, String prompt, String[] acceptKeywords, int timeout, Promise<Boolean> promise) {}
+    private record AwaitConfirmationData(String command, CommandSender sender, String prompt, String[] acceptKeywords,
+                                         int timeout, Promise<Boolean> promise) {}
 }

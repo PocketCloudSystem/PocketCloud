@@ -116,7 +116,7 @@ public final class FormatUtils {
 
     public static String usagePercentage(double percentage, boolean higherBetter, int precision, boolean coloured) {
         if (percentage < 0) {
-            return (coloured ? "§c" : "") +  "???";
+            return (coloured ? "§c" : "") + "???";
         }
 
         String formatted = round(percentage, precision) + "%";

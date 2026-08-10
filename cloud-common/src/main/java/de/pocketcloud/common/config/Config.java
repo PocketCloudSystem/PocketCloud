@@ -56,13 +56,16 @@ public final class Config {
     }
 
     public void load() throws IOException, UnsupportedFileExtensionException {
-        if (!Files.exists(filePath.getParent())) throw new FileNotFoundException("Parent of " + filePath + " not found");
+        if (!Files.exists(filePath.getParent()))
+            throw new FileNotFoundException("Parent of " + filePath + " not found");
         if (type == null) type = ConfigTypes.detect(filePath).orElse(null);
 
-        if (type == null) throw new UnsupportedFileExtensionException("Unsupported file extension from " + filePath + " has no config type");
+        if (type == null)
+            throw new UnsupportedFileExtensionException("Unsupported file extension from " + filePath + " has no config type");
         File file = filePath.toFile();
         if (!file.exists()) {
-            if (!file.createNewFile()) throw new FileNotFoundException("Could not create file " + file.getAbsolutePath());
+            if (!file.createNewFile())
+                throw new FileNotFoundException("Could not create file " + file.getAbsolutePath());
             content = defaultContent;
             changed = true;
             if (!save()) throw new IOException("Could not save file " + file.getAbsolutePath());
@@ -108,8 +111,9 @@ public final class Config {
 
     /**
      * Only difference between {@link Config#save()} and {@link Config#saveSafe()} is, that saveSafe swallows the exception and returns false instead.
+     *
      * @param customSaveHandler If applied, the config will use this to save the config to disk, meaning the handler will save the config.
-     * @param exceptionHandler If applied, the occurred exception will be passed on to the exceptionHandler
+     * @param exceptionHandler  If applied, the occurred exception will be passed on to the exceptionHandler
      */
     public boolean saveSafe(@Nullable Function<Config, Boolean> customSaveHandler, @Nullable Consumer<Throwable> exceptionHandler) {
         if (!changed) return true;

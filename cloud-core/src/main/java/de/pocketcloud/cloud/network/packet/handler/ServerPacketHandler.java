@@ -91,8 +91,8 @@ public final class ServerPacketHandler implements PacketListener {
         }
 
         PocketCloud.instance().servers().save(cloudServer.get())
-            .thenSuccess(_ -> packet.sendResponse(ServerSaveResponsePacket.create(ActionFailureReason.NONE), sender))
-            .failure(_ -> packet.sendResponse(ServerSaveResponsePacket.create(ActionFailureReason.REQUEST_TIMEOUT), sender));
+                .thenSuccess(_ -> packet.sendResponse(ServerSaveResponsePacket.create(ActionFailureReason.NONE), sender))
+                .failure(_ -> packet.sendResponse(ServerSaveResponsePacket.create(ActionFailureReason.REQUEST_TIMEOUT), sender));
     }
 
     @SneakyThrows

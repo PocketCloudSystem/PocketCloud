@@ -163,7 +163,8 @@ public final class NetUtils {
                 .build();
     }
 
-    public record DownloadProgress(double percent, long downloadedBytes, long totalBytes, double speedBytesPerSec, long etaSeconds) {
+    public record DownloadProgress(double percent, long downloadedBytes, long totalBytes, double speedBytesPerSec,
+                                   long etaSeconds) {
 
         public String formatSpeed() {
             return FormatUtils.downloadSpeed(speedBytesPerSec);

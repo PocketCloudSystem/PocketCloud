@@ -56,7 +56,8 @@ public final class PacketSerializer {
             String givenKey = data.readLast().toString();
             if (givenKey == null) throw new PacketException("Received packet does not contain an authentication key");
 
-            if (!givenKey.equals(authenticationKey)) throw new PacketException("Received packet does not contain a valid authentication key");
+            if (!givenKey.equals(authenticationKey))
+                throw new PacketException("Received packet does not contain a valid authentication key");
 
             var packet = packetResolver.apply(packetName);
             if (packet == null) return null;

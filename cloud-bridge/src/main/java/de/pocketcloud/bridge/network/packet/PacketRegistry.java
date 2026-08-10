@@ -67,7 +67,7 @@ public final class PacketRegistry implements IPacketRegistry<Channel>, Loadable 
         for (Method method : packetListener.getClass().getDeclaredMethods()) {
             method.setAccessible(true);
             if (method.isAnnotationPresent(PacketHandler.class)) {
-                Class<? extends Packet>[] packets =  method.getAnnotation(PacketHandler.class).value();
+                Class<? extends Packet>[] packets = method.getAnnotation(PacketHandler.class).value();
                 for (Class<? extends Packet> packet : packets) {
                     this.registerPacketHandler(packet, (p, c) -> {
                         try {
@@ -123,7 +123,8 @@ public final class PacketRegistry implements IPacketRegistry<Channel>, Loadable 
         if (packetClass == null) return null;
         try {
             return packetClass.getDeclaredConstructor().newInstance();
-        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException _) {
+        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException |
+                 InvocationTargetException _) {
             return null;
         }
     }

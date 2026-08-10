@@ -84,7 +84,7 @@ public final class PlayerCommand extends Command {
         } else if (type == TextType.ACTION_BAR) {
             player.sendActionbarMessage(text);
         } else if (type == TextType.TOAST) {
-            String[] parts =  text.split("\n");
+            String[] parts = text.split("\n");
             String title = parts[0];
             String body = String.join("\n", Arrays.copyOfRange(parts, 1, parts.length));
             player.sendToast(title, body);
@@ -96,7 +96,7 @@ public final class PlayerCommand extends Command {
         CloudPlayer player = ctx.arg("player", CloudPlayer.class);
         CloudServer server = ctx.arg("server", CloudServer.class);
         player.transfer(server);
-        sender.success("Transferred §b{} §rto §b{}§r.",  player.name(), server.name());
+        sender.success("Transferred §b{} §rto §b{}§r.", player.name(), server.name());
         return true;
     }
 

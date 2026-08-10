@@ -24,7 +24,7 @@ public final class ByteBufTest {
             byteBuf.writeBytes(bytes);
         }
 
-        System.out.println("ByteBuf generated in " +  Duration.between(start, Instant.now()).toMillis() + " ms");
+        System.out.println("ByteBuf generated in " + Duration.between(start, Instant.now()).toMillis() + " ms");
         System.out.println("ByteBuf length: " + byteBuf.readableBytes());
         System.out.println("ByteBuf size (human readable): " + FormatUtils.bytes(byteBuf.readableBytes()));
 
@@ -32,6 +32,6 @@ public final class ByteBufTest {
         ByteBuf copy = Unpooled.buffer(byteBuf.readableBytes());
         byteBuf.readBytes(copy, byteBuf.readableBytes());
 
-        System.out.println("ByteBuf copied in " +  Duration.between(start, Instant.now()).toMillis() + " ms");
+        System.out.println("ByteBuf copied in " + Duration.between(start, Instant.now()).toMillis() + " ms");
     }
 }

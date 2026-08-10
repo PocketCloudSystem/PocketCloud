@@ -80,7 +80,7 @@ public final class CloudMySqlProvider extends CloudProvider {
         countAsync(DatabaseQueries.checkTemplate(), template)
                 .thenSuccess(count -> promise.resolve(count > 0))
                 .failure(promise::reject);
-        
+
         return promise;
     }
 
@@ -116,7 +116,8 @@ public final class CloudMySqlProvider extends CloudProvider {
 
     @Override
     public Promise<Void> editServerGroup(IServerGroup serverGroup, Map<String, Object> newData) {
-        if (newData.get("templates") instanceof List) newData.put("templates", FileUtils.encodeJson(newData.get("templates")));
+        if (newData.get("templates") instanceof List)
+            newData.put("templates", FileUtils.encodeJson(newData.get("templates")));
         Object[] params = buildUpdateParams(newData, serverGroup.name());
         return executeAsync(DatabaseQueries.editServerGroup(newData), params);
     }
@@ -137,7 +138,7 @@ public final class CloudMySqlProvider extends CloudProvider {
                 promise.reject(e);
             }
         }).failure(promise::reject);
-        
+
         return promise;
     }
 
@@ -147,7 +148,7 @@ public final class CloudMySqlProvider extends CloudProvider {
         countAsync(DatabaseQueries.checkServerGroup(), serverGroup)
                 .thenSuccess(count -> promise.resolve(count > 0))
                 .failure(promise::reject);
-        
+
         return promise;
     }
 
@@ -164,7 +165,7 @@ public final class CloudMySqlProvider extends CloudProvider {
             });
             promise.resolve(serverGroups);
         }).failure(promise::reject);
-        
+
         return promise;
     }
 
@@ -186,7 +187,7 @@ public final class CloudMySqlProvider extends CloudProvider {
         countAsync(DatabaseQueries.hasNotificationsEnabled(), player)
                 .thenSuccess(count -> promise.resolve(count > 0))
                 .failure(promise::reject);
-        
+
         return promise;
     }
 
@@ -198,7 +199,7 @@ public final class CloudMySqlProvider extends CloudProvider {
                     List<String> list = rows.stream().map(r -> (String) r.get("player")).toList();
                     promise.resolve(list);
                 }).failure(promise::reject);
-        
+
         return promise;
     }
 
@@ -220,7 +221,7 @@ public final class CloudMySqlProvider extends CloudProvider {
         countAsync(DatabaseQueries.isOnWhitelist(), player)
                 .thenSuccess(count -> promise.resolve(count > 0))
                 .failure(promise::reject);
-        
+
         return promise;
     }
 
@@ -231,7 +232,7 @@ public final class CloudMySqlProvider extends CloudProvider {
             List<String> list = rows.stream().map(r -> (String) r.get("player")).toList();
             promise.resolve(list);
         }).failure(promise::reject);
-        
+
         return promise;
     }
 
@@ -295,7 +296,7 @@ public final class CloudMySqlProvider extends CloudProvider {
     private static DataSource buildConnectionPool(MySqlSettings mysqlSettings) {
         HikariConfig config = new HikariConfig();
 
-        config.setJdbcUrl("jdbc:mysql://" + mysqlSettings.address() + ":" + mysqlSettings.port()  + "/" + mysqlSettings.database());
+        config.setJdbcUrl("jdbc:mysql://" + mysqlSettings.address() + ":" + mysqlSettings.port() + "/" + mysqlSettings.database());
         config.setUsername(mysqlSettings.user());
         config.setPassword(mysqlSettings.password());
 

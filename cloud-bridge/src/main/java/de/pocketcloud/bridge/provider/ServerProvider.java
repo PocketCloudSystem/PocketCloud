@@ -41,11 +41,14 @@ public final class ServerProvider implements IWriteServerProvider {
             CloudServer localServer = (CloudServer) servers.get(server.name());
             ServerStatus oldStatus = localServer.status();
             localServer.syncIn(server);
-            if (verified && oldStatus != localServer.status()) CloudAPI.instance().events().call(new ServerChangedStatusEvent(localServer, localServer.status(), server.status()));
-            if (verified && oldStatus.isOnline() && !localServer.status().isOnline() && server.verificationStatus().isVerified()) CloudAPI.instance().events().call(new ServerVerifiedEvent(localServer));
+            if (verified && oldStatus != localServer.status())
+                CloudAPI.instance().events().call(new ServerChangedStatusEvent(localServer, localServer.status(), server.status()));
+            if (verified && oldStatus.isOnline() && !localServer.status().isOnline() && server.verificationStatus().isVerified())
+                CloudAPI.instance().events().call(new ServerVerifiedEvent(localServer));
         } else {
             servers.put(server.name(), server);
-            if (verified && server.status().isStarting()) CloudAPI.instance().events().call(new ServerStartingEvent(server));
+            if (verified && server.status().isStarting())
+                CloudAPI.instance().events().call(new ServerStartingEvent(server));
         }
     }
 
@@ -54,7 +57,8 @@ public final class ServerProvider implements IWriteServerProvider {
         CloudServer localServer = (CloudServer) servers.get(server.name());
         if (CloudBridge.instance().status().isVerified()) {
             CloudAPI.instance().events().call(new ServerDisconnectedEvent(localServer));
-            if (server.verificationStatus().isDenied()) CloudAPI.instance().events().call(new ServerVerificationDeniedEvent(localServer));
+            if (server.verificationStatus().isDenied())
+                CloudAPI.instance().events().call(new ServerVerificationDeniedEvent(localServer));
         }
 
         servers.remove(server.name());

@@ -46,7 +46,8 @@ public final class TemplateProvider implements IWriteTemplateProvider {
             Template localTemplate = (Template) templates.get(template.name());
             TemplateSettings oldSettings = localTemplate.settings();
             localTemplate.syncIn(template);
-            if (verified) CloudAPI.instance().events().call(new TemplateEditedEvent(localTemplate, TemplateEditData.between(oldSettings, localTemplate.settings())));
+            if (verified)
+                CloudAPI.instance().events().call(new TemplateEditedEvent(localTemplate, TemplateEditData.between(oldSettings, localTemplate.settings())));
         } else {
             templates.put(template.name(), template);
             if (verified) CloudAPI.instance().events().call(new TemplateCreatedEvent(template));
@@ -61,7 +62,8 @@ public final class TemplateProvider implements IWriteTemplateProvider {
     @Override
     public void remove(ITemplate template) {
         Template localTemplate = (Template) templates.get(template.name());
-        if (CloudBridge.instance().status().isVerified()) CloudAPI.instance().events().call(new TemplateDeletedEvent(localTemplate));
+        if (CloudBridge.instance().status().isVerified())
+            CloudAPI.instance().events().call(new TemplateDeletedEvent(localTemplate));
         templates.remove(template.name());
     }
 

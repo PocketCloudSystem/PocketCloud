@@ -27,7 +27,8 @@ public final class Ticker {
     private long lastSleepDriftWarning = 0;
 
     public Ticker register(Tickable tickable) {
-        if (tickableList.containsKey(tickable.getClass().getName())) throw new IllegalArgumentException("Tickable already exists");
+        if (tickableList.containsKey(tickable.getClass().getName()))
+            throw new IllegalArgumentException("Tickable already exists");
         tickableList.put(tickable.getClass().getName(), tickable);
         return this;
     }

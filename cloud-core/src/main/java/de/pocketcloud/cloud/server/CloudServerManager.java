@@ -109,11 +109,11 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
 
             UUID uuid = UUID.randomUUID();
             CloudServer server = new CloudServer(
-                id,
-                uuid,
-                template.name(),
-                new CloudServerData(uuid, template.templateType().isServer() ? "127.0.0.1" : "0.0.0.0", port, template.settings().maxPlayerCount()),
-                new CloudServerStorage(uuid)
+                    id,
+                    uuid,
+                    template.name(),
+                    new CloudServerData(uuid, template.templateType().isServer() ? "127.0.0.1" : "0.0.0.0", port, template.settings().maxPlayerCount()),
+                    new CloudServerStorage(uuid)
             );
 
             latestServerStartTimes.put(template.name(), server.name());
@@ -136,11 +136,11 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
 
         Promise<Void> promise = new Promise<>();
         cloudServer.dispatch(saveCommandLine)
-            .thenSuccess(_ -> {
-                cloudServer.save();
-                promise.resolve(null);
-            })
-            .failure(promise::reject);
+                .thenSuccess(_ -> {
+                    cloudServer.save();
+                    promise.resolve(null);
+                })
+                .failure(promise::reject);
 
         return promise;
     }

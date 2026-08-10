@@ -10,10 +10,10 @@ import lombok.experimental.Accessors;
  * This file should contain all the relevant binary files inside one single root folder (name can be anything)
  * Example:
  * php-8.4.tar.gz
- *  -> bin
- *      -> php7
- *          -> bin
- *              -> [php.exe, php.ini, etc...]
+ * -> bin
+ * -> php7
+ * -> bin
+ * -> [php.exe, php.ini, etc...]
  * <p>
  * This `bin` folder will then be extracted inside the software/{software}/binary/ folder.
  * If the url is either null or blank, `java` will be the result of the placeholder {BINARY_PATH}

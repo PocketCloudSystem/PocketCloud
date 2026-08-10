@@ -8,31 +8,31 @@ public final class DatabaseQueries {
 
     public static String createTables() {
         return
-            "CREATE TABLE IF NOT EXISTS " + DatabaseTables.TEMPLATES + " (" +
-                "name VARCHAR(50) PRIMARY KEY," +
-                "lobby BOOL," +
-                "maintenance BOOL," +
-                "`staticServers` BOOL," +
-                "`saveOnShutdown` BOOL," +
-                "maxPlayerCount INTEGER," +
-                "minServerCount INTEGER," +
-                "maxServerCount INTEGER," +
-                "startNewPercentage DOUBLE," +
-                "autoStart BOOL," +
-                "alwaysCopyToStaticServers BOOL," +
-                "templateType VARCHAR(20)" +
-                "serverSoftware VARCHAR(30)" +
-            "); " +
-            "CREATE TABLE IF NOT EXISTS " + DatabaseTables.SERVER_GROUPS + " (" +
-                "name VARCHAR(50) PRIMARY KEY," +
-                "templates TEXT" +
-            "); " +
-            "CREATE TABLE IF NOT EXISTS " + DatabaseTables.NOTIFICATIONS + " (" +
-                "player VARCHAR(16) PRIMARY KEY" +
-            "); " +
-            "CREATE TABLE IF NOT EXISTS " + DatabaseTables.MAINTENANCE_LIST + " (" +
-                "player VARCHAR(16) PRIMARY KEY" +
-            ");";
+                "CREATE TABLE IF NOT EXISTS " + DatabaseTables.TEMPLATES + " (" +
+                        "name VARCHAR(50) PRIMARY KEY," +
+                        "lobby BOOL," +
+                        "maintenance BOOL," +
+                        "`staticServers` BOOL," +
+                        "`saveOnShutdown` BOOL," +
+                        "maxPlayerCount INTEGER," +
+                        "minServerCount INTEGER," +
+                        "maxServerCount INTEGER," +
+                        "startNewPercentage DOUBLE," +
+                        "autoStart BOOL," +
+                        "alwaysCopyToStaticServers BOOL," +
+                        "templateType VARCHAR(20)" +
+                        "serverSoftware VARCHAR(30)" +
+                        "); " +
+                        "CREATE TABLE IF NOT EXISTS " + DatabaseTables.SERVER_GROUPS + " (" +
+                        "name VARCHAR(50) PRIMARY KEY," +
+                        "templates TEXT" +
+                        "); " +
+                        "CREATE TABLE IF NOT EXISTS " + DatabaseTables.NOTIFICATIONS + " (" +
+                        "player VARCHAR(16) PRIMARY KEY" +
+                        "); " +
+                        "CREATE TABLE IF NOT EXISTS " + DatabaseTables.MAINTENANCE_LIST + " (" +
+                        "player VARCHAR(16) PRIMARY KEY" +
+                        ");";
     }
 
     public static String addTemplate() {
@@ -125,8 +125,8 @@ public final class DatabaseQueries {
     private static String buildUpdate(String table, Map<String, Object> data, String whereKey) {
         StringBuilder sb = new StringBuilder("UPDATE ").append(table).append(" SET ");
         data.keySet().stream()
-            .filter(k -> !k.equals(whereKey))
-            .forEach(k -> sb.append(k).append(" = ?, "));
+                .filter(k -> !k.equals(whereKey))
+                .forEach(k -> sb.append(k).append(" = ?, "));
 
         sb.setLength(sb.length() - 2);
         sb.append(" WHERE ").append(whereKey).append(" = ?");

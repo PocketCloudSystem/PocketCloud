@@ -56,7 +56,7 @@ public final class PluginCommand extends Command {
         sender.info("Name§8: §b{}", plugin.getDescription().name());
         sender.info("Version§8: §b{}", plugin.getDescription().version());
         sender.info("State§8: §b{}", plugin.getState() == CloudPluginState.ENABLED ? "§aEnabled" : "§cDisabled");
-        sender.info("Description§8: §b{}", plugin.getDescription().description().isBlank() ? "Empty" :  plugin.getDescription().description());
+        sender.info("Description§8: §b{}", plugin.getDescription().description().isBlank() ? "Empty" : plugin.getDescription().description());
         sender.info("Main§8: §b{}", plugin.getDescription().main());
         sender.info("Authors§8: §c{}", String.join("§8, §c", plugin.getDescription().authors().isEmpty() ? List.of("None") : plugin.getDescription().authors()));
         sender.info("Data Folder§8: §b{}", plugin.getDataFolder().toAbsolutePath().toString());

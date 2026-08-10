@@ -43,7 +43,8 @@ public final class TemplateManager implements Tickable, Loadable, IWriteTemplate
     @Override
     public void load() {
         CloudLogger.get().info("Loading templates...");
-        for (TemplateType type : TemplateType.values()) FileUtils.createDir(TemplateTypeHelper.globalTemplatePath(type));
+        for (TemplateType type : TemplateType.values())
+            FileUtils.createDir(TemplateTypeHelper.globalTemplatePath(type));
         CloudProvider.current().getTemplates()
                 .thenSuccess(templates::putAll)
                 .thenSuccess(_ -> PocketCloud.instance().serverGroups().load());

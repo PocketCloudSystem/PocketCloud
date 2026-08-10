@@ -49,7 +49,7 @@ public final class CloudBridge implements CloudAPI {
         registry.register(ILogger.class, logger);
         registry.register(IEnvironmentConfig.class, config);
         registry.register(ProcessPerformanceStats.class, new ProcessPerformanceStats())
-                        .updateStats();
+                .updateStats();
 
         registry.register(NativePlayerAdapter.class, nativePlayerAdapter);
         registry.register(BridgePlayerExecutor.class, new BridgePlayerExecutor());

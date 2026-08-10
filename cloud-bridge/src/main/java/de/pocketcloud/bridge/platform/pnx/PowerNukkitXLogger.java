@@ -7,13 +7,13 @@ import org.powernukkitx.plugin.PluginLogger;
 import org.powernukkitx.utils.LogLevel;
 
 public final class PowerNukkitXLogger implements ILogger {
-    
+
     private final PluginLogger logger;
-    
+
     public PowerNukkitXLogger(PluginLogger logger) {
         this.logger = logger;
     }
-    
+
     @Override
     public ILogger exception(Throwable throwable) {
         logger.error("Unhandled exception", throwable);
@@ -35,7 +35,7 @@ public final class PowerNukkitXLogger implements ILogger {
             case SUCCESS -> LogLevel.NOTICE;
             case DEBUG -> LogLevel.DEBUG;
         };
-        
+
         logger.log(adaptedLevel, FormatUtils.interpolate(message, params));
         return this;
     }

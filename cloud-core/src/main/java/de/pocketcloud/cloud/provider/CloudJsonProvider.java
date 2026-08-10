@@ -40,7 +40,7 @@ public final class CloudJsonProvider extends CloudProvider {
             PocketCloud.instance().shutdown();
         }
     }
-    
+
     @Override
     public Promise<Void> addTemplate(ITemplate template) {
         templatesConfig.set(template.name(), template.write());
@@ -92,7 +92,7 @@ public final class CloudJsonProvider extends CloudProvider {
         });
         return Promise.resolved(templates);
     }
-    
+
     @Override
     public Promise<Void> addServerGroup(IServerGroup serverGroup) {
         serverGroupsConfig.set(serverGroup.name(), serverGroup.write());

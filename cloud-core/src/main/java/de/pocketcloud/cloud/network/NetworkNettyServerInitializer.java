@@ -76,9 +76,9 @@ public class NetworkNettyServerInitializer extends ChannelInitializer<Channel> {
     @Override
     protected void initChannel(Channel channel) {
         channel.pipeline().addLast(
-            new CloudPacketDecoder(() -> PocketCloud.instance().config().network().encryption(), () -> Math.toIntExact(PocketCloud.instance().config().network().packetSizeLimit()), () -> PocketCloud.instance().network().authToken(), LISTENER),
-            new CloudPacketEncoder(() -> PocketCloud.instance().config().network().encryption(), () -> Math.toIntExact(PocketCloud.instance().config().network().packetSizeLimit()), () -> PocketCloud.instance().network().authToken(), LISTENER),
-            new NetworkNettyHandler()
+                new CloudPacketDecoder(() -> PocketCloud.instance().config().network().encryption(), () -> Math.toIntExact(PocketCloud.instance().config().network().packetSizeLimit()), () -> PocketCloud.instance().network().authToken(), LISTENER),
+                new CloudPacketEncoder(() -> PocketCloud.instance().config().network().encryption(), () -> Math.toIntExact(PocketCloud.instance().config().network().packetSizeLimit()), () -> PocketCloud.instance().network().authToken(), LISTENER),
+                new NetworkNettyHandler()
         );
     }
 }

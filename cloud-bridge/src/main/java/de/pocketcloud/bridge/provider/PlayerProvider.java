@@ -25,17 +25,20 @@ public final class PlayerProvider implements IWritePlayerProvider {
             CloudPlayer localPlayer = (CloudPlayer) players.get(player.name());
             String oldServerName = localPlayer.currentServerName();
             localPlayer.syncIn(player);
-            if (verified && !Objects.equals(oldServerName, localPlayer.currentServerName())) CloudAPI.instance().events().call(new PlayerTransferredEvent(localPlayer, oldServerName == null ? null : CloudAPI.instance().servers().get(oldServerName).orElse(null), localPlayer.currentServer().orElse(null)));
+            if (verified && !Objects.equals(oldServerName, localPlayer.currentServerName()))
+                CloudAPI.instance().events().call(new PlayerTransferredEvent(localPlayer, oldServerName == null ? null : CloudAPI.instance().servers().get(oldServerName).orElse(null), localPlayer.currentServer().orElse(null)));
         } else {
             players.put(player.name(), player);
-            if (verified) CloudAPI.instance().events().call(new PlayerJoinedEvent(player, player.currentServer().orElse(null)));
+            if (verified)
+                CloudAPI.instance().events().call(new PlayerJoinedEvent(player, player.currentServer().orElse(null)));
         }
     }
 
     @Override
     public void remove(ICloudPlayer player) {
         CloudPlayer localPlayer = (CloudPlayer) players.get(player.name());
-        if (CloudBridge.instance().status().isVerified()) CloudAPI.instance().events().call(new PlayerLeftEvent(localPlayer, localPlayer.currentServer().orElse(null)));
+        if (CloudBridge.instance().status().isVerified())
+            CloudAPI.instance().events().call(new PlayerLeftEvent(localPlayer, localPlayer.currentServer().orElse(null)));
         players.remove(player.name());
     }
 

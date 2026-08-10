@@ -70,9 +70,9 @@ public class NetworkNettyClientInitializer extends ChannelInitializer<Channel> {
         String authKey = CloudBridge.instance().environmentConfig().networkAuthKey();
 
         channel.pipeline().addLast(
-            new CloudPacketDecoder(() -> encryption, () -> packetLimit, () -> authKey, LISTENER),
-            new CloudPacketEncoder(() -> encryption, () -> packetLimit, () -> authKey, LISTENER),
-            new NetworkNettyHandler()
+                new CloudPacketDecoder(() -> encryption, () -> packetLimit, () -> authKey, LISTENER),
+                new CloudPacketEncoder(() -> encryption, () -> packetLimit, () -> authKey, LISTENER),
+                new NetworkNettyHandler()
         );
     }
 }

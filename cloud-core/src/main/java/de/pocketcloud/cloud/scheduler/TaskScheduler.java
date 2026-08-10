@@ -66,7 +66,7 @@ public final class TaskScheduler implements Tickable {
     }
 
     private void scheduleTask(Consumer<Long> task, Consumer<Long> onCancel, int delay, int interval, boolean repeating) {
-        scheduleTask(new ClosureTask(task, onCancel),  delay, interval, repeating);
+        scheduleTask(new ClosureTask(task, onCancel), delay, interval, repeating);
     }
 
     public void cancel(Task task) {

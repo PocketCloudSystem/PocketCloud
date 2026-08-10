@@ -24,12 +24,13 @@ public final class LibraryManager implements Loadable {
 
     public void load() {
         try {
-            if (!Files.isRegularFile(PocketCloudPaths.storage().libraries().with("libraries.json").asPath())) FileUtils.filePutContents(
-                    PocketCloudPaths.storage().libraries().with("libraries.json").asPath(),
-                    FileUtils.PRETTY_GSON.toJson(DEFAULTS)
-            );
+            if (!Files.isRegularFile(PocketCloudPaths.storage().libraries().with("libraries.json").asPath()))
+                FileUtils.filePutContents(
+                        PocketCloudPaths.storage().libraries().with("libraries.json").asPath(),
+                        FileUtils.PRETTY_GSON.toJson(DEFAULTS)
+                );
 
-            List<Library> libs = FileUtils.decodeJsonFile(PocketCloudPaths.storage().libraries().with("libraries.json").asPath(), new TypeToken<>(){});
+            List<Library> libs = FileUtils.decodeJsonFile(PocketCloudPaths.storage().libraries().with("libraries.json").asPath(), new TypeToken<>() {});
             for (Library lib : libs) {
                 loadLibrary(lib);
             }

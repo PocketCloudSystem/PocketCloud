@@ -83,9 +83,9 @@ public final class PlayerPacketHandler implements PacketListener {
                     }
                 }
                 PocketCloud.instance().notifications().sendNotification(NotificationType.PLAYER_SWITCHED_SERVER, Map.of(
-                    "player", packet.getPlayer(),
-                    "old_server", cloudPlayer.currentServerName() != null ? cloudPlayer.currentServerName() : "None",
-                    "new_server", packet.getNewServer()
+                        "player", packet.getPlayer(),
+                        "old_server", cloudPlayer.currentServerName() != null ? cloudPlayer.currentServerName() : "None",
+                        "new_server", packet.getNewServer()
                 ), Map.of());
                 cloudPlayer.changeCurrentServer(server);
                 CloudAPI.instance().events().call(new PlayerTransferredEvent(cloudPlayer, oldServer, server));

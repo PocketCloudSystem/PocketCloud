@@ -46,7 +46,8 @@ public abstract class RequestPacket extends CloudPacket {
     }
 
     public void sendResponse(ResponsePacket packet) {
-        if (!(packet instanceof CloudboundPacket p)) throw new IllegalArgumentException("packet must be a CloudboundPacket");
+        if (!(packet instanceof CloudboundPacket p))
+            throw new IllegalArgumentException("packet must be a CloudboundPacket");
         packet.setRequestId(requestId);
         InternalPacketBroadcaster.broadcast(new Packet[]{p}, null);
     }
@@ -60,7 +61,8 @@ public abstract class RequestPacket extends CloudPacket {
     }
 
     public CompletableFuture<Void> sendResponse(ResponsePacket packet, IServerClient client) {
-        if (!(packet instanceof ClientboundPacket p)) throw new IllegalArgumentException("packet must be a ClientboundPacket");
+        if (!(packet instanceof ClientboundPacket p))
+            throw new IllegalArgumentException("packet must be a ClientboundPacket");
         packet.setRequestId(requestId);
         return client.sendPacket(p);
     }

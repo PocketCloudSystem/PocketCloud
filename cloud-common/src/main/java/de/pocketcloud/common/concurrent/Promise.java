@@ -117,7 +117,8 @@ public final class Promise<T> {
     public <U> Promise<U> thenCompose(Function<T, Promise<U>> mapper) {
         return of(future.thenCompose(value -> {
             Promise<U> next = mapper.apply(value);
-            if (next == null) return CompletableFuture.failedFuture(new NullPointerException("mapper returned null Promise"));
+            if (next == null)
+                return CompletableFuture.failedFuture(new NullPointerException("mapper returned null Promise"));
             return next.future;
         }));
     }

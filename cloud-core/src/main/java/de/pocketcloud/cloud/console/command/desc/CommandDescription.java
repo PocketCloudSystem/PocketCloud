@@ -7,7 +7,10 @@ import java.lang.annotation.RetentionPolicy;
 public @interface CommandDescription {
 
     String name();
+
     String description();
+
     String usage() default "";
+
     String[] aliases() default {};
 }

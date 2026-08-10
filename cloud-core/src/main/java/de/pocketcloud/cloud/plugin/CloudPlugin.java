@@ -55,7 +55,8 @@ public abstract class CloudPlugin {
     }
 
     public boolean saveResource(String relativePath, boolean overwrite) throws IOException {
-        if (relativePath == null || relativePath.isBlank()) throw new IllegalArgumentException("relativePath cannot be null or blank");
+        if (relativePath == null || relativePath.isBlank())
+            throw new IllegalArgumentException("relativePath cannot be null or blank");
         if (relativePath.contains("..")) throw new IllegalArgumentException("Path traversal is not allowed");
         Path destination = dataFolder.resolve(relativePath);
         if (Files.exists(destination) && !overwrite) return false;

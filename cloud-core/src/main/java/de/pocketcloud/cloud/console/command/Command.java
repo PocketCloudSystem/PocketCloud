@@ -30,7 +30,7 @@ public abstract class Command extends CommandUtilityHolder {
     private final String[] aliases;
 
     private final Map<String, SubCommand> subCommands = new HashMap<>();
-    
+
     public Command() {
         if (!this.getClass().isAnnotationPresent(CommandDescription.class)) {
             throw new IllegalStateException(this.getClass().getSimpleName() + " requires @CommandDescription");

@@ -79,8 +79,8 @@ public final class CloudPlayerManager implements IWritePlayerProvider {
     public Optional<ICloudPlayer> get(String nameOrXuid) {
         if (players.containsKey(nameOrXuid)) return Optional.of(players.get(nameOrXuid));
         return widen(players.values()).stream()
-            .filter(p -> p.xboxUserId().equals(nameOrXuid))
-            .findFirst();
+                .filter(p -> p.xboxUserId().equals(nameOrXuid))
+                .findFirst();
     }
 
     @Override

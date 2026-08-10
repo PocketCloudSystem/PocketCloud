@@ -21,7 +21,8 @@ public final class ServerStartMethods {
     }
 
     public static void set(ServerStartMethod current) {
-        if (!current.isAvailable()) throw new RuntimeException("ServerStartMethod " + current.getClass().getName() + " is not available for use");
+        if (!current.isAvailable())
+            throw new RuntimeException("ServerStartMethod " + current.getClass().getName() + " is not available for use");
         ServerStartMethods.current = current;
     }
 

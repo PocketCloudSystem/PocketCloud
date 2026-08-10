@@ -67,13 +67,15 @@ public final class TrafficMonitorManager implements Tickable, Loadable {
 
     @SuppressWarnings("unchecked")
     public <T extends TrafficMonitor> T createTrafficMonitor(Class<T> type) {
-        if (!globalWindows.containsKey(type)) throw new IllegalArgumentException("Unknown TrafficMonitor type: " + type.getName());
+        if (!globalWindows.containsKey(type))
+            throw new IllegalArgumentException("Unknown TrafficMonitor type: " + type.getName());
         TrafficMonitor monitor;
         try {
             monitor = ((Class<? extends TrafficMonitor>) type).getDeclaredConstructor().newInstance();
             trafficMonitors.computeIfAbsent(type, _ -> new CopyOnWriteArrayList<>()).add(monitor);
             return (T) monitor;
-        } catch (InstantiationException | NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+        } catch (InstantiationException | NoSuchMethodException | InvocationTargetException |
+                 IllegalAccessException e) {
             throw new RuntimeException(e);
         }
     }

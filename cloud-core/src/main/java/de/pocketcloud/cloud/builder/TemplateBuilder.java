@@ -38,7 +38,8 @@ public final class TemplateBuilder implements ITemplateBuilder {
         if (maxPlayerCount < 0) throw new IllegalArgumentException("Max player count must be positive");
         if (minServerCount < 0) throw new IllegalArgumentException("Min server count must be positive");
         if (maxServerCount < 0) throw new IllegalArgumentException("Max server count must be positive");
-        if (startNewPercentage < 0 || startNewPercentage > 1) throw new IllegalArgumentException("Start new percentage must be between 0 and 1");
+        if (startNewPercentage < 0 || startNewPercentage > 1)
+            throw new IllegalArgumentException("Start new percentage must be between 0 and 1");
         if (maxMemory <= 0) throw new IllegalArgumentException("Max memory must be positive");
         if (software == null) throw new NullPointerException("Template software is null");
         return new Template(

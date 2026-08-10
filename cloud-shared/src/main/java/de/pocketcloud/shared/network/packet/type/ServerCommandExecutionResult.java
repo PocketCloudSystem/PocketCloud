@@ -6,7 +6,8 @@ import de.pocketcloud.common.serialization.Writable;
 import java.util.List;
 import java.util.Map;
 
-public record ServerCommandExecutionResult(String id, String commandLine, List<String> messages) implements Writable<Map<String, Object>> {
+public record ServerCommandExecutionResult(String id, String commandLine,
+                                           List<String> messages) implements Writable<Map<String, Object>> {
 
     public String message(int index) {
         try {

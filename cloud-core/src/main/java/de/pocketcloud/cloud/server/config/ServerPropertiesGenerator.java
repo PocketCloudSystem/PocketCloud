@@ -38,8 +38,8 @@ public final class ServerPropertiesGenerator implements Loadable {
 
     public void register(IServerProperties properties) {
         defaultConfigFiles
-            .computeIfAbsent(properties.getServerSoftware().name(), k -> new ArrayList<>())
-            .add(properties);
+                .computeIfAbsent(properties.getServerSoftware().name(), k -> new ArrayList<>())
+                .add(properties);
 
         for (TemplateType type : TemplateType.values()) {
             if (!properties.getServerSoftware().templateType().equals(type.name())) continue;

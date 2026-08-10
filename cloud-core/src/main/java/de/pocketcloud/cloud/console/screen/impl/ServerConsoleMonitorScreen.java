@@ -17,8 +17,8 @@ import java.util.regex.Pattern;
 public final class ServerConsoleMonitorScreen extends Screen {
 
     private static final int[][] MC_RGB = {
-            {0,0,0}, {0,0,170}, {0,170,0}, {0,170,170}, {170,0,0}, {170,0,170}, {255,170,0}, {170,170,170},
-            {85,85,85}, {85,85,255}, {85,255,85}, {85,255,255}, {255,85,85}, {255,85,255}, {255,255,85}, {255,255,255}
+            {0, 0, 0}, {0, 0, 170}, {0, 170, 0}, {0, 170, 170}, {170, 0, 0}, {170, 0, 170}, {255, 170, 0}, {170, 170, 170},
+            {85, 85, 85}, {85, 85, 255}, {85, 255, 85}, {85, 255, 255}, {255, 85, 85}, {255, 85, 255}, {255, 255, 85}, {255, 255, 255}
     };
 
     private static final String[] MC_CODES = {"§0", "§1", "§2", "§3", "§4", "§5", "§6", "§7", "§8", "§9", "§a", "§b", "§c", "§d", "§e", "§f"};
@@ -65,7 +65,11 @@ public final class ServerConsoleMonitorScreen extends Screen {
 
         for (int i = 0; i < tokens.length; i++) {
             switch (tokens[i]) {
-                case "0" -> { reset = true; color = null; formats.setLength(0); }
+                case "0" -> {
+                    reset = true;
+                    color = null;
+                    formats.setLength(0);
+                }
                 case "1" -> formats.append("§l");
                 case "3" -> formats.append("§o");
                 case "4" -> formats.append("§n");
@@ -118,7 +122,10 @@ public final class ServerConsoleMonitorScreen extends Screen {
         for (int i = 0; i < MC_RGB.length; i++) {
             int dr = r - MC_RGB[i][0], dg = g - MC_RGB[i][1], db = b - MC_RGB[i][2];
             int dist = dr * dr + dg * dg + db * db;
-            if (dist < bestDist) { bestDist = dist; bestIdx = i; }
+            if (dist < bestDist) {
+                bestDist = dist;
+                bestIdx = i;
+            }
         }
         return MC_CODES[bestIdx];
     }
@@ -140,8 +147,8 @@ public final class ServerConsoleMonitorScreen extends Screen {
                 stream.startStream();
             } catch (Exception e) {
                 printInfoMessage(
-                    "§8[§c!§8] §cFailed to open log stream§8: §e{}§r, trying again in 3 seconds...",
-                    e.getMessage()
+                        "§8[§c!§8] §cFailed to open log stream§8: §e{}§r, trying again in 3 seconds...",
+                        e.getMessage()
                 );
 
                 nextOpenStreamTry = PocketCloud.instance().currentTick() + (20 * 3);
@@ -149,8 +156,8 @@ public final class ServerConsoleMonitorScreen extends Screen {
             }
         } else {
             printInfoMessage(
-                "§8[§c!§8] §rThe server §b{} §rwas not found. Press §bCTRL + C §rto §ccancel§r.",
-                serverName
+                    "§8[§c!§8] §rThe server §b{} §rwas not found. Press §bCTRL + C §rto §ccancel§r.",
+                    serverName
             );
         }
     }
@@ -161,14 +168,14 @@ public final class ServerConsoleMonitorScreen extends Screen {
             if (stream == null) {
                 if (!justStopped) {
                     printInfoMessage(
-                        "§8[§c!§8] §rThe server §b{} §rwas not found. Press §bCTRL + C §rto §ccancel§r.",
-                        serverName
+                            "§8[§c!§8] §rThe server §b{} §rwas not found. Press §bCTRL + C §rto §ccancel§r.",
+                            serverName
                     );
                 }
             } else {
                 printInfoMessage(
-                    "§8[§c!§8] §rThe server §b{} §rhas been stopped. Press §bCTRL + C §rto §ccancel §ror continue waiting.",
-                    serverName
+                        "§8[§c!§8] §rThe server §b{} §rhas been stopped. Press §bCTRL + C §rto §ccancel §ror continue waiting.",
+                        serverName
                 );
 
                 stream.stopStream();
@@ -179,8 +186,8 @@ public final class ServerConsoleMonitorScreen extends Screen {
             if (stream == null && PocketCloud.instance().currentTick() >= nextOpenStreamTry) {
                 justStopped = false;
                 printInfoMessage(
-                    "§8[§c!§8] §rThe server §b{} §rhas been §astarted§r. Starting log stream...",
-                    serverName
+                        "§8[§c!§8] §rThe server §b{} §rhas been §astarted§r. Starting log stream...",
+                        serverName
                 );
                 openLogStream();
             }
@@ -212,8 +219,8 @@ public final class ServerConsoleMonitorScreen extends Screen {
             server.dispatch(input);
         } else {
             printInfoMessage(
-                "§8[§c!§8] §rThe server §b{} §rwas not found. Press §bCTRL + C §rto §ccancel§r.",
-                serverName
+                    "§8[§c!§8] §rThe server §b{} §rwas not found. Press §bCTRL + C §rto §ccancel§r.",
+                    serverName
             );
         }
     }

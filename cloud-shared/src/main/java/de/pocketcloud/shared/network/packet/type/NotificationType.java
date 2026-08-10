@@ -3,7 +3,7 @@ package de.pocketcloud.shared.network.packet.type;
 import de.pocketcloud.common.serialization.Writable;
 
 public enum NotificationType implements Writable<String> {
-    
+
     SERVER_STARTING,
     SERVER_STOPPING,
     SERVER_TIMED_OUT,

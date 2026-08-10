@@ -43,13 +43,17 @@ public final class JarCloudPluginLoader {
             try (InputStream inputStream = jarFile.getInputStream(entry)) {
                 Map<String, Object> raw = FileUtils.parseYaml(new String(inputStream.readAllBytes()));
                 CloudPluginDescription description = CloudPluginDescription.read(raw);
-                if (description.name() == null) throw new PluginLoadFailedException("No plugin name found in plugin.yml: " + path);
-                if (description.version() == null) throw new PluginLoadFailedException("No plugin version found in plugin.yml: " + path);
-                if (description.main() == null) throw new PluginLoadFailedException("No plugin main found in plugin.yml: " + path);
+                if (description.name() == null)
+                    throw new PluginLoadFailedException("No plugin name found in plugin.yml: " + path);
+                if (description.version() == null)
+                    throw new PluginLoadFailedException("No plugin version found in plugin.yml: " + path);
+                if (description.main() == null)
+                    throw new PluginLoadFailedException("No plugin main found in plugin.yml: " + path);
 
                 classLoader = new CloudPluginClassLoader(this.getClass().getClassLoader(), pluginJar);
                 Class<?> mainClass = classLoader.loadClass(description.main());
-                if (!CloudPlugin.class.isAssignableFrom(mainClass)) throw new PluginLoadFailedException("Main class does not extend CloudPlugin");
+                if (!CloudPlugin.class.isAssignableFrom(mainClass))
+                    throw new PluginLoadFailedException("Main class does not extend CloudPlugin");
 
                 Path dataFolder = Paths.get("storage/plugins/", description.name());
                 if (!Files.exists(dataFolder)) Files.createDirectories(dataFolder);
@@ -59,7 +63,8 @@ public final class JarCloudPluginLoader {
                 main.init(classLoader, description, dataFolder, path);
                 return main;
             }
-        } catch (IOException | ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException | InstantiationException e) {
+        } catch (IOException | ClassNotFoundException | NoSuchMethodException | IllegalAccessException |
+                 InvocationTargetException | InstantiationException e) {
             try {
                 if (classLoader != null) classLoader.close();
             } catch (IOException ex) {

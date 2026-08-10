@@ -31,11 +31,11 @@ public final class PowerNukkitXConfig extends ServerProperties {
     @Override
     public Map<String, Object> replacePlaceholders(CloudServer server) {
         return new LinkedHashMap<>(Map.ofEntries(
-            Map.entry("%name%", server.name()),
-            Map.entry("%server_port%", server.data().port()),
-            Map.entry("%max_players%", server.template().settings().maxPlayerCount()),
-            Map.entry("%auto_save%", server.template().settings().saveOnShutdown() || server.template().settings().staticServers()),
-            Map.entry("%server_ip%", server.data().address())
+                Map.entry("%name%", server.name()),
+                Map.entry("%server_port%", server.data().port()),
+                Map.entry("%max_players%", server.template().settings().maxPlayerCount()),
+                Map.entry("%auto_save%", server.template().settings().saveOnShutdown() || server.template().settings().staticServers()),
+                Map.entry("%server_ip%", server.data().address())
         ));
     }
 

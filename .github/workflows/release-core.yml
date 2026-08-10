@@ -2,7 +2,7 @@ name: Release cloud-core
 
 on:
   push:
-    branches: [java]
+    branches: [ java ]
     paths:
       - 'cloud-core/pom.xml'
 

@@ -149,8 +149,10 @@ public final class ServerSoftwareManager implements IWriteSoftwareProvider, Load
         CloudLogger.get().debug("Loaded {}, part of {} template type", software.name(), software.templateType());
         softwareList.put(software.name(), software);
         TemplateTypeHelper.addSoftware(Objects.requireNonNull(software.type()), software);
-        if (!service().directoryPath(software).toFile().exists() && !service().directoryPath(software).toFile().mkdirs()) throw new RuntimeException("Unable to create directory");
-        if (!service().bridgeDirectoryPath(software).toFile().exists() && !service().bridgeDirectoryPath(software).toFile().mkdirs()) throw new RuntimeException("Unable to create directory");
+        if (!service().directoryPath(software).toFile().exists() && !service().directoryPath(software).toFile().mkdirs())
+            throw new RuntimeException("Unable to create directory");
+        if (!service().bridgeDirectoryPath(software).toFile().exists() && !service().bridgeDirectoryPath(software).toFile().mkdirs())
+            throw new RuntimeException("Unable to create directory");
 
         if (!service().configFilePath(software).toFile().exists()) {
             try (BufferedWriter writer = Files.newBufferedWriter(service().configFilePath(software), StandardCharsets.UTF_8)) {
@@ -182,10 +184,13 @@ public final class ServerSoftwareManager implements IWriteSoftwareProvider, Load
     @Override
     public void register(IServerSoftware software, boolean override) {
         ServerSoftware serverSoftware = requireServerSoftware(software);
-        if (softwareList.containsKey(serverSoftware.name()) && !override) throw new IllegalArgumentException("ServerSoftware already exists");
+        if (softwareList.containsKey(serverSoftware.name()) && !override)
+            throw new IllegalArgumentException("ServerSoftware already exists");
         softwareList.put(serverSoftware.name(), serverSoftware);
-        if (!service().directoryPath(serverSoftware).toFile().exists() && !service().directoryPath(serverSoftware).toFile().mkdirs()) throw new RuntimeException("Unable to create directory");
-        if (!service().bridgeDirectoryPath(serverSoftware).toFile().exists() && !service().bridgeDirectoryPath(serverSoftware).toFile().mkdirs()) throw new RuntimeException("Unable to create directory");
+        if (!service().directoryPath(serverSoftware).toFile().exists() && !service().directoryPath(serverSoftware).toFile().mkdirs())
+            throw new RuntimeException("Unable to create directory");
+        if (!service().bridgeDirectoryPath(serverSoftware).toFile().exists() && !service().bridgeDirectoryPath(serverSoftware).toFile().mkdirs())
+            throw new RuntimeException("Unable to create directory");
 
         try (BufferedWriter writer = Files.newBufferedWriter(service().configFilePath(serverSoftware), StandardCharsets.UTF_8)) {
             SOFTWARE_GSON.toJson(serverSoftware, writer);
@@ -216,7 +221,7 @@ public final class ServerSoftwareManager implements IWriteSoftwareProvider, Load
     public boolean disabled(ServerSoftware software) {
         return disabledSoftware.contains(software.name());
     }
-    
+
     public SoftwareService service() {
         return PocketCloud.instance().software();
     }

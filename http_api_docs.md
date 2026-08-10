@@ -14,15 +14,15 @@
 - [Route Parameters](#route-parameters)
 - [Error Handling](#error-handling)
 - [Endpoints](#endpoints)
-  - [Health](#health)
-  - [Stats](#stats)
-  - [Servers](#servers)
-  - [Players](#players)
-  - [Templates](#templates)
-  - [Groups](#groups)
-  - [Plugins](#plugins)
-  - [Maintenance](#maintenance)
-  - [Notifications](#notifications)
+    - [Health](#health)
+    - [Stats](#stats)
+    - [Servers](#servers)
+    - [Players](#players)
+    - [Templates](#templates)
+    - [Groups](#groups)
+    - [Plugins](#plugins)
+    - [Maintenance](#maintenance)
+    - [Notifications](#notifications)
 - [Creating Custom Routes](#creating-custom-routes)
 - [Server Configuration](#server-configuration)
 
@@ -30,7 +30,9 @@
 
 ## Overview
 
-The PocketCloud HTTP server is a lightweight, socket-based HTTP/1.1 API server built into the PocketCloud system. It exposes information about servers, templates, players, and cloud internals, and allows external tools or dashboards to interact with the cloud over HTTP.
+The PocketCloud HTTP server is a lightweight, socket-based HTTP/1.1 API server built into the PocketCloud system. It
+exposes information about servers, templates, players, and cloud internals, and allows external tools or dashboards to
+interact with the cloud over HTTP.
 
 - Supports `GET`, `POST`, `PUT`, `DELETE`, and `PATCH` methods
 - All API endpoints are versioned under `/v1/`
@@ -46,7 +48,8 @@ The PocketCloud HTTP server is a lightweight, socket-based HTTP/1.1 API server b
 http://<host>:<port>/v1/<endpoint>
 ```
 
-The server supports API versioning. The currently available version is **v1**. All versioned routes must be registered against a known `ApiVersion` and will be rejected if versioning is disabled on the server.
+The server supports API versioning. The currently available version is **v1**. All versioned routes must be registered
+against a known `ApiVersion` and will be rejected if versioning is disabled on the server.
 
 Non-versioned routes (like `/health`) are accessible directly at the root:
 
@@ -78,13 +81,16 @@ If authentication fails, the server responds with:
 HTTP/1.1 403 Forbidden
 ```
 
-> **Note:** Individual route files specify which authentication strategy they use. By default, all built-in v1 routes use `NoAuthRequiredAuthentication` but are still locked behind the `DefaultAuthentication` due to the specified `ApiVersion`, which is `v1`. You can pass a custom `Authentication` implementation when registering your own routes.
+> **Note:** Individual route files specify which authentication strategy they use. By default, all built-in v1 routes
+> use `NoAuthRequiredAuthentication` but are still locked behind the `DefaultAuthentication` due to the specified
+`ApiVersion`, which is `v1`. You can pass a custom `Authentication` implementation when registering your own routes.
 
 ---
 
 ## Rate Limiting
 
-The server supports optional rate limiting, configured via `MainConfig` aka `storage/config.yml`. When enabled, each client IP is tracked.
+The server supports optional rate limiting, configured via `MainConfig` aka `storage/config.yml`. When enabled, each
+client IP is tracked.
 
 | Parameter               | Default | Description                                                       |
 |-------------------------|---------|-------------------------------------------------------------------|
@@ -115,7 +121,9 @@ Content-Type: application/json
 
 ## Response Caching
 
-The server supports optional response caching for `200 OK` responses. Caching is keyed on the combination of API version, HTTP method, full path, and sorted query parameters. The cache is automatically invalidated after the configured `caching_time_in_seconds`.
+The server supports optional response caching for `200 OK` responses. Caching is keyed on the combination of API
+version, HTTP method, full path, and sorted query parameters. The cache is automatically invalidated after the
+configured `caching_time_in_seconds`.
 
 When caching is enabled, repeated identical requests are served from memory without re-executing route logic.
 
@@ -133,7 +141,8 @@ When caching is enabled, repeated identical requests are served from memory with
 
 ### Body
 
-Request bodies must be valid JSON and must not exceed the route's configured `maxPayloadLength`. Sending a body larger than the limit results in:
+Request bodies must be valid JSON and must not exceed the route's configured `maxPayloadLength`. Sending a body larger
+than the limit results in:
 
 ```http
 HTTP/1.1 413 Payload Too Large
@@ -151,13 +160,15 @@ Content-Length: <bytes>
 Connection: close
 ```
 
-Successful responses return `200 OK`. Error responses include a `message` field explaining what went wrong and if an exception occurred during the process, the exception itself is returned.
+Successful responses return `200 OK`. Error responses include a `message` field explaining what went wrong and if an
+exception occurred during the process, the exception itself is returned.
 
 ---
 
 ## Route Parameters
 
-Routes can include dynamic path segments using `{param}` syntax. The parameter value can be accessed inside the route handler via `$request->getParameter("param")`.
+Routes can include dynamic path segments using `{param}` syntax. The parameter value can be accessed inside the route
+handler via `$request->getParameter("param")`.
 
 **Example route path:** `/servers/{name}`
 
@@ -342,8 +353,8 @@ Returns the full server object as produced by `$server->write()`.
 
 **Error Responses**
 
-| Code              | Condition                     | Body                                                    |
-|-------------------|-------------------------------|---------------------------------------------------------|
+| Code              | Condition                     | Body                                                   |
+|-------------------|-------------------------------|--------------------------------------------------------|
 | `400 Bad Request` | `name` parameter not provided | `{"message": "Please specify a server name or uuid."}` |
 | `400 Bad Request` | Server does not exist         | `{"message": "Server not found."}`                     |
 
@@ -376,8 +387,8 @@ Returns the server's log lines as a newline-separated plain text body.
 
 **Error Responses**
 
-| Code                        | Condition                     | Body                                                    |
-|-----------------------------|-------------------------------|---------------------------------------------------------|
+| Code                        | Condition                     | Body                                                   |
+|-----------------------------|-------------------------------|--------------------------------------------------------|
 | `400 Bad Request`           | `name` parameter not provided | `{"message": "Please specify a server name or uuid."}` |
 | `400 Bad Request`           | Server does not exist         | `{"message": "Server not found."}`                     |
 | `500 Internal Server Error` | Logs could not be retrieved   | `{"message": "Failed to retrieve server logs."}`       |
@@ -541,8 +552,8 @@ Host: localhost:8080
 
 **Error Responses**
 
-| Code              | Condition                     | Body                                                    |
-|-------------------|-------------------------------|---------------------------------------------------------|
+| Code              | Condition                     | Body                                                   |
+|-------------------|-------------------------------|--------------------------------------------------------|
 | `400 Bad Request` | `name` parameter not provided | `{"message": "Please specify a server name or uuid."}` |
 | `400 Bad Request` | Server does not exist         | `{"message": "Server not found."}`                     |
 
@@ -586,8 +597,8 @@ Content-Type: application/json
 
 **Error Responses**
 
-| Code              | Condition                     | Body                                                    |
-|-------------------|-------------------------------|---------------------------------------------------------|
+| Code              | Condition                     | Body                                                   |
+|-------------------|-------------------------------|--------------------------------------------------------|
 | `400 Bad Request` | `name` parameter not provided | `{"message": "Please specify a server name or uuid."}` |
 | `400 Bad Request` | Server does not exist         | `{"message": "Server not found."}`                     |
 
@@ -597,7 +608,8 @@ Content-Type: application/json
 
 #### `GET /v1/players`
 
-Returns a list of all currently connected players. Optionally filter by server, template, or group. Only one filter may be applied at a time.
+Returns a list of all currently connected players. Optionally filter by server, template, or group. Only one filter may
+be applied at a time.
 
 **Query Parameters**
 
@@ -636,11 +648,11 @@ Host: localhost:8080
 
 **Error Responses**
 
-| Code              | Condition                                           | Body                                                                               |
-|-------------------|-----------------------------------------------------|------------------------------------------------------------------------------------|
-| `400 Bad Request` | `server` refers to a server that doesn't exist      | `{"message": "Server does not exist."}`                                            |
-| `400 Bad Request` | `template` refers to a template that doesn't exist  | `{"message": "Template does not exist."}`                                          |
-| `400 Bad Request` | `group` refers to a server group that doesn't exist | `{"message": "ServerGroup does not exist."}`                                       |
+| Code              | Condition                                           | Body                                                                                       |
+|-------------------|-----------------------------------------------------|--------------------------------------------------------------------------------------------|
+| `400 Bad Request` | `server` refers to a server that doesn't exist      | `{"message": "Server does not exist."}`                                                    |
+| `400 Bad Request` | `template` refers to a template that doesn't exist  | `{"message": "Template does not exist."}`                                                  |
+| `400 Bad Request` | `group` refers to a server group that doesn't exist | `{"message": "ServerGroup does not exist."}`                                               |
 | `400 Bad Request` | More than one filter was provided simultaneously    | `{"message": "You can only apply one of the following filters: server, template, group."}` |
 
 ---
@@ -747,10 +759,10 @@ Content-Type: application/json
 
 **Request Body**
 
-| Field     | Type     | Required | Max Length  | Description                                                                     |
-|-----------|----------|----------|-------------|---------------------------------------------------------------------------------|
-| `type`    | `string` | Yes      | 1024 bytes  | Text type — one of the available `TextType` values (e.g. `MESSAGE`, `TITLE`, `POPUP`) |
-| `message` | `string` | Yes      | 1024 bytes  | The text content to send to the player                                          |
+| Field     | Type     | Required | Max Length | Description                                                                           |
+|-----------|----------|----------|------------|---------------------------------------------------------------------------------------|
+| `type`    | `string` | Yes      | 1024 bytes | Text type — one of the available `TextType` values (e.g. `MESSAGE`, `TITLE`, `POPUP`) |
+| `message` | `string` | Yes      | 1024 bytes | The text content to send to the player                                                |
 
 **Response — `200 OK`**
 
@@ -762,11 +774,11 @@ Content-Type: application/json
 
 **Error Responses**
 
-| Code              | Condition                       | Body                                           |
-|-------------------|---------------------------------|------------------------------------------------|
-| `400 Bad Request` | `name` not provided             | `{"message": "Please specify a player name."}` |
-| `400 Bad Request` | Player does not exist           | `{"message": "Player not found."}`             |
-| `400 Bad Request` | `type` is not a valid TextType  | `{"message": "TextType not found."}`           |
+| Code              | Condition                      | Body                                           |
+|-------------------|--------------------------------|------------------------------------------------|
+| `400 Bad Request` | `name` not provided            | `{"message": "Please specify a player name."}` |
+| `400 Bad Request` | Player does not exist          | `{"message": "Player not found."}`             |
+| `400 Bad Request` | `type` is not a valid TextType | `{"message": "TextType not found."}`           |
 
 ---
 
@@ -794,8 +806,8 @@ Content-Type: application/json
 
 **Request Body**
 
-| Field    | Type     | Required | Max Length | Description                      |
-|----------|----------|----------|------------|----------------------------------|
+| Field    | Type     | Required | Max Length | Description                       |
+|----------|----------|----------|------------|-----------------------------------|
 | `server` | `string` | Yes      | 64 bytes   | Name of the server to transfer to |
 
 **Response — `200 OK`**
@@ -847,11 +859,11 @@ Host: localhost:8080
 ]
 ```
 
-| Field          | Type     | Description                                        |
-|----------------|----------|----------------------------------------------------|
-| `name`         | `string` | Template name                                      |
-| `player_count` | `int`    | Total players across all servers of this template  |
-| `maintenance`  | `bool`   | Whether the template is in maintenance mode        |
+| Field          | Type     | Description                                       |
+|----------------|----------|---------------------------------------------------|
+| `name`         | `string` | Template name                                     |
+| `player_count` | `int`    | Total players across all servers of this template |
+| `maintenance`  | `bool`   | Whether the template is in maintenance mode       |
 
 **Error Responses**
 
@@ -884,8 +896,8 @@ Returns the full template object as produced by `$template->write()`.
 
 **Error Responses**
 
-| Code              | Condition               | Body                                   |
-|-------------------|-------------------------|----------------------------------------|
+| Code              | Condition               | Body                                 |
+|-------------------|-------------------------|--------------------------------------|
 | `400 Bad Request` | Template does not exist | `{"message": "Template not found."}` |
 
 ---
@@ -976,17 +988,17 @@ Content-Type: application/json
 
 All fields are optional. Any combination of the following editable keys may be sent:
 
-| Field                       | Type             | Description                        |
-|-----------------------------|------------------|------------------------------------|
-| `lobby`                     | `bool`           | Lobby flag                         |
-| `maintenance`               | `bool`           | Maintenance mode flag              |
-| `static`                    | `bool`           | Static server flag                 |
-| `alwaysCopyToStaticServers` | `bool`           | Copy-to-static flag                |
-| `maxPlayerCount`            | `int`            | Maximum players per server         |
-| `minServerCount`            | `int`            | Minimum running servers            |
-| `maxServerCount`            | `int`            | Maximum running servers            |
-| `startNewPercentage`        | `float` \| `int` | Start-new threshold percentage     |
-| `autoStart`                 | `bool`           | Auto-start flag                    |
+| Field                       | Type             | Description                    |
+|-----------------------------|------------------|--------------------------------|
+| `lobby`                     | `bool`           | Lobby flag                     |
+| `maintenance`               | `bool`           | Maintenance mode flag          |
+| `static`                    | `bool`           | Static server flag             |
+| `alwaysCopyToStaticServers` | `bool`           | Copy-to-static flag            |
+| `maxPlayerCount`            | `int`            | Maximum players per server     |
+| `minServerCount`            | `int`            | Minimum running servers        |
+| `maxServerCount`            | `int`            | Maximum running servers        |
+| `startNewPercentage`        | `float` \| `int` | Start-new threshold percentage |
+| `autoStart`                 | `bool`           | Auto-start flag                |
 
 **Response — `200 OK`**
 
@@ -998,11 +1010,11 @@ All fields are optional. Any combination of the following editable keys may be s
 
 **Error Responses**
 
-| Code              | Condition                        | Body                                                                            |
-|-------------------|----------------------------------|---------------------------------------------------------------------------------|
-| `400 Bad Request` | `name` not provided              | `{"message": "Please specify a template name."}`                                |
-| `400 Bad Request` | Template does not exist          | `{"message": "Template not found."}`                                            |
-| `400 Bad Request` | Body contains a non-editable key | `{"message": "The key: <key> is not allowed inside the request body."}`         |
+| Code              | Condition                        | Body                                                                        |
+|-------------------|----------------------------------|-----------------------------------------------------------------------------|
+| `400 Bad Request` | `name` not provided              | `{"message": "Please specify a template name."}`                            |
+| `400 Bad Request` | Template does not exist          | `{"message": "Template not found."}`                                        |
+| `400 Bad Request` | Body contains a non-editable key | `{"message": "The key: <key> is not allowed inside the request body."}`     |
 | `400 Bad Request` | A field value has the wrong type | `{"message": "Invalid value for key: <key>, expected: <type>, got <type>"}` |
 
 ---
@@ -1136,10 +1148,10 @@ Content-Type: application/json
 
 **Error Responses**
 
-| Code              | Condition                 | Body                                     |
-|-------------------|---------------------------|------------------------------------------|
-| `400 Bad Request` | Invalid group data        | `{"message": "Invalid group object."}`   |
-| `400 Bad Request` | Group name already exists | `{"message": "Group already exists."}`   |
+| Code              | Condition                 | Body                                   |
+|-------------------|---------------------------|----------------------------------------|
+| `400 Bad Request` | Invalid group data        | `{"message": "Invalid group object."}` |
+| `400 Bad Request` | Group name already exists | `{"message": "Group already exists."}` |
 
 ---
 
@@ -1287,9 +1299,9 @@ Content-Type: application/json
 
 **Request Body**
 
-| Field     | Type   | Required | Description                                                          |
-|-----------|--------|----------|----------------------------------------------------------------------|
-| `enabled` | `bool` | Yes      | `true` to list only enabled plugins, `false` for only disabled ones  |
+| Field     | Type   | Required | Description                                                         |
+|-----------|--------|----------|---------------------------------------------------------------------|
+| `enabled` | `bool` | Yes      | `true` to list only enabled plugins, `false` for only disabled ones |
 
 **Response — `200 OK`**
 
@@ -1481,7 +1493,8 @@ Host: localhost:8080
 
 ### Maintenance
 
-The maintenance endpoints manage the cloud's maintenance whitelist — the list of players who are allowed to join while maintenance mode is active.
+The maintenance endpoints manage the cloud's maintenance whitelist — the list of players who are allowed to join while
+maintenance mode is active.
 
 #### `GET /v1/maintenance`
 
@@ -1708,7 +1721,8 @@ parent::__construct(
 );
 ```
 
-If the incoming body does not match this structure, the server automatically returns `400 Bad Request` before `checkForBadRequest()` or `onHandle()` are called.
+If the incoming body does not match this structure, the server automatically returns `400 Bad Request` before
+`checkForBadRequest()` or `onHandle()` are called.
 
 ### Non-Versioned Route
 

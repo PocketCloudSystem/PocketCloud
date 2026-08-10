@@ -32,7 +32,7 @@ public final class ServerStartResponsePacket extends ResponsePacket implements C
         startedServers = packetData.readArray(String.class);
     }
 
-    public static ServerStartResponsePacket create(ActionFailureReason errorReason,  Collection<String> startedServers) {
+    public static ServerStartResponsePacket create(ActionFailureReason errorReason, Collection<String> startedServers) {
         return new ServerStartResponsePacket(errorReason, startedServers);
     }
 }

@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.Set;
 
 public final class ServerUtils {
-    
+
     private static final Map<String, Set<Integer>> ids = new HashMap<>();
     private static final Set<Integer> usedPorts = new HashSet<>();
 
@@ -52,12 +52,12 @@ public final class ServerUtils {
 
         for (int tries = 0; tries < 30; tries++) {
             int port = randomPorts
-                ? start + (int) (Math.random() * (end - start + 1))
-                : currentPort++;
+                    ? start + (int) (Math.random() * (end - start + 1))
+                    : currentPort++;
             int portV6 = port + 1;
 
             if (!usedPorts.contains(port) && !usedPorts.contains(portV6) &&
-                NetUtils.isLocalUdpPortFree(port) && NetUtils.isLocalUdpPortFree(portV6)) {
+                    NetUtils.isLocalUdpPortFree(port) && NetUtils.isLocalUdpPortFree(portV6)) {
                 return port;
             }
         }

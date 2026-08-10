@@ -314,7 +314,8 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
     }
 
     public Promise<Void> save() {
-        if (!new ServerSaveEvent(this).call().isCancelled()) return Promise.rejected(new RuntimeException("Event cancelled"));
+        if (!new ServerSaveEvent(this).call().isCancelled())
+            return Promise.rejected(new RuntimeException("Event cancelled"));
         return Promise.supplyAsync(() -> {
             for (String file : template().serverSoftware().config().savableFiles()) {
                 Path filePath = path().resolve(file);
@@ -360,7 +361,8 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
     public Promise<ServerCommandExecutionResult> dispatch(String commandLine) {
         Optional<ServerClient> client = client();
         if (client.isEmpty()) return Promise.rejected(new IllegalStateException("Not verified yet"));
-        if (new ServerSendCommandEvent(this, commandLine).call().isCancelled()) return Promise.rejected(new RuntimeException("Event cancelled"));
+        if (new ServerSendCommandEvent(this, commandLine).call().isCancelled())
+            return Promise.rejected(new RuntimeException("Event cancelled"));
         String id = "command-" + StringUtils.generate(10);
         Promise<ServerCommandExecutionResult> promise = new Promise<>();
         CommandExecuteRequestPacket.create(commandLine, id).sendRequest(client.get()).then(response -> {
@@ -463,7 +465,8 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
     }
 
     public Path path() {
-        if (template().settings().staticServers()) return PocketCloudPaths.storage().staticServers().with(name()).asPath();
+        if (template().settings().staticServers())
+            return PocketCloudPaths.storage().staticServers().with(name()).asPath();
         return PocketCloudPaths.tmp().with(name() + "_" + uuid.toString()).asPath();
     }
 

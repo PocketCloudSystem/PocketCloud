@@ -2,7 +2,7 @@ name: Release cloud-bridge
 
 on:
   push:
-    branches: [java]
+    branches: [ java ]
     paths:
       - 'cloud-bridge/pom.xml'
 

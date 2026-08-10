@@ -117,7 +117,8 @@ public final class SoftwareService {
 
             Path sizeFilePath = binarySizeFilePath(software);
             File sizeFile = sizeFilePath.toFile();
-            if (!sizeFile.exists() && !sizeFile.createNewFile()) throw new IOException("Failed to create .size file for binary");
+            if (!sizeFile.exists() && !sizeFile.createNewFile())
+                throw new IOException("Failed to create .size file for binary");
             FileUtils.filePutContents(sizeFilePath, String.valueOf(archivePath.toFile().length()));
 
             Files.deleteIfExists(archivePath);
@@ -173,7 +174,8 @@ public final class SoftwareService {
             NetUtils.download(bridge.url(), sourceFile, progressBar::update);
 
             File sizeFile = sizeFilePath.toFile();
-            if (!sizeFile.exists() && !sizeFile.createNewFile()) throw new IOException("Failed to create .size file for bridge");
+            if (!sizeFile.exists() && !sizeFile.createNewFile())
+                throw new IOException("Failed to create .size file for bridge");
             FileUtils.filePutContents(sizeFilePath, String.valueOf(sourceFile.toFile().length()));
 
             progressBar.finish();

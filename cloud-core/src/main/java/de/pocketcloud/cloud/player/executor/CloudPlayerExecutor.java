@@ -86,7 +86,8 @@ public final class CloudPlayerExecutor implements IPlayerExecutor {
     public void kick(UUID uuid, String reason, String disconnectScreenMessage) {
         PocketCloud.instance().players().get(uuid)
                 .ifPresent(p -> {
-                    if (new PlayerKickEvent((CloudPlayer) p, reason, disconnectScreenMessage).call().isCancelled()) return;
+                    if (new PlayerKickEvent((CloudPlayer) p, reason, disconnectScreenMessage).call().isCancelled())
+                        return;
                     CloudServer selectedServer = (CloudServer) p.currentProxy().orElse(p.currentServer().orElse(null));
                     if (selectedServer != null) {
                         selectedServer.sendPacket(PlayerKickPacket.create(p.name(), reason, disconnectScreenMessage));
@@ -178,7 +179,8 @@ public final class CloudPlayerExecutor implements IPlayerExecutor {
     public void kick(String nameOrXuid, String reason, String disconnectScreenMessage) {
         PocketCloud.instance().players().get(nameOrXuid)
                 .ifPresent(p -> {
-                    if (new PlayerKickEvent((CloudPlayer) p, reason, disconnectScreenMessage).call().isCancelled()) return;
+                    if (new PlayerKickEvent((CloudPlayer) p, reason, disconnectScreenMessage).call().isCancelled())
+                        return;
                     CloudServer selectedServer = (CloudServer) p.currentProxy().orElse(p.currentServer().orElse(null));
                     if (selectedServer != null) {
                         selectedServer.sendPacket(PlayerKickPacket.create(p.name(), reason, disconnectScreenMessage));

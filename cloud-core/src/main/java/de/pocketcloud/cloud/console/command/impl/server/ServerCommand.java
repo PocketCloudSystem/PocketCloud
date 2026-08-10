@@ -161,7 +161,7 @@ public final class ServerCommand extends Command {
     }
 
     public boolean handleScreenSub(CommandSender sender, CommandContext ctx) {
-        CloudServer server =  ctx.arg("server", CloudServer.class);
+        CloudServer server = ctx.arg("server", CloudServer.class);
         PocketCloud.instance().screens().set(new ServerConsoleMonitorScreen(server.name()));
         return true;
     }

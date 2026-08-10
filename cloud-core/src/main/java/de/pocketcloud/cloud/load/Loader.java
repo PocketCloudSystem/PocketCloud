@@ -14,7 +14,8 @@ public final class Loader {
     private boolean reloading = false;
 
     public Loader register(Loadable loadable) {
-        if (loadableList.containsKey(loadable.getClass().getName())) throw new IllegalStateException("Loadable already exists");
+        if (loadableList.containsKey(loadable.getClass().getName()))
+            throw new IllegalStateException("Loadable already exists");
         loadableList.put(loadable.getClass().getName(), loadable);
         return this;
     }

@@ -90,11 +90,15 @@ public final class NormalPacketHandler implements PacketListener {
         TextType type = packet.getType();
         switch (type) {
             case MESSAGE -> CloudBridge.instance().playerExecutor().sendMessage(player, packet.getBody());
-            case POPUP -> CloudBridge.instance().playerExecutor().sendPopup(player, packet.getTitle(), packet.getBody());
+            case POPUP ->
+                    CloudBridge.instance().playerExecutor().sendPopup(player, packet.getTitle(), packet.getBody());
             case TIP -> CloudBridge.instance().playerExecutor().sendTip(player, packet.getBody());
-            case TITLE -> CloudBridge.instance().playerExecutor().sendTitle(player, packet.getTitle(), packet.getBody(), packet.getFadeIn(), packet.getStay(), packet.getFadeOut());
-            case ACTION_BAR -> CloudBridge.instance().playerExecutor().sendActionbarMessage(player, packet.getBody(), packet.getFadeIn(), packet.getStay(), packet.getFadeOut());
-            case TOAST -> CloudBridge.instance().playerExecutor().sendToast(player, packet.getTitle(), packet.getBody());
+            case TITLE ->
+                    CloudBridge.instance().playerExecutor().sendTitle(player, packet.getTitle(), packet.getBody(), packet.getFadeIn(), packet.getStay(), packet.getFadeOut());
+            case ACTION_BAR ->
+                    CloudBridge.instance().playerExecutor().sendActionbarMessage(player, packet.getBody(), packet.getFadeIn(), packet.getStay(), packet.getFadeOut());
+            case TOAST ->
+                    CloudBridge.instance().playerExecutor().sendToast(player, packet.getTitle(), packet.getBody());
         }
     }
 
@@ -114,7 +118,7 @@ public final class NormalPacketHandler implements PacketListener {
             else CloudBridge.instance().servers().add(server);
         } else if (type == SyncType.SERVER_STORAGE) {
             CloudAPI.instance().servers().get(UUID.fromString(remainingData.readString()))
-                            .ifPresent(s -> s.storage().syncIn(remainingData.readMap()));
+                    .ifPresent(s -> s.storage().syncIn(remainingData.readMap()));
         } else if (type == SyncType.TEMPLATES) {
             for (Template template : handleBulkSync(remainingData, Template.class)) {
                 CloudBridge.instance().templates().add(template);
