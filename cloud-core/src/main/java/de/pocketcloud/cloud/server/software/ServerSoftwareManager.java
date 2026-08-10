@@ -39,7 +39,7 @@ public final class ServerSoftwareManager implements IWriteSoftwareProvider, Load
 
     public static final List<ServerSoftware> DEFAULTS = List.of(
             new ServerSoftware("powernukkitx-latest", "SERVER", new SoftwareDownload(
-                    "https://github.com/PowerNukkitX/PowerNukkitX/releases/download/3.0.0/powernukkitx.jar",
+                    "https://github.com/PowerNukkitX/PowerNukkitX/releases/latest/download/powernukkitx.jar",
                     "powernukkitx.jar",
                     new String[]{
                             "java",

@@ -6,6 +6,7 @@ import de.pocketcloud.api.component.template.ITemplate;
 import de.pocketcloud.api.provider.write.IWriteServerProvider;
 import de.pocketcloud.api.search.ServerSearchQuery;
 import de.pocketcloud.api.template.TemplateType;
+import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.server.util.CloudServerStorage;
 import de.pocketcloud.cloud.server.util.ServerUtils;
@@ -51,6 +52,7 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
     @Getter(AccessLevel.NONE)
     private final Map<String, CloudServer> servers = new ConcurrentHashMap<>();
     private final AtomicInteger startingServers = new AtomicInteger(0);
+    private long tryAgainAt = 0;
 
     private long lastServerStartTime = 0;
     private long lastServerStopTime = 0;
@@ -232,6 +234,15 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
     public void tick(long currentTick) {
         servers.values().forEach(server -> server.tick(currentTick));
 
+        if (currentTick < tryAgainAt) return;
+        double cpuUsage = PocketCloud.instance().performanceStats().systemCpuUsage();
+        if (cpuUsage >= 85) {
+            CloudLogger.get().warn("Unable to process more server starts due to §chigh CPU load §8(§c{}%§8)§r.", cpuUsage);
+            CloudLogger.get().warn("Trying again in 2 seconds. Pending Servers§8: §e{} §8| §a{}", serverPrepareQueue.size(), serverStartQueue.size());
+            tryAgainAt = currentTick + 40;
+            return;
+        }
+
         Benchmark.startTiming("check_server_prepare_queue");
 
         int prepareSlots = MAX_PARALLEL_PREPARES - activePreparingSlots();
@@ -254,14 +265,12 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
         }
 
         Benchmark.stopTiming("check_server_prepare_queue");
-
         Benchmark.startTiming("check_server_start_queue");
 
         int availableSlots = MAX_PARALLEL_STARTS - activeStartingSlots();
         while (availableSlots > 0 && !serverStartQueue.isEmpty()) {
             CloudServer server = serverStartQueue.poll();
             if (server == null) break;
-
             startingServerTimestamps.put(server.name(), System.currentTimeMillis());
             startingServers.incrementAndGet();
             server.start().boot();
