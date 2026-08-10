@@ -1,0 +1,75 @@
+name: Release cloud-core
+
+on:
+  push:
+    branches: [java]
+    paths:
+      - 'cloud-core/pom.xml'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '22'
+          cache: maven
+
+      - name: Read version from pom.xml
+        id: version
+        run: |
+          VERSION=$(mvn -f cloud-core/pom.xml -q -Dexpression=project.version -DforceStdout help:evaluate)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Check if tag already exists
+        id: check
+        run: |
+          if git rev-parse "core-${{ steps.version.outputs.version }}" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build (with dependencies)
+        if: steps.check.outputs.exists == 'false'
+        run: mvn -B -pl cloud-core -am install
+
+      - name: Locate built jar
+        if: steps.check.outputs.exists == 'false'
+        id: jar
+        run: |
+          JAR=$(find cloud-core/target -maxdepth 1 -name '*.jar' ! -name '*sources*' ! -name '*javadoc*' ! -name 'original-*' | head -n1)
+          echo "path=$JAR" >> "$GITHUB_OUTPUT"
+
+      - name: Create versioned release
+        if: steps.check.outputs.exists == 'false'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: core-${{ steps.version.outputs.version }}
+          name: cloud-core ${{ steps.version.outputs.version }}
+          files: ${{ steps.jar.outputs.path }}
+          target_commitish: ${{ github.sha }}
+
+      - name: Move latest-core tag
+        if: steps.check.outputs.exists == 'false'
+        run: |
+          git tag -f latest-core
+          git push origin latest-core --force
+
+      - name: Update latest-core release
+        if: steps.check.outputs.exists == 'false'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest-core
+          name: "cloud-core latest (${{ steps.version.outputs.version }})"
+          files: ${{ steps.jar.outputs.path }}
+          target_commitish: ${{ github.sha }}
