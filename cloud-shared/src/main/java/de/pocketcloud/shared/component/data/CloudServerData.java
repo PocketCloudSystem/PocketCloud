@@ -19,14 +19,13 @@ public class CloudServerData implements ICloudServerData {
     protected final int port;
     protected int maxPlayers;
 
-    protected Long processId = -1L;
-    protected Long tempProcessId = -1L;
-    protected Double tps = 0.0;
-    protected Double avgTps = 0.0;
-    protected Long memoryUsage = 0L;
-    protected Long memoryPeak = 0L;
-    protected Long memoryLimit = 0L;
-    protected Double cpuUsage = 0.0;
+    protected Long processId = null;
+    protected Double tps = null;
+    protected Double avgTps = null;
+    protected Long memoryUsage = null;
+    protected Long memoryPeak = null;
+    protected Long memoryLimit = null;
+    protected Double cpuUsage = null;
 
     public CloudServerData(UUID serverUuid, String address, int port, int maxPlayers) {
         this.serverUuid = serverUuid;

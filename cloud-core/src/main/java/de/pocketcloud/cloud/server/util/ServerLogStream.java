@@ -18,7 +18,7 @@ public final class ServerLogStream {
     }
 
     public void startStream() {
-        File logFile = server.customLogFilePath().toFile().exists() ? server.customLogFilePath().toFile() : server.logFilePath().toFile();
+        File logFile = server.logFilePath().toFile();
         if (!logFile.exists()) throw new RuntimeException("Log file does not exist");
         try {
             this.fileHandle = new RandomAccessFile(logFile, "r");

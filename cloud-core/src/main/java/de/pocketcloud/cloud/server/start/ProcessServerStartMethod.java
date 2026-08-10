@@ -29,7 +29,6 @@ public final class ProcessServerStartMethod implements ServerStartMethod {
 
                     Process process = new ProcessBuilder(startCommand.split(" "))
                             .redirectErrorStream(true)
-                            .redirectOutput(server.customLogFilePath().toFile())
                             .directory(server.path().toFile())
                             .start();
 

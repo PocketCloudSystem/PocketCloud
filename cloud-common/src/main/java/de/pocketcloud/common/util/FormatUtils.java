@@ -30,23 +30,22 @@ public final class FormatUtils {
                 (seconds > 0 ? (int) Math.floor(seconds) + "s" : "");
     }
 
-    public static String tps(double tps) {
+    public static String tps(Double tps) {
         return tps(tps, true, true);
     }
 
-    public static String tps(double tps, boolean coloured) {
+    public static String tps(Double tps, boolean coloured) {
         return tps(tps, true, coloured);
     }
 
-    public static String tps(double tps, boolean suffix, boolean coloured) {
+    public static String tps(Double tps, boolean suffix, boolean coloured) {
+        if (tps == null || tps < 0) return (coloured ? "§c" : "") + "???";
         tps = round(tps, 2);
 
         String actualSuffix = suffix ? " ticks/s" : "";
 
         if (coloured) {
-            if (tps < 0) {
-                return "§c???";
-            } else if (tps >= 17) {
+            if (tps >= 17) {
                 return "§a" + tps + actualSuffix;
             } else if (tps >= 12) {
                 return "§6" + tps + actualSuffix;
@@ -56,20 +55,20 @@ public final class FormatUtils {
         } else return tps + actualSuffix;
     }
 
-    public static String bytes(long bytes) {
+    public static String bytes(Long bytes) {
         return bytes(bytes, null, false, true);
     }
 
-    public static String bytes(long bytes, boolean coloured) {
+    public static String bytes(Long bytes, boolean coloured) {
         return bytes(bytes, null, false, coloured);
     }
 
-    public static String bytes(long bytes, boolean higherPctBetter, boolean coloured) {
+    public static String bytes(Long bytes, boolean higherPctBetter, boolean coloured) {
         return bytes(bytes, null, higherPctBetter, coloured);
     }
 
-    public static String bytes(long bytes, Long maxBytes, boolean higherPctBetter, boolean coloured) {
-        if (bytes < 0) return (coloured ? "§c" : "") + "???";
+    public static String bytes(Long bytes, Long maxBytes, boolean higherPctBetter, boolean coloured) {
+        if (bytes == null || bytes < 0) return (coloured ? "§c" : "") + "???";
         String[] units = {"B", "KB", "MB", "GB", "TB", "PB", "EB"};
         int exp = bytes > 0 ? (int) Math.floor(Math.log(bytes) / Math.log(1024)) : 0;
         double value = bytes / Math.pow(1024, exp);
@@ -94,31 +93,28 @@ public final class FormatUtils {
         return String.format(format, formatted, color, percent);
     }
 
-    public static String downloadSpeed(double bytesPerSecond) {
-        if (Double.isNaN(bytesPerSecond) || Double.isInfinite(bytesPerSecond) || bytesPerSecond <= 0) return "N/A";
+    public static String downloadSpeed(Double bytesPerSecond) {
+        if (bytesPerSecond == null || Double.isNaN(bytesPerSecond) || Double.isInfinite(bytesPerSecond) || bytesPerSecond <= 0) return "N/A";
         if (bytesPerSecond >= Math.pow(1024, 3)) return String.format("%.1f GB/s", bytesPerSecond / Math.pow(1024, 3));
         if (bytesPerSecond >= Math.pow(1024, 2)) return String.format("%.1f MB/s", bytesPerSecond / Math.pow(1024, 2));
         if (bytesPerSecond >= 1024) return String.format("%.1f KB/s", bytesPerSecond / 1024);
         return String.format("%.0f B/s", bytesPerSecond);
     }
 
-    public static String usagePercentage(double percentage) {
+    public static String usagePercentage(Double percentage) {
         return usagePercentage(percentage, false, 3, true);
     }
 
-    public static String usagePercentage(double percentage, boolean coloured) {
+    public static String usagePercentage(Double percentage, boolean coloured) {
         return usagePercentage(percentage, false, 3, coloured);
     }
 
-    public static String usagePercentage(double percentage, boolean higherBetter, boolean coloured) {
+    public static String usagePercentage(Double percentage, boolean higherBetter, boolean coloured) {
         return usagePercentage(percentage, higherBetter, 3, coloured);
     }
 
-    public static String usagePercentage(double percentage, boolean higherBetter, int precision, boolean coloured) {
-        if (percentage < 0) {
-            return (coloured ? "§c" : "") + "???";
-        }
-
+    public static String usagePercentage(Double percentage, boolean higherBetter, int precision, boolean coloured) {
+        if (percentage == null || percentage < 0) return (coloured ? "§c" : "") + "???";
         String formatted = round(percentage, precision) + "%";
         String color = "";
         if (coloured) {

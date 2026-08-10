@@ -65,12 +65,12 @@ public final class ServerSoftwareManager implements IWriteSoftwareProvider, Load
                     null,
                     false
             ), new SoftwareBridge(
-                    "https://github.com/PocketCloudSystem/CloudBridge-Proxy/releases/latest/download/CloudBridge.jar",
-                    "plugins/CloudBridge.jar",
+                    "https://github.com/PocketCloudSystem/PocketCloud/releases/download/latest-bridge/cloudbridge.jar",
+                    "plugins/cloudbridge.jar",
                     true
             ), new SoftwareConfig(
                     "config.yml",
-                    "logs/latest.log",
+                    "logs/server.log",
                     List.of("command_data", "players", "resource_packs", "worlds", "structures", "services", "banned-ips.json", "banned-players.json", "ops.txt", "white-list.txt"),
                     "save-all"
             )),
@@ -95,12 +95,12 @@ public final class ServerSoftwareManager implements IWriteSoftwareProvider, Load
                     null,
                     false
             ), new SoftwareBridge(
-                    "https://github.com/PocketCloudSystem/CloudBridge-Proxy/releases/latest/download/CloudBridge.jar",
-                    "plugins/CloudBridge.jar",
+                    "https://github.com/PocketCloudSystem/PocketCloud/releases/download/latest-bridge/cloudbridge.jar",
+                    "plugins/cloudbridge.jar",
                     true
             ), new SoftwareConfig(
                     "config.yml",
-                    "logs/latest.log",
+                    "logs/server.log",
                     List.of("packs", "lang.ini"),
                     null
             ))

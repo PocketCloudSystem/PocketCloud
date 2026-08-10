@@ -25,17 +25,12 @@ public final class TmuxServerStartMethod implements ServerStartMethod {
                 String paneName = server.name() + "-" + server.uuid().toString();
                 ServerSoftware software = (ServerSoftware) server.template().serverSoftware();
                 String startCommand = prepareStartCommand(software, server);
-                Path loggingPath = server.customLogFilePath();
 
                 commands.add(
                         "cd " + TerminalUtils.shellEscape(server.path().toAbsolutePath().toString()) +
                                 " && " +
                                 "tmux new-session -d -s " + TerminalUtils.shellEscape(paneName) +
-                                " bash -lc " + TerminalUtils.shellEscape("exec " + startCommand) +
-                                " && " +
-                                "tmux pipe-pane -t " + TerminalUtils.shellEscape(paneName) +
-                                " -o " +
-                                TerminalUtils.shellEscape("cat >> " + loggingPath.toAbsolutePath())
+                                " bash -lc " + TerminalUtils.shellEscape("exec " + startCommand)
                 );
 
                 CloudLogger.get().debug("Starting {} with {}", server.name(), commands.getLast());

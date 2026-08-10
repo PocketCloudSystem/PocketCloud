@@ -19,7 +19,9 @@ import java.util.Map;
 
 public final class CloudServersHandler {
 
-    public static void handleStartSuccess(@NotNull CloudServer server, @Nullable Long tmpPid) {}
+    public static void handleStartSuccess(@NotNull CloudServer server, @Nullable Long pid) {
+        if (pid != null) server.data().processId(pid);
+    }
 
     public static void handleStartFailure(@NotNull CloudServer server, @Nullable Throwable e, boolean processFailure) {
         if (server.status() != ServerStatus.STARTING) return;

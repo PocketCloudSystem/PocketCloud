@@ -19,11 +19,9 @@ public interface ServerStartMethod {
     boolean isAvailable();
 
     default String prepareStartCommand(ServerSoftware software, CloudServer server) {
-        String startCommand = software.download().realStartCommand()
+        return software.download().realStartCommand()
                 .replace("{BINARY_PATH}", PocketCloud.instance().software().binaryDirectoryPath(software).toAbsolutePath() + File.separator)
                 .replace("{SOFTWARE_PATH}", PocketCloud.instance().software().directoryPath(software).toAbsolutePath() + File.separator)
                 .replace("{MAX_MEMORY}", String.valueOf(server.template().settings().maxMemory()));
-
-        return startCommand;
     }
 }

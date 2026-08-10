@@ -41,6 +41,7 @@ import de.pocketcloud.cloud.server.software.SoftwareService;
 import de.pocketcloud.cloud.template.TemplateManager;
 import de.pocketcloud.cloud.template.group.ServerGroupManager;
 import de.pocketcloud.cloud.tick.Ticker;
+import de.pocketcloud.cloud.update.UpdateChecker;
 import de.pocketcloud.cloud.util.PerformanceStats;
 import de.pocketcloud.cloud.util.PocketCloudPaths;
 import de.pocketcloud.cloud.util.VersionInfo;
@@ -79,6 +80,7 @@ public final class PocketCloud implements CloudAPI {
     private Instant startTime = null;
 
     private final List<Map<String, Object>> startNotifications = new ArrayList<>();
+    private boolean startNotificationsFlushed = false;
 
     private final PerformanceStats performanceStats = new PerformanceStats();
     private final ServiceRegistry services = new ServiceRegistry();
@@ -215,14 +217,34 @@ public final class PocketCloud implements CloudAPI {
         printBanner();
         CloudLogger.get().info("The §bCloud §ris §astarting§r...");
 
+        if (config().checkForUpdates()) {
+            UpdateChecker.check(VersionInfo.VERSION)
+                    .thenSuccess(res -> {
+                        if (res.updateAvailable()) {
+                            Duration duration = Duration.between(res.updateReleasedAt(), Instant.now());
+                            long days = duration.toDaysPart();
+                            int hours = duration.toHoursPart();
+                            int minutes = duration.toMinutesPart();
+                            int seconds = duration.toSecondsPart();
+
+                            List<String> timeParts = new ArrayList<>();
+                            if (days > 0) timeParts.add(days + " day" + (days == 1 ? "" : "s"));
+                            if (hours > 0) timeParts.add(hours + " hour" + (hours == 1 ? "" : "s"));
+                            if (minutes > 0) timeParts.add(minutes + " minute" + (minutes == 1 ? "" : "s"));
+                            if (seconds > 0 || timeParts.isEmpty()) timeParts.add(seconds + " second" + (seconds == 1 ? "" : "s"));
+
+                            appendStartNotification("§cUpdate for §bPocket§3Cloud §cis available!", CloudLogLevel.WARN);
+                            appendStartNotification("§cYou are currently running on version §b{}§c.", CloudLogLevel.WARN, res.currentVersion());
+                            appendStartNotification("§cThe latest version §b{} §cwas released §e{} §cago.", CloudLogLevel.WARN, res.latestVersion(), String.join("§8, §e", timeParts));
+                            appendStartNotification("§cDownload the latest update here§8: §ehttps://github.com/PocketCloudSystem/PocketCloud/releases/tag/latest-core", CloudLogLevel.WARN);
+                        } else appendStartNotification("§bCloud §ris §aup-to-date§r!", CloudLogLevel.INFO);
+                    })
+                    .failure(ex -> appendStartNotification("§cFailed to check for updates: §e{}", CloudLogLevel.ERROR, ex.getMessage()));
+        }
+
         CloudProvider.select();
 
-        for (Map<String, Object> map : startNotifications) {
-            String message = map.get("message").toString();
-            CloudLogLevel level = (CloudLogLevel) map.get("level");
-            Object[] args = (Object[]) map.get("args");
-            CloudLogger.get().log(level, message, args);
-        }
+        clearAndFlushStartNotifications();
 
         loader().loadAll();
 
@@ -241,6 +263,17 @@ public final class PocketCloud implements CloudAPI {
         new CloudReadyEvent(startTime).call();
 
         ticker().tick();
+    }
+
+    public void clearAndFlushStartNotifications() {
+        if (startNotificationsFlushed) return;
+        startNotificationsFlushed = true;
+        for (Map<String, Object> map : startNotifications) {
+            String message = map.get("message").toString();
+            CloudLogLevel level = (CloudLogLevel) map.get("level");
+            Object[] args = (Object[]) map.get("args");
+            CloudLogger.get().log(level, message, args);
+        }
     }
 
     private <T extends OkaeriConfig> T loadYmlConfig(Class<T> clazz, Path filePath) {
@@ -262,7 +295,7 @@ public final class PocketCloud implements CloudAPI {
     }
 
     public PocketCloud appendStartNotification(String message, CloudLogLevel level, Object... args) {
-        if (currentTick() > 0) {
+        if (startNotificationsFlushed) {
             CloudLogger.get().log(level, message, args);
         } else {
             startNotifications.add(Map.ofEntries(
@@ -339,6 +372,12 @@ public final class PocketCloud implements CloudAPI {
 
         loader().unloadAll();
         network().close();
+
+        if (config().writeTimingsOnShutdown()) {
+            Path path = PocketCloudPaths.storage().timings().with("latest_timings.txt").asPath();
+            logger().info("Writing timings into §b{}§r...", path.toAbsolutePath().toString());
+            Benchmark.writeTimings(path, true);
+        }
 
         CloudLogger.get().success("§cStopped §rthe §bcloud§r.");
         console().uninstall();

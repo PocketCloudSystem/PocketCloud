@@ -234,7 +234,7 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
     public void tick(long currentTick) {
         servers.values().forEach(server -> server.tick(currentTick));
 
-        if (currentTick < tryAgainAt) return;
+        if ((serverPrepareQueue.isEmpty() && serverStartQueue.isEmpty()) || currentTick < tryAgainAt) return;
         double cpuUsage = PocketCloud.instance().performanceStats().systemCpuUsage();
         if (cpuUsage >= 85) {
             CloudLogger.get().warn("Unable to process more server starts due to §chigh CPU load §8(§c{}%§8)§r.", cpuUsage);

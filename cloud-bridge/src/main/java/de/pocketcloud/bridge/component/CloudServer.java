@@ -30,7 +30,6 @@ public final class CloudServer extends BaseCloudServer implements SyncingElement
     @Override
     public void syncIn(ICloudServer server) {
         data().processId(server.data().processId());
-        data().tempProcessId(server.data().tempProcessId());
         data().tps(server.data().tps());
         data().avgTps(server.data().avgTps());
         data().memoryUsage(server.data().memoryUsage());

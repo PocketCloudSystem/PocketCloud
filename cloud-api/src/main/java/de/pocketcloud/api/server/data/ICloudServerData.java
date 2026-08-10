@@ -14,40 +14,31 @@ public interface ICloudServerData {
 
     int maxPlayers();
 
-    @Nullable
-    default Long usableProcessId() {
-        return processId() != null ? processId() : tempProcessId();
-    }
-
     @Nullable Long processId();
 
-    @Nullable Long tempProcessId();
+    @Nullable Double tps();
 
-    Double tps();
+    @Nullable Double avgTps();
 
-    Double avgTps();
+    @Nullable Long memoryUsage();
 
-    Long memoryUsage();
+    @Nullable Long memoryPeak();
 
-    Long memoryPeak();
+    @Nullable Long memoryLimit();
 
-    Long memoryLimit();
+    @Nullable Double cpuUsage();
 
-    Double cpuUsage();
+    ICloudServerData processId(@Nullable Long processId);
 
-    ICloudServerData processId(Long processId);
+    ICloudServerData tps(@Nullable Double tps);
 
-    ICloudServerData tempProcessId(Long tempProcessId);
+    ICloudServerData avgTps(@Nullable Double avgTps);
 
-    ICloudServerData tps(Double tps);
+    ICloudServerData memoryUsage(@Nullable Long memoryUsage);
 
-    ICloudServerData avgTps(Double avgTps);
+    ICloudServerData memoryPeak(@Nullable Long memoryPeak);
 
-    ICloudServerData memoryUsage(Long memoryUsage);
+    ICloudServerData memoryLimit(@Nullable Long memoryLimit);
 
-    ICloudServerData memoryPeak(Long memoryPeak);
-
-    ICloudServerData memoryLimit(Long memoryLimit);
-
-    ICloudServerData cpuUsage(Double cpuUsage);
+    ICloudServerData cpuUsage(@Nullable Double cpuUsage);
 }

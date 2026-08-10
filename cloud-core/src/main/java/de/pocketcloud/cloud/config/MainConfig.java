@@ -34,6 +34,9 @@ public final class MainConfig extends OkaeriConfig implements ICloudConfig {
     @Comment({"Whether the recorded timings should be written into a file on cloud shutdown."})
     private boolean writeTimingsOnShutdown = true;
 
+    @Comment({"Whether the cloud should check for updates on startup.", "Only applies to cloud updates."})
+    private boolean checkForUpdates = true;
+
     @Comment({"The network configuration for the cloud."})
     private NetworkConfiguration network = new NetworkConfiguration();
 

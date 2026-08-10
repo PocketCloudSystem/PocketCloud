@@ -26,7 +26,7 @@ public final class ByteBufTest {
 
         System.out.println("ByteBuf generated in " + Duration.between(start, Instant.now()).toMillis() + " ms");
         System.out.println("ByteBuf length: " + byteBuf.readableBytes());
-        System.out.println("ByteBuf size (human readable): " + FormatUtils.bytes(byteBuf.readableBytes()));
+        System.out.println("ByteBuf size (human readable): " + FormatUtils.bytes((long) byteBuf.readableBytes()));
 
         start = Instant.now();
         ByteBuf copy = Unpooled.buffer(byteBuf.readableBytes());

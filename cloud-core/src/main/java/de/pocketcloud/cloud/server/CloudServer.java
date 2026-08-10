@@ -58,6 +58,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -76,6 +77,7 @@ import java.util.concurrent.TimeoutException;
 
 import static de.pocketcloud.common.util.FileUtils.IO_EXECUTOR;
 
+@Slf4j
 @Getter
 @Accessors(fluent = true, chain = false)
 public final class CloudServer extends BaseCloudServer implements Tickable, SyncingElement<CloudServer> {
@@ -128,11 +130,12 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
     public void tick(long currentTick) {
         if (startTime == null) return;
         if (status.isStarting()) {
-            if (!pidLookupDone && data.usableProcessId() == null && (System.currentTimeMillis() - lastPidLookupTime) >= 1500 && lastPidLookupCounter < 5) {
+            if (!pidLookupDone && data.processId() == null && (lastPidLookupTime == 0 || (System.currentTimeMillis() - lastPidLookupTime) >= 1500) && lastPidLookupCounter < 5) {
                 lastPidLookupTime = System.currentTimeMillis();
                 lastPidLookupCounter++;
                 ServerStartMethods.current().lookupPid(this).thenSuccess(pid -> {
                     if (pid.isPresent()) {
+                        logger.debug("pid-Lookup succeeded after {} tries, set pid to {}", lastPidLookupCounter - 1, pid.get());
                         pidLookupDone = true;
                         data.processId(pid.get());
                     }
@@ -354,7 +357,7 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
     }
 
     public void kill() {
-        Long pid = data.usableProcessId();
+        Long pid = data.processId();
         if (pid != null) ProcessUtils.kill(pid, true);
     }
 
@@ -449,8 +452,8 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
     }
 
     public boolean isAlive() {
-        if (data.usableProcessId() == null) return false;
-        Optional<ProcessHandle> proc = ProcessHandle.of(data.usableProcessId());
+        if (data.processId() == null) return false;
+        Optional<ProcessHandle> proc = ProcessHandle.of(data.processId());
         return proc.isPresent() && proc.get().isAlive();
     }
 
@@ -472,10 +475,6 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
 
     public Path logFilePath() {
         return path().resolve(template().serverSoftware().config().relativeLogFileLocation());
-    }
-
-    public Path customLogFilePath() {
-        return path().resolve(".cloud.console.log");
     }
 
     public Config properties() {

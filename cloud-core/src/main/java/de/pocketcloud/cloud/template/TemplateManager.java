@@ -4,6 +4,7 @@ import de.pocketcloud.api.CloudAPI;
 import de.pocketcloud.api.component.builder.ITemplateBuilder;
 import de.pocketcloud.api.component.server.ICloudServer;
 import de.pocketcloud.api.component.template.ITemplate;
+import de.pocketcloud.api.logging.CloudLogLevel;
 import de.pocketcloud.api.provider.write.IWriteTemplateProvider;
 import de.pocketcloud.api.search.ServerSearchQuery;
 import de.pocketcloud.api.search.TemplateSearchQuery;
@@ -47,7 +48,17 @@ public final class TemplateManager implements Tickable, Loadable, IWriteTemplate
             FileUtils.createDir(TemplateTypeHelper.globalTemplatePath(type));
         CloudProvider.current().getTemplates()
                 .thenSuccess(templates::putAll)
-                .thenSuccess(_ -> PocketCloud.instance().serverGroups().load());
+                .thenSuccess(_ -> PocketCloud.instance().serverGroups().load())
+                .thenSuccess(_ -> {
+                    for (Template template : templates.values()) {
+                        if (template.settings().maxMemory() <= 0 && template.serverSoftware().download().realStartCommand().contains("{MAX_MEMORY}")) {
+                            PocketCloud.instance().appendStartNotification("The setting §bmaxMemory §ccannot §rbe equal to §b0 §rfor template §b{}§r.", CloudLogLevel.WARN, template.name());
+                            PocketCloud.instance().appendStartNotification("Setting it to §b1024M §rinstead...", CloudLogLevel.WARN, template.name());
+                            template.settings().maxMemory(1024);
+                            CloudProvider.current().editTemplate(template, template.write());
+                        }
+                    }
+                });
     }
 
     @Override

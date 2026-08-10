@@ -8,7 +8,6 @@ import de.pocketcloud.shared.component.software.ServerSoftware;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.*;
 
 import static de.pocketcloud.cloud.server.CloudServerManager.SERVER_EXECUTOR;
@@ -25,13 +24,10 @@ public final class ScreenServerStartMethod implements ServerStartMethod {
                 String paneName = server.name() + "-" + server.uuid().toString();
                 ServerSoftware software = (ServerSoftware) server.template().serverSoftware();
                 String startCommand = prepareStartCommand(software, server);
-                Path loggingPath = server.customLogFilePath();
 
                 commands.add("cd " + TerminalUtils.shellEscape(server.path().toAbsolutePath().toString()) +
                         " && " +
-                        "screen -dmL" +
-                        " -Logfile " + TerminalUtils.shellEscape(loggingPath.toAbsolutePath().toString()) +
-                        " -S " + TerminalUtils.shellEscape(paneName) +
+                        "screen -dmS " + TerminalUtils.shellEscape(paneName) +
                         " bash -lc " + TerminalUtils.shellEscape("exec " + startCommand));
 
                 CloudLogger.get().debug("Starting {} with {}", server.name(), commands.getLast());
