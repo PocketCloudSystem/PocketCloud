@@ -90,3 +90,4 @@ jobs:
           name: "cloud-bridge latest (${{ steps.version.outputs.version }})"
           files: ${{ steps.jar.outputs.path }}
           target_commitish: ${{ github.sha }}
+          make_latest: false
