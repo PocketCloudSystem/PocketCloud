@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      packages: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -23,6 +24,9 @@ jobs:
           distribution: temurin
           java-version: '22'
           cache: maven
+          server-id: github-pocketcloud
+          server-username: GITHUB_ACTOR
+          server-password: GITHUB_TOKEN
 
       - name: Read version from pom.xml
         id: version
@@ -42,6 +46,8 @@ jobs:
       - name: Build (with dependencies)
         if: steps.check.outputs.exists == 'false'
         run: mvn -B -pl cloud-bridge -am install
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Locate built jar
         if: steps.check.outputs.exists == 'false'
