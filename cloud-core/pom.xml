@@ -11,11 +11,10 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
+    <name>PocketCloud Core</name>
     <artifactId>cloud-core</artifactId>
     <packaging>jar</packaging>
     <version>1.0.0</version>
-
-    <name>PocketCloud Core</name>
 
     <repositories>
         <repository>

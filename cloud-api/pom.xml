@@ -10,9 +10,8 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>cloud-api</artifactId>
-
     <name>PocketCloud API</name>
+    <artifactId>cloud-api</artifactId>
 
     <properties>
         <maven.compiler.source>22</maven.compiler.source>

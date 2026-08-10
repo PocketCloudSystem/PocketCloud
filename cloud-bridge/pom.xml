@@ -10,11 +10,10 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
+    <name>PocketCloud Bridge</name>
     <artifactId>cloud-bridge</artifactId>
     <packaging>jar</packaging>
     <version>1.0.0</version>
-
-    <name>PocketCloud Bridge</name>
 
     <properties>
         <maven.compiler.source>22</maven.compiler.source>

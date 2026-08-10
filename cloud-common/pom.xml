@@ -11,9 +11,8 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>cloud-common</artifactId>
-
     <name>PocketCloud Commons</name>
+    <artifactId>cloud-common</artifactId>
 
     <properties>
         <maven.compiler.source>22</maven.compiler.source>

@@ -11,9 +11,8 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>cloud-network</artifactId>
-
     <name>PocketCloud Networking</name>
+    <artifactId>cloud-network</artifactId>
 
     <properties>
         <maven.compiler.source>22</maven.compiler.source>

@@ -10,9 +10,8 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>cloud-shared</artifactId>
-
     <name>PocketCloud Shared</name>
+    <artifactId>cloud-shared</artifactId>
 
     <properties>
         <maven.compiler.source>22</maven.compiler.source>
