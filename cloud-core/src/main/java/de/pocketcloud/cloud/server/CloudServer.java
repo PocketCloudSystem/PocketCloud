@@ -477,13 +477,9 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
         return path().resolve(template().serverSoftware().config().relativeLogFileLocation());
     }
 
-    public Config properties() {
+    public Config properties() throws UnsupportedFileExtensionException, IOException {
         if (mainProperties == null) {
-            try {
-                mainProperties = new Config(path().resolve(template().serverSoftware().config().mainConfigurationFile()));
-            } catch (IOException | UnsupportedFileExtensionException e) {
-                throw new RuntimeException(e);
-            }
+            mainProperties = new Config(path().resolve(template().serverSoftware().config().mainConfigurationFile()));
         }
 
         return mainProperties;
