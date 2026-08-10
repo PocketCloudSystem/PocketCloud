@@ -24,10 +24,14 @@ import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
 
 public final class SoftwareService {
+
+    private final Map<String, Long> cachedOnlineSizes = new ConcurrentHashMap<>();
 
     public boolean downloadSoftware(ServerSoftware software) {
         SoftwareDownload download = (SoftwareDownload) software.download();
@@ -54,11 +58,12 @@ public final class SoftwareService {
         if (!download.checkForUpdates()) return !sourceFile(software).exists();
 
         File sizeFile = sizeFilePath(software).toFile();
+        long onlineSize = cachedOnlineSizes.computeIfAbsent(download.url(), (_) -> NetUtils.downloadSize(download.url()));
         if (sizeFile.exists()) {
             try {
                 String content = Files.readString(sizeFile.toPath());
                 long size = Long.parseLong(content);
-                return size != NetUtils.downloadSize(download.url());
+                return size != onlineSize;
             } catch (Exception e) {
                 CloudLogger.get().exception("Failed to check for updates for {}", e, software.name());
                 return true;
@@ -140,11 +145,12 @@ public final class SoftwareService {
 
             Path sizeFilePath = binarySizeFilePath(software);
             File sizeFile = sizeFilePath.toFile();
+            long onlineSize = cachedOnlineSizes.computeIfAbsent(binary.url(), (_) -> NetUtils.downloadSize(binary.url()));
             if (sizeFile.exists()) {
                 try {
                     String content = Files.readString(sizeFile.toPath());
                     long size = Long.parseLong(content);
-                    return size != NetUtils.downloadSize(binary.url());
+                    return size != onlineSize;
                 } catch (Exception e) {
                     CloudLogger.get().exception("Failed to check for updates for {} for binary", e, software.name());
                     return true;
@@ -186,11 +192,12 @@ public final class SoftwareService {
 
         Path sizeFilePath = bridgeSizeFilePath(software);
         File sizeFile = sizeFilePath.toFile();
+        long onlineSize = cachedOnlineSizes.computeIfAbsent(bridge.url(), (_) -> NetUtils.downloadSize(bridge.url()));
         if (sizeFile.exists()) {
             try {
                 String content = Files.readString(sizeFile.toPath());
                 long size = Long.parseLong(content);
-                return size != NetUtils.downloadSize(bridge.url());
+                return size != onlineSize;
             } catch (Exception e) {
                 CloudLogger.get().exception("Failed to check for updates for {} for bridge", e, software.name());
                 return true;

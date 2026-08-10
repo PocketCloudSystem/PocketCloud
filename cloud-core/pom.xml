@@ -7,12 +7,13 @@
     <parent>
         <groupId>de.pocketcloud</groupId>
         <artifactId>cloud-parent</artifactId>
-        <version>1.0-SNAPSHOT</version>
+        <version>1.0.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>cloud-core</artifactId>
     <packaging>jar</packaging>
+    <version>1.0.0</version>
 
     <name>PocketCloud Core</name>
 
