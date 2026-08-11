@@ -10,7 +10,6 @@ import java.util.concurrent.ThreadLocalRandom;
 public final class TaskHandler {
 
     private final long id;
-    private final long nextRun;
 
     private final Task task;
     private final int interval;
@@ -18,6 +17,7 @@ public final class TaskHandler {
     private final CloudPlugin plugin;
 
     private boolean cancelled = false;
+    private long nextRun;
 
     public TaskHandler(Task task, int delay, int interval, boolean repeating, CloudPlugin plugin) {
         this.task = task;
@@ -41,6 +41,7 @@ public final class TaskHandler {
 
     public void update(long currentTick) {
         if (currentTick >= nextRun) {
+            nextRun = currentTick + interval;
             try {
                 task.onRun(currentTick);
             } catch (Exception e) {
