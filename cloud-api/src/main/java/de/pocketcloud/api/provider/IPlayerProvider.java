@@ -22,5 +22,7 @@ public interface IPlayerProvider {
 
     Collection<ICloudPlayer> query(Consumer<PlayerSearchQuery> queryConsumer);
 
+    int playerCount();
+
     Collection<ICloudPlayer> getAll();
 }

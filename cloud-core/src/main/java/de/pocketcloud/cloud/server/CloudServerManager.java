@@ -345,6 +345,11 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
     }
 
     @Override
+    public int serverCount() {
+        return servers.size();
+    }
+
+    @Override
     public Collection<ICloudServer> getAll() {
         return widen(servers.values().stream().toList());
     }

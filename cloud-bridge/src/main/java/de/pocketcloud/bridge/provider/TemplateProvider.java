@@ -97,6 +97,11 @@ public final class TemplateProvider implements IWriteTemplateProvider {
     }
 
     @Override
+    public int templateCount() {
+        return templates.size();
+    }
+
+    @Override
     public Collection<ITemplate> getAll() {
         return templates.values().stream().toList();
     }

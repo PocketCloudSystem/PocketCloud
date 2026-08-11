@@ -25,5 +25,7 @@ public interface ITemplateProvider {
 
     Collection<ITemplate> query(Consumer<TemplateSearchQuery> queryConsumer);
 
+    int templateCount();
+
     Collection<ITemplate> getAll();
 }

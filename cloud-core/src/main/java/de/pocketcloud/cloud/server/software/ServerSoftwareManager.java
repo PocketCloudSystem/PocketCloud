@@ -227,6 +227,11 @@ public final class ServerSoftwareManager implements IWriteSoftwareProvider, Load
     }
 
     @Override
+    public int softwareCount() {
+        return softwareList.size();
+    }
+
+    @Override
     public Collection<IServerSoftware> getAll() {
         return widen(softwareList.values().stream().toList());
     }

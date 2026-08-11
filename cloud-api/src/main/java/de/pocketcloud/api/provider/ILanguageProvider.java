@@ -17,5 +17,7 @@ public interface ILanguageProvider {
 
     Optional<ILanguage> get(String name);
 
+    int languageCount();
+
     Collection<ILanguage> getAll();
 }

@@ -180,7 +180,7 @@ public final class ServerCommand extends Command {
         }
 
         Collection<ICloudServer> servers = PocketCloud.instance().servers().query(query).stream().sorted(Comparator.comparingInt(ICloudServer::playerCount)).toList();
-        sender.info("Servers §8(§b{}§8/§b{}§8)§r:", servers.size(), PocketCloud.instance().servers().getAll().size());
+        sender.info("Servers §8(§b{}§8/§b{}§8)§r:", servers.size(), PocketCloud.instance().servers().serverCount());
         if (servers.isEmpty()) sender.info("§cNo servers found.");
         for (ICloudServer server : servers) {
             sender.info("Name§8: §b{} §8| §rPlayers§8: §b{}§8/§c{} §8| §rPort§8: §b{} §8| §rStatus§8: §b{} §8| §rSoftware§8: §b{} §8(§b{}§8)", server.name(),

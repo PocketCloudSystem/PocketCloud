@@ -44,8 +44,8 @@ public final class StatusCommand extends Command {
         double tps = PocketCloud.instance().performanceStats().currentTPS();
         double avgTps = PocketCloud.instance().performanceStats().averageTPS();
         double tickUsage = PocketCloud.instance().performanceStats().tickUsage();
-        int playerCount = PocketCloud.instance().players().getAll().size();
-        int serverCount = PocketCloud.instance().servers().getAll().size();
+        int playerCount = PocketCloud.instance().players().playerCount();
+        int serverCount = PocketCloud.instance().servers().serverCount();
 
         section(sender, "Cloud", lines -> {
             lines.put("Uptime", FormatUtils.uptime(uptime) + " §8(§c" + PocketCloud.instance().currentTick() + "§8)");

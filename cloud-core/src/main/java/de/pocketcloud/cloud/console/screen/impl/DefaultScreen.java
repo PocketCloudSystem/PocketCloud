@@ -37,8 +37,8 @@ public final class DefaultScreen extends Screen {
         String avgTps = FormatUtils.tps(PocketCloud.instance().performanceStats().averageTPS());
         String memoryUsage = FormatUtils.bytes(PocketCloud.instance().performanceStats().processUsedMemory());
         String cpuUsage = FormatUtils.usagePercentage(PocketCloud.instance().performanceStats().processCpuUsage());
-        int servers = PocketCloud.instance().servers().getAll().size();
-        int players = PocketCloud.instance().players().getAll().size();
+        int servers = PocketCloud.instance().servers().serverCount();
+        int players = PocketCloud.instance().players().playerCount();
 
         String playerAndServerCount = "§8| §b" + players + " player" + (players == 1 ? "" : "s") + " §racross §b" + servers + " server" + (servers == 1 ? "" : "s");
 

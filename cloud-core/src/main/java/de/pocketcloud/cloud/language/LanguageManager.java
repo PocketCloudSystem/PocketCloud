@@ -65,6 +65,11 @@ public final class LanguageManager implements Loadable, ILanguageProvider {
     }
 
     @Override
+    public int languageCount() {
+        return languages.size();
+    }
+
+    @Override
     public Collection<ILanguage> getAll() {
         return languages.values().stream().toList();
     }

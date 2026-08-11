@@ -196,6 +196,11 @@ public final class ServerProvider implements IWriteServerProvider {
     }
 
     @Override
+    public int serverCount() {
+        return servers.size();
+    }
+
+    @Override
     public Collection<ICloudServer> getAll() {
         return servers.values().stream().toList();
     }

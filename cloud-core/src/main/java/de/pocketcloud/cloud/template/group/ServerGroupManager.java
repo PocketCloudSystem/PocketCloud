@@ -198,6 +198,11 @@ public final class ServerGroupManager implements Loadable, IWriteServerGroupProv
         return query(searchQuery);
     }
 
+    @Override
+    public int groupsCount() {
+        return serverGroups.size();
+    }
+
     public Collection<IServerGroup> getAll() {
         return widen(serverGroups.values().stream().toList());
     }

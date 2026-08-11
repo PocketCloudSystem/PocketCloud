@@ -11,5 +11,7 @@ public interface ISoftwareProvider {
 
     Optional<IServerSoftware> get(String name);
 
+    int softwareCount();
+
     Collection<IServerSoftware> getAll();
 }

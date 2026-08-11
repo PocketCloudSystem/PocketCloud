@@ -103,6 +103,11 @@ public final class CloudPlayerManager implements IWritePlayerProvider {
     }
 
     @Override
+    public int playerCount() {
+        return players.size();
+    }
+
+    @Override
     public Collection<ICloudPlayer> getAll() {
         return widen(players.values().stream().toList());
     }

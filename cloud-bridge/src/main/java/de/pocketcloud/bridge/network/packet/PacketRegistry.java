@@ -130,6 +130,11 @@ public final class PacketRegistry implements IPacketRegistry<Channel>, Loadable 
     }
 
     @Override
+    public int packetCount() {
+        return packets.size();
+    }
+
+    @Override
     public Collection<Class<? extends Packet>> getAll() {
         return packets.values().stream().toList();
     }

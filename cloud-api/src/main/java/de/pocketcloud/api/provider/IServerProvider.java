@@ -77,5 +77,7 @@ public interface IServerProvider {
 
     Collection<ICloudServer> query(Consumer<ServerSearchQuery> queryConsumer);
 
+    int serverCount();
+
     Collection<ICloudServer> getAll();
 }

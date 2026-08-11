@@ -112,7 +112,7 @@ public final class TemplateCommand extends Command implements TabComplete {
         }
 
         Collection<ITemplate> templates = PocketCloud.instance().templates().query(query).stream().sorted(Comparator.comparingInt(ITemplate::playerCount)).toList();
-        sender.info("Templates §8(§b{}§8/§b{}§8)§r:", templates.size(), PocketCloud.instance().templates().getAll().size());
+        sender.info("Templates §8(§b{}§8/§b{}§8)§r:", templates.size(), PocketCloud.instance().templates().templateCount());
         if (templates.isEmpty()) sender.info("§cNo templates found.");
         for (ITemplate template : templates) {
             sender.info("Name§8: §b{} §8| §rPlayers§8: §b{}§8/§c{} §8| §rServers§8: §b{}§8/§c{} §8| §rLobby§8: §b{} §8| §rMaintenance§8: §b{} §8| §rSoftware§8: §b{} §8(§b{}§8)",

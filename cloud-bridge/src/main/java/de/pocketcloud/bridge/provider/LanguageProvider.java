@@ -43,6 +43,11 @@ public final class LanguageProvider implements ILanguageProvider {
     }
 
     @Override
+    public int languageCount() {
+        return 1;
+    }
+
+    @Override
     public Collection<ILanguage> getAll() {
         return List.of(current());
     }

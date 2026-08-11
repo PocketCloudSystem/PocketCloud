@@ -20,5 +20,7 @@ public interface IPacketRegistry<T> {
 
     <U extends Packet> U get(String packetName, Class<U> expectedPacket);
 
+    int packetCount();
+
     Collection<Class<? extends Packet>> getAll();
 }

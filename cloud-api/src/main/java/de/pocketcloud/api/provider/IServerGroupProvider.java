@@ -20,5 +20,7 @@ public interface IServerGroupProvider {
 
     Collection<IServerGroup> query(Consumer<ServerGroupSearchQuery> queryConsumer);
 
+    int groupsCount();
+
     Collection<IServerGroup> getAll();
 }

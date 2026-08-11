@@ -34,6 +34,11 @@ public final class SoftwareProvider implements IWriteSoftwareProvider {
     }
 
     @Override
+    public int softwareCount() {
+        return softwares.size();
+    }
+
+    @Override
     public Collection<IServerSoftware> getAll() {
         return softwares.values().stream().toList();
     }

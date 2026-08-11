@@ -225,6 +225,11 @@ public final class TemplateManager implements Tickable, Loadable, IWriteTemplate
     }
 
     @Override
+    public int templateCount() {
+        return templates.size();
+    }
+
+    @Override
     public Collection<ITemplate> getAll() {
         return widen(templates.values().stream().toList());
     }

@@ -95,6 +95,11 @@ public final class ServerGroupProvider implements IWriteServerGroupProvider {
     }
 
     @Override
+    public int groupsCount() {
+        return serverGroups.size();
+    }
+
+    @Override
     public Collection<IServerGroup> getAll() {
         return serverGroups.values().stream().toList();
     }

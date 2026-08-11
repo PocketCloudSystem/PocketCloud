@@ -126,7 +126,7 @@ public final class PlayerCommand extends Command {
         }
 
         Collection<ICloudPlayer> players = PocketCloud.instance().players().query(query);
-        sender.info("Players §8(§b{}§8/§b{}§8)§r:", players.size(), PocketCloud.instance().players().getAll().size());
+        sender.info("Players §8(§b{}§8/§b{}§8)§r:", players.size(), PocketCloud.instance().players().playerCount());
         if (players.isEmpty()) sender.info("§cNo players found.");
         for (ICloudPlayer player : players) {
             sender.info("Name§8: §b{} §8| §rCurrentServer§8: §b{} §8| §rCurrentProxy§8: §b{}", player.name(),
