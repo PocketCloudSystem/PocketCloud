@@ -54,6 +54,7 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
     private final AtomicInteger startingServers = new AtomicInteger(0);
     private long tryAgainAt = 0;
 
+    private boolean serverStartingEnabled = true;
     private long lastServerStartTime = 0;
     private long lastServerStopTime = 0;
 
@@ -64,6 +65,16 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
     private final Queue<CloudServer> serverPrepareQueue = new LinkedList<>();
     @Getter(AccessLevel.NONE)
     private final Queue<CloudServer> serverStartQueue = new LinkedList<>();
+
+    public CloudServerManager enableServerStarting() {
+        serverStartingEnabled = true;
+        return this;
+    }
+
+    public CloudServerManager disableServerStarting() {
+        serverStartingEnabled = false;
+        return this;
+    }
 
     @Override
     public void add(ICloudServer server) {
@@ -265,6 +276,7 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
         }
 
         Benchmark.stopTiming("check_server_prepare_queue");
+        if (!serverStartingEnabled) return;
         Benchmark.startTiming("check_server_start_queue");
 
         int availableSlots = MAX_PARALLEL_STARTS - activeStartingSlots();
