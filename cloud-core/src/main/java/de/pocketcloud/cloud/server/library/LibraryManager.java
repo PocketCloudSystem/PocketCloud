@@ -16,9 +16,7 @@ import java.util.*;
 
 public final class LibraryManager implements Loadable {
 
-    public static final List<Library> DEFAULTS = List.of(
-            new Library("forms", "https://github.com/PocketCloudSystem/BetterForms/archive/refs/heads/main.zip", "", "src/", List.of("pmmp-latest"), true)
-    );
+    public static final List<Library> DEFAULTS = List.of();
 
     private final Map<String, Library> libraries = new LinkedHashMap<>();
 
