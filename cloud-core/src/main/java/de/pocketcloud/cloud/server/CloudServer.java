@@ -144,6 +144,8 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
 
             if ((startTime.toEpochMilli() + (TemplateTypeHelper.timeout(template().templateType()) * 1000L)) < System.currentTimeMillis()) {
                 CloudServersHandler.handleStartFailure(this, null, false);
+            } else if (pidLookupDone && ProcessHandle.of(data.processId()).isEmpty()) {
+                CloudServersHandler.handleStartFailure(this, null, false);
             }
         } else if (status.isOnline()) {
             for (Map.Entry<String, ServerCommandExecutionRequest> entry : commandExecutionOrders.entrySet()) {

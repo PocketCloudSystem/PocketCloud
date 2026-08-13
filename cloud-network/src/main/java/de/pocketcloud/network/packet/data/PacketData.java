@@ -7,10 +7,9 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.util.CharsetUtil;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.*;
 
 public final class PacketData implements IPacketData {
 
@@ -75,10 +74,10 @@ public final class PacketData implements IPacketData {
         } else if (value instanceof Number n) {
             buf.writeByte(TYPE_DOUBLE);
             buf.writeDouble(n.doubleValue());
-        } else if (value instanceof List<?> list) {
+        } else if (value instanceof Collection<?> collection) {
             buf.writeByte(TYPE_ARRAY);
-            buf.writeInt(list.size());
-            for (Object item : list) {
+            buf.writeInt(collection.size());
+            for (Object item : collection) {
                 Object v = item instanceof Writable<?> writable ? writable.write() : item;
                 writeValue(buf, v);
             }
@@ -346,38 +345,68 @@ public final class PacketData implements IPacketData {
 
     @SuppressWarnings("unchecked")
     private <T> T coerce(Object item, Class<T> type) {
-        if (item == null) return null;
-        if (type.isInstance(item)) return type.cast(item);
-
-        if (Number.class.isAssignableFrom(type) && item instanceof Number number) {
-            if (type == Integer.class) return (T) Integer.valueOf(number.intValue());
-            if (type == Long.class) return (T) Long.valueOf(number.longValue());
-            if (type == Double.class) return (T) Double.valueOf(number.doubleValue());
-            if (type == Float.class) return (T) Float.valueOf(number.floatValue());
-            if (type == Short.class) return (T) Short.valueOf(number.shortValue());
-            if (type == Byte.class) return (T) Byte.valueOf(number.byteValue());
-        }
-
-        throw new PacketDecodeException(type.getSimpleName(), item);
+        return (T) coerce(item, (Type) type);
     }
 
     @SuppressWarnings("unchecked")
     private <T> T coerce(Object item, TypeToken<T> typeToken) {
+        return (T) coerce(item, typeToken.getType());
+    }
+
+    private Object coerce(Object item, Type type) {
         if (item == null) return null;
 
-        Class<T> rawType = (Class<T>) typeToken.getRawType();
-        if (rawType.isInstance(item)) return (T) item;
+        Class<?> rawType = rawTypeOf(type);
 
-        if (Number.class.isAssignableFrom(rawType) && item instanceof Number number) {
-            if (rawType == Integer.class) return (T) Integer.valueOf(number.intValue());
-            if (rawType == Long.class) return (T) Long.valueOf(number.longValue());
-            if (rawType == Double.class) return (T) Double.valueOf(number.doubleValue());
-            if (rawType == Float.class) return (T) Float.valueOf(number.floatValue());
-            if (rawType == Short.class) return (T) Short.valueOf(number.shortValue());
-            if (rawType == Byte.class) return (T) Byte.valueOf(number.byteValue());
+        switch (item) {
+            case Number number when Number.class.isAssignableFrom(rawType) -> {
+                if (rawType == Integer.class) return number.intValue();
+                if (rawType == Long.class) return number.longValue();
+                if (rawType == Double.class) return number.doubleValue();
+                if (rawType == Float.class) return number.floatValue();
+                if (rawType == Short.class) return number.shortValue();
+                if (rawType == Byte.class) return number.byteValue();
+                return item;
+            }
+            case List<?> list when Collection.class.isAssignableFrom(rawType) -> {
+                Type elementType = Object.class;
+                if (type instanceof ParameterizedType parameterized) {
+                    Type[] args = parameterized.getActualTypeArguments();
+                    if (args.length == 1) elementType = args[0];
+                }
+
+                Collection<Object> result = Set.class.isAssignableFrom(rawType)
+                        ? new LinkedHashSet<>(list.size())
+                        : new ArrayList<>(list.size());
+                for (Object element : list) {
+                    result.add(coerce(element, elementType));
+                }
+                return result;
+            }
+            case Map<?, ?> map when Map.class.isAssignableFrom(rawType) -> {
+                Type valueType = Object.class;
+                if (type instanceof ParameterizedType parameterized) {
+                    Type[] args = parameterized.getActualTypeArguments();
+                    if (args.length == 2) valueType = args[1];
+                }
+
+                Map<Object, Object> result = new LinkedHashMap<>(map.size());
+                for (Map.Entry<?, ?> entry : map.entrySet()) {
+                    result.put(entry.getKey(), coerce(entry.getValue(), valueType));
+                }
+                return result;
+            }
+            default -> {}
         }
 
+        if (rawType.isInstance(item)) return item;
         throw new PacketDecodeException(rawType.getSimpleName(), item);
+    }
+
+    private static Class<?> rawTypeOf(Type type) {
+        if (type instanceof Class<?> cls) return cls;
+        if (type instanceof ParameterizedType parameterized) return rawTypeOf(parameterized.getRawType());
+        return Object.class;
     }
 
     public static final class PacketDecodeException extends RuntimeException {
