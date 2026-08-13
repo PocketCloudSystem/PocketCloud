@@ -16,6 +16,7 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -31,18 +32,22 @@ public final class CloudPluginManager implements Tickable, Loadable {
 
     public void load() {
         CloudLogger.get().info("Loading plugins...");
+        List<CloudPlugin> eligiblePlugins = new ArrayList<>();
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(pluginsFolder)) {
             for (Path path : stream) {
                 if (Files.isRegularFile(path)) {
                     if (path.getFileName().toString().endsWith(".jar")) {
-                        loadPlugin(path);
+                        CloudPlugin pl = loadPlugin(path);
+                        if (pl != null) eligiblePlugins.add(pl);
                     }
                 }
             }
         } catch (IOException e) {
             CloudLogger.get().exception("Unable to load plugins", e);
         } finally {
-            enableAll();
+            for (CloudPlugin pl : eligiblePlugins) {
+                enable(pl);
+            }
         }
     }
 
@@ -52,20 +57,31 @@ public final class CloudPluginManager implements Tickable, Loadable {
         this.plugins.clear();
     }
 
-    public void loadPlugin(Path jarFile) {
+    public CloudPlugin loadPlugin(Path jarFile) {
         if (pluginLoader.canLoad(jarFile)) {
+            CloudLogger.get().info("Loading plugin §b{}§r...", jarFile.getFileName().toString());
+            CloudPlugin plugin;
+
             try {
-                CloudLogger.get().info("Loading plugin §b{}§r...", jarFile.getFileName().toString());
-                CloudPlugin plugin = pluginLoader.load(jarFile);
-                if (plugins.containsKey(plugin.getDescription().name()))
-                    throw new PluginLoadFailedException("Plugin with the same name already loaded");
+                plugin = pluginLoader.load(jarFile);
+            } catch (Exception e) {
+                CloudLogger.get().exception("Unable to load plugin " + jarFile.getFileName(), e);
+                return null;
+            }
+
+            try {
+                if (plugins.containsKey(plugin.getDescription().name())) throw new PluginLoadFailedException("Plugin with the same name already loaded");
                 plugins.put(plugin.getDescription().name(), plugin);
                 new PluginLoadEvent(plugin).call();
                 plugin.onLoad();
+                return plugin;
             } catch (Exception e) {
                 CloudLogger.get().exception("Unable to load plugin " + jarFile.getFileName(), e);
+                disable(plugin);
             }
         }
+
+        return null;
     }
 
     public void enableAll() {
