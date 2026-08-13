@@ -13,13 +13,14 @@ public class PrefixedLogger implements ILogger {
     private String prefix;
 
     public PrefixedLogger(ILogger parent, String prefix) {
+        if (parent instanceof PrefixedLogger) throw new IllegalStateException("PrefixedLogger can only be used once");
         this.parent = parent;
         this.prefix = prefix;
     }
 
     @Override
     public ILogger log(CloudLogLevel level, String message, Object... params) {
-        parent.log(level, prefix + " " + message, params);
+        parent.log(level, "%prefix:" + prefix + "%" + message, params);
         return this;
     }
 

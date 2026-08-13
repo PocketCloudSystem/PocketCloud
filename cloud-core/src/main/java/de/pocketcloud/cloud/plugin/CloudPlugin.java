@@ -43,7 +43,7 @@ public abstract class CloudPlugin {
         this.description = description;
         this.dataFolder = dataFolder;
         this.pluginFilePath = pluginFilePath;
-        this.logger = CloudLogger.prefixed("[" + description.name() + "]");
+        this.logger = CloudLogger.prefixed(description.name());
     }
 
     public boolean saveDefaultConfig() throws IOException {

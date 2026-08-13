@@ -96,7 +96,7 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
 
     private final transient LatestPacketInfo latestPacketInfo = new LatestPacketInfo();
 
-    private final transient PrefixedLogger logger = CloudLogger.prefixed("§8[§b" + name() + "§r§8]§r");
+    private final transient PrefixedLogger logger = CloudLogger.prefixed("§b" + name());
     @Setter
     private transient Instant lastKeepAlive = null;
     private transient Instant stopTime = null;

@@ -13,9 +13,15 @@ public enum CloudLogLevel {
     SUCCESS("§aSUCCESS"),
     DEBUG("§6DEBUG");
 
+    public static final CloudLogLevel LONGEST = SUCCESS;
+
     private final String prefix;
 
     CloudLogLevel(String prefix) {
         this.prefix = prefix;
+    }
+
+    public static String padPrefixToLength(CloudLogLevel level) {
+        return " ".repeat(Math.max(0, (LONGEST.prefix.length() - level.prefix.length()))) + level.prefix;
     }
 }

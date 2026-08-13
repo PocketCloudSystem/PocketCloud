@@ -2,17 +2,18 @@
     <conversionRule conversionWord="mc" class="de.pocketcloud.cloud.console.log.MinecraftColorConverter"/>
     <conversionRule conversionWord="clvl" class="de.pocketcloud.cloud.console.log.CloudLevelConverter"/>
     <conversionRule conversionWord="mcclean" class="de.pocketcloud.cloud.console.log.MinecraftCleanConverter"/>
+    <conversionRule conversionWord="prf" class="de.pocketcloud.cloud.console.log.PrefixConverter"/>
 
     <appender name="CONSOLE" class="de.pocketcloud.cloud.console.log.MinecraftConsoleAppender">
         <layout class="ch.qos.logback.classic.PatternLayout">
-            <pattern>%mc(§8[§r%d{HH:mm:ss.SSS}§8] %clvl §r§8» §r%msg%n%ex)</pattern>
+            <pattern>%mc(§8[§r%d{HH:mm:ss.SSS}§8] §r%clvl §r§8»%prf(%msg)§r%X{cleanMsg}%n%ex)</pattern>
         </layout>
     </appender>
 
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>storage/logs/latest.log</file>
         <encoder>
-            <pattern>%mcclean(§8[§r%d{HH:mm:ss.SSS}§8] %clvl §r§8» §r%msg%n%ex)</pattern>
+            <pattern>%mcclean(§8[§r%d{HH:mm:ss.SSS}§8] §r%clvl §r§8»%prf(%msg)§r%X{cleanMsg}%n%ex)</pattern>
         </encoder>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <fileNamePattern>storage/logs/%d{yyyy-MM-dd}.log.gz</fileNamePattern>
