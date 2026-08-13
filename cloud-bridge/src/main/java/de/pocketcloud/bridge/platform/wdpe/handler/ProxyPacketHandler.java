@@ -34,9 +34,6 @@ public final class ProxyPacketHandler implements PacketListener {
                 new InetSocketAddress(packet.getAddress(), packet.getPort()),
                 null
         ));
-
-        System.out.println(ProxyServer.getInstance().getServerInfo(packet.getServerName()));
-        System.out.println(ProxyServer.getInstance().getServerInfo(packet.getServerName()).getResolvedAddress().toString());
     }
 
     @PacketHandler(ProxyUnregisterServerPacket.class)

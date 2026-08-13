@@ -21,6 +21,7 @@ public final class JoinAndFallbackHandler implements IJoinHandler, IReconnectHan
 
     @Override
     public ServerInfo getFallbackServer(ProxiedPlayer player, ServerInfo oldServer, ReconnectReason reason, String kickMessage) {
+        if (kickMessage.equals("MAINTENANCE")) return null;
         return lobbyServer(oldServer.getServerName());
     }
 
