@@ -48,8 +48,8 @@ public final class NormalPacketHandler implements PacketListener {
     }
 
     private String formatReason(String reason) {
-        String firstPart = reason.split("\n")[0];
-        String formattedPart = firstPart.trim().substring(0, 100);
-        return formattedPart + (firstPart.length() > formattedPart.length() ? "..." : "");
+        String firstPart = reason.split("\n", 2)[0];
+        if (firstPart.length() <= 100) return firstPart;
+        return firstPart.substring(0, 100) + "...";
     }
 }
