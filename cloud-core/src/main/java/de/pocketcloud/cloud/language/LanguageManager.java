@@ -7,10 +7,7 @@ import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.util.PocketCloudPaths;
 import de.pocketcloud.common.lifecycle.Loadable;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 public final class LanguageManager implements Loadable, ILanguageProvider {
 
@@ -71,6 +68,6 @@ public final class LanguageManager implements Loadable, ILanguageProvider {
 
     @Override
     public Collection<ILanguage> getAll() {
-        return languages.values().stream().toList();
+        return List.copyOf(languages.values());
     }
 }

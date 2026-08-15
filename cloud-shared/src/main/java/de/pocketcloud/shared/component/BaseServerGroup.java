@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.experimental.Accessors;
 
 import java.util.Collection;
+import java.util.List;
 
 @Getter
 @Accessors(fluent = true, chain = false)
@@ -21,6 +22,6 @@ public class BaseServerGroup implements IServerGroup {
     }
 
     public Collection<String> templates() {
-        return templates.stream().toList();
+        return List.copyOf(templates);
     }
 }

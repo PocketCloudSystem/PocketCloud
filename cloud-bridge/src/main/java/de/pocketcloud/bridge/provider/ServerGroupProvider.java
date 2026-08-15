@@ -14,6 +14,7 @@ import de.pocketcloud.shared.event.group.ServerGroupDeletedEvent;
 import de.pocketcloud.shared.event.group.ServerGroupUpdatedEvent;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -101,6 +102,6 @@ public final class ServerGroupProvider implements IWriteServerGroupProvider {
 
     @Override
     public Collection<IServerGroup> getAll() {
-        return serverGroups.values().stream().toList();
+        return List.copyOf(serverGroups.values());
     }
 }

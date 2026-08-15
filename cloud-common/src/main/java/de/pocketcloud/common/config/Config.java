@@ -224,6 +224,6 @@ public final class Config {
     }
 
     public List<String> getKeys() {
-        return content.keySet().stream().toList();
+        return List.copyOf(content.keySet());
     }
 }

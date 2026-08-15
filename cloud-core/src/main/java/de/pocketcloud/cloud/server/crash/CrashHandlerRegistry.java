@@ -52,6 +52,6 @@ public final class CrashHandlerRegistry implements Loadable {
     }
 
     public List<CrashHandler> getAll() {
-        return crashHandlers.values().stream().toList();
+        return List.copyOf(crashHandlers.values());
     }
 }

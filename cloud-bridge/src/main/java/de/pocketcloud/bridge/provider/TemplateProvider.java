@@ -15,6 +15,7 @@ import de.pocketcloud.shared.event.template.TemplateDeletedEvent;
 import de.pocketcloud.shared.event.template.TemplateEditedEvent;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -103,6 +104,6 @@ public final class TemplateProvider implements IWriteTemplateProvider {
 
     @Override
     public Collection<ITemplate> getAll() {
-        return templates.values().stream().toList();
+        return List.copyOf(templates.values());
     }
 }

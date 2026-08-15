@@ -114,7 +114,7 @@ public final class CommandManager implements Loadable, Tickable {
     }
 
     public List<Command> getAll() {
-        return commandPool.values().stream().toList();
+        return List.copyOf(commandPool.values());
     }
 
     private record AwaitConfirmationData(String command, CommandSender sender, String prompt, String[] acceptKeywords,

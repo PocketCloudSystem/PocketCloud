@@ -109,7 +109,7 @@ public final class CloudPlayerManager implements IWritePlayerProvider {
 
     @Override
     public Collection<ICloudPlayer> getAll() {
-        return widen(players.values().stream().toList());
+        return widen(List.copyOf(players.values()));
     }
 
     @SuppressWarnings("unchecked")

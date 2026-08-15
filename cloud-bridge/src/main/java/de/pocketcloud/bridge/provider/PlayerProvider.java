@@ -83,6 +83,6 @@ public final class PlayerProvider implements IWritePlayerProvider {
 
     @Override
     public Collection<ICloudPlayer> getAll() {
-        return players.values().stream().toList();
+        return List.copyOf(players.values());
     }
 }

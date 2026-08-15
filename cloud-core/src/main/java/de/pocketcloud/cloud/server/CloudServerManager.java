@@ -363,7 +363,7 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
 
     @Override
     public Collection<ICloudServer> getAll() {
-        return widen(servers.values().stream().toList());
+        return widen(List.copyOf(servers.values()));
     }
 
     @SuppressWarnings("unchecked")

@@ -31,10 +31,7 @@ import org.jetbrains.annotations.ApiStatus;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Consumer;
 
 public final class TemplateManager implements Tickable, Loadable, IWriteTemplateProvider {
@@ -231,7 +228,7 @@ public final class TemplateManager implements Tickable, Loadable, IWriteTemplate
 
     @Override
     public Collection<ITemplate> getAll() {
-        return widen(templates.values().stream().toList());
+        return widen(List.copyOf(templates.values()));
     }
 
     @SuppressWarnings("unchecked")

@@ -135,6 +135,6 @@ public final class PacketRegistry implements IPacketRegistry<ServerClient>, Load
 
     @Override
     public Collection<Class<? extends Packet>> getAll() {
-        return packets.values().stream().toList();
+        return List.copyOf(packets.values());
     }
 }

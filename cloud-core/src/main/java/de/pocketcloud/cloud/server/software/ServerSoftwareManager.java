@@ -233,7 +233,7 @@ public final class ServerSoftwareManager implements IWriteSoftwareProvider, Load
 
     @Override
     public Collection<IServerSoftware> getAll() {
-        return widen(softwareList.values().stream().toList());
+        return widen(List.copyOf(softwareList.values()));
     }
 
     @SuppressWarnings("unchecked")

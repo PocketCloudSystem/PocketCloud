@@ -23,10 +23,7 @@ import de.pocketcloud.network.packet.impl.response.ServerStopResponsePacket;
 import de.pocketcloud.shared.event.server.*;
 import de.pocketcloud.shared.network.packet.type.ActionFailureReason;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
@@ -202,6 +199,6 @@ public final class ServerProvider implements IWriteServerProvider {
 
     @Override
     public Collection<ICloudServer> getAll() {
-        return servers.values().stream().toList();
+        return List.copyOf(servers.values());
     }
 }

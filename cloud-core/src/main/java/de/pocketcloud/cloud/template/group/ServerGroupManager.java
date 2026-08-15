@@ -204,7 +204,7 @@ public final class ServerGroupManager implements Loadable, IWriteServerGroupProv
     }
 
     public Collection<IServerGroup> getAll() {
-        return widen(serverGroups.values().stream().toList());
+        return widen(List.copyOf(serverGroups.values()));
     }
 
     @SuppressWarnings("unchecked")
