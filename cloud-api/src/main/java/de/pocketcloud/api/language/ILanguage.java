@@ -12,7 +12,13 @@ public interface ILanguage {
 
     String translate(String key, Object... args);
 
+    String translate(String key, Map<String, Object> args);
+
     default String translate(LanguageKey key, Object... args) {
+        return translate(key.langKey(), args);
+    }
+
+    default String translate(LanguageKey key, Map<String, Object> args) {
         return translate(key.langKey(), args);
     }
 

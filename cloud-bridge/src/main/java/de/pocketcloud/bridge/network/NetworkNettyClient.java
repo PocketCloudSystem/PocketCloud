@@ -14,7 +14,10 @@ import io.netty.util.concurrent.DefaultThreadFactory;
 import lombok.Getter;
 
 import java.net.SocketAddress;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 @Getter
 public final class NetworkNettyClient {
@@ -23,6 +26,8 @@ public final class NetworkNettyClient {
     private final EventLoopGroup workerGroup = Epoll.isAvailable()
             ? new EpollEventLoopGroup(new DefaultThreadFactory("worker-group"))
             : new NioEventLoopGroup(new DefaultThreadFactory("worker-group"));
+
+    private final Set<CompletableFuture<Void>> pendingWrites = ConcurrentHashMap.newKeySet();
 
     private Channel channel;
 
@@ -44,6 +49,7 @@ public final class NetworkNettyClient {
 
     public CompletableFuture<Void> sendPacket(CloudboundPacket packet) {
         CompletableFuture<Void> future = new CompletableFuture<>();
+        pendingWrites.add(future);
 
         channel.writeAndFlush(packet).addListener(f -> {
             if (f.isSuccess()) {
@@ -51,12 +57,23 @@ public final class NetworkNettyClient {
             } else {
                 future.completeExceptionally(f.cause());
             }
+            pendingWrites.remove(future);
         });
 
         return future;
     }
 
     public void close() {
-        this.workerGroup.shutdownGracefully();
+        try {
+            CompletableFuture.allOf(pendingWrites.toArray(new CompletableFuture[0])).get(5, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            CloudBridge.instance().logger().warn("§cNot all packets could be flushed before shutdown: {}", e.getMessage());
+        }
+
+        if (channel != null) {
+            channel.close().syncUninterruptibly();
+        }
+
+        workerGroup.shutdownGracefully();
     }
 }

@@ -6,16 +6,16 @@ import de.pocketcloud.shared.sync.SyncType;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Local notification cache for the server
  */
 public final class NotificationListCache implements LocalCache<String, Boolean> {
 
-    private final Map<String, Boolean> notificationList = new HashMap<>();
+    private final Map<String, Boolean> notificationList = new ConcurrentHashMap<>();
 
     @Override
     public void syncIn(Map<String, Boolean> cache) {
@@ -29,13 +29,13 @@ public final class NotificationListCache implements LocalCache<String, Boolean> 
     @Override
     public void add(String key, @NotNull Boolean value) {
         notificationList.put(key, value);
-        SyncPacket.create(SyncType.PLAYER_NOTIFICATION_STATE, data -> data.writeAll(key, value));
+        SyncPacket.create(SyncType.PLAYER_NOTIFICATION_STATE, data -> data.writeAll(key, value)).sendPacket();
     }
 
     @Override
     public void remove(String element) {
         notificationList.remove(element);
-        SyncPacket.create(SyncType.PLAYER_NOTIFICATION_STATE, data -> data.writeAll(element, false));
+        SyncPacket.create(SyncType.PLAYER_NOTIFICATION_STATE, data -> data.writeAll(element, false)).sendPacket();
     }
 
     @Override

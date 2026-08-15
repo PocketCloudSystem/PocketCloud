@@ -1,6 +1,7 @@
 package de.pocketcloud.cloud.cache;
 
 import de.pocketcloud.api.sync.SyncingElement;
+import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.network.broadcaster.PacketBroadcaster;
 import de.pocketcloud.common.cache.LocalCache;
 import de.pocketcloud.network.packet.impl.SyncPacket;
@@ -29,6 +30,7 @@ public final class NotificationListCache implements LocalCache<String, Boolean>,
     @Override
     public void syncOut() {
         PacketBroadcaster.broadcast(buildSyncPacket());
+        CloudLogger.get().info("syncing out");
     }
 
     @Override

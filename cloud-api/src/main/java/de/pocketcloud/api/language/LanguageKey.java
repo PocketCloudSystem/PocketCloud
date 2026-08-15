@@ -2,6 +2,8 @@ package de.pocketcloud.api.language;
 
 import de.pocketcloud.api.CloudAPI;
 
+import java.util.Map;
+
 public enum LanguageKey {
 
     RAW_YES("raw.yes"),
@@ -218,6 +220,10 @@ public enum LanguageKey {
     }
 
     public String translate(Object... args) {
+        return CloudAPI.instance().language().current().translate(langKey, args);
+    }
+
+    public String translate(Map<String, Object> args) {
         return CloudAPI.instance().language().current().translate(langKey, args);
     }
 

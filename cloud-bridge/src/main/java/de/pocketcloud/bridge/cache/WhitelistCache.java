@@ -5,16 +5,16 @@ import de.pocketcloud.common.cache.LocalCache;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Local whitelist cache for the server
  */
 public final class WhitelistCache implements LocalCache<String, Boolean>, SyncingElement<Map<String, Boolean>> {
 
-    private final Map<String, Boolean> whitelist = new HashMap<>();
+    private final Map<String, Boolean> whitelist = new ConcurrentHashMap<>();
 
     @Override
     public void syncIn(Map<String, Boolean> cache) {

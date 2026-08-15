@@ -3,15 +3,15 @@ package de.pocketcloud.bridge.cache;
 import de.pocketcloud.common.cache.LocalCache;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class RandomCache implements LocalCache<String, Object> {
 
     public static final String KEY_LAST_KEEP_ALIVE = "last_keep_alive";
 
-    private final Map<String, Object> cache = new HashMap<>();
+    private final Map<String, Object> cache = new ConcurrentHashMap<>();
 
     @Override
     public void syncIn(Map<String, Object> cache) {}

@@ -60,7 +60,18 @@ public class Language implements ILanguage {
     public String translate(String key, Object... args) {
         String message = messages.getOrDefault(key, key);
         message = message.replace("{PREFIX}", this.messages.getOrDefault("inGame.prefix", ""));
-        for (int i = 0; i < args.length; i++) message = message.replace("{" + i + "}", args[i].toString());
+        for (int i = 0; i < args.length; i++) message = message.replace("%" + i + "%", args[i].toString());
+        return message;
+    }
+
+    @Override
+    public String translate(String key, Map<String, Object> args) {
+        String message = messages.getOrDefault(key, key);
+        message = message.replace("{PREFIX}", this.messages.getOrDefault("inGame.prefix", ""));
+        for (Map.Entry<String, Object> entry : args.entrySet()) {
+            message = message.replace("%" + entry.getKey() + "%", entry.getValue().toString());
+        }
+
         return message;
     }
 }
