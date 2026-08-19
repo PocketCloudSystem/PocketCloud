@@ -7,8 +7,4 @@ public final class ServerGroupCreatedEvent extends ServerGroupEvent {
     public ServerGroupCreatedEvent(IServerGroup serverGroup) {
         super(serverGroup);
     }
-
-    public IServerGroup getServerGroup() {
-        return serverGroup;
-    }
 }

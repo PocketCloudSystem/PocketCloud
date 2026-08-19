@@ -1,11 +1,13 @@
 package de.pocketcloud.bridge.network;
 
+import de.pocketcloud.api.CloudAPI;
 import de.pocketcloud.api.network.traffic.TrafficDirection;
 import de.pocketcloud.bridge.CloudBridge;
 import de.pocketcloud.network.packet.CloudPacket;
 import de.pocketcloud.network.packet.ResponsePacket;
 import de.pocketcloud.network.traffic.TrafficMonitorManager;
 import de.pocketcloud.network.traffic.impl.NetworkTrafficMonitor;
+import de.pocketcloud.shared.event.network.PacketReceivedEvent;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 
@@ -17,6 +19,7 @@ public class NetworkNettyHandler extends SimpleChannelInboundHandler<CloudPacket
     protected void channelRead0(ChannelHandlerContext ctx, CloudPacket packet) {
         try {
             TrafficMonitorManager.instance().callHandlers(NetworkTrafficMonitor.class, NetworkTrafficMonitor.parsePacketMode(TrafficDirection.IN, packet.getClass()), ctx.channel(), packet, packet.getSize());
+            CloudAPI.instance().events().call(new PacketReceivedEvent(packet, ctx.channel()));
             if (packet instanceof ResponsePacket responsePacket) {
                 CloudBridge.instance().requests().resolve(responsePacket);
             }

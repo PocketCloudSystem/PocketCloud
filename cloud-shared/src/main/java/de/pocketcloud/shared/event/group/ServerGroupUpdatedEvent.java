@@ -16,8 +16,4 @@ public final class ServerGroupUpdatedEvent extends ServerGroupEvent {
         this.oldTemplates = oldTemplates;
         this.newTemplates = newTemplates;
     }
-
-    public IServerGroup getServerGroup() {
-        return serverGroup;
-    }
 }

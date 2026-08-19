@@ -7,8 +7,4 @@ public final class ServerGroupDeletedEvent extends ServerGroupEvent {
     public ServerGroupDeletedEvent(IServerGroup serverGroup) {
         super(serverGroup);
     }
-
-    public IServerGroup getServerGroup() {
-        return serverGroup;
-    }
 }

@@ -28,6 +28,7 @@ import de.pocketcloud.network.packet.impl.request.ServerHandshakeRequestPacket;
 import de.pocketcloud.network.packet.impl.response.ServerHandshakeResponsePacket;
 import de.pocketcloud.network.request.RequestManager;
 import de.pocketcloud.network.traffic.TrafficMonitorManager;
+import de.pocketcloud.shared.event.server.LocalServerReadyEvent;
 import de.pocketcloud.shared.network.packet.type.ServerDisconnectReason;
 import lombok.Getter;
 import lombok.experimental.Accessors;
@@ -93,6 +94,7 @@ public final class CloudBridge implements CloudAPI {
                 platformPlugin.onVerification();
                 logger.info(LanguageKey.INGAME_SERVER_VERIFIED.translate());
                 constructKeepAlive().sendPacket();
+                CloudAPI.instance().events().call(new LocalServerReadyEvent(CloudAPI.instance().servers().current()));
             } else {
                 logger.warn("Cloud responded with verification status '{}', shutting down...", res.getVerificationStatus().name());
                 shutdown();

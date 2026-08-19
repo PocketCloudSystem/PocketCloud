@@ -2,9 +2,9 @@ package de.pocketcloud.shared.event.server;
 
 import de.pocketcloud.api.component.server.ICloudServer;
 
-public final class ServerDisconnectedEvent extends ServerEvent {
+public final class LocalServerReadyEvent extends ServerEvent {
 
-    public ServerDisconnectedEvent(ICloudServer server) {
+    public LocalServerReadyEvent(ICloudServer server) {
         super(server);
     }
 
