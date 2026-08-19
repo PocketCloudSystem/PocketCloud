@@ -40,7 +40,7 @@ public final class ServerProvider implements IWriteServerProvider {
             localServer.syncIn(server);
             if (verified && oldStatus != localServer.status())
                 CloudAPI.instance().events().call(new ServerChangedStatusEvent(localServer, localServer.status(), server.status()));
-            if (verified && oldStatus.isOnline() && !localServer.status().isOnline() && server.verificationStatus().isVerified())
+            if (verified && !oldStatus.isOnline() && server.verificationStatus().isVerified())
                 CloudAPI.instance().events().call(new ServerVerifiedEvent(localServer));
         } else {
             servers.put(server.name(), server);
