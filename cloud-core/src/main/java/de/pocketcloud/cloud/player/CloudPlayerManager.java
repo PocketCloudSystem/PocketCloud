@@ -14,11 +14,12 @@ import de.pocketcloud.shared.event.player.PlayerLeftEvent;
 import de.pocketcloud.shared.network.packet.type.NotificationType;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 public final class CloudPlayerManager implements IWritePlayerProvider {
 
-    private final Map<String, CloudPlayer> players = new LinkedHashMap<>();
+    private final Map<String, CloudPlayer> players = new ConcurrentHashMap<>();
 
     @Override
     public void add(ICloudPlayer player) {
