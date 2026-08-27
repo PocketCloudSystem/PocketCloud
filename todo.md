@@ -3,3 +3,4 @@
 - http(s) routes
 - test the cloud
 - http api docs
+- better way to create default configs for the sub servers (e.g. having some kind of server-configs repo & adding .%config%.version file)

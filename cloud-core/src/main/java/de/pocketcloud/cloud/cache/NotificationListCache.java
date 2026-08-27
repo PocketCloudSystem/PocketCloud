@@ -30,7 +30,6 @@ public final class NotificationListCache implements LocalCache<String, Boolean>,
     @Override
     public void syncOut() {
         PacketBroadcaster.broadcast(buildSyncPacket());
-        CloudLogger.get().info("syncing out");
     }
 
     @Override
