@@ -65,7 +65,7 @@ public final class WaterdogConfig extends ServerProperties {
                 ),
                 "servers", new LinkedHashMap<>(),
                 "network_settings", ArrayUtils.orderedMap(
-                        "connection_throttle", 10,
+                        "connection_throttle", 5,
                         "connection_throttle_time", 1000,
                         "enable_ipv6", false,
                         "max_user_mtu", 1400,
@@ -84,7 +84,6 @@ public final class WaterdogConfig extends ServerProperties {
                 "upstream_encryption", true,
                 "online_mode", true,
                 "use_login_extras", false,
-                "use_certificate_payload", true,
                 "replace_username_spaces", false,
                 "enable_query", true,
                 "prefer_fast_transfer", true,
