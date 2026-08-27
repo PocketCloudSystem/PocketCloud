@@ -1,5 +1,6 @@
 package de.pocketcloud.network.codec;
 
+import de.pocketcloud.api.CloudAPI;
 import de.pocketcloud.api.network.traffic.TrafficDirection;
 import de.pocketcloud.network.traffic.PacketTrafficListener;
 import io.netty.buffer.ByteBuf;
@@ -27,32 +28,37 @@ public final class CloudPacketDecoder extends ByteToMessageDecoder {
 
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) {
-        if (in.readableBytes() < 4) return;
+        try {
+            if (in.readableBytes() < 4) return;
 
-        in.markReaderIndex();
-        int length = in.readInt();
-        if (in.readableBytes() < length) {
-            in.resetReaderIndex();
-            return;
+            in.markReaderIndex();
+            int length = in.readInt();
+            if (in.readableBytes() < length) {
+                in.resetReaderIndex();
+                return;
+            }
+
+            if (length > maxPacketSizeSupplier.getAsInt()) {
+                trafficListener.onTooLargePacket(ctx.channel(), null, length, TrafficDirection.IN);
+                in.skipBytes(length);
+                return;
+            }
+
+            byte[] bytes = new byte[length];
+            in.readBytes(bytes);
+
+            if (!trafficListener.onIncoming(ctx.channel(), bytes, length)) return;
+
+            var packet = PacketSerializer.decode(bytes, encryptionEnabled.getAsBoolean(), authTokenSupplier.get(), trafficListener::onPacketResolve);
+            if (packet == null) {
+                trafficListener.onUnknownPacket(ctx.channel(), bytes, length);
+                return;
+            }
+
+            packet.setSize(length);
+            out.add(packet);
+        } catch (Exception e) {
+            CloudAPI.instance().logger().exception(e);
         }
-
-        if (length > maxPacketSizeSupplier.getAsInt()) {
-            trafficListener.onTooLargePacket(ctx.channel(), null, length, TrafficDirection.IN);
-            return;
-        }
-
-        byte[] bytes = new byte[length];
-        in.readBytes(bytes);
-
-        if (!trafficListener.onIncoming(ctx.channel(), bytes, length)) return;
-
-        var packet = PacketSerializer.decode(bytes, encryptionEnabled.getAsBoolean(), authTokenSupplier.get(), trafficListener::onPacketResolve);
-        if (packet == null) {
-            trafficListener.onUnknownPacket(ctx.channel(), bytes, length);
-            return;
-        }
-
-        packet.setSize(length);
-        out.add(packet);
     }
 }
