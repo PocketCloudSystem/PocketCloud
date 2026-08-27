@@ -56,7 +56,7 @@ public final class PowerNukkitXCloudConfig extends ServerProperties {
                 "network-address", "%address%",
                 "network-port", "%port%",
                 "network-auth-key", "%auth_key%",
-                "network-encryption", "%encryption%",
+                "network-encryption", "%packet_size_limit%",
                 "network-packet-size-limit", "%port%"
         );
     }
