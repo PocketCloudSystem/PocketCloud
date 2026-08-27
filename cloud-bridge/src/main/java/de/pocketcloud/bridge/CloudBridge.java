@@ -56,7 +56,7 @@ public final class CloudBridge implements CloudAPI {
         registry.register(BridgePlayerExecutor.class, new BridgePlayerExecutor());
         registry.register(NotificationService.class, new NotificationService());
 
-        registry.register(TrafficMonitorManager.class, new TrafficMonitorManager());
+        registry.register(TrafficMonitorManager.class, new TrafficMonitorManager()).load();
         registry.register(NetworkNettyClient.class, new NetworkNettyClient(config.cloudNetworkAddress()));
         registry.register(RequestManager.class, new RequestManager());
         registry.register(PacketRegistry.class, new PacketRegistry());
@@ -143,6 +143,11 @@ public final class CloudBridge implements CloudAPI {
         return registry.get(ProcessPerformanceStats.class);
     }
 
+    public TrafficMonitorManager traffic() {
+        return registry.get(TrafficMonitorManager.class);
+    }
+
+    @Override
     @SuppressWarnings("unchecked")
     public EventService<Object> events() {
         return (EventService<Object>) registry.get(EventService.class);
