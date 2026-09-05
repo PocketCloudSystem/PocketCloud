@@ -168,18 +168,8 @@ public final class HttpServer {
     }
 
     public void close() {
-        try {
-            if (!bossGroup.awaitTermination(3, TimeUnit.SECONDS)) {
-                bossGroup.shutdownGracefully();
-            }
-        } catch (InterruptedException _) {}
-
-        try {
-            if (!workerGroup.awaitTermination(3, TimeUnit.SECONDS)) {
-                workerGroup.shutdownGracefully();
-            }
-        } catch (InterruptedException _) {}
-
+        bossGroup.shutdownGracefully(0, 1, TimeUnit.SECONDS);
+        workerGroup.shutdownGracefully(0, 1, TimeUnit.SECONDS);
         if (sslContext != null) ReferenceCountUtil.release(sslContext);
     }
 }

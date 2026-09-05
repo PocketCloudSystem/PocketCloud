@@ -57,7 +57,7 @@ public class NetworkNettyHandler extends SimpleChannelInboundHandler<CloudPacket
         } catch (Exception e) {
             boolean debugEnabled = CloudLogger.get().isDebugMode();
             CloudLogger.get().error("Unhandled exception while processing packet §b{} §rsent by §b{}§r.{}", packet.getName(), ctx.channel().remoteAddress(), debugEnabled ? "" : " §8(§renable §edebug §rto view full stack trace§8)");
-            if (CloudLogger.get().isDebugMode()) CloudLogger.get().exception(e);
+            if (debugEnabled) CloudLogger.get().exception(e);
             else CloudLogger.get().error(e.getMessage());
         }
     }

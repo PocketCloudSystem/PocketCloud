@@ -8,9 +8,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 import static de.pocketcloud.cloud.server.CloudServerManager.SERVER_EXECUTOR;
 
@@ -27,7 +25,7 @@ public final class ProcessServerStartMethod implements ServerStartMethod {
                 try {
                     CloudLogger.get().debug("Starting {} with {}", server.name(), startCommand);
 
-                    Process process = new ProcessBuilder(startCommand.split(" "))
+                    Process process = new ProcessBuilder(tokenizeCommand(startCommand))
                             .redirectErrorStream(true)
                             .directory(server.path().toFile())
                             .start();
@@ -45,6 +43,42 @@ public final class ProcessServerStartMethod implements ServerStartMethod {
 
             return pids;
         }, SERVER_EXECUTOR);
+    }
+
+    private List<String> tokenizeCommand(String command) {
+        List<String> tokens = new ArrayList<>();
+        StringBuilder current = new StringBuilder();
+        boolean inQuotes = false;
+        char quoteChar = 0;
+
+        for (int i = 0; i < command.length(); i++) {
+            char c = command.charAt(i);
+
+            if (inQuotes) {
+                if (c == quoteChar) {
+                    inQuotes = false;
+                } else {
+                    current.append(c);
+                }
+                continue;
+            }
+
+            if (c == '"' || c == '\'') {
+                inQuotes = true;
+                quoteChar = c;
+            } else if (Character.isWhitespace(c)) {
+                if (!current.isEmpty()) {
+                    tokens.add(current.toString());
+                    current.setLength(0);
+                }
+            } else {
+                current.append(c);
+            }
+        }
+
+        if (!current.isEmpty()) tokens.add(current.toString());
+        if (inQuotes) throw new IllegalArgumentException("Unbalanced quote in command: " + command);
+        return tokens;
     }
 
     @Override

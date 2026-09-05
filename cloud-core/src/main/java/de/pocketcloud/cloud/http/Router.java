@@ -23,11 +23,14 @@ import io.netty.handler.codec.http.HttpMethod;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -36,6 +39,7 @@ import java.util.regex.Pattern;
 public final class Router implements IRouter {
 
     public static final HttpMethod QUERY = new HttpMethod("QUERY");
+    private static final Pattern GROUP_PATTERN = Pattern.compile("\\{([^/]+)}");
 
     public static final int UNVERSIONED = -1;
 
@@ -43,6 +47,10 @@ public final class Router implements IRouter {
     private final Map<Integer, VersionMeta> versionMeta = new HashMap<>();
     @Getter
     private final List<RouteDefinition> routes = new ArrayList<>();
+    private final Map<String, Map<String, RouteDefinition>> staticRoutesByMethod = new ConcurrentHashMap<>();
+    private final Map<String, List<RouteDefinition>> dynamicRoutesByMethod = new ConcurrentHashMap<>();
+
+    private final Map<String, List<String>> groupNames = new ConcurrentHashMap<>();
 
     public Router() {
         registerController(new HealthRoute());
@@ -57,7 +65,9 @@ public final class Router implements IRouter {
     }
 
     public void registerController(Object controller) {
-        routes.addAll(scanController(controller));
+        List<RouteDefinition> routes = scanController(controller);
+        for (RouteDefinition route : routes) indexRoute(route);
+        this.routes.addAll(routes);
     }
 
     public void deprecateVersion(int version, String sunset) {
@@ -133,9 +143,22 @@ public final class Router implements IRouter {
             RouteHandlerMethod rhm = wrapWithAuth(handler, authClass, failedAuthClass);
             String finalPath = version == UNVERSIONED ? path : versionedPath(version, path);
             Pattern pattern = Pattern.compile(RouteDefinition.toRegex(finalPath));
-            routes.add(new RouteDefinition(method.name(), finalPath, pattern, rhm, version));
+            RouteDefinition definition = new RouteDefinition(method.name(), finalPath, pattern, rhm, version);
+            indexRoute(definition);
+            routes.add(definition);
         } catch (Exception e) {
             CloudLogger.get().error("Failed to add route: " + path, e);
+        }
+    }
+
+    private void indexRoute(RouteDefinition route) {
+        boolean isDynamic = route.path().contains("{");
+        if (isDynamic) {
+            dynamicRoutesByMethod.computeIfAbsent(route.method(), _ -> new CopyOnWriteArrayList<>())
+                    .add(route);
+        } else {
+            staticRoutesByMethod.computeIfAbsent(route.method(), _ -> new ConcurrentHashMap<>())
+                    .put(route.path(), route);
         }
     }
 
@@ -172,15 +195,20 @@ public final class Router implements IRouter {
         String path = req.path();
         String method = req.method().name();
 
-        for (RouteDefinition route : routes) {
-            if (!route.method().equals(method)) continue;
+        RouteDefinition staticRoute = staticRoutesByMethod.getOrDefault(method, Map.of()).get(path);
+        if (staticRoute != null) {
+            applyVersionHeaders(res, staticRoute.version());
+            staticRoute.handler().handle(req, res);
+            return;
+        }
 
+        for (RouteDefinition route : dynamicRoutesByMethod.getOrDefault(method, List.of())) {
             Matcher matcher = route.pattern().matcher(path);
             if (matcher.matches()) {
                 for (String name : extractGroupNames(route.path())) {
                     try {
                         req.setPathParam(name, matcher.group(name));
-                    } catch (IllegalArgumentException ignored) {}
+                    } catch (IllegalArgumentException _) {}
                 }
 
                 applyVersionHeaders(res, route.version());
@@ -242,7 +270,7 @@ public final class Router implements IRouter {
         return result;
     }
 
-    private <A extends java.lang.annotation.Annotation> void registerIfPresent(
+    private <A extends Annotation> void registerIfPresent(
             List<RouteDefinition> result, Method method, Object controller,
             Class<A> annotationType, HttpMethod httpMethod,
             Function<A, String> pathExtractor,
@@ -269,10 +297,12 @@ public final class Router implements IRouter {
     }
 
     private List<String> extractGroupNames(String path) {
-        List<String> names = new ArrayList<>();
-        Matcher m = Pattern.compile("\\{([^/]+)}").matcher(path);
-        while (m.find()) names.add(m.group(1));
-        return names;
+        return groupNames.computeIfAbsent(path, p -> {
+            List<String> names = new ArrayList<>();
+            Matcher m = GROUP_PATTERN.matcher(p);
+            while (m.find()) names.add(m.group(1));
+            return names;
+        });
     }
 
     private record VersionMeta(boolean deprecated, String sunset) {}

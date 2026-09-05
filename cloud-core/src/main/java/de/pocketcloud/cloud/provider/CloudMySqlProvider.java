@@ -67,7 +67,7 @@ public final class CloudMySqlProvider extends CloudProvider {
             try {
                 promise.resolve(Optional.of(Template.read(rows.getFirst())));
             } catch (Exception e) {
-                Promise.rejected(e);
+                promise.reject(e);
             }
         }).failure(promise::reject);
 

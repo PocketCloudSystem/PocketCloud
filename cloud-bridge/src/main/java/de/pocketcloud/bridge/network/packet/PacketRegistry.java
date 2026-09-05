@@ -13,6 +13,7 @@ import io.netty.channel.Channel;
 import org.reflections.Reflections;
 import org.reflections.util.ConfigurationBuilder;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
@@ -21,7 +22,7 @@ import java.util.function.BiConsumer;
 
 public final class PacketRegistry implements IPacketRegistry<Channel>, Loadable {
 
-    private final Map<String, Class<? extends Packet>> packets = new ConcurrentHashMap<>();
+    private final Map<String, Constructor<?>> packets = new ConcurrentHashMap<>();
     private final Map<Class<? extends Packet>, List<BiConsumer<Packet, Channel>>> handlers = new ConcurrentHashMap<>();
 
     @Override
@@ -57,8 +58,12 @@ public final class PacketRegistry implements IPacketRegistry<Channel>, Loadable 
 
     @Override
     public void registerPacket(Class<? extends Packet> packetClass) {
-        synchronized (packets) {
-            packets.put(packetClass.getSimpleName(), packetClass);
+        try {
+            Constructor<?> constructor = packetClass.getConstructor();
+            constructor.setAccessible(true);
+            packets.put(packetClass.getSimpleName(), constructor);
+        } catch (NoSuchMethodException e) {
+            throw new RuntimeException("Failed to register packet", e);
         }
     }
 
@@ -97,9 +102,8 @@ public final class PacketRegistry implements IPacketRegistry<Channel>, Loadable 
     @Override
     @SuppressWarnings("unchecked")
     public <U extends Packet> void registerPacketHandler(Class<U> packet, BiConsumer<U, Channel> handler) {
-        if (!handlers.containsKey(packet)) handlers.put(packet, Collections.synchronizedList(new ArrayList<>()));
-        List<BiConsumer<Packet, Channel>> methods = handlers.get(packet);
-        methods.add((BiConsumer<Packet, Channel>) handler);
+        handlers.computeIfAbsent(packet, k -> Collections.synchronizedList(new ArrayList<>()))
+                .add((BiConsumer<Packet, Channel>) handler);
     }
 
     @Override
@@ -119,12 +123,11 @@ public final class PacketRegistry implements IPacketRegistry<Channel>, Loadable 
 
     @Override
     public Packet get(String packetName) {
-        Class<? extends Packet> packetClass = packets.get(packetName);
-        if (packetClass == null) return null;
+        Constructor<?> constructor = packets.get(packetName);
+        if (constructor == null) return null;
         try {
-            return packetClass.getDeclaredConstructor().newInstance();
-        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException |
-                 InvocationTargetException _) {
+            return (Packet) constructor.newInstance();
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException _) {
             return null;
         }
     }
@@ -135,7 +138,8 @@ public final class PacketRegistry implements IPacketRegistry<Channel>, Loadable 
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Collection<Class<? extends Packet>> getAll() {
-        return List.copyOf(packets.values());
+        return List.copyOf(packets.values().stream().map(c -> (Class<Packet>) c.getDeclaringClass()).toList());
     }
 }

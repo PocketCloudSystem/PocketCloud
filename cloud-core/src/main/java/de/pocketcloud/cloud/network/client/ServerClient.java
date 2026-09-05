@@ -12,7 +12,9 @@ import lombok.experimental.Accessors;
 import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 
 public final class ServerClient implements IServerClient {
@@ -24,7 +26,7 @@ public final class ServerClient implements IServerClient {
     @Getter
     @Accessors(fluent = true)
     private final Channel channel;
-    private final List<DelayedPacket> delayedPackets = new ArrayList<>();
+    private final Queue<DelayedPacket> delayedPackets = new ConcurrentLinkedQueue<>();
 
     public ServerClient(Channel channel) {
         this.channel = channel;
@@ -60,16 +62,16 @@ public final class ServerClient implements IServerClient {
 
     public List<DelayedPacket> pollDuePackets() {
         long now = System.currentTimeMillis();
-        List<DelayedPacket> pks = new ArrayList<>();
+        List<DelayedPacket> due = new ArrayList<>();
         delayedPackets.removeIf(dp -> {
             if (dp.deliverAt() <= now) {
-                pks.add(dp);
+                due.add(dp);
                 return true;
             }
-
             return false;
         });
-        return pks;
+
+        return due;
     }
 
     public List<DelayedPacket> delayedPackets() {

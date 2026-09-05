@@ -20,8 +20,12 @@ public interface ServerStartMethod {
 
     default String prepareStartCommand(ServerSoftware software, CloudServer server) {
         return software.download().realStartCommand()
-                .replace("{BINARY_PATH}", PocketCloud.instance().software().binaryDirectoryPath(software).toAbsolutePath() + File.separator)
-                .replace("{SOFTWARE_PATH}", PocketCloud.instance().software().directoryPath(software).toAbsolutePath() + File.separator)
+                .replace("{BINARY_PATH}", quote(PocketCloud.instance().software().binaryDirectoryPath(software).toAbsolutePath() + File.separator))
+                .replace("{SOFTWARE_PATH}", quote(PocketCloud.instance().software().directoryPath(software).toAbsolutePath() + File.separator))
                 .replace("{MAX_MEMORY}", String.valueOf(server.template().settings().maxMemory()));
+    }
+
+    private static String quote(String value) {
+        return "\"" + value.replace("\"", "\\\"") + "\"";
     }
 }

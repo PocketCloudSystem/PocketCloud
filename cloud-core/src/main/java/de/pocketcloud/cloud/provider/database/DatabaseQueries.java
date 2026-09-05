@@ -2,7 +2,10 @@ package de.pocketcloud.cloud.provider.database;
 
 import de.pocketcloud.cloud.template.util.TemplateHelper;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public final class DatabaseQueries {
 
@@ -20,7 +23,7 @@ public final class DatabaseQueries {
                         "startNewPercentage DOUBLE," +
                         "autoStart BOOL," +
                         "alwaysCopyToStaticServers BOOL," +
-                        "templateType VARCHAR(20)" +
+                        "templateType VARCHAR(20)," +
                         "serverSoftware VARCHAR(30)" +
                         "); " +
                         "CREATE TABLE IF NOT EXISTS " + DatabaseTables.SERVER_GROUPS + " (" +
@@ -116,20 +119,30 @@ public final class DatabaseQueries {
     }
 
     private static String buildInsert(String table, String[] columns) {
+        if (columns == null || columns.length == 0) throw new IllegalArgumentException("columns must not be empty");
         String cols = String.join(", ", columns);
-        String placeholders = "?,".repeat(columns.length);
-        placeholders = placeholders.substring(0, placeholders.length() - 1);
+        String placeholders = String.join(", ", Collections.nCopies(columns.length, "?"));
         return "INSERT INTO " + table + " (" + cols + ") VALUES (" + placeholders + ")";
     }
 
     private static String buildUpdate(String table, Map<String, Object> data, String whereKey) {
-        StringBuilder sb = new StringBuilder("UPDATE ").append(table).append(" SET ");
-        data.keySet().stream()
-                .filter(k -> !k.equals(whereKey))
-                .forEach(k -> sb.append(k).append(" = ?, "));
+        if (data == null || data.isEmpty()) {
+            throw new IllegalArgumentException("No fields to update");
+        }
 
-        sb.setLength(sb.length() - 2);
-        sb.append(" WHERE ").append(whereKey).append(" = ?");
-        return sb.toString();
+        List<String> keys = data.keySet().stream()
+                .filter(k -> !k.equals(whereKey))
+                .sorted()
+                .toList();
+
+        if (keys.isEmpty()) {
+            throw new IllegalArgumentException("No fields to update");
+        }
+
+        String setClause = keys.stream()
+                .map(k -> k + " = ?")
+                .collect(Collectors.joining(", "));
+
+        return "UPDATE " + table + " SET " + setClause + " WHERE " + whereKey + " = ?";
     }
 }
