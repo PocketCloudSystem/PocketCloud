@@ -60,11 +60,16 @@ public final class ServerClient implements IServerClient {
 
     public List<DelayedPacket> pollDuePackets() {
         long now = System.currentTimeMillis();
-        List<DelayedPacket> due = delayedPackets.stream()
-                .filter(dp -> dp.deliverAt() <= now)
-                .toList();
-        delayedPackets.removeAll(due);
-        return due;
+        List<DelayedPacket> pks = new ArrayList<>();
+        delayedPackets.removeIf(dp -> {
+            if (dp.deliverAt() <= now) {
+                pks.add(dp);
+                return true;
+            }
+
+            return false;
+        });
+        return pks;
     }
 
     public List<DelayedPacket> delayedPackets() {

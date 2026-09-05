@@ -7,8 +7,12 @@ import de.pocketcloud.api.component.template.ITemplate;
 import de.pocketcloud.api.server.ServerStatus;
 import de.pocketcloud.api.server.VerificationStatus;
 import de.pocketcloud.api.template.TemplateType;
+import de.pocketcloud.common.serialization.MapperUtils;
+import de.pocketcloud.common.serialization.Writable;
 
-public final class ServerSearchQuery implements ISearchQuery<ICloudServer> {
+import java.util.Map;
+
+public final class ServerSearchQuery implements ISearchQuery<ICloudServer>, Writable<Map<String, Object>> {
 
     public static ServerSearchQuery create() {
         return new ServerSearchQuery();
@@ -93,5 +97,39 @@ public final class ServerSearchQuery implements ISearchQuery<ICloudServer> {
         }
 
         return true;
+    }
+
+    public Map<String, Object> write() {
+        return MapperUtils.toMap(this);
+    }
+
+    public static ServerSearchQuery read(Map<String, Object> data) {
+        ServerSearchQuery query = new ServerSearchQuery();
+        query.namePrefix = (String) data.get("namePrefix");
+        query.templateName = (String) data.get("templateName");
+        query.serverGroupName = (String) data.get("serverGroupName");
+        query.lobby = (Boolean) data.get("lobby");
+
+        try {
+            query.status = data.get("status") != null ? ServerStatus.valueOf(data.get("status").toString().toUpperCase()) : null;
+        } catch (IllegalArgumentException _) {
+            query.status = null;
+        }
+
+        try {
+            query.verificationStatus = data.get("verificationStatus") != null ? VerificationStatus.valueOf(data.get("status").toString()) : null;
+        } catch (IllegalArgumentException _) {
+            query.verificationStatus = null;
+        }
+
+        try {
+            query.templateType = data.get("templateType") != null ? TemplateType.valueOf(data.get("templateType").toString()) : null;
+        } catch (IllegalArgumentException _) {
+            query.templateType = null;
+        }
+
+        query.serverSoftwareName = (String) data.get("serverSoftwareName");
+
+        return query;
     }
 }

@@ -8,9 +8,13 @@ import de.pocketcloud.api.component.template.ITemplate;
 import de.pocketcloud.api.server.ServerStatus;
 import de.pocketcloud.api.server.VerificationStatus;
 import de.pocketcloud.api.template.TemplateType;
+import de.pocketcloud.common.serialization.MapperUtils;
+import de.pocketcloud.common.serialization.Writable;
 import org.jetbrains.annotations.NotNull;
 
-public final class PlayerSearchQuery implements ISearchQuery<ICloudPlayer> {
+import java.util.Map;
+
+public final class PlayerSearchQuery implements ISearchQuery<ICloudPlayer>, Writable<Map<String, Object>> {
 
     public static PlayerSearchQuery create() {
         return new PlayerSearchQuery();
@@ -129,5 +133,46 @@ public final class PlayerSearchQuery implements ISearchQuery<ICloudPlayer> {
         }
 
         return true;
+    }
+
+    @Override
+    public Map<String, Object> write() {
+        return MapperUtils.toMap(this);
+    }
+
+    public static PlayerSearchQuery read(Map<String, Object> data) {
+        PlayerSearchQuery query = new PlayerSearchQuery();
+        query.namePrefix = (String) data.get("namePrefix");
+        query.serverName = (String) data.get("serverName");
+        query.templateName = (String) data.get("templateName");
+        query.serverGroupName = (String) data.get("serverGroupName");
+
+        try {
+            query.status = data.get("status") != null
+                    ? ServerStatus.valueOf(data.get("status").toString().toUpperCase())
+                    : null;
+        } catch (IllegalArgumentException _) {
+            query.status = null;
+        }
+
+        try {
+            query.verificationStatus = data.get("verificationStatus") != null
+                    ? VerificationStatus.valueOf(data.get("verificationStatus").toString().toUpperCase())
+                    : null;
+        } catch (IllegalArgumentException _) {
+            query.verificationStatus = null;
+        }
+
+        try {
+            query.templateType = data.get("templateType") != null
+                    ? TemplateType.valueOf(data.get("templateType").toString().toUpperCase())
+                    : null;
+        } catch (IllegalArgumentException _) {
+            query.templateType = null;
+        }
+
+        query.serverSoftwareName = (String) data.get("serverSoftwareName");
+
+        return query;
     }
 }

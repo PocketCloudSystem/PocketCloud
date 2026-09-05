@@ -43,7 +43,7 @@ public class MainLogger implements ILogger {
 
     @Override
     public ILogger exception(Throwable throwable) {
-        SLF4J.error("Unhandled exception", throwable);
+        SLF4J.error(throwable.getMessage(), throwable);
         return this;
     }
 

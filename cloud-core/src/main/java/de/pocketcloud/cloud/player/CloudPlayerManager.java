@@ -20,6 +20,8 @@ import java.util.function.Consumer;
 public final class CloudPlayerManager implements IWritePlayerProvider {
 
     private final Map<String, CloudPlayer> players = new ConcurrentHashMap<>();
+    private final Map<String, String> playersByXuid = new ConcurrentHashMap<>();
+    private final Map<UUID, String> playersByUuid = new ConcurrentHashMap<>();
 
     @Override
     public void add(ICloudPlayer player) {
@@ -37,6 +39,8 @@ public final class CloudPlayerManager implements IWritePlayerProvider {
         }
 
         players.put(cloudPlayer.name(), cloudPlayer);
+        playersByXuid.put(cloudPlayer.xboxUserId(), cloudPlayer.name());
+        playersByUuid.put(cloudPlayer.uniqueId(), cloudPlayer.name());
         cloudPlayer.syncOut();
         String serverOrProxy = cloudPlayer.currentServerName() != null ? cloudPlayer.currentServerName() : cloudPlayer.currentProxyName();
         PocketCloud.instance().notifications().sendNotification(NotificationType.PLAYER_JOINED, Map.of("player", cloudPlayer.name(), "server", serverOrProxy), Map.of());
@@ -54,6 +58,8 @@ public final class CloudPlayerManager implements IWritePlayerProvider {
         }
 
         players.remove(cloudPlayer.name());
+        playersByXuid.remove(cloudPlayer.xboxUserId());
+        playersByUuid.remove(cloudPlayer.uniqueId());
 
         String serverOrProxy = cloudPlayer.currentServerName() != null ? cloudPlayer.currentServerName() : cloudPlayer.currentProxyName();
         PocketCloud.instance().notifications().sendNotification(NotificationType.PLAYER_LEFT, Map.of("player", cloudPlayer.name(), "server", serverOrProxy), Map.of());
@@ -68,25 +74,27 @@ public final class CloudPlayerManager implements IWritePlayerProvider {
 
     @Override
     public boolean check(String nameOrXuid) {
-        return players.containsKey(nameOrXuid) || players.values().stream().anyMatch(p -> p.xboxUserId().equals(nameOrXuid));
+        return players.containsKey(nameOrXuid) || playersByXuid.containsKey(nameOrXuid);
     }
 
     @Override
     public boolean check(UUID uuid) {
-        return players.values().stream().anyMatch(p -> p.uniqueId().equals(uuid));
+        return playersByUuid.containsKey(uuid);
     }
 
     @Override
     public Optional<ICloudPlayer> get(String nameOrXuid) {
-        if (players.containsKey(nameOrXuid)) return Optional.of(players.get(nameOrXuid));
-        return widen(players.values()).stream()
-                .filter(p -> p.xboxUserId().equals(nameOrXuid))
-                .findFirst();
+        CloudPlayer byName = players.get(nameOrXuid);
+        if (byName != null) return Optional.of(byName);
+
+        String name = playersByXuid.get(nameOrXuid);
+        return name != null ? Optional.ofNullable(players.get(name)) : Optional.empty();
     }
 
     @Override
     public Optional<ICloudPlayer> get(UUID uuid) {
-        return widen(players.values()).stream().filter(p -> p.uniqueId().equals(uuid)).findFirst();
+        String name = playersByUuid.get(uuid);
+        return name != null ? Optional.ofNullable(players.get(name)) : Optional.empty();
     }
 
     @Override

@@ -4,8 +4,12 @@ import de.pocketcloud.api.CloudAPI;
 import de.pocketcloud.api.component.group.IServerGroup;
 import de.pocketcloud.api.component.template.ITemplate;
 import de.pocketcloud.api.template.TemplateType;
+import de.pocketcloud.common.serialization.MapperUtils;
+import de.pocketcloud.common.serialization.Writable;
 
-public final class TemplateSearchQuery implements ISearchQuery<ITemplate> {
+import java.util.Map;
+
+public final class TemplateSearchQuery implements ISearchQuery<ITemplate>, Writable<Map<String, Object>> {
 
     public static TemplateSearchQuery create() {
         return new TemplateSearchQuery();
@@ -56,5 +60,26 @@ public final class TemplateSearchQuery implements ISearchQuery<ITemplate> {
         }
 
         return true;
+    }
+
+    @Override
+    public Map<String, Object> write() {
+        return MapperUtils.toMap(this);
+    }
+
+    public static TemplateSearchQuery read(Map<String, Object> data) {
+        TemplateSearchQuery query = new TemplateSearchQuery();
+        query.namePrefix = (String) data.get("namePrefix");
+        query.serverGroupName = (String) data.get("serverGroupName");
+
+        try {
+            query.templateType = data.get("templateType") != null ? TemplateType.valueOf(data.get("templateType").toString().toUpperCase()) : null;
+        } catch (IllegalArgumentException _) {
+            query.templateType = null;
+        }
+
+        query.serverSoftwareName = (String) data.get("serverSoftwareName");
+
+        return query;
     }
 }

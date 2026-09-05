@@ -72,6 +72,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -88,7 +89,7 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
     @Getter(AccessLevel.NONE)
     private transient boolean markedForRemoval = false;
 
-    private transient final Map<String, ServerCommandExecutionRequest> commandExecutionOrders = new HashMap<>();
+    private transient final Map<String, ServerCommandExecutionRequest> commandExecutionOrders = new ConcurrentHashMap<>();
 
     private transient boolean pidLookupDone = false;
     private transient long lastPidLookupTime = 0;
@@ -319,7 +320,7 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
     }
 
     public Promise<Void> save() {
-        if (!new ServerSaveEvent(this).call().isCancelled())
+        if (new ServerSaveEvent(this).call().isCancelled())
             return Promise.rejected(new RuntimeException("Event cancelled"));
         return Promise.supplyAsync(() -> {
             for (String file : template().serverSoftware().config().savableFiles()) {
@@ -447,6 +448,19 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
         this.status = status;
         syncOut();
         CloudAPI.instance().events().call(new ServerChangedStatusEvent(this, oldStatus, status));
+    }
+
+    public List<String> retrieveLogs() {
+        Path logFilePath = logFilePath();
+        if (Files.exists(logFilePath)) {
+            try {
+                return Files.readAllLines(logFilePath);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        return null;
     }
 
     public ServerLogStream openLogStream() {

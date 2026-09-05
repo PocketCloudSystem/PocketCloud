@@ -32,6 +32,24 @@ public final class TemplateBuilder implements ITemplateBuilder {
         return new TemplateBuilder();
     }
 
+    public static TemplateBuilder of(ITemplate template) {
+        return TemplateBuilder.create()
+                .name(template.name())
+                .lobby(template.settings().lobby())
+                .maintenance(template.settings().maintenance())
+                .staticServers(template.settings().staticServers())
+                .alwaysCopyToStaticServers(template.settings().alwaysCopyToStaticServers())
+                .saveOnShutdown(template.settings().saveOnShutdown())
+                .maxPlayerCount(template.settings().maxPlayerCount())
+                .minServerCount(template.settings().minServerCount())
+                .maxServerCount(template.settings().maxServerCount())
+                .startNewPercentage(template.settings().startNewPercentage())
+                .autoStart(template.settings().autoStart())
+                .maxMemory(template.settings().maxMemory())
+                .type(template.templateType())
+                .software(template.serverSoftware());
+    }
+
     @Override
     public ITemplate build() {
         if (name == null) throw new NullPointerException("Template name is null");

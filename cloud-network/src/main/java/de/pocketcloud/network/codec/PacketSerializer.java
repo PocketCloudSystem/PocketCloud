@@ -7,7 +7,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.function.Function;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
@@ -71,17 +70,6 @@ public final class PacketSerializer {
         } catch (IOException e) {
             throw new PacketException("IO error during decoding: " + e.getMessage(), e);
         }
-    }
-
-    public static String hexToText(String hex) {
-        byte[] bytes = new byte[hex.length() / 2];
-
-        for (int i = 0; i < bytes.length; i++) {
-            int index = i * 2;
-            bytes[i] = (byte) Integer.parseInt(hex.substring(index, index + 2), 16);
-        }
-
-        return new String(bytes, StandardCharsets.UTF_8);
     }
 
     private static byte[] compress(byte[] data) throws IOException {

@@ -29,6 +29,7 @@ import lombok.Getter;
 import lombok.experimental.Accessors;
 
 import java.net.SocketAddress;
+import java.util.concurrent.TimeUnit;
 
 @Getter
 @Accessors(fluent = true)
@@ -94,7 +95,9 @@ public final class HttpServer {
                                     if (msg instanceof ByteBuf byteBuf) {
                                         bytes = byteBuf.readableBytes();
                                     } else if (msg instanceof ByteBufHolder holder) {
-                                        bytes = holder.content().readableBytes();
+                                        if (holder.content() != null) {
+                                            bytes = holder.content().readableBytes();
+                                        }
                                     }
 
                                     if (bytes > 0) {
@@ -165,8 +168,18 @@ public final class HttpServer {
     }
 
     public void close() {
-        this.bossGroup.shutdownGracefully();
-        this.workerGroup.shutdownGracefully();
+        try {
+            if (!bossGroup.awaitTermination(3, TimeUnit.SECONDS)) {
+                bossGroup.shutdownGracefully();
+            }
+        } catch (InterruptedException _) {}
+
+        try {
+            if (!workerGroup.awaitTermination(3, TimeUnit.SECONDS)) {
+                workerGroup.shutdownGracefully();
+            }
+        } catch (InterruptedException _) {}
+
         if (sslContext != null) ReferenceCountUtil.release(sslContext);
     }
 }

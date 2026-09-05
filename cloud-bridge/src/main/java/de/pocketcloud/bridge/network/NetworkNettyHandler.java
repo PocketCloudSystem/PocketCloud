@@ -39,6 +39,6 @@ public class NetworkNettyHandler extends SimpleChannelInboundHandler<CloudPacket
             }
         }
 
-        CloudBridge.instance().logger().exception("Unhandled exception caused by §b{}§r. §8(§renable §edebug §rto view full stack trace§8)", cause, ctx.channel().remoteAddress());
+        CloudBridge.instance().logger().exception("Unhandled exception caused by §b{}§r.", cause, ctx.channel().remoteAddress());
     }
 }

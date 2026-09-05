@@ -1,5 +1,6 @@
 package de.pocketcloud.cloud.http.io;
 
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import de.pocketcloud.api.network.traffic.TrafficDirection;
 import de.pocketcloud.cloud.PocketCloud;
@@ -98,7 +99,7 @@ public final class HttpResponse {
         send("application/json", json);
     }
 
-    public void json(JsonObject json) {
+    public void json(JsonElement json) {
         json(FileUtils.encodeJson(json));
     }
 

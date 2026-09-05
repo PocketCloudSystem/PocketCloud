@@ -132,6 +132,10 @@ public final class CloudPluginManager implements Tickable, Loadable {
         }
     }
 
+    public int pluginCount() {
+        return plugins.size();
+    }
+
     public Optional<CloudPlugin> get(String name) {
         return Optional.ofNullable(plugins.get(name));
     }

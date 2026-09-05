@@ -16,7 +16,7 @@ public final class PowerNukkitXLogger implements ILogger {
 
     @Override
     public ILogger exception(Throwable throwable) {
-        logger.error("Unhandled exception", throwable);
+        logger.error(throwable.getMessage(), throwable);
         return this;
     }
 

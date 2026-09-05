@@ -55,7 +55,8 @@ public class NetworkNettyHandler extends SimpleChannelInboundHandler<CloudPacket
 
             if (server != null) server.latestPacketInfo().setLatestPacket(Instant.now(), packet.getClass());
         } catch (Exception e) {
-            CloudLogger.get().error("Unhandled exception while processing packet §b{} §rsent by §b{}§r. §8(§renable §edebug §rto view full stack trace§8)", packet.getName(), ctx.channel().remoteAddress());
+            boolean debugEnabled = CloudLogger.get().isDebugMode();
+            CloudLogger.get().error("Unhandled exception while processing packet §b{} §rsent by §b{}§r.{}", packet.getName(), ctx.channel().remoteAddress(), debugEnabled ? "" : " §8(§renable §edebug §rto view full stack trace§8)");
             if (CloudLogger.get().isDebugMode()) CloudLogger.get().exception(e);
             else CloudLogger.get().error(e.getMessage());
         }
@@ -69,8 +70,9 @@ public class NetworkNettyHandler extends SimpleChannelInboundHandler<CloudPacket
             return;
         }
 
-        CloudLogger.get().error("Unhandled exception caused by §b{}§r. §8(§renable §edebug §rto view full stack trace§8)", ctx.channel().remoteAddress());
-        if (CloudLogger.get().isDebugMode()) CloudLogger.get().exception(cause);
+        boolean debugEnabled = CloudLogger.get().isDebugMode();
+        CloudLogger.get().error("Unhandled exception caused by §b{}§r.{}", ctx.channel().remoteAddress(), debugEnabled ? "" : " §8(§renable §edebug §rto view full stack trace§8)");
+        if (debugEnabled) CloudLogger.get().exception(cause);
         else CloudLogger.get().error(cause.getMessage());
         ctx.close();
     }

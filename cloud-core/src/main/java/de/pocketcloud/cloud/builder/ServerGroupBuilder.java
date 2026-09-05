@@ -21,33 +21,39 @@ public final class ServerGroupBuilder implements IServerGroupBuilder {
     public static ServerGroupBuilder create() {
         return new ServerGroupBuilder();
     }
+    
+    public static ServerGroupBuilder of(IServerGroup group) {
+        return ServerGroupBuilder.create()
+                .name(group.name())
+                .templates(group.templates().toArray(new String[0]));
+    }
 
     @Override
-    public IServerGroupBuilder template(String templateName) {
+    public ServerGroupBuilder template(String templateName) {
         templates.add(templateName);
         return this;
     }
 
     @Override
-    public IServerGroupBuilder template(ITemplate template) {
+    public ServerGroupBuilder template(ITemplate template) {
         templates.add(template.name());
         return this;
     }
 
     @Override
-    public IServerGroupBuilder templates(String... templateNames) {
+    public ServerGroupBuilder templates(String... templateNames) {
         templates.addAll(Arrays.stream(templateNames).toList());
         return this;
     }
 
     @Override
-    public IServerGroupBuilder templates(ITemplate... templates) {
+    public ServerGroupBuilder templates(ITemplate... templates) {
         this.templates.addAll(Arrays.stream(templates).map(ITemplate::name).toList());
         return this;
     }
 
     @Override
-    public IServerGroupBuilder clearTemplates() {
+    public ServerGroupBuilder clearTemplates() {
         templates.clear();
         return this;
     }

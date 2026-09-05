@@ -8,7 +8,15 @@ import de.pocketcloud.cloud.http.handler.AuthenticationFailedHandler;
 import de.pocketcloud.cloud.http.handler.RouteHandler;
 import de.pocketcloud.cloud.http.io.HttpRequest;
 import de.pocketcloud.cloud.http.io.HttpResponse;
-import de.pocketcloud.cloud.http.route.TestRoutes;
+import de.pocketcloud.cloud.http.route.HealthRoute;
+import de.pocketcloud.cloud.http.route.v1.GeneralRoutes;
+import de.pocketcloud.cloud.http.route.v1.group.GroupRoutes;
+import de.pocketcloud.cloud.http.route.v1.maintenance.MaintenanceRoutes;
+import de.pocketcloud.cloud.http.route.v1.notification.NotificationRoutes;
+import de.pocketcloud.cloud.http.route.v1.player.PlayerRoutes;
+import de.pocketcloud.cloud.http.route.v1.plugin.PluginRoutes;
+import de.pocketcloud.cloud.http.route.v1.server.ServerRoutes;
+import de.pocketcloud.cloud.http.route.v1.template.TemplateRoutes;
 import de.pocketcloud.cloud.http.util.RouteDefinition;
 import de.pocketcloud.cloud.http.util.RouteHandlerMethod;
 import io.netty.handler.codec.http.HttpMethod;
@@ -37,7 +45,15 @@ public final class Router implements IRouter {
     private final List<RouteDefinition> routes = new ArrayList<>();
 
     public Router() {
-        registerController(new TestRoutes());
+        registerController(new HealthRoute());
+        registerController(new GeneralRoutes());
+        registerController(new GroupRoutes());
+        registerController(new MaintenanceRoutes());
+        registerController(new NotificationRoutes());
+        registerController(new PlayerRoutes());
+        registerController(new PluginRoutes());
+        registerController(new ServerRoutes());
+        registerController(new TemplateRoutes());
     }
 
     public void registerController(Object controller) {

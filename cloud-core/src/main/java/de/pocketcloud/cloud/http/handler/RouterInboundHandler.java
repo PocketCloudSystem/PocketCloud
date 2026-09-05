@@ -2,11 +2,13 @@ package de.pocketcloud.cloud.http.handler;
 
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.http.Router;
+import de.pocketcloud.cloud.http.exception.HttpException;
 import de.pocketcloud.cloud.http.io.HttpRequest;
 import de.pocketcloud.cloud.http.io.HttpResponse;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.HttpResponseStatus;
 
 import java.io.IOException;
 
@@ -30,9 +32,18 @@ public final class RouterInboundHandler extends SimpleChannelInboundHandler<Full
 
         try {
             router.handle(request, response);
+        } catch (HttpException e) {
+            if (!response.isSent()) {
+                response.error(HttpResponseStatus.valueOf(e.statusCode()), e.getMessage());
+            }
+            CloudLogger.get().debug("Request rejected (" + e.statusCode() + ") for " + request.path() + ": " + e.getMessage());
         } catch (Exception e) {
-            response.internalServerError("An unexpected error occurred: " + e.getMessage());
-            CloudLogger.get().exception("Unhandled exception while routing request " + request.path(), e);
+            boolean debugEnabled = CloudLogger.get().isDebugMode();
+            CloudLogger.get().error("Unhandled exception while routing request §b{}§r.{}" + request.path(), debugEnabled ? "" : " §8(§renable §edebug §rto view full stack trace§8)");
+            if (debugEnabled) CloudLogger.get().exception(e);
+            if (!response.isSent()) {
+                response.internalServerError("An unexpected error occurred");
+            }
         }
     }
 

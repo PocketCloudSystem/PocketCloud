@@ -4,7 +4,6 @@ import de.pocketcloud.api.CloudAPI;
 import de.pocketcloud.api.CloudAPIHolder;
 import de.pocketcloud.api.config.ICloudConfig;
 import de.pocketcloud.api.config.IEnvironmentConfig;
-import de.pocketcloud.api.executor.IPlayerExecutor;
 import de.pocketcloud.api.logging.CloudLogLevel;
 import de.pocketcloud.api.logging.ILogger;
 import de.pocketcloud.api.service.ServiceRegistry;
@@ -473,7 +472,7 @@ public final class PocketCloud implements CloudAPI {
     }
 
     @Override
-    public IPlayerExecutor playerExecutor() {
+    public CloudPlayerExecutor playerExecutor() {
         return services.get(CloudPlayerExecutor.class);
     }
 

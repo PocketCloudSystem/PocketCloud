@@ -2,12 +2,16 @@ package de.pocketcloud.api.template.util;
 
 import de.pocketcloud.api.component.template.ITemplate;
 import de.pocketcloud.api.template.settings.TemplateSettings;
+import de.pocketcloud.common.serialization.MapperUtils;
+import de.pocketcloud.common.serialization.Writable;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 
+import java.util.Map;
+
 @Setter
 @Accessors(fluent = true)
-public class TemplateEditData {
+public class TemplateEditData implements Writable<Map<String, Object>> {
 
     private Boolean lobby = null;
     private Boolean maintenance = null;
@@ -35,7 +39,7 @@ public class TemplateEditData {
             throw new IllegalArgumentException("Max server count must be positive");
         if (startNewPercentage != null && (startNewPercentage < 0 || startNewPercentage > 1))
             throw new IllegalArgumentException("Start new percentage must be between 0 and 1");
-        if (maxMemory <= 0) throw new IllegalArgumentException("Max memory must be positive");
+        if (maxMemory != null && maxMemory <= 0) throw new IllegalArgumentException("Max memory must be positive");
 
         if (lobby != null) template.settings().lobby(lobby);
         if (maintenance != null) template.settings().maintenance(maintenance);
@@ -48,6 +52,11 @@ public class TemplateEditData {
         if (startNewPercentage != null) template.settings().startNewPercentage(startNewPercentage);
         if (autoStart != null) template.settings().autoStart(autoStart);
         if (maxMemory != null) template.settings().maxMemory(maxMemory);
+    }
+
+    @Override
+    public Map<String, Object> write() {
+        return MapperUtils.toMap(this);
     }
 
     public static TemplateEditData create() {
@@ -76,5 +85,21 @@ public class TemplateEditData {
         if (oldSettings.autoStart() != newSettings.autoStart()) templateEditData.autoStart = newSettings.autoStart();
         if (oldSettings.maxMemory() != newSettings.maxMemory()) templateEditData.maxMemory = newSettings.maxMemory();
         return templateEditData;
+    }
+
+    public static TemplateEditData read(Map<String, Object> data) {
+        TemplateEditData editData = new TemplateEditData();
+        editData.lobby = (Boolean) data.get("lobby");
+        editData.maintenance = (Boolean) data.get("maintenance");
+        editData.staticServers = (Boolean) data.get("staticServers");
+        editData.alwaysCopyToStaticServers = (Boolean) data.get("alwaysCopyToStaticServers");
+        editData.saveOnShutdown = (Boolean) data.get("saveOnShutdown");
+        editData.maxPlayerCount = data.get("maxPlayerCount") != null ? ((Number) data.get("maxPlayerCount")).intValue() : null;
+        editData.minServerCount = data.get("minServerCount") != null ? ((Number) data.get("minServerCount")).intValue() : null;
+        editData.maxServerCount = data.get("maxServerCount") != null ? ((Number) data.get("maxServerCount")).intValue() : null;
+        editData.startNewPercentage = data.get("startNewPercentage") != null ? ((Number) data.get("startNewPercentage")).doubleValue() : null;
+        editData.autoStart = (Boolean) data.get("autoStart");
+        editData.maxMemory = data.get("maxMemory") != null ? ((Number) data.get("maxMemory")).intValue() : null;
+        return editData;
     }
 }

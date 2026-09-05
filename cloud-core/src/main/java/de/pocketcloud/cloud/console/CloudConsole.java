@@ -138,6 +138,7 @@ public final class CloudConsole extends Thread implements Tickable {
 
     public void pollCommands() {
         String line;
+        if (!PocketCloud.instance().running()) return;
         while ((line = consoleQueue.poll()) != null) {
             PocketCloud.instance().screens().get().handleInput(line);
         }
