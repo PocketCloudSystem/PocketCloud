@@ -18,9 +18,11 @@ import org.reflections.Reflections;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 
 public final class PacketRegistry implements IPacketRegistry<ServerClient>, Loadable {
 
@@ -44,7 +46,11 @@ public final class PacketRegistry implements IPacketRegistry<ServerClient>, Load
     @Override
     public void load() {
         Reflections reflections = new Reflections("de.pocketcloud.network.packet.impl");
-        Set<Class<? extends Packet>> packetClasses = reflections.getSubTypesOf(Packet.class);
+        Set<Class<? extends Packet>> packetClasses = reflections.getSubTypesOf(Packet.class).stream()
+                .filter(clazz -> !clazz.isInterface())
+                .filter(clazz -> !Modifier.isAbstract(clazz.getModifiers()))
+                .collect(Collectors.toSet());
+
         for (Class<? extends Packet> packetClass : packetClasses) {
             registerPacket(packetClass);
         }
@@ -57,12 +63,13 @@ public final class PacketRegistry implements IPacketRegistry<ServerClient>, Load
 
     @Override
     public void registerPacket(Class<? extends Packet> packetClass) {
+        if (packetClass.isInterface() || Modifier.isAbstract(packetClass.getModifiers())) return;
         try {
             Constructor<?> constructor = packetClass.getConstructor();
             constructor.setAccessible(true);
             packets.put(packetClass.getSimpleName(), constructor);
         } catch (NoSuchMethodException e) {
-            throw new RuntimeException("Failed to register packet", e);
+            throw new RuntimeException("Failed to register packet " + packetClass.getName(), e);
         }
     }
 

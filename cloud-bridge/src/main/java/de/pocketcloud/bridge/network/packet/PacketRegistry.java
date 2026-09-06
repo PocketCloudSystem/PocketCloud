@@ -16,9 +16,11 @@ import org.reflections.util.ConfigurationBuilder;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 
 public final class PacketRegistry implements IPacketRegistry<Channel>, Loadable {
 
@@ -45,7 +47,11 @@ public final class PacketRegistry implements IPacketRegistry<Channel>, Loadable 
                 .forPackage("de.pocketcloud.network.packet.impl", CloudBridge.class.getClassLoader())
                 .addClassLoaders(CloudBridge.class.getClassLoader()));
 
-        Set<Class<? extends Packet>> packetClasses = reflections.getSubTypesOf(Packet.class);
+        Set<Class<? extends Packet>> packetClasses = reflections.getSubTypesOf(Packet.class).stream()
+                .filter(clazz -> !clazz.isInterface())
+                .filter(clazz -> !Modifier.isAbstract(clazz.getModifiers()))
+                .collect(Collectors.toSet());
+
         for (Class<? extends Packet> packetClass : packetClasses) {
             registerPacket(packetClass);
         }
@@ -58,6 +64,7 @@ public final class PacketRegistry implements IPacketRegistry<Channel>, Loadable 
 
     @Override
     public void registerPacket(Class<? extends Packet> packetClass) {
+        if (packetClass.isInterface() || Modifier.isAbstract(packetClass.getModifiers())) return;
         try {
             Constructor<?> constructor = packetClass.getConstructor();
             constructor.setAccessible(true);
