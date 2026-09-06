@@ -52,22 +52,44 @@ public final class Router implements IRouter {
 
     private final Map<String, List<String>> groupNames = new ConcurrentHashMap<>();
 
-    public Router() {
-        registerController(new HealthRoute());
-        registerController(new GeneralRoutes());
-        registerController(new GroupRoutes());
-        registerController(new MaintenanceRoutes());
-        registerController(new NotificationRoutes());
-        registerController(new PlayerRoutes());
-        registerController(new PluginRoutes());
-        registerController(new ServerRoutes());
-        registerController(new TemplateRoutes());
+    // Only applied to controllers registered from this constructor (the cloud's own routes,
+    // see registerCloudController()). Routes added afterwards - by plugins, via
+    // registerController()/get()/post()/... - are intentionally left unprefixed.
+    private final String routePrefix;
+
+    public Router(String routePrefix) {
+        this.routePrefix = normalizePrefix(routePrefix);
+
+        registerCloudController(new HealthRoute());
+        registerCloudController(new GeneralRoutes());
+        registerCloudController(new GroupRoutes());
+        registerCloudController(new MaintenanceRoutes());
+        registerCloudController(new NotificationRoutes());
+        registerCloudController(new PlayerRoutes());
+        registerCloudController(new PluginRoutes());
+        registerCloudController(new ServerRoutes());
+        registerCloudController(new TemplateRoutes());
     }
 
+    /**
+     * Registers a controller's routes without the cloud's route prefix. This is the public,
+     * plugin-facing registration path - see the class-level note on routePrefix.
+     */
     public void registerController(Object controller) {
-        List<RouteDefinition> routes = scanController(controller);
-        for (RouteDefinition route : routes) indexRoute(route);
-        this.routes.addAll(routes);
+        List<RouteDefinition> definitions = scanController(controller, "");
+        for (RouteDefinition route : definitions) indexRoute(route);
+        this.routes.addAll(definitions);
+    }
+
+    /**
+     * Registers one of the cloud's own built-in controllers, with routePrefix applied to
+     * every route it declares. Only called from the constructor above - intentionally not
+     * exposed, so plugins can never end up under the cloud's own prefix by accident.
+     */
+    private void registerCloudController(Object controller) {
+        List<RouteDefinition> definitions = scanController(controller, routePrefix);
+        for (RouteDefinition route : definitions) indexRoute(route);
+        this.routes.addAll(definitions);
     }
 
     public void deprecateVersion(int version, String sunset) {
@@ -245,7 +267,7 @@ public final class Router implements IRouter {
         return "/v" + version + normalized;
     }
 
-    private List<RouteDefinition> scanController(Object controller) {
+    private List<RouteDefinition> scanController(Object controller, String prefix) {
         List<RouteDefinition> result = new ArrayList<>();
         Class<?> clazz = controller.getClass();
 
@@ -257,21 +279,21 @@ public final class Router implements IRouter {
         for (Method method : clazz.getDeclaredMethods()) {
             method.setAccessible(true);
 
-            registerIfPresent(result, method, controller, GetRoute.class, HttpMethod.GET, GetRoute::value, GetRoute::authentication, GetRoute::onAuthFailed, GetRoute::version);
-            registerIfPresent(result, method, controller, PostRoute.class, HttpMethod.POST, PostRoute::value, PostRoute::authentication, PostRoute::onAuthFailed, PostRoute::version);
-            registerIfPresent(result, method, controller, PutRoute.class, HttpMethod.PUT, PutRoute::value, PutRoute::authentication, PutRoute::onAuthFailed, PutRoute::version);
-            registerIfPresent(result, method, controller, PatchRoute.class, HttpMethod.PATCH, PatchRoute::value, PatchRoute::authentication, PatchRoute::onAuthFailed, PatchRoute::version);
-            registerIfPresent(result, method, controller, DeleteRoute.class, HttpMethod.DELETE, DeleteRoute::value, DeleteRoute::authentication, DeleteRoute::onAuthFailed, DeleteRoute::version);
-            registerIfPresent(result, method, controller, HeadRoute.class, HttpMethod.HEAD, HeadRoute::value, HeadRoute::authentication, HeadRoute::onAuthFailed, HeadRoute::version);
-            registerIfPresent(result, method, controller, OptionsRoute.class, HttpMethod.OPTIONS, OptionsRoute::value, OptionsRoute::authentication, OptionsRoute::onAuthFailed, OptionsRoute::version);
-            registerIfPresent(result, method, controller, QueryRoute.class, QUERY, QueryRoute::value, QueryRoute::authentication, QueryRoute::onAuthFailed, QueryRoute::version);
+            registerIfPresent(result, method, controller, prefix, GetRoute.class, HttpMethod.GET, GetRoute::value, GetRoute::authentication, GetRoute::onAuthFailed, GetRoute::version);
+            registerIfPresent(result, method, controller, prefix, PostRoute.class, HttpMethod.POST, PostRoute::value, PostRoute::authentication, PostRoute::onAuthFailed, PostRoute::version);
+            registerIfPresent(result, method, controller, prefix, PutRoute.class, HttpMethod.PUT, PutRoute::value, PutRoute::authentication, PutRoute::onAuthFailed, PutRoute::version);
+            registerIfPresent(result, method, controller, prefix, PatchRoute.class, HttpMethod.PATCH, PatchRoute::value, PatchRoute::authentication, PatchRoute::onAuthFailed, PatchRoute::version);
+            registerIfPresent(result, method, controller, prefix, DeleteRoute.class, HttpMethod.DELETE, DeleteRoute::value, DeleteRoute::authentication, DeleteRoute::onAuthFailed, DeleteRoute::version);
+            registerIfPresent(result, method, controller, prefix, HeadRoute.class, HttpMethod.HEAD, HeadRoute::value, HeadRoute::authentication, HeadRoute::onAuthFailed, HeadRoute::version);
+            registerIfPresent(result, method, controller, prefix, OptionsRoute.class, HttpMethod.OPTIONS, OptionsRoute::value, OptionsRoute::authentication, OptionsRoute::onAuthFailed, OptionsRoute::version);
+            registerIfPresent(result, method, controller, prefix, QueryRoute.class, QUERY, QueryRoute::value, QueryRoute::authentication, QueryRoute::onAuthFailed, QueryRoute::version);
         }
 
         return result;
     }
 
     private <A extends Annotation> void registerIfPresent(
-            List<RouteDefinition> result, Method method, Object controller,
+            List<RouteDefinition> result, Method method, Object controller, String prefix,
             Class<A> annotationType, HttpMethod httpMethod,
             Function<A, String> pathExtractor,
             Function<A, Class<? extends IAuthentication>> authExtractor,
@@ -284,6 +306,7 @@ public final class Router implements IRouter {
         int version = resolveVersion(controller.getClass(), versionExtractor.apply(annotation));
         String rawPath = pathExtractor.apply(annotation);
         String path = version == UNVERSIONED ? rawPath : versionedPath(version, rawPath);
+        path = joinPath(prefix, path);
 
         RouteHandler handler = new RouteHandlerMethod(controller, method);
 
@@ -294,6 +317,21 @@ public final class Router implements IRouter {
         } catch (Exception e) {
             CloudLogger.get().error("Failed to register annotated route: " + path, e);
         }
+    }
+
+    private static String normalizePrefix(String prefix) {
+        if (prefix == null || prefix.isBlank()) return "";
+        String withLeadingSlash = prefix.startsWith("/") ? prefix : "/" + prefix;
+        String withoutTrailingSlash = withLeadingSlash.endsWith("/") && withLeadingSlash.length() > 1
+                ? withLeadingSlash.substring(0, withLeadingSlash.length() - 1)
+                : withLeadingSlash;
+        return withoutTrailingSlash.equals("/") ? "" : withoutTrailingSlash;
+    }
+
+    private static String joinPath(String prefix, String path) {
+        if (prefix == null || prefix.isEmpty()) return path;
+        String normalizedPath = path.startsWith("/") ? path : "/" + path;
+        return prefix + normalizedPath;
     }
 
     private List<String> extractGroupNames(String path) {

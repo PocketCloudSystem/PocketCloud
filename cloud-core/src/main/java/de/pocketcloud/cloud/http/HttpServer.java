@@ -35,7 +35,7 @@ import java.util.concurrent.TimeUnit;
 @Accessors(fluent = true)
 public final class HttpServer {
 
-    private final Router router = new Router();
+    private final Router router;
 
     @Getter(AccessLevel.NONE)
     private final EventLoopGroup bossGroup = new MultiThreadIoEventLoopGroup(new DefaultThreadFactory("HttpBossGroup"), NioIoHandler.newFactory());
@@ -52,6 +52,7 @@ public final class HttpServer {
     public HttpServer(SocketAddress address, String authToken) {
         this.address = address;
         this.authToken = authToken;
+        this.router = new Router(PocketCloud.instance().config().httpServer().routePrefix());
     }
 
     public void start() {

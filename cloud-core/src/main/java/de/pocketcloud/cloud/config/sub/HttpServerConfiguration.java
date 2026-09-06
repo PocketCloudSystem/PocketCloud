@@ -35,6 +35,9 @@ public final class HttpServerConfiguration extends OkaeriConfig implements IClou
     @Comment({"TLS/HTTPS configuration for the HTTP server"})
     private SslConfiguration ssl = new SslConfiguration();
 
+    @Comment({"Route prefix for cloud endpoints.", "This only works for endpoints registered by the cloud itself."})
+    private String routePrefix = "/cloud/";
+
     @Override
     public void validate() {
         if (port < 1 || port > 65535) {
