@@ -38,13 +38,21 @@ public final class RequestManager implements Tickable {
     }
 
     public void reject(RequestPacket packet) {
-        packet.invokeClosures(true, null, RequestPacketFailureReason.REQUEST_TIMEOUT, null);
+        invokeTimeoutClosures(packet);
         remove(packet);
     }
 
     public void reject(RequestPacket packet, Throwable e) {
-        packet.invokeClosures(true, null, RequestPacketFailureReason.EXCEPTION, e);
+        invokeExceptionClosures(packet, e);
         remove(packet);
+    }
+
+    private void invokeTimeoutClosures(RequestPacket packet) {
+        packet.invokeClosures(true, null, RequestPacketFailureReason.REQUEST_TIMEOUT, null);
+    }
+
+    private void invokeExceptionClosures(RequestPacket packet, Throwable e) {
+        packet.invokeClosures(true, null, RequestPacketFailureReason.EXCEPTION, e);
     }
 
     @Override
@@ -54,7 +62,7 @@ public final class RequestManager implements Tickable {
             RequestPacket request = entry.getValue();
             Long sent = request.getSentTimestamp();
             if (sent != null && (now - sent) > 10_000) {
-                reject(request);
+                invokeTimeoutClosures(request);
                 return true;
             }
 

@@ -5,14 +5,33 @@ import de.pocketcloud.network.exception.PacketException;
 import de.pocketcloud.network.packet.data.PacketData;
 import org.jetbrains.annotations.Nullable;
 
+import javax.crypto.AEADBadTagException;
+import javax.crypto.Cipher;
+import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
 public final class PacketSerializer {
+
+    private static final String CIPHER_ALGORITHM = "AES/GCM/NoPadding";
+    private static final int GCM_IV_LENGTH_BYTES = 12;
+    private static final int GCM_TAG_LENGTH_BITS = 128;
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+
+    private static final Map<String, SecretKeySpec> KEY_CACHE = new ConcurrentHashMap<>();
 
     private PacketSerializer() {}
 
@@ -22,10 +41,10 @@ public final class PacketSerializer {
             packet.encode(buffer);
             buffer.write(authenticationKey);
 
-            byte[] bytes = buffer.toByteArray();
+            byte[] bytes = compress(buffer.toByteArray());
 
             if (encryptionEnabled) {
-                bytes = compress(bytes);
+                bytes = encrypt(bytes, authenticationKey);
             }
 
             return bytes;
@@ -38,11 +57,13 @@ public final class PacketSerializer {
     public static Packet decode(byte[] buffer, boolean encryptionEnabled, String authenticationKey, Function<String, Packet> packetResolver) throws PacketException {
         try {
             if (buffer == null || buffer.length == 0) throw new PacketException("Cannot decode an empty buffer");
-            byte[] decompressed = buffer;
+
+            byte[] bytes = buffer;
             if (encryptionEnabled) {
-                decompressed = decompress(buffer);
+                bytes = decrypt(bytes, authenticationKey);
             }
 
+            byte[] decompressed = decompress(bytes);
             PacketData data = PacketData.fromBytes(decompressed);
 
             if (data.isEmpty()) throw new PacketException("Received buffer is empty");
@@ -67,8 +88,60 @@ public final class PacketSerializer {
             throw new PacketException("Failed to decode packet data: " + e.getMessage(), e);
         } catch (DataFormatException e) {
             throw new PacketException("Failed to decompress data: " + e.getMessage(), e);
+        } catch (AEADBadTagException e) {
+            throw new PacketException("Failed to decrypt packet: authentication tag mismatch");
+        } catch (GeneralSecurityException e) {
+            throw new PacketException("Failed to decrypt packet data: " + e.getMessage(), e);
         } catch (IOException e) {
             throw new PacketException("IO error during decoding: " + e.getMessage(), e);
+        }
+    }
+
+    private static byte[] encrypt(byte[] data, String authenticationKey) throws GeneralSecurityException {
+        SecretKeySpec key = deriveKey(authenticationKey);
+        byte[] iv = new byte[GCM_IV_LENGTH_BYTES];
+        SECURE_RANDOM.nextBytes(iv);
+
+        Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
+        cipher.init(Cipher.ENCRYPT_MODE, key, new GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv));
+        byte[] ciphertext = cipher.doFinal(data);
+
+        byte[] result = new byte[GCM_IV_LENGTH_BYTES + ciphertext.length];
+        System.arraycopy(iv, 0, result, 0, GCM_IV_LENGTH_BYTES);
+        System.arraycopy(ciphertext, 0, result, GCM_IV_LENGTH_BYTES, ciphertext.length);
+        return result;
+    }
+
+    private static byte[] decrypt(byte[] data, String authenticationKey) throws GeneralSecurityException, PacketException {
+        if (data.length < GCM_IV_LENGTH_BYTES) {
+            throw new PacketException("Encrypted buffer is too short to contain an IV");
+        }
+
+        SecretKeySpec key = deriveKey(authenticationKey);
+        byte[] iv = Arrays.copyOfRange(data, 0, GCM_IV_LENGTH_BYTES);
+        byte[] ciphertext = Arrays.copyOfRange(data, GCM_IV_LENGTH_BYTES, data.length);
+
+        Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
+        cipher.init(Cipher.DECRYPT_MODE, key, new GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv));
+        return cipher.doFinal(ciphertext);
+    }
+
+    private static SecretKeySpec deriveKey(String authenticationKey) throws GeneralSecurityException {
+        if (authenticationKey == null || authenticationKey.isEmpty()) {
+            throw new GeneralSecurityException("Cannot derive an encryption key from an empty auth token");
+        }
+
+        SecretKeySpec cached = KEY_CACHE.get(authenticationKey);
+        if (cached != null) return cached;
+
+        try {
+            MessageDigest sha256 = MessageDigest.getInstance("SHA-256");
+            byte[] keyBytes = sha256.digest(authenticationKey.getBytes(StandardCharsets.UTF_8));
+            SecretKeySpec derived = new SecretKeySpec(keyBytes, "AES");
+            KEY_CACHE.put(authenticationKey, derived);
+            return derived;
+        } catch (NoSuchAlgorithmException e) {
+            throw new GeneralSecurityException(e);
         }
     }
 
