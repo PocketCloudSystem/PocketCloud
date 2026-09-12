@@ -7,7 +7,10 @@ import java.util.regex.Pattern;
 
 public final class EnvironmentConfigType implements ConfigType {
 
-    private static final Pattern PATTERN = Pattern.compile("^\\s*(?:export\\s+)?([A-Z0-9_\\-\\.]+)\\s*=\\s*(.*)\\s*$", Pattern.MULTILINE);
+    private static final Pattern PATTERN = Pattern.compile(
+            "^\\s*(?:export\\s+)?([A-Za-z_][A-Za-z0-9_.-]*)\\s*=\\s*([^\\r\\n]*)\\s*$",
+            Pattern.MULTILINE
+    );
 
     @Override
     public Map<String, Object> decode(String content) {

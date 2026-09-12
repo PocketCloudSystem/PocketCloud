@@ -10,6 +10,7 @@ import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.server.util.CloudServerStorage;
 import de.pocketcloud.cloud.server.util.ServerUtils;
+import de.pocketcloud.cloud.template.Template;
 import de.pocketcloud.cloud.util.benchmark.Benchmark;
 import de.pocketcloud.common.concurrent.Promise;
 import de.pocketcloud.common.lifecycle.Tickable;
@@ -22,7 +23,9 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
 
@@ -51,6 +54,8 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
 
     @Getter(AccessLevel.NONE)
     private final Map<String, CloudServer> servers = new ConcurrentHashMap<>();
+    @Getter(AccessLevel.NONE)
+    private final Map<ITemplate, Integer> serverCounts = new ConcurrentHashMap<>();
     private final AtomicInteger startingServers = new AtomicInteger(0);
     private long tryAgainAt = 0;
 
@@ -62,9 +67,20 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
     private final Map<String, String> latestServerStartTimes = new ConcurrentHashMap<>();
 
     @Getter(AccessLevel.NONE)
-    private final Queue<CloudServer> serverPrepareQueue = new LinkedList<>();
+    private final Map<String, Long> zeroPlayersReachedTimestamps = new ConcurrentHashMap<>();
+
     @Getter(AccessLevel.NONE)
-    private final Queue<CloudServer> serverStartQueue = new LinkedList<>();
+    private final AtomicLong queueSequence = new AtomicLong(0);
+
+    private final Comparator<CloudServer> QUEUE_ORDER = Comparator
+            .comparingInt((CloudServer s) -> s.template().settings().priority())
+            .reversed()
+            .thenComparingLong(CloudServer::queuedAt);
+
+    @Getter(AccessLevel.NONE)
+    private final Queue<CloudServer> serverPrepareQueue = new PriorityBlockingQueue<>(11, QUEUE_ORDER);
+    @Getter(AccessLevel.NONE)
+    private final Queue<CloudServer> serverStartQueue = new PriorityBlockingQueue<>(11, QUEUE_ORDER);
 
     public CloudServerManager enableServerStarting() {
         serverStartingEnabled = true;
@@ -87,6 +103,8 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
     @Override
     public void remove(ICloudServer server) {
         servers.remove(server.name());
+        zeroPlayersReachedTimestamps.remove(server.name());
+        serverCounts.put(server.template(), serverCounts.getOrDefault(server.template(), 1) - 1);
         if (startingServerTimestamps.remove(server.name()) != null) startingServers.decrementAndGet();
         ServerUtils.removeId(server.template(), server.id());
         ServerUtils.removePort(server.data().port());
@@ -97,24 +115,36 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
     @Override
     public Promise<Collection<String>> start(ITemplate template, int count) {
         Collection<String> startedServers = new ArrayList<>();
-        if (!checkCapacity(template)) {
+        int maxCount = template.settings().maxServerCount();
+
+        int[] toStartHolder = new int[1];
+        serverCounts.compute(template, (t, current) -> {
+            int existing = current == null ? 0 : current;
+            int allowed = Math.clamp(maxCount - existing, 0, count);
+            toStartHolder[0] = allowed;
+            return existing + allowed;
+        });
+
+        int toStart = toStartHolder[0];
+
+        if (toStart <= 0) {
             CloudLogger.get().warn("Failed to start any more servers of §b{} §rdue to the max amount of servers already being reached.", template.name());
             return Promise.resolved(startedServers);
         }
 
-        int currentCount = query(ServerSearchQuery.create().ofTemplate(template)).size();
-        int maxCount = template.settings().maxServerCount();
-
-        for (int i = 0; i < count; i++) {
-            if (currentCount >= maxCount) break;
+        for (int i = 0; i < toStart; i++) {
             this.lastServerStartTime = System.currentTimeMillis();
 
             int id = ServerUtils.getFreeId(template);
-            if (id == -1) continue;
+            if (id == -1) {
+                serverCounts.merge(template, -1, Integer::sum);
+                continue;
+            }
 
             int port = ServerUtils.getFreePort(template.templateType());
             if (port <= 0) {
                 CloudLogger.get().warn("Failed to start any more servers of §b{}§8: §cNo available ports found.", template.name());
+                serverCounts.merge(template, -(toStart - i), Integer::sum);
                 break;
             }
 
@@ -129,9 +159,9 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
 
             latestServerStartTimes.put(template.name(), server.name());
             add(server);
+            server.queuedAt(queueSequence.incrementAndGet());
             serverPrepareQueue.offer(server);
             startedServers.add(server.name());
-            currentCount++;
         }
 
         return Promise.resolved(startedServers);
@@ -225,11 +255,12 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
 
     @Override
     public boolean checkCapacity(ITemplate template) {
-        return query(ServerSearchQuery.create().ofTemplate(template)).size() < template.settings().maxServerCount();
+        return serverCounts.getOrDefault(template, 0) < template.settings().maxServerCount();
     }
 
     private void addToStartQueue(CloudServer server) {
         CloudLogger.get().debug("Done preparing server: §b{}", server.name());
+        server.queuedAt(queueSequence.incrementAndGet());
         serverStartQueue.offer(server);
     }
 
@@ -243,7 +274,28 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
 
     @Override
     public void tick(long currentTick) {
-        servers.values().forEach(server -> server.tick(currentTick));
+        servers.values().forEach(server -> {
+            if (server.status().isOnline()) {
+                Template template = server.template();
+                int playerCount = server.playerCount();
+                long runningServers = serverCounts.getOrDefault(template, 0);
+                long zeroPlayersReachedTimestamp = zeroPlayersReachedTimestamps.getOrDefault(server.name(), 0L);
+                if (playerCount > 0) zeroPlayersReachedTimestamps.put(server.name(), 0L);
+                if (playerCount == 0 && template.settings().stopOnEmpty()) {
+                    if (zeroPlayersReachedTimestamp == 0) {
+                        zeroPlayersReachedTimestamp = System.currentTimeMillis();
+                        zeroPlayersReachedTimestamps.put(server.name(), zeroPlayersReachedTimestamp);
+                    }
+
+                    if (runningServers > template.settings().minServerCount() && (zeroPlayersReachedTimestamp + (template.settings().emptyServerGracePeriod() * 1000L)) <= System.currentTimeMillis()) {
+                        stop(server);
+                        return;
+                    }
+                }
+            }
+
+            server.tick(currentTick);
+        });
 
         if ((serverPrepareQueue.isEmpty() && serverStartQueue.isEmpty()) || currentTick < tryAgainAt) return;
         double cpuUsage = PocketCloud.instance().performanceStats().systemCpuUsage();

@@ -93,7 +93,7 @@ public final class TemplateCommand extends Command implements TabComplete {
         sender.info("MaxPlayerCount§8: §b{} player(s)", template.settings().maxPlayerCount());
         sender.info("MinServerCount§8: §b{} server(s)", template.settings().minServerCount());
         sender.info("MaxServerCount§8: §b{} server(s)", template.settings().maxServerCount());
-        sender.info("StartNewPercentage§8: §b{}%", template.settings().startNewPercentage() * 100);
+        sender.info("startNewServerThreshold§8: §b{}%", template.settings().startNewServerThreshold() * 100);
         sender.info("AutoStart§8: §b{}", template.settings().autoStart() ? "§aYes" : "§cNo");
         sender.info("Software§8: §b{} §8(§b{}§8)", template.serverSoftware().name(), template.templateType().name());
         sender.info("§b{} player(s) §racross §b{} server(s)§r.", template.playerCount(), template.serverCount());

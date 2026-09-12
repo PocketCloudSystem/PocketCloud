@@ -21,7 +21,7 @@ public class TemplateEditData implements Writable<Map<String, Object>> {
     private Integer maxPlayerCount = null;
     private Integer minServerCount = null;
     private Integer maxServerCount = null;
-    private Double startNewPercentage = null;
+    private Double startNewServerThreshold = null;
     private Boolean autoStart = null;
     private Integer maxMemory = null;
 
@@ -37,7 +37,7 @@ public class TemplateEditData implements Writable<Map<String, Object>> {
             throw new IllegalArgumentException("Min server count must be positive");
         if (maxServerCount != null && maxServerCount < 0)
             throw new IllegalArgumentException("Max server count must be positive");
-        if (startNewPercentage != null && (startNewPercentage < 0 || startNewPercentage > 1))
+        if (startNewServerThreshold != null && (startNewServerThreshold < 0 || startNewServerThreshold > 1))
             throw new IllegalArgumentException("Start new percentage must be between 0 and 1");
         if (maxMemory != null && maxMemory <= 0) throw new IllegalArgumentException("Max memory must be positive");
 
@@ -49,7 +49,7 @@ public class TemplateEditData implements Writable<Map<String, Object>> {
         if (maxPlayerCount != null) template.settings().maxPlayerCount(maxPlayerCount);
         if (minServerCount != null) template.settings().minServerCount(minServerCount);
         if (maxServerCount != null) template.settings().maxServerCount(maxServerCount);
-        if (startNewPercentage != null) template.settings().startNewPercentage(startNewPercentage);
+        if (startNewServerThreshold != null) template.settings().startNewServerThreshold(startNewServerThreshold);
         if (autoStart != null) template.settings().autoStart(autoStart);
         if (maxMemory != null) template.settings().maxMemory(maxMemory);
     }
@@ -80,8 +80,8 @@ public class TemplateEditData implements Writable<Map<String, Object>> {
             templateEditData.minServerCount = newSettings.minServerCount();
         if (oldSettings.maxServerCount() != newSettings.maxServerCount())
             templateEditData.maxServerCount = newSettings.maxServerCount();
-        if (oldSettings.startNewPercentage() != newSettings.startNewPercentage())
-            templateEditData.startNewPercentage = newSettings.startNewPercentage();
+        if (oldSettings.startNewServerThreshold() != newSettings.startNewServerThreshold())
+            templateEditData.startNewServerThreshold = newSettings.startNewServerThreshold();
         if (oldSettings.autoStart() != newSettings.autoStart()) templateEditData.autoStart = newSettings.autoStart();
         if (oldSettings.maxMemory() != newSettings.maxMemory()) templateEditData.maxMemory = newSettings.maxMemory();
         return templateEditData;
@@ -97,7 +97,7 @@ public class TemplateEditData implements Writable<Map<String, Object>> {
         editData.maxPlayerCount = data.get("maxPlayerCount") != null ? ((Number) data.get("maxPlayerCount")).intValue() : null;
         editData.minServerCount = data.get("minServerCount") != null ? ((Number) data.get("minServerCount")).intValue() : null;
         editData.maxServerCount = data.get("maxServerCount") != null ? ((Number) data.get("maxServerCount")).intValue() : null;
-        editData.startNewPercentage = data.get("startNewPercentage") != null ? ((Number) data.get("startNewPercentage")).doubleValue() : null;
+        editData.startNewServerThreshold = data.get("startNewServerThreshold") != null ? ((Number) data.get("startNewServerThreshold")).doubleValue() : null;
         editData.autoStart = (Boolean) data.get("autoStart");
         editData.maxMemory = data.get("maxMemory") != null ? ((Number) data.get("maxMemory")).intValue() : null;
         return editData;

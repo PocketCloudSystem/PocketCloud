@@ -13,16 +13,7 @@ public final class DatabaseQueries {
         return
                 "CREATE TABLE IF NOT EXISTS " + DatabaseTables.TEMPLATES + " (" +
                         "name VARCHAR(50) PRIMARY KEY," +
-                        "lobby BOOL," +
-                        "maintenance BOOL," +
-                        "`staticServers` BOOL," +
-                        "`saveOnShutdown` BOOL," +
-                        "maxPlayerCount INTEGER," +
-                        "minServerCount INTEGER," +
-                        "maxServerCount INTEGER," +
-                        "startNewPercentage DOUBLE," +
-                        "autoStart BOOL," +
-                        "alwaysCopyToStaticServers BOOL," +
+                        "settings TEXT, " +
                         "templateType VARCHAR(20)," +
                         "serverSoftware VARCHAR(30)" +
                         "); " +
@@ -39,7 +30,7 @@ public final class DatabaseQueries {
     }
 
     public static String addTemplate() {
-        return buildInsert(DatabaseTables.TEMPLATES, TemplateHelper.KEYS.toArray(new String[0]));
+        return buildInsert(DatabaseTables.TEMPLATES, new String[]{"name", "settings", "templateType", "serverSoftware"});
     }
 
     public static String removeTemplate() {

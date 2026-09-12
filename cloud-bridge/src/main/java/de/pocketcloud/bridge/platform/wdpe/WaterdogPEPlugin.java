@@ -10,6 +10,9 @@ import de.pocketcloud.bridge.platform.wdpe.adapter.WaterdogPEPlayerAdapter;
 import de.pocketcloud.bridge.platform.wdpe.handler.JoinAndFallbackHandler;
 import de.pocketcloud.bridge.platform.wdpe.handler.ProxyPacketHandler;
 import de.pocketcloud.bridge.platform.wdpe.listener.PlayerListener;
+import de.pocketcloud.common.config.Config;
+import de.pocketcloud.common.config.exception.UnsupportedFileExtensionException;
+import de.pocketcloud.common.config.type.EnvironmentConfigType;
 import dev.waterdog.waterdogpe.ProxyServer;
 import dev.waterdog.waterdogpe.event.defaults.InitialServerDeterminedEvent;
 import dev.waterdog.waterdogpe.event.defaults.PlayerDisconnectedEvent;
@@ -17,15 +20,22 @@ import dev.waterdog.waterdogpe.event.defaults.PlayerLoginEvent;
 import dev.waterdog.waterdogpe.event.defaults.ServerTransferEvent;
 import dev.waterdog.waterdogpe.player.ProxiedPlayer;
 import dev.waterdog.waterdogpe.plugin.Plugin;
-import dev.waterdog.waterdogpe.utils.config.YamlConfig;
 
+import java.io.IOException;
 import java.util.Map;
 
 public final class WaterdogPEPlugin extends Plugin implements IPlatformPlugin {
 
     @Override
     public void onStartup() {
-        CloudAPIHolder.setInstance(new CloudBridge(this, craftPlatformLogger(), fetchEnvironmentConfig(), buildNativePlayerAdapter()));
+        try {
+            CloudAPIHolder.setInstance(new CloudBridge(this, craftPlatformLogger(), fetchEnvironmentConfig(), buildNativePlayerAdapter()));
+        } catch (UnsupportedFileExtensionException | IOException e) {
+            getLogger().error("Failed to load environment settings, shutting down...", e);
+            getProxy().shutdown();
+            return;
+        }
+
         CloudBridge.instance().packets().registerPacketListener(new ProxyPacketHandler());
     }
 
@@ -59,8 +69,8 @@ public final class WaterdogPEPlugin extends Plugin implements IPlatformPlugin {
 
     @SuppressWarnings("unchecked")
     @Override
-    public LocalServerConfig fetchEnvironmentConfig() {
-        Map<String, Object> environmentSettings = (Map<String, Object>) new YamlConfig(ProxyServer.getInstance().getDataPath().toString() + "/config.yml").get("environment-settings");
+    public LocalServerConfig fetchEnvironmentConfig() throws UnsupportedFileExtensionException, IOException {
+        Map<String, Object> environmentSettings = new Config(ProxyServer.getInstance().getDataPath().resolve(".env"), new EnvironmentConfigType()).getAll();
         return LocalServerConfig.fromMap(environmentSettings);
     }
 

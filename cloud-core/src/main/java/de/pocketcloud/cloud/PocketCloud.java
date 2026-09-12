@@ -90,8 +90,8 @@ public final class PocketCloud implements CloudAPI {
         CloudAPIHolder.setInstance(this);
 
         int version = Runtime.version().feature();
-        if (version < 22) {
-            System.err.println("You need Java 22 or higher to be able to use PocketCloud.");
+        if (version < 25) {
+            System.err.println("You need Java 25 or higher to be able to use PocketCloud.");
             System.err.println("You currently use Java " + version + ".");
             System.err.println("Update your Java version.");
             System.exit(0);

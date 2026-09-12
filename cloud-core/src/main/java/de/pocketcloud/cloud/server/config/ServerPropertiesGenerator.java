@@ -3,7 +3,6 @@ package de.pocketcloud.cloud.server.config;
 import de.pocketcloud.api.component.software.IServerSoftware;
 import de.pocketcloud.api.template.TemplateType;
 import de.pocketcloud.cloud.console.log.CloudLogger;
-import de.pocketcloud.cloud.server.config.impl.PowerNukkitXCloudConfig;
 import de.pocketcloud.cloud.server.config.impl.PowerNukkitXConfig;
 import de.pocketcloud.cloud.server.config.impl.WaterdogConfig;
 import de.pocketcloud.cloud.template.util.TemplateTypeHelper;
@@ -27,7 +26,6 @@ public final class ServerPropertiesGenerator implements Loadable {
     @Override
     public void load() {
         register(new PowerNukkitXConfig());
-        register(new PowerNukkitXCloudConfig());
         register(new WaterdogConfig());
     }
 
@@ -37,8 +35,7 @@ public final class ServerPropertiesGenerator implements Loadable {
     }
 
     public void register(IServerProperties properties) {
-        defaultConfigFiles
-                .computeIfAbsent(properties.getServerSoftware().name(), k -> new ArrayList<>())
+        defaultConfigFiles.computeIfAbsent(properties.getServerSoftware().name(), k -> new ArrayList<>())
                 .add(properties);
 
         for (TemplateType type : TemplateType.values()) {

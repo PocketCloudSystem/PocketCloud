@@ -8,15 +8,21 @@ import java.util.Set;
 public final class TemplateHelper {
 
     public static final List<String> KEYS = List.of(
-            "name", "lobby", "maintenance", "staticServers", "alwaysCopyToStaticServers", "saveOnShutdown",
-            "maxPlayerCount", "minServerCount", "maxServerCount", "startNewPercentage",
-            "autoStart", "templateType", "serverSoftware", "maxMemory"
+            "name", "lobby", "maintenance", "staticServers", "alwaysCopyToStaticServers", "saveOnShutdown", "deleteOnStop",
+            "stopOnEmpty", "autoStart",
+            "maxMemory",
+            "startupTimeout", "shutdownTimeout", "emptyServerGracePeriod",
+            "startNewServerThreshold", "maxPlayerCount", "minServerCount", "maxServerCount",
+            "priority", "jvmFlags"
     );
 
     public static final List<String> EDITABLE_KEYS = List.of(
-            "lobby", "maintenance", "staticServers", "alwaysCopyToStaticServers", "saveOnShutdown",
-            "maxPlayerCount", "minServerCount", "maxServerCount",
-            "startNewPercentage", "autoStart", "maxMemory"
+            "lobby", "maintenance", "staticServers", "alwaysCopyToStaticServers", "saveOnShutdown", "deleteOnStop",
+            "stopOnEmpty", "autoStart",
+            "maxMemory",
+            "startupTimeout", "shutdownTimeout", "emptyServerGracePeriod",
+            "startNewServerThreshold", "maxPlayerCount", "minServerCount", "maxServerCount",
+            "priority"
     );
 
     public static final Map<String, Class<?>> KEY_TYPES = new HashMap<>();
@@ -27,7 +33,7 @@ public final class TemplateHelper {
             "maxplayercount", "maxPlayerCount",
             "minservercount", "minServerCount",
             "maxservercount", "maxServerCount",
-            "startnewpercentage", "startNewPercentage",
+            "startNewServerThreshold", "startNewServerThreshold",
             "autostart", "autoStart",
             "templatetype", "templateType",
             "serversoftware", "serverSoftware"
@@ -39,14 +45,24 @@ public final class TemplateHelper {
         KEY_TYPES.put("staticServers", Boolean.class);
         KEY_TYPES.put("alwaysCopyToStaticServers", Boolean.class);
         KEY_TYPES.put("saveOnShutdown", Boolean.class);
+        KEY_TYPES.put("deleteOnStop", Boolean.class);
+        KEY_TYPES.put("stopOnEmpty", Boolean.class);
+        KEY_TYPES.put("autoStart", Boolean.class);
+
+        KEY_TYPES.put("startNewServerThreshold", Double.class);
         KEY_TYPES.put("maxPlayerCount", Integer.class);
         KEY_TYPES.put("minServerCount", Integer.class);
         KEY_TYPES.put("maxServerCount", Integer.class);
-        KEY_TYPES.put("startNewPercentage", Double.class);
-        KEY_TYPES.put("autoStart", Boolean.class);
-        KEY_TYPES.put("templateType", String.class);
-        KEY_TYPES.put("serverSoftware", String.class);
+
         KEY_TYPES.put("maxMemory", Integer.class);
+
+        KEY_TYPES.put("startupTimeout", Integer.class);
+        KEY_TYPES.put("shutdownTimeout", Integer.class);
+        KEY_TYPES.put("emptyServerGracePeriod", Integer.class);
+
+        KEY_TYPES.put("priority", Integer.class);
+
+        KEY_TYPES.put("jvmFlags", List.class);
     }
 
     private static final Set<String> EDITABLE_KEYS_SET = Set.copyOf(EDITABLE_KEYS);

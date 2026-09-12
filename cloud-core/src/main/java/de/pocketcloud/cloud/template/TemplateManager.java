@@ -48,6 +48,11 @@ public final class TemplateManager implements Tickable, Loadable, IWriteTemplate
                 .thenSuccess(_ -> PocketCloud.instance().serverGroups().load())
                 .thenSuccess(_ -> {
                     for (Template template : templates.values()) {
+                        if (template.settings().usingDefaults()) {
+                            PocketCloud.instance().appendStartNotification("Template §b{} §rhas been refreshed.", CloudLogLevel.DEBUG, template.name());
+                            CloudProvider.current().editTemplate(template, template.write());
+                        }
+
                         if (template.settings().maxMemory() <= 0 && template.serverSoftware().download().realStartCommand().contains("{MAX_MEMORY}")) {
                             PocketCloud.instance().appendStartNotification("The setting §bmaxMemory §ccannot §rbe equal to §b0 §rfor template §b{}§r.", CloudLogLevel.WARN, template.name());
                             PocketCloud.instance().appendStartNotification("Setting it to §b1024M §rinstead...", CloudLogLevel.WARN, template.name());
@@ -191,7 +196,7 @@ public final class TemplateManager implements Tickable, Loadable, IWriteTemplate
 
             ICloudServer latest = PocketCloud.instance().servers().getLatest(template).orElse(null);
             if (latest != null) {
-                double requiredPercentage = template.settings().startNewPercentage();
+                double requiredPercentage = template.settings().startNewServerThreshold();
                 if (requiredPercentage <= 0) continue;
                 int players = latest.playerCount();
                 double percentage = (double) players / latest.data().maxPlayers();

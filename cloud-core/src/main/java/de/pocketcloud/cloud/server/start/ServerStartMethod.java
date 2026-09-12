@@ -22,7 +22,8 @@ public interface ServerStartMethod {
         return software.download().realStartCommand()
                 .replace("{BINARY_PATH}", quote(PocketCloud.instance().software().binaryDirectoryPath(software).toAbsolutePath() + File.separator))
                 .replace("{SOFTWARE_PATH}", quote(PocketCloud.instance().software().directoryPath(software).toAbsolutePath() + File.separator))
-                .replace("{MAX_MEMORY}", String.valueOf(server.template().settings().maxMemory()));
+                .replace("{MAX_MEMORY}", String.valueOf(server.template().settings().maxMemory()))
+                .replace("{JVM_FLAGS}", String.join(" ", server.template().settings().jvmFlags()));
     }
 
     private static String quote(String value) {

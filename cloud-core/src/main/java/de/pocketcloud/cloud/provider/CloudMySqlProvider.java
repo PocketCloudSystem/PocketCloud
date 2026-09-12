@@ -1,5 +1,6 @@
 package de.pocketcloud.cloud.provider;
 
+import com.google.gson.reflect.TypeToken;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import de.pocketcloud.api.component.group.IServerGroup;
@@ -15,6 +16,7 @@ import de.pocketcloud.cloud.template.group.ServerGroup;
 import de.pocketcloud.common.cache.LocalCache;
 import de.pocketcloud.common.concurrent.Promise;
 import de.pocketcloud.common.util.FileUtils;
+import oshi.util.FileUtil;
 
 import javax.sql.DataSource;
 import java.sql.*;
@@ -51,6 +53,7 @@ public final class CloudMySqlProvider extends CloudProvider {
 
     @Override
     public Promise<Void> editTemplate(ITemplate template, Map<String, Object> newData) {
+        if (newData.get("settings") instanceof Map<?, ?>) newData.put("settings", FileUtils.encodeJson(newData.get("settings")));
         Object[] params = buildUpdateParams(newData, template.name());
         return executeAsync(DatabaseQueries.editTemplate(newData), params);
     }
@@ -65,7 +68,9 @@ public final class CloudMySqlProvider extends CloudProvider {
             }
 
             try {
-                promise.resolve(Optional.of(Template.read(rows.getFirst())));
+                Map<String, Object> data = rows.getFirst();
+                if (data.containsKey("settings")) data.put("settings", FileUtils.decodeJson(data.get("settings").toString(), new TypeToken<Map<String, Object>>() {}.getType()));
+                promise.resolve(Optional.of(Template.read(data)));
             } catch (Exception e) {
                 promise.reject(e);
             }
@@ -91,6 +96,7 @@ public final class CloudMySqlProvider extends CloudProvider {
             Map<String, Template> templates = new HashMap<>();
             rows.forEach(row -> {
                 try {
+                    if (row.containsKey("settings")) row.put("settings", FileUtils.decodeJson(row.get("settings").toString(), new TypeToken<Map<String, Object>>() {}.getType()));
                     Template t = Template.read(row);
                     templates.put(t.name(), t);
                 } catch (Exception _) {}
@@ -116,8 +122,7 @@ public final class CloudMySqlProvider extends CloudProvider {
 
     @Override
     public Promise<Void> editServerGroup(IServerGroup serverGroup, Map<String, Object> newData) {
-        if (newData.get("templates") instanceof List)
-            newData.put("templates", FileUtils.encodeJson(newData.get("templates")));
+        if (newData.get("templates") instanceof List) newData.put("templates", FileUtils.encodeJson(newData.get("templates")));
         Object[] params = buildUpdateParams(newData, serverGroup.name());
         return executeAsync(DatabaseQueries.editServerGroup(newData), params);
     }
@@ -242,7 +247,7 @@ public final class CloudMySqlProvider extends CloudProvider {
                 bindParams(ps, params);
                 ps.executeUpdate();
             } catch (SQLException e) {
-                CloudLogger.get().exception("MySQL execute rejecteded: {}", e, sql);
+                CloudLogger.get().exception("MySQL execute rejected: {}", e, sql);
                 throw new RuntimeException(e);
             }
         });
@@ -266,7 +271,7 @@ public final class CloudMySqlProvider extends CloudProvider {
                     }
                 }
             } catch (SQLException e) {
-                CloudLogger.get().exception("MySQL query rejecteded: {}", e, sql);
+                CloudLogger.get().exception("MySQL query rejected: {}", e, sql);
                 throw new RuntimeException(e);
             }
             return rows;

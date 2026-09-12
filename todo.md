@@ -1,5 +1,4 @@
-- ingame commands
 - test the cloud
 - http api docs
 - better way to create default configs for the sub servers (e.g. having some kind of server-configs repo & adding .%config%.version file)
-- remove environment settings from server configs -> cloud.env
+  - when replacing old configs with new ones, get the old values and set them inside the new config

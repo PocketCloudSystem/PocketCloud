@@ -85,7 +85,7 @@ public final class TemplateEditSetup extends Setup {
                         .canSkipped(true)
                         .build(),
 
-                QuestionBuilder.builder("startNewPercentage", "How many players are required to start a new server? (in %, 0-100, 0 = none)")
+                QuestionBuilder.builder("startNewServerThreshold", "How many players are required to start a new server? (in %, 0-100, 0 = none)")
                         .parser((input, _) -> {
                             if (!input.matches("\\d+(\\.\\d+)?")) return null;
                             double value = Double.parseDouble(input);
@@ -93,7 +93,7 @@ public final class TemplateEditSetup extends Setup {
                         })
                         .canSkipped(true)
                         .recommendation("75%")
-                        .defaultValue((template.settings().startNewPercentage() * 100) + "%", template.settings().startNewPercentage() * 100)
+                        .defaultValue((template.settings().startNewServerThreshold() * 100) + "%", template.settings().startNewServerThreshold() * 100)
                         .build(),
 
                 QuestionBuilder.builder("autoStart", "Should your template start servers automatically?")
@@ -128,7 +128,7 @@ public final class TemplateEditSetup extends Setup {
                 .maxPlayerCount((Integer) results.get("maxPlayerCount"))
                 .minServerCount((Integer) results.get("minServerCount"))
                 .maxServerCount((Integer) results.get("maxServerCount"))
-                .startNewPercentage((Double) results.get("startNewPercentage"))
+                .startNewServerThreshold((Double) results.get("startNewServerThreshold"))
                 .autoStart((Boolean) results.get("autoStart"))
                 .maxMemory((Integer) results.get("maxMemory"))
         );

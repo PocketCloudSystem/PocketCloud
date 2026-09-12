@@ -4,11 +4,7 @@ import de.pocketcloud.api.component.software.IServerSoftware;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.server.CloudServer;
 import de.pocketcloud.cloud.server.config.ServerProperties;
-import de.pocketcloud.cloud.template.util.TemplateTypeHelper;
-import de.pocketcloud.common.util.ArrayUtils;
 
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 public final class WaterdogConfig extends ServerProperties {
@@ -30,91 +26,11 @@ public final class WaterdogConfig extends ServerProperties {
 
     @Override
     public Map<String, Object> replacePlaceholders(CloudServer server) {
-        return new LinkedHashMap<>(Map.ofEntries(
-                Map.entry("%uuid%", server.uuid().toString()),
+        return Map.ofEntries(
                 Map.entry("%name%", server.name()),
                 Map.entry("%server_ip%", server.data().address()),
                 Map.entry("%server_port%", server.data().port()),
-                Map.entry("%max_players%", server.template().settings().maxPlayerCount()),
-                Map.entry("%template%", server.templateName()),
-                Map.entry("%address%", PocketCloud.instance().config().network().address()),
-                Map.entry("%port%", PocketCloud.instance().config().network().port()),
-                Map.entry("%encryption%", PocketCloud.instance().config().network().encryption()),
-                Map.entry("%language%", PocketCloud.instance().config().language()),
-                Map.entry("%cloud_path%", System.getProperty("user.dir")),
-                Map.entry("%timeout%", TemplateTypeHelper.timeout(server.template().templateType())),
-                Map.entry("%auth_key%", PocketCloud.instance().network().authToken()),
-                Map.entry("%packet_size_limit%", PocketCloud.instance().config().network().packetSizeLimit())
-        ));
-    }
-
-    @Override
-    public Map<String, Object> getDefaultContent() {
-        return ArrayUtils.orderedMap(
-                "listener", ArrayUtils.orderedMap(
-                        "motd", "%name%",
-                        "sub_motd", "WaterdogPE Proxy",
-                        "name", "§bWaterdog§3PE",
-                        "priorities", List.of(),
-                        "host", "%server_ip%:%server_port%",
-                        "max_players", "%max_players%",
-                        "forced_hosts", new LinkedHashMap<>(),
-                        "additional_ports", List.of(),
-                        "join_handler", "DefaultJoinHandler",
-                        "reconnect_handler", "DefaultReconnectHandler"
-                ),
-                "servers", new LinkedHashMap<>(),
-                "network_settings", ArrayUtils.orderedMap(
-                        "connection_throttle", 5,
-                        "connection_throttle_time", 1000,
-                        "enable_ipv6", false,
-                        "max_user_mtu", 1400,
-                        "enable_cookies", true,
-                        "login_throttle", 2,
-                        "enable_proxy_protocol", false,
-                        "max_downstream_mtu", 1400,
-                        "login_timeout", 10,
-                        "connection_timeout", 15,
-                        "error_timeout", 15,
-                        "random_downstream_loopback_address", false
-                ),
-                "permissions", new LinkedHashMap<>(),
-                "permissions_default", List.of(),
-                "enable_debug", false,
-                "upstream_encryption", true,
-                "online_mode", true,
-                "use_login_extras", false,
-                "replace_username_spaces", false,
-                "enable_query", true,
-                "prefer_fast_transfer", true,
-                "inject_proxy_commands", true,
-                "compression", "zlib",
-                "upstream_compression_level", 6,
-                "downstream_compression_level", 2,
-                "enable_edu_features", true,
-                "enable_packs", true,
-                "overwrite_client_packs", false,
-                "force_server_packs", false,
-                "pack_cache_size", 16,
-                "pack_cdn_urls", List.of(),
-                "disable_cdn_for", List.of(),
-                "force_disable_vibrant_visuals", false,
-                "default_idle_threads", -1,
-                "enable_statistics", true,
-                "enable_error_reporting", true,
-                "environment-settings", ArrayUtils.orderedMap(
-                        "server-name", "%name%",
-                        "template-name", "%template%",
-                        "server-uuid", "%uuid%",
-                        "cloud-language", "%language%",
-                        "server-timeout", "%timeout%",
-                        "cloud-path", "%cloud_path%",
-                        "network-address", "%address%",
-                        "network-port", "%port%",
-                        "network-auth-key", "%auth_key%",
-                        "network-encryption", "%encryption%",
-                        "network-packet-size-limit", "%packet_size_limit%"
-                )
+                Map.entry("%max_players%", server.template().settings().maxPlayerCount())
         );
     }
 

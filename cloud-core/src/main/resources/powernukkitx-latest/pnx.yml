@@ -1,0 +1,326 @@
+# Basic settings for your PowerNukkitX server
+settings:
+  # Server's IP address
+  ip: '%server_ip%'
+  # Server's port
+  port: ''%server_port%'
+  # Maximum number of players
+  maxPlayers: '%max_players%'
+  # Default world name
+  defaultLevelName: world
+  # Whether to enable the allowlist
+  allowList: false
+  # The allowlist kick message, applies if the allowlist is enabled
+  allowListMessage: Server is white-listed
+  # Server's MOTD
+  motd: '%name%'
+  # Server's sub-MOTD
+  sub-motd: powernukkitx.org
+  # Server's language settings
+  language: eng
+  # Whether the server translates the text when sending or the client translates
+  forceServerTranslate: false
+  # Whether to enable safe spawn
+  safeSpawn: true
+  # Tick cycle for server auto-save
+  autoSave: '%auto_save%'
+  autosaveDelay: 6000
+  # Whether to save unknown blocks, such as custom blocks that are not registered
+  saveUnknownBlock: true
+  # Whether to enable Xbox authentication
+  xboxAuth: true
+# Player specific configuration
+player-settings:
+  # Whether to save player data
+  savePlayerData: true
+  # Cooldown time for players changing skins
+  skinChangeCooldown: 30
+  # Whether to force trust player skins, allowing players to use third-party skins
+  # freely
+  forceSkinTrusted: false
+  # Whether to check player movement
+  checkMovement: true
+  # Rotation update threshold
+  rotationUpdateThreshold: 1.0
+  # Movement distance threshold
+  movementDistanceThreshold: 0.1
+  # Spawn radius
+  spawnRadius: 16
+# Settings affecting the gameplay on your server
+gameplay-settings:
+  # Whether to allow players to use command blocks
+  enableCommandBlocks: true
+  # Whether to allow beta clients to join
+  allowBeta: false
+  # Whether to enable Redstone functionality
+  enableRedstone: true
+  # Whether to tick Redstone
+  tickRedstone: true
+  # View distance
+  viewDistance: 8
+  # Whether to enable achievements
+  achievements: true
+  # Whether to announce achievements
+  announceAchievements: true
+  # Spawn protection radius
+  spawnProtection: 16
+  # Default game mode
+  gamemode: 0
+  # Whether to force the default game mode
+  forceGamemode: false
+  # Whether to enable hardcore mode
+  hardcore: false
+  # Whether to enable PVP
+  pvp: true
+  # Game difficulty
+  difficulty: 1
+  # Whether to force resources
+  forceResources: false
+  # Whether to allow client packs
+  allowClientPacks: true
+  # Resource packs hosted on an external server, the client downloads them from the
+  # given url instead of receiving them through the game connection
+  cdnPacks: []
+  # Whether to allow vibrant visuals
+  allowVibrantVisuals: true
+  # Experiments to be enabled
+  experiments:
+    - data_driven_vanilla_blocks_and_items
+  # Whether to cache structures
+  cacheStructures: false
+  # Whether to enable education features
+  enableEducation: false
+  # Whether to mute emote announcements
+  muteEmoteAnnouncements: false
+  # Whether to enable intelligent mobs
+  enableMobAi: true
+  # Whether to load the recipe registry. Disabling skips recipe loading at boot
+  # (faster startup, less RAM) and sends clients an empty recipe book; all craft
+  # requests are rejected. Restart required
+  enableRecipes: true
+  # Whether to load the creative inventory registry. Disabling sends clients an
+  # empty creative inventory and also force-disables recipes (hard dependency).
+  # Restart required
+  enableCreativeInventory: true
+  # Whether world time advances at all. Disabling freezes time server-side every
+  # tick (stronger than the dodaylightcycle gamerule, which is ignored). Important
+  # for high tick rates where time would otherwise race
+  enableDaylightCycle: true
+  # Whether to run the weather cycle at all. Disabling skips all weather processing
+  # every tick and forces clear weather (stronger than the doweathercycle gamerule,
+  # which is ignored)
+  enableWeather: true
+  # Whether to run natural entity spawning. Disabling skips all spawn rule
+  # processing every tick (stronger than the domobspawning gamerule, which is
+  # ignored). Spawn eggs and plugins can still spawn entities
+  enableEntitySpawning: true
+  # Whether to run random block ticks. Disabling stops crop growth, fire spread,
+  # leaf decay, ice melting etc. and skips the random tick chunk scan every tick
+  # (stronger than randomtickspeed 0). Scheduled updates (redstone, pistons,
+  # liquids) keep working
+  enableBlockRandomTicking: true
+  # Whether liquids flow. Disabling makes water and lava static (placed liquid stays
+  # a source block and never spreads)
+  enableLiquidFlow: true
+  # Whether breaking blocks and killing entities drop items. Disabling prevents all
+  # item entity drops from block breaks and deaths (item entities cost tick time)
+  enableItemDrops: true
+  # Whether XP orbs spawn. Disabling prevents all experience orb entities (mob
+  # kills, mining, furnaces give no XP)
+  enableXpOrbs: true
+  # Whether explosions destroy blocks. Disabling keeps explosion knockback and
+  # entity damage but never breaks blocks (stronger than the mobgriefing gamerule;
+  # also affects TNT)
+  enableExplosionBlockDamage: true
+  # Whether gravity-affected blocks (sand, gravel, concrete powder etc.) fall.
+  # Disabling keeps them floating in place
+  enableBlockGravity: true
+  # Whether player hunger depletes. Disabling freezes the food level (no starvation,
+  # no sprint-jump drain)
+  enableHunger: true
+# Misc settings for your server like add-ons
+misc-settings:
+  # Message sent when the server shuts down
+  shutdownMessage: Server closed
+  # Whether to install the Spark plugin on the server as profiler
+  installSpark: false
+  # Ignore plugin API check
+  bypassAPICheck: false
+  # pnx.settings.misc.overrideserverauthblockbreaking
+  overrideServerAuthBlockBreaking: false
+  # Enables anonymous usage statistics collection via bStats. When enabled,
+  # PowerNukkitX sends anonymous data (server version, player count, OS, Java
+  # version, etc.) to help the developers understand usage and improve the software.
+  # Metrics do not affect performance.
+  enableMetrics: true
+# Settings affecting how levels are handled by PowerNukkitX
+level-settings:
+  # Whether to enable level thread (Every level has its own thread)
+  levelThread: false
+  # Whether the server dynamically adjusts the tick rate
+  autoTickRate: true
+  # Maximum adjustable tick count
+  autoTickRateLimit: 20
+  # Base tick rate
+  baseTickRate: 1
+  # pnx.settings.level.alwaystickplayers
+  alwaysTickPlayers: false
+  # Whether to load all levels
+  loadAllLevels: true
+  # Chunk unload tick cycle
+  chunkUnloadDelay: 15000
+  # Limits how many entites can spawn in a world
+  entitySpawnCap: 512
+  # Defines the FOV used by the server to prioritize chunk generation
+  fieldOfView: 100
+  # Defines the level worker threads. -1 to use all available processors
+  levelWorkerThreads: -1
+# Settings affecting how chunks are handled by PowerNukkitX
+chunk-settings:
+  # Limits how many entities can spawn naturally in a chunk.
+  spawnLimit: 3
+  # Maximum number of chunks sent to players per tick
+  perTickSend: 32
+  # Number of chunks a player needs to receive upon first spawn
+  spawnThreshold: 56
+  # Tick cycle of chunks
+  chunksPerTicks: -1
+  # Tick radius of chunks
+  tickRadius: 4
+  # Whether chunks perform light updates
+  lightUpdates: true
+  # Whether to clear the tick list at the end of each tick
+  clearTickList: true
+  # Maximum number of terrain generation tasks executed simultaneously
+  generationQueueSize: 8
+  # If enabled, every new generated chunk will be saved. Improves performance but
+  # world sizes will grow faster.
+  saveGenerated: true
+  # Enable this if your BDS imported map have invisble chests, signs, beds, etc.
+  convertBDSChunks: false
+  # List for ticking disabled blocks. Example: minecraft:lava
+  disableBlockTicking: []
+# Network settings for PowerNukkitX
+network-settings:
+  # Whether the query protocol displays plugin information
+  queryPlugins: true
+  # Compression level of the compression algorithm used by the server
+  compressionLevel: 4
+  # Zlib compression algorithm provider used by the server. 0 for Java's original
+  # algorithm
+  # 1 for single-threaded low memory usage algorithm
+  # 2 for multi-threaded caching algorithm
+  # 3 for hardware-accelerated algorithm
+  zlibProvider: 3
+  # Whether the server uses Snappy compression (not recommended)
+  snappy: false
+  # Buffer for server decompression
+  compressionBufferSize: 1048576
+  # Maximum number of bytes the server can decompress
+  maxDecompressSize: 268435456
+  # Maximun number of packet per seconds
+  packetLimit: 8000
+  # Whether to enable query
+  enableQuery: true
+  # Whether to enable encryption
+  networkEncryption: true
+  # Login time
+  checkLoginTime: false
+  # Whether RakNet automatically flushes each connection's outgoing packet queue on
+  # a timer. Disabling stops packets from being sent until something flushes
+  # manually, so leave this on unless you flush yourself
+  autoFlush: true
+  # Time in milliseconds between automatic RakNet flushes when auto-flush is on.
+  # Lower values cut latency but send more, smaller datagrams; higher values batch
+  # more per packet
+  flushInterval: 10
+  # Maximum unsent bytes RakNet will buffer for a single connection before it stops
+  # queueing more (backpressure). Guards server memory against slow or stalled
+  # clients
+  maxQueuedBytes: 67108864
+  # RakNet connection-cookie handling, which mitigates IP-spoofed connection floods.
+  # ACTIVE: validate cookies in-process; OFFLOADED / OFFLOADED_PSK: cookies are
+  # validated by an upstream proxy/DDoS layer; OFF: disable cookies
+  cookieMode: ACTIVE
+  # Settings related to inbound packet rate limiting
+  rate-limit:
+    # Whether to enable per-session and per-player inbound packet rate limiting
+    rateLimitEnabled: true
+    # Maximum inbound packets per second per session before the player is kicked for
+    # flooding
+    maxInboundPacketsPerSecond: 1500
+    # Maximum inbound packets processed per server tick per session (hard cap, excess
+    # is dropped)
+    maxPacketsPerTick: 500
+    # Maximum command packets per second per player
+    maxCommandsPerSecondPerPlayer: 10
+    # Maximum chat packets per second per player
+    maxChatPerSecondPerPlayer: 2
+    # Maximum form response packets per second per player
+    maxFormResponsesPerSecondPerPlayer: 20
+    # Maximum movement packets per second per player
+    # Players can only send one per tick (20/s), but high ping may lead to false
+    # rate-limiting.
+    maxMovementPacketsPerSecondPerPlayer: 40
+  # Settings related to inbound packet rate limiting
+  botnet:
+    # Whether to enable botnet / distributed flood detection
+    detectionEnabled: false
+    # Packets per second a single session must exceed to be considered suspicious
+    suspiciousThreshold: 300
+    # Minimum number of simultaneously suspicious sessions required to evaluate botnet
+    # signals
+    minSuspiciousIps: 3
+    # Whether to automatically block all suspicious IPs when a botnet attack is
+    # detected
+    autoBlock: true
+    # Duration (seconds) to block suspicious IPs when auto-block is enabled
+    autoBlockDurationSeconds: 60
+    # Minimum corroborating signal score (1-5) required to fire a botnet alert. Score
+    # 1 = volume only, higher scores require additional signals (timing, packet type,
+    # subnet, session age)
+    minScore: 2
+# Debug configuration for PowerNukkitX
+debug-settings:
+  # Whether to prompt for deprecated events for plugin
+  deprecatedVerbose: true
+  # Server's debug level [INFO, DEBUG, TRACE, ALL]
+  level: INFO
+  # Whether to enable debug commands
+  command: false
+  # Packet log mode (false = list contains ignored packets, true = list contains
+  # logged packets)
+  mode: false
+  # pnx.settings.debug.packetList
+  packetList: []
+  # pnx.settings.debug.disableencodinglimits
+  disableEncodingLimits: false
+# Performance settings for PowerNukkitX
+performance-settings:
+  # Number of threads used by the server scheduler, 'auto' means automatic
+  # allocation
+  asyncWorkers: auto
+  # How many ticks per second should be targeted (1-100000). Above ~500 TPS the tick
+  # thread busy-waits for sub-millisecond precision and will fully use one CPU core
+  # per tick loop
+  baseTps: 20
+  # Whether to enable the registry cache. Recommended for larger networks that often
+  # boot subservers.
+  registryCacheEnabled: false
+  # Path to the registry cache file
+  registryCachePath: path/to/your/registry_cache.bin
+  # When should the level GC force all chunks to be checked.
+  forceGCpercentage: 1.0
+  # Whether to enable the freeze array
+  enable: true
+  slots: 32
+  defaultTemperature: 32
+  freezingPoint: 0
+  boilingPoint: 1024
+  absoluteZero: -256
+  melting: 16
+  singleOperation: 1
+  batchOperation: 32
+# Version of your pnx.yml. DO NOT MODIFY!
+config:
+  version: 3.0.0

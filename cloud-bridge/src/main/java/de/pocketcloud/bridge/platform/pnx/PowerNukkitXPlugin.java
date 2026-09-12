@@ -12,11 +12,15 @@ import de.pocketcloud.bridge.platform.pnx.command.CloudNotifyCommand;
 import de.pocketcloud.bridge.platform.pnx.command.TransferCommand;
 import de.pocketcloud.bridge.platform.pnx.handler.ServerPacketHandler;
 import de.pocketcloud.bridge.platform.pnx.listener.PlayerListener;
+import de.pocketcloud.common.config.Config;
+import de.pocketcloud.common.config.exception.UnsupportedFileExtensionException;
+import de.pocketcloud.common.config.type.EnvironmentConfigType;
 import org.powernukkitx.Player;
 import org.powernukkitx.Server;
 import org.powernukkitx.plugin.PluginBase;
-import org.powernukkitx.utils.Config;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
@@ -24,7 +28,13 @@ public final class PowerNukkitXPlugin extends PluginBase implements IPlatformPlu
 
     @Override
     public void onLoad() {
-        CloudAPIHolder.setInstance(new CloudBridge(this, craftPlatformLogger(), fetchEnvironmentConfig(), buildNativePlayerAdapter()));
+        try {
+            CloudAPIHolder.setInstance(new CloudBridge(this, craftPlatformLogger(), fetchEnvironmentConfig(), buildNativePlayerAdapter()));
+        } catch (UnsupportedFileExtensionException | IOException e) {
+            getLogger().error("Failed to load environment settings, shuttdown down...", e);
+            getServer().shutdown();
+        }
+
         CloudBridge.instance().packets().registerPacketListener(new ServerPacketHandler());
     }
 
@@ -59,8 +69,8 @@ public final class PowerNukkitXPlugin extends PluginBase implements IPlatformPlu
     }
 
     @Override
-    public LocalServerConfig fetchEnvironmentConfig() {
-        Map<String, Object> environmentSettings = new Config(Server.getInstance().getDataPath() + "/pnx_cloud.yml").getAll();
+    public LocalServerConfig fetchEnvironmentConfig() throws UnsupportedFileExtensionException, IOException {
+        Map<String, Object> environmentSettings = new Config(Path.of(Server.getInstance().getDataPath()).resolve(".env"), new EnvironmentConfigType()).getAll();
         return LocalServerConfig.fromMap(environmentSettings);
     }
 

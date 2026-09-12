@@ -57,6 +57,7 @@ public final class ServerSoftwareManager implements IWriteSoftwareProvider, Load
                             "--add-opens", "java.base/java.lang=ALL-UNNAMED",
                             "--add-opens", "java.base/java.io=ALL-UNNAMED",
                             "--add-opens", "java.base/java.net=ALL-UNNAMED",
+                            "{JVM_FLAGS}",
                             "-jar",
                             "{SOFTWARE_PATH}powernukkitx.jar"
                     },
@@ -87,6 +88,7 @@ public final class ServerSoftwareManager implements IWriteSoftwareProvider, Load
                             "-XX:CICompilerCount=2",
                             "-XX:ParallelGCThreads=2",
                             "-XX:ConcGCThreads=1",
+                            "{JVM_FLAGS}",
                             "-jar",
                             "{SOFTWARE_PATH}waterdog.jar"
                     },

@@ -922,7 +922,7 @@ Content-Type: application/json
   "maxPlayerCount": 20,
   "minServerCount": 1,
   "maxServerCount": 2,
-  "startNewPercentage": 30.0,
+  "startNewServerThreshold": 30.0,
   "autoStart": true,
   "templateType": "SERVER"
 }
@@ -940,7 +940,7 @@ Content-Type: application/json
 | `maxPlayerCount`            | `int`            | Yes      | Maximum number of players per server                           |
 | `minServerCount`            | `int`            | Yes      | Minimum number of servers to keep running                      |
 | `maxServerCount`            | `int`            | Yes      | Maximum number of servers allowed to run simultaneously        |
-| `startNewPercentage`        | `float` \| `int` | Yes      | Percentage fill at which a new server is automatically started |
+| `startNewServerThreshold`        | `float` \| `int` | Yes      | Percentage fill at which a new server is automatically started |
 | `autoStart`                 | `bool`           | Yes      | Whether servers auto-start to maintain `minServerCount`        |
 | `templateType`              | `string`         | Yes      | Template type — `SERVER` or `PROXY`                            |
 
@@ -997,7 +997,7 @@ All fields are optional. Any combination of the following editable keys may be s
 | `maxPlayerCount`            | `int`            | Maximum players per server     |
 | `minServerCount`            | `int`            | Minimum running servers        |
 | `maxServerCount`            | `int`            | Maximum running servers        |
-| `startNewPercentage`        | `float` \| `int` | Start-new threshold percentage |
+| `startNewServerThreshold`        | `float` \| `int` | Start-new threshold percentage |
 | `autoStart`                 | `bool`           | Auto-start flag                |
 
 **Response — `200 OK`**

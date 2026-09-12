@@ -31,10 +31,12 @@ import de.pocketcloud.common.cache.LocalCache;
 import de.pocketcloud.common.concurrent.Promise;
 import de.pocketcloud.common.config.Config;
 import de.pocketcloud.common.config.exception.UnsupportedFileExtensionException;
+import de.pocketcloud.common.config.type.EnvironmentConfigType;
 import de.pocketcloud.common.lifecycle.Tickable;
 import de.pocketcloud.common.serialization.MapperUtils;
 import de.pocketcloud.common.serialization.annotation.MapCreator;
 import de.pocketcloud.common.serialization.annotation.MapKey;
+import de.pocketcloud.common.util.ArrayUtils;
 import de.pocketcloud.common.util.FileUtils;
 import de.pocketcloud.common.util.ProcessUtils;
 import de.pocketcloud.common.util.StringUtils;
@@ -103,6 +105,9 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
     private transient Instant stopTime = null;
     private transient Config mainProperties = null;
 
+    @Setter
+    private transient long queuedAt = 0;
+
     @MapCreator
     public CloudServer(
             @MapKey(name = "id") int id,
@@ -136,14 +141,14 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
                 lastPidLookupCounter++;
                 ServerStartMethods.current().lookupPid(this).thenSuccess(pid -> {
                     if (pid.isPresent()) {
-                        logger.debug("pid-Lookup succeeded after {} tries, set pid to {}", lastPidLookupCounter - 1, pid.get());
+                        logger.debug("pid-Lookup succeeded after {} tries, set pid to {}", lastPidLookupCounter, pid.get());
                         pidLookupDone = true;
                         data.processId(pid.get());
                     }
                 });
             }
 
-            if ((startTime.toEpochMilli() + (TemplateTypeHelper.timeout(template().templateType()) * 1000L)) < System.currentTimeMillis()) {
+            if ((startTime.toEpochMilli() + (template().settings().startupTimeout() * 1000L)) < System.currentTimeMillis()) {
                 CloudServersHandler.handleStartFailure(this, null, false);
             } else if (pidLookupDone && ProcessHandle.of(data.processId()).isEmpty()) {
                 CloudServersHandler.handleStartFailure(this, null, false);
@@ -157,7 +162,7 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
                 }
             }
 
-            int baseTimeout = TemplateTypeHelper.timeout(template().templateType());
+            int baseTimeout = template().settings().startupTimeout();
             double tps = PocketCloud.instance().performanceStats().currentTPS();
             double loadFactor = Math.max(1.0, 20 / Math.max(1.0, tps));
             int effectiveTimeout = (int) (baseTimeout * loadFactor);
@@ -166,7 +171,7 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
                 CloudServersHandler.handleTimeout(this);
             }
         } else if (status.isStopping()) {
-            if ((stopTime.toEpochMilli() + 10_000) <= System.currentTimeMillis()) {
+            if ((stopTime.toEpochMilli() + (template().settings().shutdownTimeout() * 1000L)) <= System.currentTimeMillis()) {
                 CloudServersHandler.handleStopTimeout(this);
             }
         }
@@ -195,7 +200,7 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
                 FileUtils.unlinkFile(logFileLocation);
             }
 
-            if (Files.exists(path()) && !template().settings().staticServers()) {
+            if (Files.exists(path()) && !template().settings().staticServers() && template().settings().deleteOnStop()) {
                 FileUtils.removeDirectory(path());
             }
 
@@ -252,16 +257,46 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
                     content = content.replace(key, value.toString());
                 }
 
-                FileUtils.filePutContents(filePath, content);
+                FileUtils.filePutContents(filePath, unquotePrimitives(content));
             }
 
             FileUtils.unlinkFile(logFileLocation);
         }, IO_EXECUTOR);
     }
 
+    private static String unquotePrimitives(String content) {
+        return content.replaceAll(
+                "(?m)^(\\s*[\\w.\\-]+:\\s*)\"(-?\\d+(?:\\.\\d+)?|true|false)\"(\\s*(?:#.*)?)$",
+                "$1$2$3"
+        );
+    }
+
+    private void createCloudEnvironmentConfig() {
+        try {
+            Config config = new Config(path().resolve(".env"), new EnvironmentConfigType());
+            config.setAll(ArrayUtils.orderedMap(
+                    "server-name", name(),
+                    "template-name", templateName,
+                    "server-uuid", uuid.toString(),
+                    "cloud-language", PocketCloud.instance().config().language(),
+                    "server-timeout", template().settings().startupTimeout(),
+                    "cloud-path", System.getProperty("user.dir"),
+                    "network-address", PocketCloud.instance().config().network().address(),
+                    "network-port", PocketCloud.instance().config().network().port(),
+                    "network-auth-key", PocketCloud.instance().network().authToken(),
+                    "network-encryption", PocketCloud.instance().network().encryption(),
+                    "network-packet-size-limit", PocketCloud.instance().network().packetSizeLimit()
+            ));
+            config.save();
+        } catch (IOException | UnsupportedFileExtensionException e) {
+            CloudServersHandler.handleStartFailure(this, e, false);
+        }
+    }
+
     public CloudServer start() {
         startTime = Instant.now();
         CloudAPI.instance().events().call(new ServerStartingEvent(this));
+        createCloudEnvironmentConfig();
         status(ServerStatus.STARTING);
         CloudLogger.get().info("§aStarting §b{} §8[§ruuid={}, path={}, port={}§8]§r...", name(), uuid.toString(), path().toString(), data.port());
         PocketCloud.instance().notifications().sendNotification(NotificationType.SERVER_STARTING, Map.of("server", name()), Map.of());
@@ -343,7 +378,7 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
 
     public void deleteTmpDir() {
         saveAndDeleteLogFiles();
-        if (!template().settings().staticServers()) {
+        if (!template().settings().staticServers() && template().settings().deleteOnStop()) {
             CloudLogger.get().debug("Removed server directory {}", path().toString());
             FileUtils.removeDirectory(path());
         }

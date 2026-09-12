@@ -24,7 +24,7 @@ public interface ITemplateBuilder extends IComponentBuilder<ITemplate> {
 
     ITemplateBuilder maxServerCount(int maxServerCount);
 
-    ITemplateBuilder startNewPercentage(double startPercentage);
+    ITemplateBuilder startNewServerThreshold(double startPercentage);
 
     ITemplateBuilder autoStart(boolean autoStart);
 
