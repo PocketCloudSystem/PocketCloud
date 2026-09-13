@@ -44,7 +44,7 @@
         <logback.version>1.5.38</logback.version>
 
         <!-- Game-Server-Dependencies -->
-        <powernukkitx.version>nightly-SNAPSHOT</powernukkitx.version>
+        <powernukkitx.version>stable-SNAPSHOT</powernukkitx.version>
         <waterdog.version>2.0.4-SNAPSHOT</waterdog.version>
 
         <!-- Other external Libraries -->

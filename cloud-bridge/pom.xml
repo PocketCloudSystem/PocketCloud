@@ -19,7 +19,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <!-- Intentionally differs from the parent POM (4.2.15.Final) -
+        <!-- Intentionally differs from the parent POM (4.2.15.Final) because
              the Waterdog/Bedrock protocol stack requires an older Netty version -->
         <netty.version>4.1.135.Final</netty.version>
     </properties>
