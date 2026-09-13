@@ -13,8 +13,8 @@
 
     <name>PocketCloud Core</name>
     <artifactId>cloud-core</artifactId>
-    <version>1.0.0</version>
     <packaging>jar</packaging>
+    <version>1.0.0</version>
 
     <repositories>
         <repository>
