@@ -65,6 +65,13 @@
 
     <dependencyManagement>
         <dependencies>
+            <!-- ================= Lombok ================= -->
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>${lombok.version}</version>
+            </dependency>
+
             <!-- ================= Netty ================= -->
             <dependency>
                 <groupId>io.netty</groupId>
