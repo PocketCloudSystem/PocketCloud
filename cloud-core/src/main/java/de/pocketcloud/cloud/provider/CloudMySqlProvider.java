@@ -43,6 +43,7 @@ public final class CloudMySqlProvider extends CloudProvider {
     @Override
     public Promise<Void> addTemplate(ITemplate template) {
         Map<String, Object> data = template.write();
+        if (data.get("settings") instanceof Map<?, ?>) data.put("settings", FileUtils.encodeJson(data.get("settings")));
         return executeAsync(DatabaseQueries.addTemplate(), data.values().toArray());
     }
 
