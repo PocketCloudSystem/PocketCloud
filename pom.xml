@@ -9,166 +9,208 @@
     <version>1.0.0</version>
     <packaging>pom</packaging>
 
-    <modules>
-        <module>cloud-common</module>
-        <module>cloud-network</module>
-        <module>cloud-core</module>
-        <module>cloud-api</module>
-        <module>cloud-bridge</module>
-        <module>cloud-shared</module>
-    </modules>
-
     <name>PocketCloud Parent</name>
     <description>Parent POM for PocketCloud</description>
 
+    <modules>
+        <module>cloud-common</module>
+        <module>cloud-api</module>
+        <module>cloud-shared</module>
+        <module>cloud-network</module>
+        <module>cloud-core</module>
+        <module>cloud-bridge</module>
+    </modules>
+
     <properties>
+        <!-- Build -->
         <maven.compiler.source>25</maven.compiler.source>
         <maven.compiler.target>25</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+        <!-- Plugin versions -->
+        <compiler-plugin.version>3.13.0</compiler-plugin.version>
+        <lombok.version>1.18.46</lombok.version>
+
+        <!-- Netty -->
+        <netty.version>4.2.15.Final</netty.version>
+
+        <!-- Jackson -->
+        <jackson.version>3.2.1</jackson.version>
+        <jackson-annotations.version>2.22</jackson-annotations.version>
+
+        <!-- Logging -->
+        <slf4j.version>2.0.18</slf4j.version>
+        <logback.version>1.5.38</logback.version>
+
+        <!-- Game-Server-Dependencies -->
+        <powernukkitx.version>nightly-SNAPSHOT</powernukkitx.version>
+        <waterdog.version>2.0.4-SNAPSHOT</waterdog.version>
+
+        <!-- Other external Libraries -->
+        <okaeri-configs.version>5.0.13</okaeri-configs.version>
+        <jetbrains-annotations.version>26.1.0</jetbrains-annotations.version>
+        <commons-compress.version>1.28.0</commons-compress.version>
+        <commons-lang3.version>3.20.0</commons-lang3.version>
+        <hikaricp.version>7.0.2</hikaricp.version>
+        <jline.version>3.30.6</jline.version>
+        <discord-webhook.version>1.0.2</discord-webhook.version>
+        <gson.version>2.14.0</gson.version>
+        <oshi.version>7.4.1</oshi.version>
+        <reflections.version>0.10.2</reflections.version>
+
+        <!-- Testing -->
+        <junit.version>6.1.1</junit.version>
     </properties>
 
     <dependencyManagement>
         <dependencies>
+            <!-- ================= Netty ================= -->
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-common</artifactId>
-                <version>4.2.15.Final</version>
+                <version>${netty.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-buffer</artifactId>
-                <version>4.2.15.Final</version>
+                <version>${netty.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-transport</artifactId>
-                <version>4.2.15.Final</version>
+                <version>${netty.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-codec</artifactId>
-                <version>4.2.15.Final</version>
+                <version>${netty.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-handler</artifactId>
-                <version>4.2.15.Final</version>
+                <version>${netty.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-codec-http</artifactId>
-                <version>4.2.15.Final</version>
+                <version>${netty.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-transport-native-epoll</artifactId>
-                <version>4.2.15.Final</version>
+                <version>${netty.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-pkitesting</artifactId>
-                <version>4.2.15.Final</version>
+                <version>${netty.version}</version>
             </dependency>
-            <dependency>
-                <groupId>eu.okaeri</groupId>
-                <artifactId>okaeri-configs-yaml-snakeyaml</artifactId>
-                <version>5.0.13</version>
-            </dependency>
-            <dependency>
-                <groupId>io.swagger.core.v3</groupId>
-                <artifactId>swagger-core</artifactId>
-                <version>2.2.22</version>
-            </dependency>
-            <dependency>
-                <groupId>org.projectlombok</groupId>
-                <artifactId>lombok</artifactId>
-                <version>1.18.46</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jetbrains</groupId>
-                <artifactId>annotations</artifactId>
-                <version>26.1.0</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.commons</groupId>
-                <artifactId>commons-compress</artifactId>
-                <version>1.28.0</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.commons</groupId>
-                <artifactId>commons-lang3</artifactId>
-                <version>3.20.0</version>
-            </dependency>
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-simple</artifactId>
-                <version>2.0.16</version>
-            </dependency>
-            <dependency>
-                <groupId>com.zaxxer</groupId>
-                <artifactId>HikariCP</artifactId>
-                <version>7.0.2</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jline</groupId>
-                <artifactId>jline</artifactId>
-                <version>3.30.6</version>
-            </dependency>
-            <dependency>
-                <groupId>de.pocketcloud</groupId>
-                <artifactId>discord-webhook</artifactId>
-                <version>1.0.2</version>
-            </dependency>
-            <dependency>
-                <groupId>com.google.code.gson</groupId>
-                <artifactId>gson</artifactId>
-                <version>2.14.0</version>
-            </dependency>
-            <dependency>
-                <groupId>com.github.oshi</groupId>
-                <artifactId>oshi-core</artifactId>
-                <version>7.4.1</version>
-            </dependency>
+
+            <!-- ================= Jackson ================= -->
+            <!-- Jackson 3: Core/Databind unter tools.jackson.*, Annotations weiterhin unter com.fasterxml.jackson.* -->
             <dependency>
                 <groupId>tools.jackson.dataformat</groupId>
                 <artifactId>jackson-dataformat-yaml</artifactId>
-                <version>3.2.1</version>
+                <version>${jackson.version}</version>
             </dependency>
             <dependency>
                 <groupId>tools.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
-                <version>3.2.1</version>
+                <version>${jackson.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+                <version>${jackson-annotations.version}</version>
+            </dependency>
+
+            <!-- ================= Logging ================= -->
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
-                <version>2.0.18</version>
+                <version>${slf4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-simple</artifactId>
+                <version>${slf4j.version}</version>
             </dependency>
             <dependency>
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-classic</artifactId>
-                <version>1.5.38</version>
+                <version>${logback.version}</version>
             </dependency>
-            <dependency>
-                <groupId>org.reflections</groupId>
-                <artifactId>reflections</artifactId>
-                <version>0.10.2</version>
-            </dependency>
+
+            <!-- ================= Game-Server-Dependencies ================= -->
             <dependency>
                 <groupId>org.powernukkitx</groupId>
                 <artifactId>server</artifactId>
-                <version>nightly-SNAPSHOT</version>
+                <version>${powernukkitx.version}</version>
             </dependency>
             <dependency>
                 <groupId>dev.waterdog.waterdogpe</groupId>
                 <artifactId>waterdog</artifactId>
-                <version>2.0.4-SNAPSHOT</version>
+                <version>${waterdog.version}</version>
             </dependency>
+
+            <!-- ================= Other Libraries ================= -->
+            <dependency>
+                <groupId>eu.okaeri</groupId>
+                <artifactId>okaeri-configs-yaml-snakeyaml</artifactId>
+                <version>${okaeri-configs.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jetbrains</groupId>
+                <artifactId>annotations</artifactId>
+                <version>${jetbrains-annotations.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-compress</artifactId>
+                <version>${commons-compress.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>${commons-lang3.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.zaxxer</groupId>
+                <artifactId>HikariCP</artifactId>
+                <version>${hikaricp.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jline</groupId>
+                <artifactId>jline</artifactId>
+                <version>${jline.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>de.pocketcloud</groupId>
+                <artifactId>discord-webhook</artifactId>
+                <version>${discord-webhook.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.code.gson</groupId>
+                <artifactId>gson</artifactId>
+                <version>${gson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.oshi</groupId>
+                <artifactId>oshi-core</artifactId>
+                <version>${oshi.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.reflections</groupId>
+                <artifactId>reflections</artifactId>
+                <version>${reflections.version}</version>
+            </dependency>
+
+            <!-- ================= Testing ================= -->
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-api</artifactId>
-                <version>6.1.1</version>
+                <version>${junit.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -178,7 +220,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.13.0</version>
+                <version>${compiler-plugin.version}</version>
                 <configuration>
                     <source>25</source>
                     <target>25</target>
@@ -188,7 +230,7 @@
                         <path>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
-                            <version>1.18.46</version>
+                            <version>${lombok.version}</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>

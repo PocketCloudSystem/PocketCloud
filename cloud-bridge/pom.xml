@@ -3,6 +3,7 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+
     <parent>
         <groupId>de.pocketcloud</groupId>
         <artifactId>cloud-parent</artifactId>
@@ -10,15 +11,15 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <name>PocketCloud Bridge</name>
     <artifactId>cloud-bridge</artifactId>
     <packaging>jar</packaging>
-    <version>1.0.0</version>
+
+    <name>PocketCloud Bridge</name>
 
     <properties>
-        <maven.compiler.source>25</maven.compiler.source>
-        <maven.compiler.target>25</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <!-- Intentionally differs from the parent POM (4.2.15.Final) -
+             the Waterdog/Bedrock protocol stack requires an older Netty version -->
         <netty.version>4.1.135.Final</netty.version>
     </properties>
 
@@ -53,9 +54,10 @@
     </repositories>
 
     <dependencies>
+        <!-- ================= Internal ================= -->
         <dependency>
             <groupId>de.pocketcloud</groupId>
-            <artifactId>cloud-network</artifactId>
+            <artifactId>cloud-common</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -65,24 +67,22 @@
         </dependency>
         <dependency>
             <groupId>de.pocketcloud</groupId>
-            <artifactId>cloud-common</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>de.pocketcloud</groupId>
             <artifactId>cloud-shared</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.powernukkitx</groupId>
-            <artifactId>server</artifactId>
-            <scope>provided</scope>
+            <groupId>de.pocketcloud</groupId>
+            <artifactId>cloud-network</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>dev.waterdog.waterdogpe</groupId>
-            <artifactId>waterdog</artifactId>
-            <scope>provided</scope>
+            <groupId>de.pocketcloud</groupId>
+            <artifactId>cloud-core</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
         </dependency>
+
+        <!-- ================= External ================= -->
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-common</artifactId>
@@ -117,11 +117,17 @@
             <groupId>org.reflections</groupId>
             <artifactId>reflections</artifactId>
         </dependency>
+
+        <!-- ================= Provided ================= -->
         <dependency>
-            <groupId>de.pocketcloud</groupId>
-            <artifactId>cloud-core</artifactId>
-            <version>1.0.0</version>
-            <scope>compile</scope>
+            <groupId>org.powernukkitx</groupId>
+            <artifactId>server</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>dev.waterdog.waterdogpe</groupId>
+            <artifactId>waterdog</artifactId>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 

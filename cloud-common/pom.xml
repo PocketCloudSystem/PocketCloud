@@ -11,17 +11,19 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <name>PocketCloud Commons</name>
     <artifactId>cloud-common</artifactId>
+    <packaging>jar</packaging>
+
+    <name>PocketCloud Commons</name>
 
     <properties>
-        <maven.compiler.source>25</maven.compiler.source>
-        <maven.compiler.target>25</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <skip.jar>true</skip.jar>
+        <jar-plugin.version>3.4.2</jar-plugin.version>
     </properties>
 
     <dependencies>
+        <!-- ================= External ================= -->
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
@@ -33,11 +35,6 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>org.jetbrains</groupId>
             <artifactId>annotations</artifactId>
         </dependency>
@@ -45,16 +42,23 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
         </dependency>
+
+        <!-- ================= Provided ================= -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 
     <build>
         <directory>${project.basedir}/../target/${project.artifactId}</directory>
-        <finalName>compiled/${project.artifactId}.jar</finalName>
+        <finalName>compiled/${project.artifactId}</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>3.4.2</version>
+                <version>${jar-plugin.version}</version>
                 <configuration>
                     <skip>${skip.jar}</skip>
                 </configuration>
@@ -62,6 +66,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
+                <version>3.6.0</version>
                 <configuration>
                     <skip>${skip.jar}</skip>
                 </configuration>

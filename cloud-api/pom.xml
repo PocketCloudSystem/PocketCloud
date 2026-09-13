@@ -3,6 +3,7 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+
     <parent>
         <groupId>de.pocketcloud</groupId>
         <artifactId>cloud-parent</artifactId>
@@ -10,29 +11,36 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <name>PocketCloud API</name>
     <artifactId>cloud-api</artifactId>
+    <packaging>jar</packaging>
+
+    <name>PocketCloud API</name>
 
     <properties>
-        <maven.compiler.source>25</maven.compiler.source>
-        <maven.compiler.target>25</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <skip.jar>true</skip.jar>
+        <jar-plugin.version>3.4.2</jar-plugin.version>
     </properties>
 
     <dependencies>
+        <!-- ================= Internal ================= -->
         <dependency>
             <groupId>de.pocketcloud</groupId>
             <artifactId>cloud-common</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-        </dependency>
+
+        <!-- ================= External ================= -->
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-transport</artifactId>
+        </dependency>
+
+        <!-- ================= Provided ================= -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 
@@ -43,7 +51,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>3.4.2</version>
+                <version>${jar-plugin.version}</version>
                 <configuration>
                     <skip>${skip.jar}</skip>
                 </configuration>
@@ -51,6 +59,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
+                <version>3.6.0</version>
                 <configuration>
                     <skip>${skip.jar}</skip>
                 </configuration>
