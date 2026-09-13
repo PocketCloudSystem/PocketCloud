@@ -12,8 +12,8 @@
 
     <name>PocketCloud Bridge</name>
     <artifactId>cloud-bridge</artifactId>
-    <packaging>jar</packaging>
     <version>1.0.0</version>
+    <packaging>jar</packaging>
 
     <properties>
         <maven.compiler.source>25</maven.compiler.source>
