@@ -10,7 +10,11 @@ import de.pocketcloud.cloud.console.screen.Screen;
 import de.pocketcloud.cloud.console.util.InterruptionResult;
 import de.pocketcloud.cloud.server.CloudServer;
 import de.pocketcloud.cloud.server.util.ServerLogStream;
+import org.jline.reader.Candidate;
+import org.jline.reader.LineReader;
+import org.jline.reader.ParsedLine;
 
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -255,6 +259,9 @@ public final class ServerConsoleMonitorScreen extends Screen {
         PocketCloud.instance().screens().reset();
         return InterruptionResult.CONTINUE;
     }
+
+    @Override
+    public void onTabComplete(LineReader reader, ParsedLine parsedLine, List<Candidate> list) {}
 
     private void printInfoMessage(String message, Object... params) {
         if (message.equals(lastInfoMessage)) return;

@@ -223,11 +223,9 @@ public abstract class Setup {
         if (question.getResultHandler() != null) question.getResultHandler().accept(result);
     }
 
-    public void onStart(ILogger logger) {
-    }
+    public void onStart(ILogger logger) {}
 
-    public void onCancel() {
-    }
+    public void onCancel() {}
 
     public final void back() {
         nextQuestion(true);

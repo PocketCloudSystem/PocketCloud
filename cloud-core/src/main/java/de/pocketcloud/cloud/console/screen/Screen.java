@@ -6,7 +6,11 @@ import de.pocketcloud.cloud.console.log.cache.LogMessagesCache;
 import de.pocketcloud.cloud.console.output.OutputHandler;
 import de.pocketcloud.cloud.console.output.OutputManager;
 import de.pocketcloud.cloud.console.util.InterruptionResult;
+import org.jline.reader.Candidate;
+import org.jline.reader.LineReader;
+import org.jline.reader.ParsedLine;
 
+import java.util.List;
 import java.util.function.Supplier;
 
 public abstract class Screen {
@@ -18,6 +22,8 @@ public abstract class Screen {
     abstract public void tick(long currentTick);
 
     abstract public void onRemove(long currentTick);
+
+    abstract public void onTabComplete(LineReader reader, ParsedLine parsedLine, List<Candidate> list);
 
     /**
      * This is being called when the user presses CTRL + C
