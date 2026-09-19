@@ -22,6 +22,8 @@ public final class TemplateEditSetup extends Setup {
     public void onStart(ILogger logger) {
         setPrefix("§bTemplate-Editing-Setup");
         logger.withoutFormat("Welcome to the Template-Editing-Setup!");
+        logger.withoutFormat("Editing template: §b" + template.name());
+        logger.withoutFormat("You can skip questions with Enter to keep the current value.");
     }
 
     @Override
@@ -31,88 +33,208 @@ public final class TemplateEditSetup extends Setup {
 
     @Override
     public List<Question<?>> applyQuestions() {
+        var settings = template.settings();
+
         return List.of(
-                QuestionBuilder.builder("lobby", "Is your template a lobby?")
+                QuestionBuilder.builder("lobby", "Is this template a lobby? (yes/no)")
                         .parser((input, _) -> input.equalsIgnoreCase("yes"))
                         .canSkipped(true)
                         .possibleAnswers("yes", "no")
-                        .defaultValue(template.settings().lobby() ? "Yes" : "No", template.settings().lobby())
+                        .defaultValue(settings.lobby() ? "Yes" : "No", settings.lobby())
                         .build(),
 
-                QuestionBuilder.builder("maintenance", "Should your template be in maintenance?")
+                QuestionBuilder.builder("maintenance", "Should this template be in maintenance mode? (yes/no)")
                         .parser((input, _) -> input.equalsIgnoreCase("yes"))
                         .canSkipped(true)
                         .possibleAnswers("yes", "no")
-                        .defaultValue(template.settings().maintenance() ? "Yes" : "No", template.settings().maintenance())
+                        .defaultValue(settings.maintenance() ? "Yes" : "No", settings.maintenance())
                         .build(),
 
-                QuestionBuilder.builder("static", "Should your template be static, meaning the servers of that template just have their own data?")
+                QuestionBuilder.builder("static", "Should servers of this template be static (keep their own persistent data)? (yes/no)")
                         .parser((input, _) -> input.equalsIgnoreCase("yes"))
                         .canSkipped(true)
                         .possibleAnswers("yes", "no")
-                        .defaultValue(template.settings().staticServers() ? "Yes" : "No", template.settings().staticServers())
+                        .defaultValue(settings.staticServers() ? "Yes" : "No", settings.staticServers())
                         .build(),
 
-                QuestionBuilder.builder("alwaysCopyToStaticServers", "Should your static servers always copy data from their template?")
+                QuestionBuilder.builder("alwaysCopyToStaticServers", "Should static servers always copy data from the template on start? (only relevant if static = yes) (yes/no)")
                         .parser((input, _) -> input.equalsIgnoreCase("yes"))
                         .canSkipped(true)
                         .possibleAnswers("yes", "no")
-                        .defaultValue(template.settings().alwaysCopyToStaticServers() ? "Yes" : "No", template.settings().alwaysCopyToStaticServers())
+                        .defaultValue(settings.alwaysCopyToStaticServers() ? "Yes" : "No", settings.alwaysCopyToStaticServers())
                         .build(),
 
-                QuestionBuilder.builder("saveOnShutdown", "Should your static servers always copy data from their template?")
+                QuestionBuilder.builder("saveOnShutdown", "Should servers save their data back to the template on shutdown? (yes/no)")
                         .parser((input, _) -> input.equalsIgnoreCase("yes"))
                         .canSkipped(true)
                         .possibleAnswers("yes", "no")
-                        .defaultValue(template.settings().saveOnShutdown() ? "Yes" : "No", template.settings().saveOnShutdown())
+                        .defaultValue(settings.saveOnShutdown() ? "Yes" : "No", settings.saveOnShutdown())
                         .build(),
 
-                QuestionBuilder.builder("maxPlayerCount", "How many players are allowed on that template's servers?")
-                        .parser((input, _) -> input.matches("\\d+") ? Integer.parseInt(input) : null)
-                        .defaultValue(template.settings().maxPlayerCount() + " player" + (template.settings().maxPlayerCount() == 1 ? "" : "s"), template.settings().maxPlayerCount())
+                QuestionBuilder.builder("deleteOnStop", "Should the server directory be deleted after shutdown? (yes/no)")
+                        .parser((input, _) -> input.equalsIgnoreCase("yes"))
                         .canSkipped(true)
+                        .possibleAnswers("yes", "no")
+                        .defaultValue(settings.deleteOnStop() ? "Yes" : "No", settings.deleteOnStop())
                         .build(),
 
-                QuestionBuilder.builder("minServerCount", "How many servers should always be running?")
-                        .parser((input, _) -> input.matches("\\d+") ? Integer.parseInt(input) : null)
-                        .defaultValue(template.settings().minServerCount() + " server" + (template.settings().minServerCount() == 1 ? "" : "s"), template.settings().minServerCount())
+                QuestionBuilder.builder("stopOnEmpty", "Should servers automatically shut down when they reach 0 players? (yes/no)")
+                        .parser((input, _) -> input.equalsIgnoreCase("yes"))
                         .canSkipped(true)
+                        .possibleAnswers("yes", "no")
+                        .defaultValue(settings.stopOnEmpty() ? "Yes" : "No", settings.stopOnEmpty())
                         .build(),
 
-                QuestionBuilder.builder("maxServerCount", "How many servers can be running in total?")
-                        .parser((input, _) -> input.matches("\\d+") ? Integer.parseInt(input) : null)
-                        .defaultValue(template.settings().maxServerCount() + " server" + (template.settings().maxServerCount() == 1 ? "" : "s"), template.settings().maxServerCount())
-                        .canSkipped(true)
-                        .build(),
-
-                QuestionBuilder.builder("startNewServerThreshold", "How many players are required to start a new server? (in %, 0-100, 0 = none)")
-                        .parser((input, _) -> {
-                            if (!input.matches("\\d+(\\.\\d+)?")) return null;
-                            double value = Double.parseDouble(input);
-                            return (value < 0 || value > 100) ? null : value / 100;
-                        })
-                        .canSkipped(true)
-                        .recommendation("75%")
-                        .defaultValue((template.settings().startNewServerThreshold() * 100) + "%", template.settings().startNewServerThreshold() * 100)
-                        .build(),
-
-                QuestionBuilder.builder("autoStart", "Should your template start servers automatically?")
+                QuestionBuilder.builder("autoStart", "Should the cloud automatically start servers of this template? (yes/no)")
                         .parser((input, _) -> input.equalsIgnoreCase("yes"))
                         .canSkipped(true)
                         .possibleAnswers("yes", "no")
                         .recommendation("yes")
-                        .defaultValue(template.settings().autoStart() ? "Yes" : "No", template.settings().autoStart())
+                        .defaultValue(settings.autoStart() ? "Yes" : "No", settings.autoStart())
                         .build(),
 
-                QuestionBuilder.builder("maxMemory", "How much memory do servers from this template have? §8(§bin Megabytes§8)")
-                        .parser((input, _) -> {
-                            if (!input.matches("\\d+")) return null;
-                            int value = Integer.parseInt(input);
-                            return (value < 0) ? null : value;
+                QuestionBuilder.builder("startNewServerThreshold", "Player load threshold to start a new server (0-100 %, 0 = disabled)")
+                        .parser((input, error) -> {
+                            if (!input.matches("\\d+(\\.\\d+)?")) {
+                                error.set("Please enter a number between 0 and 100!");
+                                return null;
+                            }
+                            double value = Double.parseDouble(input);
+                            if (value < 0 || value > 100) {
+                                error.set("Value must be between 0 and 100!");
+                                return null;
+                            }
+                            return value / 100.0;
                         })
                         .canSkipped(true)
-                        .recommendation("1024 Megabytes")
-                        .defaultValue(String.valueOf(template.settings().maxMemory()), template.settings().maxMemory())
+                        .recommendation("75")
+                        .defaultValue((settings.startNewServerThreshold() * 100) + "%", settings.startNewServerThreshold())
+                        .build(),
+
+                QuestionBuilder.builder("maxPlayerCount", "Maximum players per server of this template")
+                        .parser((input, error) -> {
+                            if (!input.matches("\\d+")) {
+                                error.set("Please enter a positive whole number!");
+                                return null;
+                            }
+                            int value = Integer.parseInt(input);
+                            if (value < 1) {
+                                error.set("Must be at least 1!");
+                                return null;
+                            }
+                            return value;
+                        })
+                        .canSkipped(true)
+                        .defaultValue(settings.maxPlayerCount() + " player" + (settings.maxPlayerCount() == 1 ? "" : "s"), settings.maxPlayerCount())
+                        .build(),
+
+                QuestionBuilder.builder("minServerCount", "How many servers should always be online (minimum)?")
+                        .parser((input, error) -> {
+                            if (!input.matches("\\d+")) {
+                                error.set("Please enter a whole number (≥ 0)!");
+                                return null;
+                            }
+                            return Integer.parseInt(input);
+                        })
+                        .canSkipped(true)
+                        .defaultValue(settings.minServerCount() + " server" + (settings.minServerCount() == 1 ? "" : "s"), settings.minServerCount())
+                        .build(),
+
+                QuestionBuilder.builder("maxServerCount", "Maximum number of servers that can run for this template")
+                        .parser((input, error) -> {
+                            if (!input.matches("\\d+")) {
+                                error.set("Please enter a whole number (≥ 1)!");
+                                return null;
+                            }
+                            int value = Integer.parseInt(input);
+                            if (value < 1) {
+                                error.set("Must be at least 1!");
+                                return null;
+                            }
+                            return value;
+                        })
+                        .canSkipped(true)
+                        .defaultValue(settings.maxServerCount() + " server" + (settings.maxServerCount() == 1 ? "" : "s"), settings.maxServerCount())
+                        .build(),
+
+                QuestionBuilder.builder("maxMemory", "Memory (RAM) per server in Megabytes")
+                        .parser((input, error) -> {
+                            if (!input.matches("\\d+")) {
+                                error.set("Please enter a whole number!");
+                                return null;
+                            }
+                            int value = Integer.parseInt(input);
+                            if (value < 256) {
+                                error.set("Recommended minimum is 256 MB!");
+                                return null;
+                            }
+                            return value;
+                        })
+                        .canSkipped(true)
+                        .recommendation("1024")
+                        .defaultValue(String.valueOf(settings.maxMemory()), settings.maxMemory())
+                        .build(),
+
+                QuestionBuilder.builder("startupTimeout", "Seconds to wait for a server to start successfully")
+                        .parser((input, error) -> {
+                            if (!input.matches("\\d+")) {
+                                error.set("Please enter a whole number!");
+                                return null;
+                            }
+                            int value = Integer.parseInt(input);
+                            if (value < 5) {
+                                error.set("Minimum recommended is 5 seconds!");
+                                return null;
+                            }
+                            return value;
+                        })
+                        .canSkipped(true)
+                        .recommendation("15")
+                        .defaultValue(String.valueOf(settings.startupTimeout()), settings.startupTimeout())
+                        .build(),
+
+                QuestionBuilder.builder("shutdownTimeout", "Seconds to wait for a server to stop cleanly")
+                        .parser((input, error) -> {
+                            if (!input.matches("\\d+")) {
+                                error.set("Please enter a whole number!");
+                                return null;
+                            }
+                            int value = Integer.parseInt(input);
+                            if (value < 5) {
+                                error.set("Minimum recommended is 5 seconds!");
+                                return null;
+                            }
+                            return value;
+                        })
+                        .canSkipped(true)
+                        .recommendation("15")
+                        .defaultValue(String.valueOf(settings.shutdownTimeout()), settings.shutdownTimeout())
+                        .build(),
+
+                QuestionBuilder.builder("emptyServerGracePeriod", "Seconds to wait after 0 players before stopping the server (only if stopOnEmpty = yes)")
+                        .parser((input, error) -> {
+                            if (!input.matches("\\d+")) {
+                                error.set("Please enter a whole number!");
+                                return null;
+                            }
+                            return Integer.parseInt(input);
+                        })
+                        .canSkipped(true)
+                        .recommendation("120")
+                        .defaultValue(String.valueOf(settings.emptyServerGracePeriod()), settings.emptyServerGracePeriod())
+                        .build(),
+
+                QuestionBuilder.builder("priority", "Boot priority of this template (higher = more important, used for start order)")
+                        .parser((input, error) -> {
+                            if (!input.matches("\\d+")) {
+                                error.set("Please enter a whole number (≥ 0)!");
+                                return null;
+                            }
+                            return Integer.parseInt(input);
+                        })
+                        .canSkipped(true)
+                        .recommendation("0")
+                        .defaultValue(String.valueOf(settings.priority()), settings.priority())
                         .build()
         );
     }
@@ -125,12 +247,18 @@ public final class TemplateEditSetup extends Setup {
                 .staticServers((Boolean) results.get("static"))
                 .alwaysCopyToStaticServers((Boolean) results.get("alwaysCopyToStaticServers"))
                 .saveOnShutdown((Boolean) results.get("saveOnShutdown"))
+                .deleteOnStop((Boolean) results.get("deleteOnStop"))
+                .stopOnEmpty((Boolean) results.get("stopOnEmpty"))
+                .autoStart((Boolean) results.get("autoStart"))
+                .startNewServerThreshold((Double) results.get("startNewServerThreshold"))
                 .maxPlayerCount((Integer) results.get("maxPlayerCount"))
                 .minServerCount((Integer) results.get("minServerCount"))
                 .maxServerCount((Integer) results.get("maxServerCount"))
-                .startNewServerThreshold((Double) results.get("startNewServerThreshold"))
-                .autoStart((Boolean) results.get("autoStart"))
                 .maxMemory((Integer) results.get("maxMemory"))
+                .startupTimeout((Integer) results.get("startupTimeout"))
+                .shutdownTimeout((Integer) results.get("shutdownTimeout"))
+                .emptyServerGracePeriod((Integer) results.get("emptyServerGracePeriod"))
+                .priority((Integer) results.get("priority"))
         );
     }
 }
