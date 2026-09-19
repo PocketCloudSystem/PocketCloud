@@ -10,6 +10,7 @@ import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
 import org.jline.reader.UserInterruptException;
 import org.jline.reader.impl.LineReaderImpl;
+import org.jline.reader.impl.history.DefaultHistory;
 import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
 import org.jline.utils.AttributedString;
@@ -18,6 +19,7 @@ import org.jline.utils.Status;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -35,12 +37,15 @@ public final class CloudConsole extends Thread implements Tickable {
     private Supplier<InterruptionResult> interruptionHandler = () -> PocketCloud.instance().screens().get().onCancel(PocketCloud.instance().currentTick());
 
     private final Object readerLock = new Object();
+    private DefaultHistory history;
+    private List<String> oldHistory = new ArrayList<>();
     private Terminal terminal;
     private LineReader reader;
     private Status status;
     private String prompt = DEFAULT_PROMPT;
 
     public CloudConsole install() throws IOException {
+        history = new DefaultHistory();
         terminal = TerminalBuilder.builder()
                 .color(true)
                 .encoding(StandardCharsets.UTF_8)
@@ -48,6 +53,7 @@ public final class CloudConsole extends Thread implements Tickable {
                 .build();
 
         reader = LineReaderBuilder.builder()
+                .history(history)
                 .appName("PocketCloud")
                 .option(LineReader.Option.HISTORY_BEEP, false)
                 .option(LineReader.Option.HISTORY_IGNORE_DUPS, true)
@@ -148,6 +154,18 @@ public final class CloudConsole extends Thread implements Tickable {
         synchronized (readerLock) {
             if (reader != null) {
                 reader.setVariable(LineReader.DISABLE_HISTORY, !enabled);
+                if (enabled) {
+                    for (String line : oldHistory) {
+                        history.add(line);
+                    }
+
+                    this.oldHistory = new ArrayList<>();
+                } else {
+                    history.forEach(e -> oldHistory.add(e.line()));
+                    try {
+                        this.history.purge();
+                    } catch (IOException _) {}
+                }
             }
         }
     }
