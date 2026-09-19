@@ -3,6 +3,8 @@ package de.pocketcloud.cloud.setup;
 import de.pocketcloud.api.logging.ILogger;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.log.CloudLogger;
+import de.pocketcloud.cloud.console.output.OutputManager;
+import de.pocketcloud.cloud.console.output.impl.SetupOutputHandler;
 import de.pocketcloud.cloud.console.screen.impl.SetupScreen;
 import lombok.Getter;
 import lombok.Setter;
@@ -45,6 +47,9 @@ public abstract class Setup {
         PocketCloud.instance().screens().set(new SetupScreen(this));
 
         this.logger = CloudLogger.tmp();
+        SetupOutputHandler handler = new SetupOutputHandler();
+        handler.add(logger);
+        OutputManager.set(handler);
 
         onStart(logger);
         logSetupInstructions();
@@ -194,14 +199,14 @@ public abstract class Setup {
         if (input.isEmpty()) return false;
 
         if (!isValidAnswer(input)) {
-            logger.withoutFormat("Please provide a valid answer!");
+            logger.withoutFormat("§cPlease provide a valid answer!");
             return false;
         }
 
         ErrorHolder error = new ErrorHolder();
-        Object result = question.getParser().parse(input, error);
+        Object result = question.getParser().parse(input.trim(), error);
         if (result == null) {
-            logger.withoutFormat(error.isPresent() ? error.get() : "Please provide a valid answer!");
+            logger.withoutFormat("§c" + (error.isPresent() ? error.get() : "Please provide a valid answer!"));
             return false;
         }
 
@@ -215,7 +220,7 @@ public abstract class Setup {
 
     private boolean isValidAnswer(String input) {
         List<String> possibleAnswers = currentQuestion.getPossibleAnswers();
-        return possibleAnswers.isEmpty() || possibleAnswers.contains(input);
+        return possibleAnswers.isEmpty() || possibleAnswers.contains(input.trim());
     }
 
     private void storeResult(Question<Object> question, Object result) {

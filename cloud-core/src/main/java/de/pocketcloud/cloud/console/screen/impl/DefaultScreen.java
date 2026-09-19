@@ -9,6 +9,7 @@ import de.pocketcloud.cloud.console.command.holder.CommandUtilityHolder;
 import de.pocketcloud.cloud.console.command.sender.ConsoleCommandSender;
 import de.pocketcloud.cloud.console.command.sub.LambdaSubCommand;
 import de.pocketcloud.cloud.console.command.sub.SubCommand;
+import de.pocketcloud.cloud.console.log.cache.LogMessagesCache;
 import de.pocketcloud.cloud.console.screen.Screen;
 import de.pocketcloud.cloud.console.util.InterruptionResult;
 import de.pocketcloud.common.util.FormatUtils;
@@ -76,6 +77,7 @@ public final class DefaultScreen extends Screen {
 
     @Override
     public void handleInput(String input) {
+        LogMessagesCache.save(PocketCloud.instance().console().getPrompt() + input);
         PocketCloud.instance().commands().call(new ConsoleCommandSender(), input);
     }
 
