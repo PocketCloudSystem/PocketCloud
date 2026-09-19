@@ -23,6 +23,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.Objects;
 
 @CommandDescription(name = "server", description = "Manage the cloud servers", aliases = {"srv", "service"})
 public final class ServerCommand extends Command {
@@ -155,6 +156,7 @@ public final class ServerCommand extends Command {
         sender.info("Memory Usage§8: §b{}§8/§c{} §8(§rPeak: §b{}§8)", FormatUtils.bytes(server.data().memoryUsage(), true), FormatUtils.bytes(server.data().memoryLimit(), false), FormatUtils.bytes(server.data().memoryPeak(), true));
         sender.info("CPU Usage§8: §b{}", FormatUtils.usagePercentage(server.data().cpuUsage(), true));
         sender.info("Used Software§8: §b{}", server.template().serverSoftware().name());
+        sender.info("Process Id§8: §b{}", Objects.requireNonNullElse(server.data().processId(), "§cUnknown"));
         sender.info("Path§8: §b{}", server.path().toAbsolutePath().toString());
         sender.info("Channel§8: §b{}", server.client().isPresent() ? server.client().get().address().toString() : "No channel yet");
         return true;
