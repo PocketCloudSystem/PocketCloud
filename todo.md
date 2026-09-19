@@ -1,2 +1,1 @@
 - test the cloud
-- expand the template creation & edit setup

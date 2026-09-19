@@ -36,56 +36,56 @@ public final class TemplateEditSetup extends Setup {
         var settings = template.settings();
 
         return List.of(
-                QuestionBuilder.builder("lobby", "Is this template a lobby? (yes/no)")
+                QuestionBuilder.builder("lobby", "Is this template a lobby?")
                         .parser((input, _) -> input.equalsIgnoreCase("yes"))
                         .canSkipped(true)
                         .possibleAnswers("yes", "no")
                         .defaultValue(settings.lobby() ? "Yes" : "No", settings.lobby())
                         .build(),
 
-                QuestionBuilder.builder("maintenance", "Should this template be in maintenance mode? (yes/no)")
+                QuestionBuilder.builder("maintenance", "Should this template be in maintenance mode?")
                         .parser((input, _) -> input.equalsIgnoreCase("yes"))
                         .canSkipped(true)
                         .possibleAnswers("yes", "no")
                         .defaultValue(settings.maintenance() ? "Yes" : "No", settings.maintenance())
                         .build(),
 
-                QuestionBuilder.builder("static", "Should servers of this template be static (keep their own persistent data)? (yes/no)")
+                QuestionBuilder.builder("static", "Should servers of this template be static (keep their own persistent data)?")
                         .parser((input, _) -> input.equalsIgnoreCase("yes"))
                         .canSkipped(true)
                         .possibleAnswers("yes", "no")
                         .defaultValue(settings.staticServers() ? "Yes" : "No", settings.staticServers())
                         .build(),
 
-                QuestionBuilder.builder("alwaysCopyToStaticServers", "Should static servers always copy data from the template on start? (only relevant if static = yes) (yes/no)")
+                QuestionBuilder.builder("alwaysCopyToStaticServers", "Should static servers always copy data from the template on start? (only relevant if static = yes)")
                         .parser((input, _) -> input.equalsIgnoreCase("yes"))
                         .canSkipped(true)
                         .possibleAnswers("yes", "no")
                         .defaultValue(settings.alwaysCopyToStaticServers() ? "Yes" : "No", settings.alwaysCopyToStaticServers())
                         .build(),
 
-                QuestionBuilder.builder("saveOnShutdown", "Should servers save their data back to the template on shutdown? (yes/no)")
+                QuestionBuilder.builder("saveOnShutdown", "Should servers save their data back to the template on shutdown?")
                         .parser((input, _) -> input.equalsIgnoreCase("yes"))
                         .canSkipped(true)
                         .possibleAnswers("yes", "no")
                         .defaultValue(settings.saveOnShutdown() ? "Yes" : "No", settings.saveOnShutdown())
                         .build(),
 
-                QuestionBuilder.builder("deleteOnStop", "Should the server directory be deleted after shutdown? (yes/no)")
+                QuestionBuilder.builder("deleteOnStop", "Should the server directory be deleted after shutdown?")
                         .parser((input, _) -> input.equalsIgnoreCase("yes"))
                         .canSkipped(true)
                         .possibleAnswers("yes", "no")
                         .defaultValue(settings.deleteOnStop() ? "Yes" : "No", settings.deleteOnStop())
                         .build(),
 
-                QuestionBuilder.builder("stopOnEmpty", "Should servers automatically shut down when they reach 0 players? (yes/no)")
+                QuestionBuilder.builder("stopOnEmpty", "Should servers automatically shut down when they reach 0 players?")
                         .parser((input, _) -> input.equalsIgnoreCase("yes"))
                         .canSkipped(true)
                         .possibleAnswers("yes", "no")
                         .defaultValue(settings.stopOnEmpty() ? "Yes" : "No", settings.stopOnEmpty())
                         .build(),
 
-                QuestionBuilder.builder("autoStart", "Should the cloud automatically start servers of this template? (yes/no)")
+                QuestionBuilder.builder("autoStart", "Should the cloud automatically start servers of this template?")
                         .parser((input, _) -> input.equalsIgnoreCase("yes"))
                         .canSkipped(true)
                         .possibleAnswers("yes", "no")
