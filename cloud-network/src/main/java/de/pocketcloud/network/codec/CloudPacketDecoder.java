@@ -64,7 +64,7 @@ public final class CloudPacketDecoder extends ByteToMessageDecoder {
 
             packet.setSize(length);
             out.add(packet);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             CloudAPI.instance().logger().exception(e);
         }
     }
