@@ -55,7 +55,7 @@ public final class CloudMySqlProvider extends CloudProvider {
     @Override
     public Promise<Void> editTemplate(ITemplate template, Map<String, Object> newData) {
         if (newData.get("settings") instanceof Map<?, ?>) newData.put("settings", FileUtils.encodeJson(newData.get("settings")));
-        Object[] params = buildUpdateParams(newData, template.name());
+        Object[] params = buildUpdateParams(newData, "name", template.name());
         return executeAsync(DatabaseQueries.editTemplate(newData), params);
     }
 
@@ -124,7 +124,7 @@ public final class CloudMySqlProvider extends CloudProvider {
     @Override
     public Promise<Void> editServerGroup(IServerGroup serverGroup, Map<String, Object> newData) {
         if (newData.get("templates") instanceof List) newData.put("templates", FileUtils.encodeJson(newData.get("templates")));
-        Object[] params = buildUpdateParams(newData, serverGroup.name());
+        Object[] params = buildUpdateParams(newData, "name", serverGroup.name());
         return executeAsync(DatabaseQueries.editServerGroup(newData), params);
     }
 
@@ -293,8 +293,12 @@ public final class CloudMySqlProvider extends CloudProvider {
         }
     }
 
-    private static Object[] buildUpdateParams(Map<String, Object> data, String pkValue) {
-        List<Object> params = new ArrayList<>(data.values());
+    private static Object[] buildUpdateParams(Map<String, Object> data, String whereKey, String pkValue) {
+        List<Object> params = data.keySet().stream()
+                .filter(k -> !k.equals(whereKey))
+                .sorted()
+                .map(data::get)
+                .collect(Collectors.toCollection(ArrayList::new));
         params.add(pkValue);
         return params.toArray();
     }
