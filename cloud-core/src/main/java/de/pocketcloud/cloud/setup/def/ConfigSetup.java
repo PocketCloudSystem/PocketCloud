@@ -10,6 +10,7 @@ import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.setup.Question;
 import de.pocketcloud.cloud.setup.QuestionBuilder;
 import de.pocketcloud.cloud.setup.Setup;
+import de.pocketcloud.cloud.setup.SetupHelper;
 
 import java.util.List;
 import java.util.Map;
@@ -44,7 +45,7 @@ public final class ConfigSetup extends Setup {
                         .build(),
 
                 QuestionBuilder.builder("writeTimingsOnShutdown", "Should timings be written on shutdown?")
-                        .parser((input, _) -> input.equalsIgnoreCase("yes"))
+                        .parser((input, _) -> SetupHelper.parseBoolean(input))
                         .canSkipped(true)
                         .possibleAnswers("yes", "no")
                         .defaultValue(config.writeTimingsOnShutdown() ? "Yes" : "No", config.writeTimingsOnShutdown())
@@ -56,24 +57,20 @@ public final class ConfigSetup extends Setup {
                         .build(),
 
                 QuestionBuilder.builder("networkPort", "What's the network port?")
-                        .parser((input, _) -> {
-                            if (!input.matches("\\d+")) return null;
-                            int port = Integer.parseInt(input);
-                            return (port <= 0 || port > 65535) ? null : port;
-                        })
+                        .parser((input, error) -> SetupHelper.parseInt(input, error, 1, 65535))
                         .canSkipped(true)
                         .defaultValue(String.valueOf(config.network().port()), config.network().port())
                         .build(),
 
                 QuestionBuilder.builder("networkEncryption", "Should network encryption be enabled?")
-                        .parser((input, _) -> input.equalsIgnoreCase("yes"))
+                        .parser((input, _) -> SetupHelper.parseBoolean(input))
                         .canSkipped(true)
                         .possibleAnswers("yes", "no")
                         .defaultValue(config.network().encryption() ? "Yes" : "No", config.network().encryption())
                         .build(),
 
                 QuestionBuilder.builder("httpServerEnabled", "Should the http server be enabled?")
-                        .parser((input, _) -> input.equalsIgnoreCase("yes"))
+                        .parser((input, _) -> SetupHelper.parseBoolean(input))
                         .canSkipped(true)
                         .possibleAnswers("yes", "no")
                         .defaultValue(config.httpServer().enabled() ? "Yes" : "No", config.httpServer().enabled())
@@ -85,11 +82,7 @@ public final class ConfigSetup extends Setup {
                         .build(),
 
                 QuestionBuilder.builder("httpServerPort", "What's the http server port?")
-                        .parser((input, _) -> {
-                            if (!input.matches("\\d+")) return null;
-                            int port = Integer.parseInt(input);
-                            return (port <= 0 || port > 65535) ? null : port;
-                        })
+                        .parser((input, error) -> SetupHelper.parseInt(input, error, 1, 65535))
                         .canSkipped(true)
                         .defaultValue(String.valueOf(config.httpServer().port()), config.httpServer().port())
                         .build()

@@ -355,8 +355,6 @@ public final class PocketCloud implements CloudAPI {
         } catch (Exception e) {
             CloudLogger.get().exception("Unable to shutdown", e);
         }
-
-        System.exit(0);
     }
 
     private void shutdown0() {
@@ -369,8 +367,8 @@ public final class PocketCloud implements CloudAPI {
         CloudLogger.get().info("§cStopping §rall servers...");
         servers().stopAllAndWait(10 * 1000);
 
-        loader().unloadAll();
         network().close();
+        loader().unloadAll();
 
         if (config().writeTimingsOnShutdown()) {
             Path path = PocketCloudPaths.storage().timings().with("latest_timings.txt").asPath();

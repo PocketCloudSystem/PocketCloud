@@ -7,6 +7,7 @@ import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.setup.Question;
 import de.pocketcloud.cloud.setup.QuestionBuilder;
 import de.pocketcloud.cloud.setup.Setup;
+import de.pocketcloud.cloud.setup.SetupHelper;
 import de.pocketcloud.cloud.template.Template;
 import lombok.AllArgsConstructor;
 
@@ -37,56 +38,56 @@ public final class TemplateEditSetup extends Setup {
 
         return List.of(
                 QuestionBuilder.builder("lobby", "Is this template a lobby?")
-                        .parser((input, _) -> input.equalsIgnoreCase("yes"))
+                        .parser((input, _) -> SetupHelper.parseBoolean(input))
                         .canSkipped(true)
                         .possibleAnswers("yes", "no")
                         .defaultValue(settings.lobby() ? "Yes" : "No", settings.lobby())
                         .build(),
 
                 QuestionBuilder.builder("maintenance", "Should this template be in maintenance mode?")
-                        .parser((input, _) -> input.equalsIgnoreCase("yes"))
+                        .parser((input, _) -> SetupHelper.parseBoolean(input))
                         .canSkipped(true)
                         .possibleAnswers("yes", "no")
                         .defaultValue(settings.maintenance() ? "Yes" : "No", settings.maintenance())
                         .build(),
 
                 QuestionBuilder.builder("static", "Should servers of this template be static (keep their own persistent data)?")
-                        .parser((input, _) -> input.equalsIgnoreCase("yes"))
+                        .parser((input, _) -> SetupHelper.parseBoolean(input))
                         .canSkipped(true)
                         .possibleAnswers("yes", "no")
                         .defaultValue(settings.staticServers() ? "Yes" : "No", settings.staticServers())
                         .build(),
 
                 QuestionBuilder.builder("alwaysCopyToStaticServers", "Should static servers always copy data from the template on start? (only relevant if static = yes)")
-                        .parser((input, _) -> input.equalsIgnoreCase("yes"))
+                        .parser((input, _) -> SetupHelper.parseBoolean(input))
                         .canSkipped(true)
                         .possibleAnswers("yes", "no")
                         .defaultValue(settings.alwaysCopyToStaticServers() ? "Yes" : "No", settings.alwaysCopyToStaticServers())
                         .build(),
 
                 QuestionBuilder.builder("saveOnShutdown", "Should servers save their data back to the template on shutdown?")
-                        .parser((input, _) -> input.equalsIgnoreCase("yes"))
+                        .parser((input, _) -> SetupHelper.parseBoolean(input))
                         .canSkipped(true)
                         .possibleAnswers("yes", "no")
                         .defaultValue(settings.saveOnShutdown() ? "Yes" : "No", settings.saveOnShutdown())
                         .build(),
 
                 QuestionBuilder.builder("deleteOnStop", "Should the server directory be deleted after shutdown?")
-                        .parser((input, _) -> input.equalsIgnoreCase("yes"))
+                        .parser((input, _) -> SetupHelper.parseBoolean(input))
                         .canSkipped(true)
                         .possibleAnswers("yes", "no")
                         .defaultValue(settings.deleteOnStop() ? "Yes" : "No", settings.deleteOnStop())
                         .build(),
 
                 QuestionBuilder.builder("stopOnEmpty", "Should servers automatically shut down when they reach 0 players?")
-                        .parser((input, _) -> input.equalsIgnoreCase("yes"))
+                        .parser((input, _) -> SetupHelper.parseBoolean(input))
                         .canSkipped(true)
                         .possibleAnswers("yes", "no")
                         .defaultValue(settings.stopOnEmpty() ? "Yes" : "No", settings.stopOnEmpty())
                         .build(),
 
                 QuestionBuilder.builder("autoStart", "Should the cloud automatically start servers of this template?")
-                        .parser((input, _) -> input.equalsIgnoreCase("yes"))
+                        .parser((input, _) -> SetupHelper.parseBoolean(input))
                         .canSkipped(true)
                         .possibleAnswers("yes", "no")
                         .recommendation("yes")
@@ -94,147 +95,63 @@ public final class TemplateEditSetup extends Setup {
                         .build(),
 
                 QuestionBuilder.builder("startNewServerThreshold", "Player load threshold to start a new server (0-100 %, 0 = disabled)")
-                        .parser((input, error) -> {
-                            if (!input.matches("\\d+(\\.\\d+)?")) {
-                                error.set("Please enter a number between 0 and 100!");
-                                return null;
-                            }
-                            double value = Double.parseDouble(input);
-                            if (value < 0 || value > 100) {
-                                error.set("Value must be between 0 and 100!");
-                                return null;
-                            }
-                            return value / 100.0;
-                        })
+                        .parser((input, error) -> SetupHelper.parseDouble(input, error, 0, 100, true))
                         .canSkipped(true)
                         .recommendation("75")
-                        .defaultValue((settings.startNewServerThreshold() * 100) + "%", settings.startNewServerThreshold())
+                        .defaultValue("0 (disabled)", 0.0)
                         .build(),
 
                 QuestionBuilder.builder("maxPlayerCount", "Maximum players per server of this template")
-                        .parser((input, error) -> {
-                            if (!input.matches("\\d+")) {
-                                error.set("Please enter a positive whole number!");
-                                return null;
-                            }
-                            int value = Integer.parseInt(input);
-                            if (value < 1) {
-                                error.set("Must be at least 1!");
-                                return null;
-                            }
-                            return value;
-                        })
+                        .parser((input, error) -> SetupHelper.parseInt(input, error, 0, 100_000))
                         .canSkipped(true)
-                        .defaultValue(settings.maxPlayerCount() + " player" + (settings.maxPlayerCount() == 1 ? "" : "s"), settings.maxPlayerCount())
+                        .defaultValue("20", 20)
                         .build(),
 
                 QuestionBuilder.builder("minServerCount", "How many servers should always be online (minimum)?")
-                        .parser((input, error) -> {
-                            if (!input.matches("\\d+")) {
-                                error.set("Please enter a whole number (≥ 0)!");
-                                return null;
-                            }
-                            return Integer.parseInt(input);
-                        })
+                        .parser((input, error) -> SetupHelper.parseInt(input, error, 0, 100))
                         .canSkipped(true)
-                        .defaultValue(settings.minServerCount() + " server" + (settings.minServerCount() == 1 ? "" : "s"), settings.minServerCount())
+                        .defaultValue("1", 1)
                         .build(),
 
                 QuestionBuilder.builder("maxServerCount", "Maximum number of servers that can run for this template")
-                        .parser((input, error) -> {
-                            if (!input.matches("\\d+")) {
-                                error.set("Please enter a whole number (≥ 1)!");
-                                return null;
-                            }
-                            int value = Integer.parseInt(input);
-                            if (value < 1) {
-                                error.set("Must be at least 1!");
-                                return null;
-                            }
-                            return value;
-                        })
+                        .parser((input, error) -> SetupHelper.parseInt(input, error, 0, 100))
                         .canSkipped(true)
-                        .defaultValue(settings.maxServerCount() + " server" + (settings.maxServerCount() == 1 ? "" : "s"), settings.maxServerCount())
+                        .defaultValue("2", 2)
                         .build(),
 
                 QuestionBuilder.builder("maxMemory", "Memory (RAM) per server in Megabytes")
-                        .parser((input, error) -> {
-                            if (!input.matches("\\d+")) {
-                                error.set("Please enter a whole number!");
-                                return null;
-                            }
-                            int value = Integer.parseInt(input);
-                            if (value < 256) {
-                                error.set("Recommended minimum is 256 MB!");
-                                return null;
-                            }
-                            return value;
-                        })
+                        .parser((input, error) -> SetupHelper.parseInt(input, error, 256, (int) Math.max(PocketCloud.instance().performanceStats().systemTotalMemory() / 1024 / 1024, 1024)))
                         .canSkipped(true)
                         .recommendation("1024")
-                        .defaultValue(String.valueOf(settings.maxMemory()), settings.maxMemory())
+                        .defaultValue("1024", 1024)
                         .build(),
 
                 QuestionBuilder.builder("startupTimeout", "Seconds to wait for a server to start successfully")
-                        .parser((input, error) -> {
-                            if (!input.matches("\\d+")) {
-                                error.set("Please enter a whole number!");
-                                return null;
-                            }
-                            int value = Integer.parseInt(input);
-                            if (value < 5) {
-                                error.set("Minimum recommended is 5 seconds!");
-                                return null;
-                            }
-                            return value;
-                        })
+                        .parser((input, error) -> SetupHelper.parseInt(input, error, 5, 120))
                         .canSkipped(true)
                         .recommendation("15")
-                        .defaultValue(String.valueOf(settings.startupTimeout()), settings.startupTimeout())
+                        .defaultValue("15", 15)
                         .build(),
 
                 QuestionBuilder.builder("shutdownTimeout", "Seconds to wait for a server to stop cleanly")
-                        .parser((input, error) -> {
-                            if (!input.matches("\\d+")) {
-                                error.set("Please enter a whole number!");
-                                return null;
-                            }
-                            int value = Integer.parseInt(input);
-                            if (value < 5) {
-                                error.set("Minimum recommended is 5 seconds!");
-                                return null;
-                            }
-                            return value;
-                        })
+                        .parser((input, error) -> SetupHelper.parseInt(input, error, 5, 120))
                         .canSkipped(true)
                         .recommendation("15")
-                        .defaultValue(String.valueOf(settings.shutdownTimeout()), settings.shutdownTimeout())
+                        .defaultValue("15", 15)
                         .build(),
 
                 QuestionBuilder.builder("emptyServerGracePeriod", "Seconds to wait after 0 players before stopping the server (only if stopOnEmpty = yes)")
-                        .parser((input, error) -> {
-                            if (!input.matches("\\d+")) {
-                                error.set("Please enter a whole number!");
-                                return null;
-                            }
-                            return Integer.parseInt(input);
-                        })
+                        .parser((input, error) -> SetupHelper.parseInt(input, error, 0, Integer.MAX_VALUE))
                         .canSkipped(true)
                         .recommendation("120")
-                        .defaultValue(String.valueOf(settings.emptyServerGracePeriod()), settings.emptyServerGracePeriod())
+                        .defaultValue("120", 120)
                         .build(),
 
                 QuestionBuilder.builder("priority", "Boot priority of this template (higher = more important, used for start order)")
-                        .parser((input, error) -> {
-                            if (!input.matches("\\d+")) {
-                                error.set("Please enter a whole number (≥ 0)!");
-                                return null;
-                            }
-                            return Integer.parseInt(input);
-                        })
+                        .parser((input, error) -> SetupHelper.parseInt(input, error, 0, Integer.MAX_VALUE))
                         .canSkipped(true)
                         .recommendation("0")
-                        .defaultValue(String.valueOf(settings.priority()), settings.priority())
+                        .defaultValue("0", 0)
                         .build()
         );
     }

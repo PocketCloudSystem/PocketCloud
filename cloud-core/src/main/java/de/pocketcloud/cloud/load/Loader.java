@@ -4,12 +4,12 @@ import de.pocketcloud.cloud.util.benchmark.Benchmark;
 import de.pocketcloud.common.lifecycle.Loadable;
 import lombok.Getter;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public final class Loader {
 
-    private final Map<String, Loadable> loadableList = new HashMap<>();
+    private final Map<String, Loadable> loadableList = new LinkedHashMap<>();
     @Getter
     private boolean reloading = false;
 
@@ -63,6 +63,7 @@ public final class Loader {
         if (reloading) return;
         reloading = true;
         unloadAll();
+        preloadAll();
         loadAll();
         reloading = false;
     }
