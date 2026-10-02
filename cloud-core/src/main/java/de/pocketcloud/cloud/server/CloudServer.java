@@ -363,7 +363,7 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
                 Path dstPath = template().path().resolve(file);
                 if (Files.isRegularFile(filePath)) {
                     try {
-                        Files.copy(filePath, dstPath);
+                        Files.copy(filePath, dstPath, StandardCopyOption.REPLACE_EXISTING);
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
@@ -377,6 +377,11 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
     }
 
     public void deleteTmpDir() {
+        if (template().settings().saveOnShutdown()) save().thenSuccess((_) -> deleteTmpDir0());
+        else deleteTmpDir0();
+    }
+
+    private void deleteTmpDir0() {
         saveAndDeleteLogFiles();
         if (!template().settings().staticServers() && template().settings().deleteOnStop()) {
             CloudLogger.get().debug("Removed server directory {}", path().toString());
@@ -389,7 +394,6 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
         PocketCloud.instance().clients().remove(this);
 
         if (template().templateType() == TemplateType.SERVER) {
-            if (template().settings().saveOnShutdown()) save();
             removeFromProxies();
         }
     }
