@@ -73,6 +73,7 @@ public final class TemplateManager implements Tickable, Loadable, IWriteTemplate
     @Override
     public void create(ITemplateBuilder builder) {
         Template template = (Template) builder.build();
+        if (!checkName(template.name())) throw new IllegalArgumentException("Template name must only contain letters, numbers, underscores and hyphens");
         Benchmark.startTiming("template_creation");
         try {
             TemplateCreateEvent ev = new TemplateCreateEvent(template);
@@ -174,6 +175,11 @@ public final class TemplateManager implements Tickable, Loadable, IWriteTemplate
     @Override
     public boolean check(String name) {
         return templates.containsKey(name);
+    }
+
+    public boolean checkName(String name) {
+        return !name.contains("..") && !name.contains("/") && !name.contains("\\") && !name.contains(".")
+                && !name.contains(":") && !name.startsWith("-") && name.matches("[a-zA-Z0-9_\\-]+");
     }
 
     @Override
