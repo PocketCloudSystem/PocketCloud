@@ -7,7 +7,7 @@ import de.pocketcloud.common.lifecycle.Tickable;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.locks.LockSupport;
 
@@ -20,7 +20,7 @@ public final class Ticker {
     public static final long DRIFT_WARNING_THRESHOLD_MS = 200;
     public static final long DRIFT_WARNING_INTERVAL_MS = 5_000;
 
-    private final Map<String, Tickable> tickableList = new HashMap<>();
+    private final Map<String, Tickable> tickableList = new LinkedHashMap<>();
 
     private long tickCounter = 0;
     private long nextTick = 0;
@@ -62,9 +62,14 @@ public final class Ticker {
 
             if (!PocketCloud.instance().loader().isReloading()) {
                 for (Tickable tickable : tickableList.values()) {
-                    Benchmark.startTiming("tick_" + tickable.getClass().getName());
-                    tickable.tick(tickCounter);
-                    Benchmark.stopTiming("tick_" + tickable.getClass().getName());
+                    try {
+                        Benchmark.startTiming("tick_" + tickable.getClass().getName());
+                        tickable.tick(tickCounter);
+                    } catch (Throwable t) {
+                        CloudLogger.get().exception("Exception in tickable {}", t, tickable.getClass().getSimpleName());
+                    } finally {
+                        Benchmark.stopTiming("tick_" + tickable.getClass().getName());
+                    }
                 }
             }
 
