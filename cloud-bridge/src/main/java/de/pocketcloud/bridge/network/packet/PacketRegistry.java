@@ -60,6 +60,7 @@ public final class PacketRegistry implements IPacketRegistry<Channel>, Loadable 
     @Override
     public void unload() {
         packets.clear();
+        handlers.clear();
     }
 
     @Override
