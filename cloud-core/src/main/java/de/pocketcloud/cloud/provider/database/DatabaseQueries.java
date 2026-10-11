@@ -1,7 +1,5 @@
 package de.pocketcloud.cloud.provider.database;
 
-import de.pocketcloud.cloud.template.util.TemplateHelper;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -9,28 +7,31 @@ import java.util.stream.Collectors;
 
 public final class DatabaseQueries {
 
-    public static String createTables() {
-        return
+    public static final String[] TEMPLATE_COLUMNS = {"name", "settings", "templateType", "serverSoftware"};
+
+    public static String[] createTables() {
+        return new String[]{
                 "CREATE TABLE IF NOT EXISTS " + DatabaseTables.TEMPLATES + " (" +
-                        "name VARCHAR(50) PRIMARY KEY," +
+                        "name VARCHAR(50) PRIMARY KEY, " +
                         "settings TEXT, " +
-                        "templateType VARCHAR(20)," +
+                        "templateType VARCHAR(20), " +
                         "serverSoftware VARCHAR(30)" +
-                        "); " +
-                        "CREATE TABLE IF NOT EXISTS " + DatabaseTables.SERVER_GROUPS + " (" +
+                        "); ",
+                "CREATE TABLE IF NOT EXISTS " + DatabaseTables.SERVER_GROUPS + " (" +
                         "name VARCHAR(50) PRIMARY KEY," +
                         "templates TEXT" +
-                        "); " +
-                        "CREATE TABLE IF NOT EXISTS " + DatabaseTables.NOTIFICATIONS + " (" +
+                        "); ",
+                "CREATE TABLE IF NOT EXISTS " + DatabaseTables.NOTIFICATIONS + " (" +
                         "player VARCHAR(16) PRIMARY KEY" +
-                        "); " +
-                        "CREATE TABLE IF NOT EXISTS " + DatabaseTables.MAINTENANCE_LIST + " (" +
+                        "); ",
+                "CREATE TABLE IF NOT EXISTS " + DatabaseTables.MAINTENANCE_LIST + " (" +
                         "player VARCHAR(16) PRIMARY KEY" +
-                        ");";
+                        ");"
+        };
     }
 
     public static String addTemplate() {
-        return buildInsert(DatabaseTables.TEMPLATES, new String[]{"name", "settings", "templateType", "serverSoftware"});
+        return buildInsert(DatabaseTables.TEMPLATES, TEMPLATE_COLUMNS);
     }
 
     public static String removeTemplate() {
@@ -42,7 +43,7 @@ public final class DatabaseQueries {
     }
 
     public static String getTemplate() {
-        return "SELECT " + String.join(", ", TemplateHelper.KEYS) + " FROM " + DatabaseTables.TEMPLATES + " WHERE name = ?";
+        return "SELECT " + String.join(", ", TEMPLATE_COLUMNS) + " FROM " + DatabaseTables.TEMPLATES + " WHERE name = ?";
     }
 
     public static String checkTemplate() {
@@ -50,7 +51,7 @@ public final class DatabaseQueries {
     }
 
     public static String getTemplates() {
-        return "SELECT " + String.join(", ", TemplateHelper.KEYS) + " FROM " + DatabaseTables.TEMPLATES;
+        return "SELECT " + String.join(", ", TEMPLATE_COLUMNS) + " FROM " + DatabaseTables.TEMPLATES;
     }
 
     public static String addServerGroup() {

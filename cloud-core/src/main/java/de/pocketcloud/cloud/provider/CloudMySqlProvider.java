@@ -16,7 +16,6 @@ import de.pocketcloud.cloud.template.group.ServerGroup;
 import de.pocketcloud.common.cache.LocalCache;
 import de.pocketcloud.common.concurrent.Promise;
 import de.pocketcloud.common.util.FileUtils;
-import oshi.util.FileUtil;
 
 import javax.sql.DataSource;
 import java.sql.*;
@@ -31,13 +30,16 @@ public final class CloudMySqlProvider extends CloudProvider {
     public CloudMySqlProvider() {
         this.connectionPool = buildConnectionPool(PocketCloud.instance().config().mysqlSettings().asSettings());
 
-        executeAsync(DatabaseQueries.createTables()).thenSuccess(_ -> {
-            getWhitelist().thenSuccess(list -> LocalCache.get(WhitelistCache.class).syncIn(list.stream()
-                    .collect(Collectors.toMap(Function.identity(), _ -> true))));
+        for (String sql : DatabaseQueries.createTables()) {
+            executeSync(sql);
+        }
 
-            getNotificationList().thenSuccess(list -> LocalCache.get(NotificationListCache.class).syncIn(list.stream()
-                    .collect(Collectors.toMap(Function.identity(), _ -> true))));
-        });
+        getWhitelist().thenSuccess(list -> LocalCache.get(WhitelistCache.class)
+                        .syncIn(list.stream().collect(Collectors.toMap(Function.identity(), _ -> true))))
+                .failure(ex -> CloudLogger.get().exception("Failed to load whitelist", ex));
+
+        getNotificationList().thenSuccess(list -> LocalCache.get(NotificationListCache.class).syncIn(list.stream().collect(Collectors.toMap(Function.identity(), _ -> true))))
+                .failure(ex -> CloudLogger.get().exception("Failed to load notification list", ex));
     }
 
     @Override
@@ -252,6 +254,16 @@ public final class CloudMySqlProvider extends CloudProvider {
                 throw new RuntimeException(e);
             }
         });
+    }
+
+    private void executeSync(String sql, Object... params) {
+        try (Connection conn = connectionPool.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            bindParams(ps, params);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            CloudLogger.get().exception("MySQL execute rejected: {}", e, sql);
+            throw new RuntimeException(e);
+        }
     }
 
     private Promise<List<Map<String, Object>>> queryAsync(String sql, Object... params) {
