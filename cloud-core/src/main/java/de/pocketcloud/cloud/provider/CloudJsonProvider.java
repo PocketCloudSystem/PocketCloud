@@ -171,14 +171,14 @@ public final class CloudJsonProvider extends CloudProvider {
     public Promise<Void> addToWhitelist(String player) {
         whitelistConfig.set(player, true);
         LocalCache.get(WhitelistCache.class).add(player, true);
-        return saveConfig(notificationListConfig);
+        return saveConfig(whitelistConfig);
     }
 
     @Override
     public Promise<Void> removeFromWhitelist(String player) {
         whitelistConfig.remove(player);
         LocalCache.get(WhitelistCache.class).remove(player);
-        return saveConfig(notificationListConfig);
+        return saveConfig(whitelistConfig);
     }
 
     @Override
