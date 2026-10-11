@@ -29,7 +29,7 @@ public final class SetupHelper {
             return null;
         }
 
-        if (PocketCloud.instance().templates().checkName(input)) {
+        if (!PocketCloud.instance().templates().checkName(input)) {
             error.set("Name must only contain letters, numbers, underscores and hyphens (no dots, slashes or special characters)!");
             return null;
         }
