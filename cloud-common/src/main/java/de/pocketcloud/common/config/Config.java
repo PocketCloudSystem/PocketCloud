@@ -21,7 +21,7 @@ public final class Config {
 
     private final Path filePath;
     private ConfigType type;
-    private Map<String, Object> content = Map.of();
+    private Map<String, Object> content = new LinkedHashMap<>();
     private final Map<String, Object> defaultContent;
 
     @Getter
@@ -30,7 +30,7 @@ public final class Config {
     public Config(Path filePath, ConfigType type, Map<String, Object> defaultContent) throws IOException, UnsupportedFileExtensionException {
         this.filePath = filePath;
         this.type = type;
-        this.defaultContent = defaultContent;
+        this.defaultContent = defaultContent == null ? new LinkedHashMap<>() : new LinkedHashMap<>(defaultContent);
 
         load();
     }
@@ -81,7 +81,7 @@ public final class Config {
     }
 
     public void reload() throws IOException, UnsupportedFileExtensionException {
-        content = Map.of();
+        content = new LinkedHashMap<>();
         changed = false;
         load();
     }
@@ -172,7 +172,7 @@ public final class Config {
     }
 
     public Config clear() {
-        this.content = Map.of();
+        this.content = new LinkedHashMap<>();
         changed = true;
         return this;
     }
