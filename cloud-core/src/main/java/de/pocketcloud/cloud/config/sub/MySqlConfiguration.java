@@ -42,7 +42,7 @@ public final class MySqlConfiguration extends OkaeriConfig implements ICloudConf
     }
 
     public MySqlSettings asSettings() {
-        return new MySqlSettings(address, port, user, database, password);
+        return new MySqlSettings(address, port, database, user, password);
     }
 
     public SocketAddress socketAddress() {
