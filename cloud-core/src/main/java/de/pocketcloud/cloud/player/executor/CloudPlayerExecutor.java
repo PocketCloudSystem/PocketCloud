@@ -105,6 +105,7 @@ public final class CloudPlayerExecutor implements IPlayerExecutor {
         CloudServer selectedServer = (CloudServer) player.currentProxy().orElse(player.currentServer().orElse(null));
         if (selectedServer != null) {
             selectedServer.sendPacket(PlayerTransferPacket.create(player.name(), server.name()));
+            return true;
         }
         return false;
     }

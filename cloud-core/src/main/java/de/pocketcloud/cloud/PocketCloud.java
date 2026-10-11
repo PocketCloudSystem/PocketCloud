@@ -94,27 +94,28 @@ public final class PocketCloud implements CloudAPI {
             System.err.println("You need Java 25 or higher to be able to use PocketCloud.");
             System.err.println("You currently use Java " + version + ".");
             System.err.println("Update your Java version.");
-            System.exit(0);
+            System.exit(1);
+            return;
+        }
+
+        String os = System.getProperty("os.name").toLowerCase();
+        if (!os.contains("nux") && !os.contains("nix") && !os.contains("aix")) {
+            System.err.println("PocketCloud needs to run on Linux/a Linux distribution.");
+            System.exit(1);
             return;
         }
 
         System.out.println("Cleaning tmp/ folder...");
         FileUtils.removeDirectory(PocketCloudPaths.tmp().asPath());
 
-        createDirectories();
-
         System.out.println("Checking for previous used versions...");
+
         Path firstRunPath = PocketCloudPaths.storage().with(".first_run").asPath();
+
         if (!Files.exists(firstRunPath)) {
             firstRun = true;
-            try {
-                System.out.println("You are using an incompatible folder structure of PocketCloud.");
-                System.out.println("All your important files will be backed up inside the new storage/backups/.");
-                SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
-                String backupId = "backup-" + format.format(new Date());
-                Path backupPath = PocketCloudPaths.storage().backups().with(backupId).asPath();
-                FileUtils.createDir(backupPath);
 
+            try {
                 List<String> oldFolders = List.of(
                         "servers",
                         "templates",
@@ -131,28 +132,48 @@ public final class PocketCloud implements CloudAPI {
                         "storage/inGame"
                 );
 
-                for (String name : oldFolders) {
-                    Path folder = Path.of(name);
+                boolean hasOldStructure = oldFolders.stream()
+                        .map(Path::of)
+                        .anyMatch(Files::exists);
 
-                    if (Files.exists(folder)) {
-                        FileUtils.copyDirectory(
-                                folder,
-                                backupPath.resolve(name),
-                                Set.of()
-                        );
+                if (hasOldStructure) {
+                    System.out.println("You are using an incompatible folder structure of PocketCloud.");
+                    System.out.println("All your important files will be backed up inside the new storage/backups/.");
 
-                        FileUtils.removeDirectory(folder);
+                    SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
+                    String backupId = "backup-" + format.format(new Date());
+
+                    Path backupPath = PocketCloudPaths.storage().backups().with(backupId).asPath();
+                    FileUtils.createDir(backupPath);
+
+                    for (String name : oldFolders) {
+                        Path folder = Path.of(name);
+
+                        if (Files.exists(folder)) {
+                            FileUtils.copyDirectory(
+                                    folder,
+                                    backupPath.resolve(name),
+                                    Set.of()
+                            );
+
+                            FileUtils.removeDirectory(folder);
+                        }
                     }
                 }
 
                 createDirectories();
 
-                FileUtils.filePutContents(firstRunPath, String.valueOf(System.currentTimeMillis()));
+                FileUtils.filePutContents(
+                        firstRunPath,
+                        String.valueOf(System.currentTimeMillis())
+                );
             } catch (Exception e) {
                 System.err.println("An error occurred during the backup process.");
                 e.printStackTrace();
                 return;
             }
+        } else {
+            createDirectories();
         }
 
         services.register(Ticker.class, new Ticker());

@@ -26,7 +26,6 @@ public final class ProcessServerStartMethod implements ServerStartMethod {
                     CloudLogger.get().debug("Starting {} with {}", server.name(), startCommand);
 
                     Process process = new ProcessBuilder(tokenizeCommand(startCommand))
-                            .redirectErrorStream(true)
                             .directory(server.path().toFile())
                             .start();
 

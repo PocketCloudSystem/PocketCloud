@@ -22,19 +22,19 @@ public final class CloudJsonProvider extends CloudProvider {
 
     private Config templatesConfig;
     private Config serverGroupsConfig;
-    private Config notificationsList;
-    private Config maintenanceList;
+    private Config notificationListConfig;
+    private Config whitelistConfig;
 
     public CloudJsonProvider() {
         try {
             this.templatesConfig = new Config(PocketCloudPaths.templates().with("templates.json").asPath());
             this.serverGroupsConfig = new Config(PocketCloudPaths.groups().with("groups.json").asPath());
 
-            this.notificationsList = new Config(PocketCloudPaths.storage().inGame().with("notificationList.json").asPath());
-            this.maintenanceList = new Config(PocketCloudPaths.storage().inGame().with("maintenanceList.json").asPath());
+            this.notificationListConfig = new Config(PocketCloudPaths.storage().inGame().with("notificationList.json").asPath());
+            this.whitelistConfig = new Config(PocketCloudPaths.storage().inGame().with("whitelist.json").asPath());
 
-            maintenanceList.getAll().keySet().stream().filter(p -> maintenanceList.get(p, false)).forEach(p -> LocalCache.get(WhitelistCache.class).add(p, true));
-            notificationsList.getAll().keySet().stream().filter(p -> notificationsList.get(p, false)).forEach(p -> LocalCache.get(NotificationListCache.class).add(p, true));
+            whitelistConfig.getAll().keySet().stream().filter(p -> whitelistConfig.get(p, false)).forEach(p -> LocalCache.get(WhitelistCache.class).add(p, true));
+            notificationListConfig.getAll().keySet().stream().filter(p -> notificationListConfig.get(p, false)).forEach(p -> LocalCache.get(NotificationListCache.class).add(p, true));
         } catch (IOException | UnsupportedFileExtensionException e) {
             CloudLogger.get().exception("Unable to load CloudJsonProvider", e);
             PocketCloud.instance().shutdown();
@@ -145,50 +145,50 @@ public final class CloudJsonProvider extends CloudProvider {
 
     @Override
     public Promise<Void> enablePlayerNotifications(String player) {
-        notificationsList.set(player, true);
+        notificationListConfig.set(player, true);
         LocalCache.get(NotificationListCache.class).add(player, true);
-        return saveConfig(notificationsList);
+        return saveConfig(notificationListConfig);
     }
 
     @Override
     public Promise<Void> disablePlayerNotifications(String player) {
-        notificationsList.remove(player);
+        notificationListConfig.remove(player);
         LocalCache.get(NotificationListCache.class).remove(player);
-        return saveConfig(notificationsList);
+        return saveConfig(notificationListConfig);
     }
 
     @Override
     public Promise<Boolean> hasNotificationsEnabled(String player) {
-        return Promise.resolved(notificationsList.get(player, false));
+        return Promise.resolved(notificationListConfig.get(player, false));
     }
 
     @Override
     public Promise<List<String>> getNotificationList() {
-        return Promise.resolved(new ArrayList<>(notificationsList.getKeys()));
+        return Promise.resolved(new ArrayList<>(notificationListConfig.getKeys()));
     }
 
     @Override
     public Promise<Void> addToWhitelist(String player) {
-        maintenanceList.set(player, true);
+        whitelistConfig.set(player, true);
         LocalCache.get(WhitelistCache.class).add(player, true);
-        return saveConfig(notificationsList);
+        return saveConfig(notificationListConfig);
     }
 
     @Override
     public Promise<Void> removeFromWhitelist(String player) {
-        maintenanceList.remove(player);
+        whitelistConfig.remove(player);
         LocalCache.get(WhitelistCache.class).remove(player);
-        return saveConfig(notificationsList);
+        return saveConfig(notificationListConfig);
     }
 
     @Override
     public Promise<Boolean> isOnWhitelist(String player) {
-        return Promise.resolved(maintenanceList.get(player, false));
+        return Promise.resolved(whitelistConfig.get(player, false));
     }
 
     @Override
     public Promise<List<String>> getWhitelist() {
-        return Promise.resolved(maintenanceList.getAll().entrySet().stream()
+        return Promise.resolved(whitelistConfig.getAll().entrySet().stream()
                 .filter(e -> Boolean.TRUE.equals(e.getValue()))
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toList()));

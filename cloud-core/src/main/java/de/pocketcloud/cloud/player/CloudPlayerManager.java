@@ -20,8 +20,8 @@ import java.util.function.Consumer;
 public final class CloudPlayerManager implements IWritePlayerProvider {
 
     private final Map<String, CloudPlayer> players = new ConcurrentHashMap<>();
-    private final Map<String, String> playersByXuid = new ConcurrentHashMap<>();
-    private final Map<UUID, String> playersByUuid = new ConcurrentHashMap<>();
+    private final Map<String, CloudPlayer> playersByXuid = new ConcurrentHashMap<>();
+    private final Map<UUID, CloudPlayer> playersByUuid = new ConcurrentHashMap<>();
 
     @Override
     public void add(ICloudPlayer player) {
@@ -39,8 +39,8 @@ public final class CloudPlayerManager implements IWritePlayerProvider {
         }
 
         players.put(cloudPlayer.name(), cloudPlayer);
-        playersByXuid.put(cloudPlayer.xboxUserId(), cloudPlayer.name());
-        playersByUuid.put(cloudPlayer.uniqueId(), cloudPlayer.name());
+        playersByXuid.put(cloudPlayer.xboxUserId(), cloudPlayer);
+        playersByUuid.put(cloudPlayer.uniqueId(), cloudPlayer);
         cloudPlayer.syncOut();
         String serverOrProxy = cloudPlayer.currentServerName() != null ? cloudPlayer.currentServerName() : cloudPlayer.currentProxyName();
         PocketCloud.instance().notifications().sendNotification(NotificationType.PLAYER_JOINED, Map.of("player", cloudPlayer.name(), "server", serverOrProxy), Map.of());
@@ -57,9 +57,9 @@ public final class CloudPlayerManager implements IWritePlayerProvider {
             CloudLogger.get().info("Player §b{} §cdisconnected §rfrom §b{}§r.", cloudPlayer.name(), from);
         }
 
-        players.remove(cloudPlayer.name());
-        playersByXuid.remove(cloudPlayer.xboxUserId());
-        playersByUuid.remove(cloudPlayer.uniqueId());
+        players.remove(cloudPlayer.name(), cloudPlayer);
+        playersByXuid.remove(cloudPlayer.xboxUserId(), cloudPlayer);
+        playersByUuid.remove(cloudPlayer.uniqueId(), cloudPlayer);
 
         String serverOrProxy = cloudPlayer.currentServerName() != null ? cloudPlayer.currentServerName() : cloudPlayer.currentProxyName();
         PocketCloud.instance().notifications().sendNotification(NotificationType.PLAYER_LEFT, Map.of("player", cloudPlayer.name(), "server", serverOrProxy), Map.of());
@@ -84,17 +84,14 @@ public final class CloudPlayerManager implements IWritePlayerProvider {
 
     @Override
     public Optional<ICloudPlayer> get(String nameOrXuid) {
-        CloudPlayer byName = players.get(nameOrXuid);
-        if (byName != null) return Optional.of(byName);
-
-        String name = playersByXuid.get(nameOrXuid);
-        return name != null ? Optional.ofNullable(players.get(name)) : Optional.empty();
+        CloudPlayer player = players.get(nameOrXuid);
+        if (player == null) player = playersByXuid.get(nameOrXuid);
+        return Optional.ofNullable(player);
     }
 
     @Override
     public Optional<ICloudPlayer> get(UUID uuid) {
-        String name = playersByUuid.get(uuid);
-        return name != null ? Optional.ofNullable(players.get(name)) : Optional.empty();
+        return Optional.ofNullable(playersByUuid.get(uuid));
     }
 
     @Override

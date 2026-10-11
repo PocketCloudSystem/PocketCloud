@@ -102,14 +102,16 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
 
     @Override
     public void remove(ICloudServer server) {
-        servers.remove(server.name());
-        zeroPlayersReachedTimestamps.remove(server.name());
-        serverCounts.put(server.template(), serverCounts.getOrDefault(server.template(), 1) - 1);
-        if (startingServerTimestamps.remove(server.name()) != null) startingServers.decrementAndGet();
-        ServerUtils.removeId(server.template(), server.id());
-        ServerUtils.removePort(server.data().port());
-        this.lastServerStopTime = System.currentTimeMillis();
-        ((CloudServer) server).markForRemoval().syncOut();
+        CloudServer cloudServer = requireCloudServer(server);
+        if (!servers.remove(cloudServer.name(), cloudServer)) return;
+        zeroPlayersReachedTimestamps.remove(cloudServer.name());
+        serverCounts.compute(cloudServer.template(), (_, count) -> count == null ? 0 : Math.max(0, count - 1));
+        if (startingServerTimestamps.remove(cloudServer.name()) != null) startingServers.decrementAndGet();
+        preparingServerTimestamps.remove(cloudServer.name());
+        ServerUtils.removeId(cloudServer.template(), cloudServer.id());
+        ServerUtils.removePort(cloudServer.data().port());
+        lastServerStopTime = System.currentTimeMillis();
+        cloudServer.markForRemoval().syncOut();
     }
 
     @Override
@@ -267,7 +269,13 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
     private void onStartFailed(Object[] crashData) {
         CloudServer server = (CloudServer) crashData[0];
         Throwable exception = crashData.length > 1 ? (Throwable) crashData[1] : null;
-        CloudLogger.get().warn("§cFailed to prepare server §e{}§8: §e{}", server.name(), exception != null ? exception.getMessage() : "Unknown error");
+
+        CloudLogger.get().warn(
+                "§cFailed to prepare server §e{}§8: §e{}",
+                server.name(),
+                exception != null ? exception.getMessage() : "Unknown error"
+        );
+
         if (exception != null) CloudLogger.get().exception(exception);
         if (startingServerTimestamps.remove(server.name()) != null) startingServers.decrementAndGet();
     }

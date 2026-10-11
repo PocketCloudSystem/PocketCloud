@@ -49,6 +49,7 @@ public final class SoftwareService {
             return true;
         } catch (Exception e) {
             progressBar.abort();
+            CloudLogger.get().error("Failed to download software {}", e, software.name());
             return false;
         }
     }
@@ -93,6 +94,7 @@ public final class SoftwareService {
             Files.createDirectories(binaryDir);
         } catch (IOException e) {
             progressBar.abort();
+            CloudLogger.get().error("Failed to create directories for {} binary", e, software.name());
             return false;
         }
 
@@ -132,6 +134,7 @@ public final class SoftwareService {
             return true;
         } catch (Exception e) {
             progressBar.abort();
+            CloudLogger.get().error("Failed to download binary for {}", e, software.name());
             return false;
         }
     }
@@ -182,6 +185,7 @@ public final class SoftwareService {
             return true;
         } catch (Exception e) {
             progressBar.abort();
+            CloudLogger.get().error("Failed to download bridge for {}", e, software.name());
             return false;
         }
     }

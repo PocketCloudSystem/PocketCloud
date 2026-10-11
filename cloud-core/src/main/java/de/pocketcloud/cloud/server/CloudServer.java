@@ -331,7 +331,7 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
         stop(false);
     }
 
-    public void saveAndDeleteLogFiles() {
+    public void saveLogFiles() {
         Path logFileLocation = logFilePath();
         Path logArchivePath = template().path().resolve("cloud_log_archive");
         if (Files.exists(logFileLocation)) {
@@ -382,7 +382,7 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
     }
 
     private void deleteTmpDir0() {
-        saveAndDeleteLogFiles();
+        saveLogFiles();
         if (!template().settings().staticServers() && template().settings().deleteOnStop()) {
             CloudLogger.get().debug("Removed server directory {}", path().toString());
             FileUtils.removeDirectory(path());
