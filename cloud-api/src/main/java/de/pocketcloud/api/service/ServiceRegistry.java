@@ -1,11 +1,13 @@
 package de.pocketcloud.api.service;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class ServiceRegistry {
 
-    private final Map<Class<?>, Object> services = new ConcurrentHashMap<>();
+    private final Map<Class<?>, Object> services = new LinkedHashMap<>();
 
     public <T> T register(Class<T> serviceClass, T serviceInstance) {
         if (services.containsKey(serviceClass))
@@ -23,6 +25,6 @@ public final class ServiceRegistry {
     }
 
     public Map<Class<?>, Object> getAll() {
-        return Map.copyOf(this.services);
+        return Collections.unmodifiableMap(new LinkedHashMap<>(this.services));
     }
 }

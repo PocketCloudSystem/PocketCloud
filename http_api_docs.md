@@ -67,7 +67,7 @@ The final path of a built-in route is assembled as:
 <route prefix>/v<version><path>
 ```
 
-- The **route prefix** is an optional prefix configured for the cloud's own routes (empty by default — see
+- The **route prefix** is an optional prefix configured for the cloud's own routes ('/cloud/' by default — see
   [Server Configuration](#server-configuration)). It is *not* applied to routes registered by plugins.
 - Non-versioned routes (like `/health`) skip the `/v<version>` segment entirely, but still receive the route prefix
   if one is configured.
@@ -1221,15 +1221,15 @@ an `IAuthentication` class, an `AuthenticationFailedHandler` class, and/or an ex
 
 The HTTP server is built from the cloud's `MainConfig`. Fields confirmed to be in use by the current implementation:
 
-| Config Area                            | Description                                                                     |
-|----------------------------------------|---------------------------------------------------------------------------------|
-| `http_server.route_prefix`             | Optional prefix applied in front of every built-in cloud route (e.g. `/v1/...`) |
-| `http_server.ssl.enabled`              | Whether the HTTP server should use TLS                                          |
-| `http_server.ssl.self_signed`          | If `true`, generates a self-signed certificate at startup                       |
-| `http_server.ssl.self_signed_hostname` | Hostname used for the self-signed certificate's subject/SAN                     |
-| `http_server.ssl.cert_file`            | Path to a certificate file (used when not self-signed)                          |
-| `http_server.ssl.private_key_file`     | Path to the certificate's private key file                                      |
-| `http_server.ssl.key_password`         | Optional password for the private key file                                      |
+| Config Area                            | Description                                                                        |
+|----------------------------------------|------------------------------------------------------------------------------------|
+| `http_server.route_prefix`             | Optional prefix applied in front of every built-in cloud route (e.g. `/cloud/...`) |
+| `http_server.ssl.enabled`              | Whether the HTTP server should use TLS                                             |
+| `http_server.ssl.self_signed`          | If `true`, generates a self-signed certificate at startup                          |
+| `http_server.ssl.self_signed_hostname` | Hostname used for the self-signed certificate's subject/SAN                        |
+| `http_server.ssl.cert_file`            | Path to a certificate file (used when not self-signed)                             |
+| `http_server.ssl.private_key_file`     | Path to the certificate's private key file                                         |
+| `http_server.ssl.key_password`         | Optional password for the private key file                                         |
 
 The server's auth token (used by `DefaultAuthentication`) is generated via a secure random token generator and
 exposed as `HttpServer#authToken()`.

@@ -45,7 +45,27 @@ public final class TemplateProvider implements IWriteTemplateProvider {
         boolean verified = CloudBridge.instance().status().isVerified();
         if (templates.containsKey(template.name())) {
             Template localTemplate = (Template) templates.get(template.name());
-            TemplateSettings oldSettings = localTemplate.settings();
+            TemplateSettings oldSettings = new TemplateSettings(
+                    localTemplate.settings().lobby(),
+                    localTemplate.settings().maintenance(),
+                    localTemplate.settings().staticServers(),
+                    localTemplate.settings().alwaysCopyToStaticServers(),
+                    localTemplate.settings().saveOnShutdown(),
+                    localTemplate.settings().deleteOnStop(),
+                    localTemplate.settings().stopOnEmpty(),
+                    localTemplate.settings().autoStart(),
+                    localTemplate.settings().startNewServerThreshold(),
+                    localTemplate.settings().maxPlayerCount(),
+                    localTemplate.settings().minServerCount(),
+                    localTemplate.settings().maxServerCount(),
+                    localTemplate.settings().maxMemory(),
+                    localTemplate.settings().startupTimeout(),
+                    localTemplate.settings().shutdownTimeout(),
+                    localTemplate.settings().emptyServerGracePeriod(),
+                    localTemplate.settings().priority(),
+                    localTemplate.settings().jvmFlags()
+            );
+
             localTemplate.syncIn(template);
             if (verified)
                 CloudAPI.instance().events().call(new TemplateEditedEvent(localTemplate, TemplateEditData.between(oldSettings, localTemplate.settings())));
@@ -63,6 +83,7 @@ public final class TemplateProvider implements IWriteTemplateProvider {
     @Override
     public void remove(ITemplate template) {
         Template localTemplate = (Template) templates.get(template.name());
+        if (localTemplate == null) return;
         if (CloudBridge.instance().status().isVerified())
             CloudAPI.instance().events().call(new TemplateDeletedEvent(localTemplate));
         templates.remove(template.name());

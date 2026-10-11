@@ -79,7 +79,7 @@ public abstract class RequestPacket extends CloudPacket {
             if (responseConsumer != null) responseConsumer.accept(packet);
         } catch (Throwable ex) {
             if (failureConsumer != null) {
-                failureConsumer.accept(this, e, RequestPacketFailureReason.THEN_CRASHED);
+                failureConsumer.accept(this, ex, RequestPacketFailureReason.THEN_CRASHED);
             }
         }
     }

@@ -54,6 +54,7 @@ public final class PlayerListener implements Listener {
                     "server", CloudBridge.instance().environmentConfig().localServerName(),
                     "reason", event.getKickMessage()
             ));
+            return;
         }
 
         PlayerConnectPacket.create(

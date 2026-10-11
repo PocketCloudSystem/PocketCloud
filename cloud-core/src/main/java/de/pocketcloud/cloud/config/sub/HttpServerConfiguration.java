@@ -41,8 +41,8 @@ public final class HttpServerConfiguration extends OkaeriConfig implements IClou
     @Override
     public void validate() {
         if (port < 1 || port > 65535) {
-            PocketCloud.instance().appendStartNotification("Invalid port given in http server configuration. reset to defaukt...", CloudLogLevel.WARN);
-            port = 3656;
+            PocketCloud.instance().appendStartNotification("Invalid port given in http server configuration. reset to default...", CloudLogLevel.WARN);
+            port = 8080;
         }
 
         ssl.validate();

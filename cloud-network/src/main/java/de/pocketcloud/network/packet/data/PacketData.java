@@ -2,6 +2,7 @@ package de.pocketcloud.network.packet.data;
 
 import com.google.gson.reflect.TypeToken;
 import de.pocketcloud.api.network.packet.data.IPacketData;
+import de.pocketcloud.common.serialization.MapperUtils;
 import de.pocketcloud.common.serialization.Writable;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -400,6 +401,13 @@ public final class PacketData implements IPacketData {
         }
 
         if (rawType.isInstance(item)) return item;
+
+        if (item instanceof Map<?, ?> map && !Map.class.isAssignableFrom(rawType)) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> data = (Map<String, Object>) map;
+            return MapperUtils.fromMap(data, rawType);
+        }
+
         throw new PacketDecodeException(rawType.getSimpleName(), item);
     }
 

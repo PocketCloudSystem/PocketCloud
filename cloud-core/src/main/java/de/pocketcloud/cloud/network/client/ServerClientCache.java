@@ -77,6 +77,10 @@ public final class ServerClientCache implements Tickable {
         return serversByClient.containsKey(client.toString());
     }
 
+    public synchronized boolean isRegistered(CloudServer server) {
+        return clientsByServer.containsKey(server.uuid());
+    }
+
     public synchronized Optional<ServerClient> getByChannel(Channel channel) {
         return Optional.ofNullable(clientsByAddress.get(channel.remoteAddress().toString()));
     }

@@ -1,4 +1,3 @@
-
 package de.pocketcloud.common.util;
 
 import java.io.IOException;
@@ -27,7 +26,7 @@ public final class NetUtils {
     private NetUtils() {}
 
     public static boolean isLocalUdpPortFree(int port) {
-        try (DatagramSocket socket = new DatagramSocket(port)) {
+        try (DatagramSocket _ = new DatagramSocket(port)) {
             return true;
         } catch (IOException e) {
             return false;
@@ -61,7 +60,8 @@ public final class NetUtils {
                     HttpResponse.BodyHandlers.discarding()
             );
 
-            if (response.statusCode() != 200) {
+            // FIX: Erlaube erfolgreiche Statuscodes (z.B. 200 OK oder 204 No Content) statt starr nur 200
+            if (response.statusCode() < 200 || response.statusCode() >= 300) {
                 return -1L;
             }
 
@@ -120,7 +120,6 @@ public final class NetUtils {
 
         Files.createDirectories(parent);
 
-        // Same directory so an atomic move is possible on the same filesystem.
         Path tempFile = Files.createTempFile(parent, "download-", ".tmp");
         boolean moved = false;
 
@@ -165,14 +164,11 @@ public final class NetUtils {
                             long now = System.nanoTime();
 
                             if (onProgress != null && (firstUpdate || now - lastTime >= 500_000_000L)) {
-
                                 firstUpdate = false;
 
                                 double elapsedSeconds = (now - lastTime) / 1_000_000_000.0;
                                 double speed = elapsedSeconds > 0 ? (downloaded - lastBytes) / elapsedSeconds : 0;
-
                                 double percent = totalBytes > 0 ? (double) downloaded / totalBytes * 100 : -1;
-
                                 long eta = totalBytes > 0 && speed > 0 ? Math.max(0, (long) ((totalBytes - downloaded) / speed)) : -1;
 
                                 onProgress.accept(new DownloadProgress(
@@ -185,7 +181,6 @@ public final class NetUtils {
                         }
                     }
 
-                    // Detect truncated downloads when Content-Length is provided.
                     if (totalBytes >= 0 && downloaded != totalBytes) {
                         throw new IOException("Incomplete download: expected " + totalBytes + " bytes, received " + downloaded);
                     }
@@ -204,7 +199,6 @@ public final class NetUtils {
                         StandardCopyOption.REPLACE_EXISTING,
                         StandardCopyOption.ATOMIC_MOVE);
             } catch (AtomicMoveNotSupportedException e) {
-                // Keep the old file safe if atomic replacement is unavailable.
                 throw new IOException("Atomic replacement is not supported for " + absoluteTarget, e);
             }
 
@@ -223,7 +217,7 @@ public final class NetUtils {
 
     private static HttpClient createClient() {
         return HttpClient.newBuilder()
-                .followRedirects(HttpClient.Redirect.ALWAYS)
+                .followRedirects(HttpClient.Redirect.NORMAL)
                 .connectTimeout(REQUEST_TIMEOUT)
                 .build();
     }

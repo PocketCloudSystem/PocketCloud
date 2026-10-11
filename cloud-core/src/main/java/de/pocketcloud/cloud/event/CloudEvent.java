@@ -7,7 +7,7 @@ import lombok.Getter;
 public abstract class CloudEvent implements Event {
 
     public final int MAX_EVENT_CALL_DEPTH = 50;
-    private static int eventCallDepth = 1;
+    private static ThreadLocal<Integer> eventCallDepth = ThreadLocal.withInitial(() -> 1);
     @Getter
     private boolean cancelled = false;
 
@@ -22,15 +22,15 @@ public abstract class CloudEvent implements Event {
     }
 
     public CloudEvent call() {
-        if (eventCallDepth >= MAX_EVENT_CALL_DEPTH) {
+        if (eventCallDepth.get() >= MAX_EVENT_CALL_DEPTH) {
             throw new RuntimeException("Recursive event call detected (reached max depth of " + MAX_EVENT_CALL_DEPTH + " calls)");
         }
 
-        ++eventCallDepth;
+        eventCallDepth.set(eventCallDepth.get() + 1);
         try {
             PocketCloud.instance().events().call(this);
         } finally {
-            --eventCallDepth;
+            eventCallDepth.set(eventCallDepth.get() - 1);
         }
 
         return this;

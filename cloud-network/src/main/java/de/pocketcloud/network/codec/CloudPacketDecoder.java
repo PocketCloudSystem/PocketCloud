@@ -37,12 +37,14 @@ public final class CloudPacketDecoder extends ByteToMessageDecoder {
             if (length < 0) {
                 CloudAPI.instance().logger().exception(new IllegalStateException("Received invalid (negative) packet length " + length + " - closing channel"));
                 ctx.close();
+                in.skipBytes(length);
                 return;
             }
 
             if (length > maxPacketSizeSupplier.getAsInt()) {
                 trafficListener.onTooLargePacket(ctx.channel(), null, length, TrafficDirection.IN);
                 ctx.close();
+                in.skipBytes(length);
                 return;
             }
 

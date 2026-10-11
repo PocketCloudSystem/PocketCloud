@@ -1,5 +1,6 @@
 package de.pocketcloud.cloud.network.packet.handler;
 
+import de.pocketcloud.api.CloudAPI;
 import de.pocketcloud.api.network.handler.PacketHandler;
 import de.pocketcloud.api.network.handler.PacketListener;
 import de.pocketcloud.api.network.packet.data.IPacketData;
@@ -10,7 +11,7 @@ import de.pocketcloud.cloud.provider.CloudProvider;
 import de.pocketcloud.network.packet.impl.SyncPacket;
 import de.pocketcloud.shared.sync.SyncType;
 
-import java.util.Map;
+import java.util.UUID;
 
 public final class SyncPacketHandler implements PacketListener {
 
@@ -35,8 +36,8 @@ public final class SyncPacketHandler implements PacketListener {
     }
 
     public void handleServerStorage(IPacketData data, ServerClient sender) {
-        Map<String, Object> storage = data.readMap();
-        sender.server().storage().syncIn(storage);
+        CloudAPI.instance().servers().get(UUID.fromString(data.readString()))
+                .ifPresent(s -> s.storage().syncIn(data.readMap()));
     }
 
     public void handlePlayerUpdateNotificationState(IPacketData data, ServerClient sender) {

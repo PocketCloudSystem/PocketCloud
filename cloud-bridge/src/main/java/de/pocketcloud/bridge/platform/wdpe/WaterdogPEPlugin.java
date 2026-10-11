@@ -58,8 +58,14 @@ public final class WaterdogPEPlugin extends Plugin implements IPlatformPlugin {
     public void onVerification() {}
 
     @Override
-    public void startTask(Runnable runnable, int period) {
-        getProxy().getScheduler().scheduleRepeating(runnable, period);
+    public void startTask(Runnable runnable, int delay, int period) {
+        if (period <= 0 && delay > 0) {
+            getProxy().getScheduler().scheduleDelayed(runnable, delay);
+        } else if (period > 0 && delay <= 0) {
+            getProxy().getScheduler().scheduleRepeating(runnable, period);
+        } else {
+            getProxy().getScheduler().scheduleDelayedRepeating(runnable, delay, period);
+        }
     }
 
     @Override

@@ -31,7 +31,7 @@ public final class ServerConsoleMonitorScreen extends Screen {
     private static final Pattern SGR_PARAMS = Pattern.compile("^\u001B\\[([0-9;]*)m$");
 
     private ILogger logger;
-    private ServerLogStream stream;
+    private volatile ServerLogStream stream;
 
     private boolean justStopped = false;
     private String lastInfoMessage = "";
@@ -142,20 +142,23 @@ public final class ServerConsoleMonitorScreen extends Screen {
         }
     }
 
-    private void openLogStream() {
-        if (stream != null) stream.stopStream();
+    private synchronized void openLogStream() {
+        ServerLogStream currentStream = stream;
+        if (currentStream != null) currentStream.stopStream();
         CloudServer server = (CloudServer) PocketCloud.instance().servers().get(serverName).orElse(null);
         if (server != null) {
             stream = server.openLogStream();
             try {
-                stream.startStream();
+                if (stream != null) {
+                    stream.startStream();
+                }
             } catch (Exception e) {
                 printInfoMessage(
                         "§8[§c!§8] §cFailed to open log stream§8: §e{}§r, trying again in 3 seconds...",
                         e.getMessage()
                 );
 
-                nextOpenStreamTry = PocketCloud.instance().currentTick() + (20 * 3);
+                nextOpenStreamTry = PocketCloud.instance().currentTick() + 60;
                 stream = null;
             }
         } else {
@@ -182,7 +185,8 @@ public final class ServerConsoleMonitorScreen extends Screen {
                         serverName
                 );
 
-                stream.stopStream();
+                ServerLogStream currentStream = stream;
+                if (currentStream != null) currentStream.stopStream();
                 stream = null;
                 justStopped = true;
             }
@@ -232,21 +236,26 @@ public final class ServerConsoleMonitorScreen extends Screen {
     @Override
     public void tick(long currentTick) {
         checkLogStream();
-        if (stream != null) {
-            while (true) {
-                String line = stream.readNewLine();
+
+        ServerLogStream currentStream = stream;
+        if (currentStream != null) {
+            int linesRead = 0;
+            while (linesRead < 100) {
+                String line = currentStream.readNewLine();
                 if (line == null) break;
                 line = processAnsi(line).trim();
                 line = line.replaceFirst("^>+\\s*", "");
                 if (line.isEmpty()) continue;
                 printLog(line);
+                linesRead++;
             }
         }
     }
 
     @Override
     public void onRemove(long currentTick) {
-        if (stream != null) stream.stopStream();
+        ServerLogStream currentStream = stream;
+        if (currentStream != null) currentStream.stopStream();
         stream = null;
 
         clear();

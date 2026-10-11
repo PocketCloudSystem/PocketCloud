@@ -123,10 +123,10 @@ public final class TemplateManager implements Tickable, Loadable, IWriteTemplate
         if (temp.settings().maintenance()) {
             temp.players().forEach(player -> {
                 if (template.settings().lobby()) {
-                    player.kick("MAINTENANCE");
+                    player.kick();
                 } else {
                     Optional<ICloudServer> lobbyServer = PocketCloud.instance().servers().getFreeLobby();
-                    if (lobbyServer.isEmpty()) player.kick("MAINTENANCE");
+                    if (lobbyServer.isEmpty()) player.kick();
                     else player.transfer(lobbyServer.get());
                 }
             });
@@ -150,7 +150,15 @@ public final class TemplateManager implements Tickable, Loadable, IWriteTemplate
             return;
         }
 
-        PocketCloud.instance().servers().stop(template);
+        PocketCloud.instance().servers().stopTemplateAndWait(template, 10_000)
+                .thenSuccess((_) -> continueDeletion(temp))
+                .failure(ex -> {
+                    CloudLogger.get().exception("§cAn error occurred while stopping servers with template §b{}", ex, template.name());
+                    continueDeletion(temp);
+                });
+    }
+
+    private void continueDeletion(Template temp) {
         CloudProvider.current().removeTemplate(temp);
         if (Files.isDirectory(temp.path())) {
             try {
@@ -164,7 +172,7 @@ public final class TemplateManager implements Tickable, Loadable, IWriteTemplate
         BenchmarkTiming res = Benchmark.stopTiming("template_removal");
         CloudLogger.get().success("Successfully §cremoved §rthe template §b{}§r. §8(§rTook §b{}ms§8)", temp.name(), NumberUtils.formatNumber(res.duration(), 2));
         temp.markForRemoval().syncOut();
-        CloudAPI.instance().events().call(new TemplateDeletedEvent(template));
+        CloudAPI.instance().events().call(new TemplateDeletedEvent(temp));
     }
 
     @Override

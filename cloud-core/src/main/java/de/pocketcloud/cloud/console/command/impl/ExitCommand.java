@@ -1,5 +1,6 @@
 package de.pocketcloud.cloud.console.command.impl;
 
+import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.command.Command;
 import de.pocketcloud.cloud.console.command.ctx.CommandContext;
 import de.pocketcloud.cloud.console.command.desc.CommandDescription;
@@ -17,12 +18,12 @@ public final class ExitCommand extends Command {
     @Override
     public boolean run(CommandSender sender, CommandContext ctx) {
         if (ctx.hasFlag("y")) {
-            System.exit(0);
+            PocketCloud.instance().shutdown();
         } else {
             awaitConfirmation(sender, "Are you sure you want to §cshutdown §rthe cloud?")
                     .thenSuccess(r -> {
                         if (r) {
-                            System.exit(0);
+                            PocketCloud.instance().shutdown();
                         }
                     });
         }

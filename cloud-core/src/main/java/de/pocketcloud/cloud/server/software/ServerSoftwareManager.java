@@ -126,6 +126,7 @@ public final class ServerSoftwareManager implements IWriteSoftwareProvider, Load
                         loadSoftware(software);
                     } catch (Exception e) {
                         CloudLogger.get().exception("Failed to load software {}", e, file.getFileName().toString());
+                        softwareList.remove(software == null ? file.getFileName().toString() : software.name());
                         disabledSoftware.add(software == null ? file.getFileName().toString() : software.name());
                     }
                 }
@@ -147,9 +148,6 @@ public final class ServerSoftwareManager implements IWriteSoftwareProvider, Load
     public void load() {}
 
     public void loadSoftware(ServerSoftware software) {
-        CloudLogger.get().debug("Loaded {}, part of {} template type", software.name(), software.templateType());
-        softwareList.put(software.name(), software);
-        TemplateTypeHelper.addSoftware(Objects.requireNonNull(software.type()), software);
         if (!service().directoryPath(software).toFile().exists() && !service().directoryPath(software).toFile().mkdirs())
             throw new RuntimeException("Unable to create directory");
         if (!service().bridgeDirectoryPath(software).toFile().exists() && !service().bridgeDirectoryPath(software).toFile().mkdirs())
@@ -162,6 +160,10 @@ public final class ServerSoftwareManager implements IWriteSoftwareProvider, Load
                 throw new RuntimeException(e);
             }
         }
+
+        CloudLogger.get().debug("Loaded {}, part of {} template type", software.name(), software.templateType());
+        softwareList.put(software.name(), software);
+        TemplateTypeHelper.addSoftware(Objects.requireNonNull(software.type()), software);
 
         if (service().requiresUpdateSoftware(software)) {
             if (!service().downloadSoftware(software)) throw new RuntimeException("Failed to download software");

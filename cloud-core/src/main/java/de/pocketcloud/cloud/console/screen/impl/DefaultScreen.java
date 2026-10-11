@@ -71,7 +71,7 @@ public final class DefaultScreen extends Screen {
 
     @Override
     public InterruptionResult onCancel(long currentTick) {
-        PocketCloud.instance().commands().call(new ConsoleCommandSender(), "exit -y");
+        PocketCloud.instance().shutdown();
         return InterruptionResult.INTERRUPT;
     }
 

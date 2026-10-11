@@ -97,18 +97,19 @@ public final class ConfigSetup extends Setup {
         config.language((String) results.get("language"));
         config.writeTimingsOnShutdown((Boolean) results.get("writeTimingsOnShutdown"));
 
-        NetworkConfiguration networkConfiguration = new NetworkConfiguration();
-        networkConfiguration.address((String) results.get("networkAddress"));
-        networkConfiguration.port((Integer) results.get("networkPort"));
-        networkConfiguration.encryption((Boolean) results.get("networkEncryption"));
+        NetworkConfiguration networkConfiguration = config.network();
+        if (networkConfiguration != null) {
+            networkConfiguration.address((String) results.get("networkAddress"));
+            networkConfiguration.port((Integer) results.get("networkPort"));
+            networkConfiguration.encryption((Boolean) results.get("networkEncryption"));
+        }
 
-        HttpServerConfiguration httpServerConfiguration = new HttpServerConfiguration();
-        httpServerConfiguration.enabled((Boolean) results.get("httpServerEnabled"));
-        httpServerConfiguration.address((String) results.get("httpServerAddress"));
-        httpServerConfiguration.port((Integer) results.get("httpServerPort"));
-
-        config.network(networkConfiguration);
-        config.httpServer(httpServerConfiguration);
+        HttpServerConfiguration httpServerConfiguration = config.httpServer();
+        if (httpServerConfiguration != null) {
+            httpServerConfiguration.enabled((Boolean) results.get("httpServerEnabled"));
+            httpServerConfiguration.address((String) results.get("httpServerAddress"));
+            httpServerConfiguration.port((Integer) results.get("httpServerPort"));
+        }
 
         config.save();
         CloudLogger.get().success("Your configuration has been §asaved§r. Restart the cloud to apply the changes made.");

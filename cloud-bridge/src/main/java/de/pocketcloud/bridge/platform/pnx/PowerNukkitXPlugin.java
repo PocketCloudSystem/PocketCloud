@@ -33,6 +33,7 @@ public final class PowerNukkitXPlugin extends PluginBase implements IPlatformPlu
         } catch (UnsupportedFileExtensionException | IOException e) {
             getLogger().error("Failed to load environment settings, shuttdown down...", e);
             getServer().shutdown();
+            return;
         }
 
         CloudBridge.instance().packets().registerPacketListener(new ServerPacketHandler());
@@ -59,8 +60,14 @@ public final class PowerNukkitXPlugin extends PluginBase implements IPlatformPlu
     }
 
     @Override
-    public void startTask(Runnable runnable, int period) {
-        getServer().getScheduler().scheduleRepeatingTask(runnable, period);
+    public void startTask(Runnable runnable, int delay, int period) {
+        if (period <= 0 && delay > 0) {
+            getServer().getScheduler().scheduleDelayedTask(runnable, delay);
+        } else if (period > 0 && delay <= 0) {
+            getServer().getScheduler().scheduleRepeatingTask(runnable, period);
+        } else {
+            getServer().getScheduler().scheduleDelayedRepeatingTask(runnable, delay, period);
+        }
     }
 
     @Override

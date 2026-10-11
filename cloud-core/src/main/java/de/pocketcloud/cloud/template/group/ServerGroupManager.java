@@ -27,19 +27,20 @@ import lombok.Getter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 public final class ServerGroupManager implements Loadable, IWriteServerGroupProvider {
 
     @Getter
     private boolean loaded = false;
-    private final Map<String, ServerGroup> serverGroups = new HashMap<>();
+    private final Map<String, ServerGroup> serverGroups = new ConcurrentHashMap<>();
 
     @Override
     public void load() {
-        loaded = true;
         CloudLogger.get().info("Loading server groups...");
-        CloudProvider.current().getServerGroups().thenSuccess(serverGroups::putAll);
+        CloudProvider.current().getServerGroups().thenSuccess(serverGroups::putAll)
+                .thenSuccess(_ -> loaded = true);
     }
 
     @Override
@@ -112,6 +113,7 @@ public final class ServerGroupManager implements Loadable, IWriteServerGroupProv
     @Override
     public void removeTemplate(IServerGroup group, ITemplate template) {
         ServerGroup serverGroup = requireServerGroup(group);
+        if (!checkName(template.name())) throw new IllegalArgumentException("ServerGroup name must only contain letters, numbers, underscores and hyphens");
         Benchmark.startTiming("server_group_remove_template");
         ServerGroupRemoveTemplateEvent ev = new ServerGroupRemoveTemplateEvent(serverGroup, (Template) template);
         ev.call();
@@ -178,6 +180,11 @@ public final class ServerGroupManager implements Loadable, IWriteServerGroupProv
     @Override
     public boolean check(String name) {
         return serverGroups.containsKey(name);
+    }
+
+    public boolean checkName(String name) {
+        return !name.contains("..") && !name.contains("/") && !name.contains("\\") && !name.contains(".")
+                && !name.contains(":") && !name.startsWith("-") && name.matches("[a-zA-Z0-9_\\-]+");
     }
 
     public Optional<IServerGroup> get(String name) {

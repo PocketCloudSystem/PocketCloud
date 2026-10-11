@@ -9,8 +9,10 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -96,9 +98,29 @@ public final class Config {
     public boolean save(@Nullable Function<Config, Boolean> customSaveHandler) throws IOException {
         if (!changed) return true;
         if (customSaveHandler != null) return customSaveHandler.apply(this);
-        String content = type.encode(this.content);
-        Files.writeString(filePath, content);
-        return true;
+
+        Path parent = filePath.getParent();
+        if (parent != null && !Files.exists(parent)) {
+            Files.createDirectories(parent);
+        }
+
+        String encoded = type.encode(this.content);
+        Path tempFile = Files.createTempFile(parent != null ? parent : Path.of("."), "config-", ".tmp");
+        try {
+            Files.writeString(tempFile, encoded);
+            try {
+                Files.move(tempFile, filePath,
+                        StandardCopyOption.REPLACE_EXISTING,
+                        StandardCopyOption.ATOMIC_MOVE);
+            } catch (AtomicMoveNotSupportedException e) {
+                Files.move(tempFile, filePath,
+                        StandardCopyOption.REPLACE_EXISTING);
+            }
+            changed = false;
+            return true;
+        } finally {
+            Files.deleteIfExists(tempFile);
+        }
     }
 
     public boolean saveSafe() {
@@ -117,13 +139,9 @@ public final class Config {
      */
     public boolean saveSafe(@Nullable Function<Config, Boolean> customSaveHandler, @Nullable Consumer<Throwable> exceptionHandler) {
         if (!changed) return true;
-        if (customSaveHandler != null) return customSaveHandler.apply(this);
-
         try {
-            String content = type.encode(this.content);
-            Files.writeString(filePath, content);
-            return true;
-        } catch (Exception e) {
+            return save(customSaveHandler);
+        } catch (Throwable e) {
             if (exceptionHandler != null) exceptionHandler.accept(e);
             return false;
         }

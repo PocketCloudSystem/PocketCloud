@@ -11,6 +11,7 @@ import dev.waterdog.waterdogpe.network.serverinfo.ServerInfo;
 import dev.waterdog.waterdogpe.player.ProxiedPlayer;
 
 import java.util.Comparator;
+import java.util.Objects;
 
 public final class JoinAndFallbackHandler implements IJoinHandler, IReconnectHandler {
 
@@ -21,15 +22,18 @@ public final class JoinAndFallbackHandler implements IJoinHandler, IReconnectHan
 
     @Override
     public ServerInfo getFallbackServer(ProxiedPlayer player, ServerInfo oldServer, ReconnectReason reason, String kickMessage) {
-        if (kickMessage.equals("MAINTENANCE")) return null;
         return lobbyServer(oldServer.getServerName());
     }
 
     private ServerInfo lobbyServer(String excludedServer) {
         return CloudAPI.instance().servers().query(q -> q.ofType(TemplateType.SERVER).lobby(true)).stream()
+                .filter(s -> s.status().isOnline(true))
+                .filter(s -> s.playerCount() < s.data().maxPlayers())
                 .filter(s -> excludedServer == null || !excludedServer.equals(s.name()))
-                .min(Comparator.comparingInt(ICloudServer::playerCount))
+                .sorted(Comparator.comparingInt(ICloudServer::playerCount))
                 .map(s -> ProxyServer.getInstance().getServerInfo(s.name()))
+                .filter(Objects::nonNull)
+                .findFirst()
                 .orElse(null);
     }
 }

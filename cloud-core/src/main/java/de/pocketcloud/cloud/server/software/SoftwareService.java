@@ -17,9 +17,11 @@ import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
@@ -31,7 +33,58 @@ import java.util.zip.GZIPInputStream;
 
 public final class SoftwareService {
 
+    private static final int MAX_LINK_LENGTH = 4096;
+    private static final long LOOKUP_RETRY_MS = 60_000;
+
     private final Map<String, Long> cachedOnlineSizes = new ConcurrentHashMap<>();
+    private final Map<String, Long> failedLookups = new ConcurrentHashMap<>();
+
+    private static Path safeResolve(Path root, String name) throws IOException {
+        Path target = root.resolve(name).normalize();
+        if (!target.startsWith(root)) throw new IOException("Path traversal detected: " + name);
+        return target;
+    }
+
+    private static void createDirsInside(Path root, Path dir) throws IOException {
+        Files.createDirectories(dir);
+        if (!dir.toRealPath().startsWith(root)) throw new IOException("Path escapes extraction root: " + dir);
+    }
+
+    private static void createSymlinkInside(Path root, Path link, String linkTarget) throws IOException {
+        if (linkTarget.isEmpty()) throw new IOException("Empty symlink target: " + link);
+        Path t = Path.of(linkTarget);
+        if (t.isAbsolute()) throw new IOException("Absolute symlink target not allowed: " + linkTarget);
+
+        boolean seenName = false;
+        for (Path part : t) {
+            String s = part.toString();
+            if (s.equals("..")) {
+                if (seenName) throw new IOException("Unsupported symlink target: " + linkTarget);
+            } else if (!s.equals(".")) {
+                seenName = true;
+            }
+        }
+
+        Path resolved = link.getParent().toRealPath().resolve(t).normalize();
+        if (!resolved.startsWith(root)) throw new IOException("Symlink escapes extraction root: " + link + " -> " + linkTarget);
+
+        Files.deleteIfExists(link);
+        Files.createSymbolicLink(link, t);
+    }
+
+    private static void createHardLinkInside(Path root, Path link, String linkName) throws IOException {
+        Path source = safeResolve(root, linkName).toRealPath();
+        if (!source.startsWith(root) || !Files.isRegularFile(source, LinkOption.NOFOLLOW_LINKS)) throw new IOException("Invalid hard link: " + link + " -> " + linkName);
+        Files.deleteIfExists(link);
+        Files.createLink(link, source);
+    }
+
+    private static void writeFile(Path target, InputStream in) throws IOException {
+        Files.deleteIfExists(target);
+        try (OutputStream out = Files.newOutputStream(target, StandardOpenOption.CREATE_NEW)) {
+            in.transferTo(out);
+        }
+    }
 
     public boolean downloadSoftware(ServerSoftware software) {
         SoftwareDownload download = (SoftwareDownload) software.download();
@@ -52,26 +105,6 @@ public final class SoftwareService {
             CloudLogger.get().error("Failed to download software {}", e, software.name());
             return false;
         }
-    }
-
-    public boolean requiresUpdateSoftware(ServerSoftware software) {
-        SoftwareDownload download = (SoftwareDownload) software.download();
-        if (!download.checkForUpdates()) return !sourceFile(software).exists();
-
-        File sizeFile = sizeFilePath(software).toFile();
-        long onlineSize = cachedOnlineSizes.computeIfAbsent(download.url(), (_) -> NetUtils.downloadSize(download.url()));
-        if (sizeFile.exists()) {
-            try {
-                String content = Files.readString(sizeFile.toPath());
-                long size = Long.parseLong(content);
-                return size != onlineSize;
-            } catch (Exception e) {
-                CloudLogger.get().exception("Failed to check for updates for {}", e, software.name());
-                return true;
-            }
-        }
-
-        return true;
     }
 
     public boolean downloadBinary(ServerSoftware software) {
@@ -139,32 +172,6 @@ public final class SoftwareService {
         }
     }
 
-    public boolean requiresUpdateBinary(ServerSoftware software) {
-        SoftwareBinary binary = (SoftwareBinary) software.binary();
-        Path binaryDir = binaryDirectoryPath(software);
-
-        try (Stream<Path> stream = Files.list(binaryDir)) {
-            if (stream.count() <= 1) return true;
-            if (!binary.checkForUpdates()) return !binaryDir.toFile().exists();
-
-            Path sizeFilePath = binarySizeFilePath(software);
-            File sizeFile = sizeFilePath.toFile();
-            long onlineSize = cachedOnlineSizes.computeIfAbsent(binary.url(), (_) -> NetUtils.downloadSize(binary.url()));
-            if (sizeFile.exists()) {
-                try {
-                    String content = Files.readString(sizeFile.toPath());
-                    long size = Long.parseLong(content);
-                    return size != onlineSize;
-                } catch (Exception e) {
-                    CloudLogger.get().exception("Failed to check for updates for {} for binary", e, software.name());
-                    return true;
-                }
-            }
-        } catch (IOException _) {}
-
-        return true;
-    }
-
     public boolean downloadBridge(ServerSoftware software) {
         SoftwareBridge bridge = (SoftwareBridge) software.bridge();
         DownloadProgressBar progressBar = createProgressBar(bridge.fileName());
@@ -190,85 +197,97 @@ public final class SoftwareService {
         }
     }
 
+    public boolean requiresUpdateSoftware(ServerSoftware software) {
+        SoftwareDownload download = (SoftwareDownload) software.download();
+        if (!sourceFile(software).isFile()) return true;
+        if (!download.checkForUpdates()) return false;
+
+        long onlineSize = onlineSize(download.url());
+        if (onlineSize <= 0) return false;
+        return !sizeMatches(sizeFilePath(software), onlineSize);
+    }
+
     public boolean requiresUpdateBridge(ServerSoftware software) {
         SoftwareBridge bridge = (SoftwareBridge) software.bridge();
-        Path sourceFile = bridgeSourceFile(software);
+        if (!Files.isRegularFile(bridgeSourceFile(software))) return true;
+        if (!bridge.checkForUpdates()) return false;
 
-        if (!bridge.checkForUpdates()) return !sourceFile.toFile().exists();
-
-        Path sizeFilePath = bridgeSizeFilePath(software);
-        File sizeFile = sizeFilePath.toFile();
-        long onlineSize = cachedOnlineSizes.computeIfAbsent(bridge.url(), (_) -> NetUtils.downloadSize(bridge.url()));
-        if (sizeFile.exists()) {
-            try {
-                String content = Files.readString(sizeFile.toPath());
-                long size = Long.parseLong(content);
-                return size != onlineSize;
-            } catch (Exception e) {
-                CloudLogger.get().exception("Failed to check for updates for {} for bridge", e, software.name());
-                return true;
-            }
-        }
-
-        return true;
+        long onlineSize = onlineSize(bridge.url());
+        if (onlineSize <= 0) return false;
+        return !sizeMatches(bridgeSizeFilePath(software), onlineSize);
     }
 
-    private void extractZipEntry(ZipArchiveEntry entry, ZipArchiveInputStream zis, Path binaryDir) throws IOException {
-        if (entry.getName().isEmpty()) return;
+    public boolean requiresUpdateBinary(ServerSoftware software) {
+        SoftwareBinary binary = (SoftwareBinary) software.binary();
+        if (binary.url() == null || binary.url().isBlank()) return false;
 
-        Path target = binaryDir.resolve(entry.getName()).normalize();
-        if (!target.startsWith(binaryDir)) throw new IOException("Zip slip detected: " + entry.getName());
+        if (!Files.isRegularFile(binarySizeFilePath(software))) return true;
+        if (!binary.checkForUpdates()) return false;
+
+        long onlineSize = onlineSize(binary.url());
+        if (onlineSize <= 0) return false;
+        return !sizeMatches(binarySizeFilePath(software), onlineSize);
+    }
+
+    private void extractZipEntry(ZipArchiveEntry entry, ZipArchiveInputStream zis, Path root) throws IOException {
+        if (entry.getName().isEmpty()) return;
+        Path target = safeResolve(root, entry.getName());
 
         if (entry.isDirectory()) {
-            Files.createDirectories(target);
+            createDirsInside(root, target);
+            return;
+        }
+
+        createDirsInside(root, target.getParent());
+
+        if (entry.isUnixSymlink()) {
+            byte[] raw = zis.readNBytes(MAX_LINK_LENGTH + 1);
+            if (raw.length > MAX_LINK_LENGTH) throw new IOException("Symlink target too long: " + entry.getName());
+            createSymlinkInside(root, target, new String(raw, StandardCharsets.UTF_8).trim());
         } else {
-            Files.createDirectories(target.getParent());
-
-            int unixMode = entry.getUnixMode();
-            boolean isSymlink = (unixMode & 0xA000) == 0xA000;
-
-            if (isSymlink) {
-                String linkTarget = new String(zis.readAllBytes()).trim();
-                if (Files.exists(target, LinkOption.NOFOLLOW_LINKS)) Files.delete(target);
-                Files.createSymbolicLink(target, Path.of(linkTarget));
-            } else {
-                try (OutputStream out = Files.newOutputStream(target, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
-                    byte[] buffer = new byte[8192];
-                    int read;
-                    while ((read = zis.read(buffer)) != -1) {
-                        out.write(buffer, 0, read);
-                    }
-                }
-            }
+            writeFile(target, zis);
         }
     }
 
-    private void extractTarEntry(TarArchiveEntry entry, TarArchiveInputStream tis, Path binaryDir) throws IOException {
+    private void extractTarEntry(TarArchiveEntry entry, TarArchiveInputStream tis, Path root) throws IOException {
         if (entry.getName().isEmpty()) return;
-
-        Path target = binaryDir.resolve(entry.getName()).normalize();
-        if (!target.startsWith(binaryDir)) throw new IOException("Zip slip detected: " + entry.getName());
+        Path target = safeResolve(root, entry.getName());
 
         if (entry.isDirectory()) {
-            Files.createDirectories(target);
-        } else if (entry.isSymbolicLink()) {
-            Files.createDirectories(target.getParent());
-            if (Files.exists(target, LinkOption.NOFOLLOW_LINKS)) Files.delete(target);
-            Files.createSymbolicLink(target, Path.of(entry.getLinkName()));
-        } else if (entry.isLink()) {
-            Files.createDirectories(target.getParent());
-            Path linkTarget = binaryDir.resolve(entry.getLinkName()).normalize();
-            if (Files.exists(target, LinkOption.NOFOLLOW_LINKS)) Files.delete(target);
-            Files.createLink(target, linkTarget);
+            createDirsInside(root, target);
+            return;
+        }
+
+        createDirsInside(root, target.getParent());
+
+        if (entry.isSymbolicLink()) createSymlinkInside(root, target, entry.getLinkName());
+        else if (entry.isLink()) createHardLinkInside(root, target, entry.getLinkName());
+        else writeFile(target, tis);
+    }
+
+    private long onlineSize(String url) {
+        Long cached = cachedOnlineSizes.get(url);
+        if (cached != null) return cached;
+
+        Long failedAt = failedLookups.get(url);
+        if (failedAt != null && System.currentTimeMillis() - failedAt < LOOKUP_RETRY_MS) return -1;
+
+        long size = NetUtils.downloadSize(url);
+        if (size > 0) {
+            cachedOnlineSizes.put(url, size);
+            failedLookups.remove(url);
         } else {
-            Files.createDirectories(target.getParent());
-            try (OutputStream out = Files.newOutputStream(target, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
-                byte[] buffer = new byte[8192];
-                int read;
-                while ((read = tis.read(buffer)) != -1) {
-                    out.write(buffer, 0, read);
-                }
-            }
+            failedLookups.put(url, System.currentTimeMillis());
+        }
+
+        return size;
+    }
+
+    private static boolean sizeMatches(Path sizeFile, long expected) {
+        try {
+            return Long.parseLong(Files.readString(sizeFile).trim()) == expected;
+        } catch (Exception e) {
+            return false;
         }
     }
 

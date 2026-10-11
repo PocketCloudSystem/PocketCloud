@@ -42,6 +42,7 @@ public final class CloudBridge implements CloudAPI {
 
     private VerificationStatus status = VerificationStatus.PENDING;
     private final ServiceRegistry registry = new ServiceRegistry();
+    private boolean shutdown = false;
 
     public CloudBridge(IPlatformPlugin platformPlugin, ILogger logger, IEnvironmentConfig config, NativePlayerAdapter<?> nativePlayerAdapter) {
         instance = this;
@@ -74,13 +75,13 @@ public final class CloudBridge implements CloudAPI {
 
         try {
             network().start();
-        } catch (InterruptedException e) {
+        } catch (Throwable e) {
             logger().error("Failed to establish network connection, shutting this server down...", e);
             shutdown();
             return;
         }
 
-        platformPlugin.startTask(new RequestTimeoutTask(), 10);
+        platformPlugin.startTask(new RequestTimeoutTask(), 0, 10);
 
         ServerHandshakeRequestPacket.create(
                 environmentConfig().localServerName(),
@@ -107,12 +108,14 @@ public final class CloudBridge implements CloudAPI {
     }
 
     private void startOtherTasks() {
-        platformPlugin().startTask(new ChangeStatusTask(), 10);
-        platformPlugin().startTask(new ServerTimeoutTask(), 10);
-        platformPlugin().startTask(new UpdatePerformanceStatsTask(), 10);
+        platformPlugin().startTask(new ChangeStatusTask(), 0, 10);
+        platformPlugin().startTask(new ServerTimeoutTask(), 0, 10);
+        platformPlugin().startTask(new UpdatePerformanceStatsTask(), 0, 10);
     }
 
     public void shutdown() {
+        if (shutdown) return;
+        shutdown = true;
         logger().warn("Plugin has been disabled, shutting down...");
         DisconnectPacket.create(ServerDisconnectReason.SERVER_SHUTDOWN).sendPacket();
         network().close();

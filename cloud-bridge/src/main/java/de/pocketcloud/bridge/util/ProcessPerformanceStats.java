@@ -21,7 +21,6 @@ public final class ProcessPerformanceStats {
     private double cpuUsage = 0;
 
     public void updateStats() {
-        lastUpdate = System.currentTimeMillis();
         Runtime runtime = Runtime.getRuntime();
         maxMemory = runtime.maxMemory();
         totalMemory = runtime.totalMemory();
@@ -31,5 +30,7 @@ public final class ProcessPerformanceStats {
         if ((System.currentTimeMillis() - lastUpdate) >= 2000) {
             cpuUsage = Math.max(0, osBean.getCpuLoad() * 100);
         }
+
+        lastUpdate = System.currentTimeMillis();
     }
 }

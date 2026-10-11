@@ -73,10 +73,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 
 import static de.pocketcloud.common.util.FileUtils.IO_EXECUTOR;
 
@@ -84,6 +81,8 @@ import static de.pocketcloud.common.util.FileUtils.IO_EXECUTOR;
 @Getter
 @Accessors(fluent = true, chain = false)
 public final class CloudServer extends BaseCloudServer implements Tickable, SyncingElement<CloudServer> {
+
+    private static final Set<CompletableFuture<Void>> PENDING_SAVES = ConcurrentHashMap.newKeySet();
 
     /**
      * Only meant for the SyncPacket
@@ -228,6 +227,10 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
             }
 
             List<IServerProperties> propertiesData = PocketCloud.instance().properties().getAll(template().serverSoftware());
+            if (propertiesData == null) {
+                throw new RuntimeException("No server configuration(s) found");
+            }
+
             for (var properties : propertiesData) {
                 Path filePath = path().resolve(properties.getFileName());
                 if (!copyFromSources) {
@@ -357,6 +360,7 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
     public Promise<Void> save() {
         if (new ServerSaveEvent(this).call().isCancelled())
             return Promise.rejected(new RuntimeException("Event cancelled"));
+
         return Promise.supplyAsync(() -> {
             for (String file : template().serverSoftware().config().savableFiles()) {
                 Path filePath = path().resolve(file);
@@ -377,8 +381,40 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
     }
 
     public void deleteTmpDir() {
-        if (template().settings().saveOnShutdown()) save().thenSuccess((_) -> deleteTmpDir0());
-        else deleteTmpDir0();
+        if (!template().settings().saveOnShutdown()) {
+            deleteTmpDir0();
+            return;
+        }
+
+        CompletableFuture<Void> done = save().toCompletableFuture().handle((_, t) -> {
+            try {
+                if (t == null) {
+                    deleteTmpDir0();
+                } else {
+                    Throwable cause = t instanceof CompletionException && t.getCause() != null ? t.getCause() : t;
+                    CloudLogger.get().exception("Failed to save server §b{}§r, moving data to backups", cause, name());
+                    preserveAfterFailedSave();
+                }
+            } catch (Exception e) {
+                CloudLogger.get().exception("Failed to clean up server §b{}", e, name());
+            }
+            return null;
+        });
+
+        PENDING_SAVES.add(done);
+        done.whenComplete((_, _) -> PENDING_SAVES.remove(done));
+    }
+
+    private void preserveAfterFailedSave() {
+        saveLogFiles();
+        Path src = path();
+        if (template().settings().staticServers() || !Files.exists(src)) return; // static: Verzeichnis ist das Original
+
+        Path dst = PocketCloudPaths.storage().backups().with("failed-save_" + name() + "_" + uuid).asPath();
+        FileUtils.createDir(dst);
+        FileUtils.copyDirectory(src, dst, Set.of());
+        FileUtils.removeDirectory(src);
+        CloudLogger.get().warn("Data of §b{}§r was moved to §b{}§r.", name(), dst.toString());
     }
 
     private void deleteTmpDir0() {
@@ -546,5 +582,12 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
 
     public static CloudServer read(Map<String, Object> data) {
         return MapperUtils.fromMap(data, CloudServer.class);
+    }
+
+    public static void awaitPendingSaves(Duration timeout) {
+        CompletableFuture.allOf(PENDING_SAVES.toArray(CompletableFuture[]::new))
+                .orTimeout(timeout.toMillis(), TimeUnit.MILLISECONDS)
+                .exceptionally(_ -> null)
+                .join();
     }
 }

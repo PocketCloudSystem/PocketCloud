@@ -5,6 +5,7 @@ import de.pocketcloud.api.component.server.ICloudServer;
 import de.pocketcloud.api.component.template.ITemplate;
 import de.pocketcloud.api.provider.write.IWriteServerProvider;
 import de.pocketcloud.api.search.ServerSearchQuery;
+import de.pocketcloud.api.server.ServerStatus;
 import de.pocketcloud.api.template.TemplateType;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.log.CloudLogger;
@@ -55,7 +56,7 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
     @Getter(AccessLevel.NONE)
     private final Map<String, CloudServer> servers = new ConcurrentHashMap<>();
     @Getter(AccessLevel.NONE)
-    private final Map<ITemplate, Integer> serverCounts = new ConcurrentHashMap<>();
+    private final Map<String, Integer> serverCounts = new ConcurrentHashMap<>();
     private final AtomicInteger startingServers = new AtomicInteger(0);
     private long tryAgainAt = 0;
 
@@ -97,7 +98,6 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
         CloudServer cloudServer = requireCloudServer(server);
         servers.putIfAbsent(cloudServer.name(), cloudServer);
         ServerUtils.addId(cloudServer.template(), cloudServer.id());
-        ServerUtils.addPort(cloudServer.data().port());
     }
 
     @Override
@@ -105,9 +105,11 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
         CloudServer cloudServer = requireCloudServer(server);
         if (!servers.remove(cloudServer.name(), cloudServer)) return;
         zeroPlayersReachedTimestamps.remove(cloudServer.name());
-        serverCounts.compute(cloudServer.template(), (_, count) -> count == null ? 0 : Math.max(0, count - 1));
+        serverCounts.compute(cloudServer.templateName(), (_, count) -> count == null ? 0 : Math.max(0, count - 1));
         if (startingServerTimestamps.remove(cloudServer.name()) != null) startingServers.decrementAndGet();
         preparingServerTimestamps.remove(cloudServer.name());
+        serverPrepareQueue.remove(cloudServer);
+        serverStartQueue.remove(cloudServer);
         ServerUtils.removeId(cloudServer.template(), cloudServer.id());
         ServerUtils.removePort(cloudServer.data().port());
         lastServerStopTime = System.currentTimeMillis();
@@ -120,7 +122,7 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
         int maxCount = template.settings().maxServerCount();
 
         int[] toStartHolder = new int[1];
-        serverCounts.compute(template, (t, current) -> {
+        serverCounts.compute(template.name(), (t, current) -> {
             int existing = current == null ? 0 : current;
             int allowed = Math.clamp(maxCount - existing, 0, count);
             toStartHolder[0] = allowed;
@@ -137,16 +139,16 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
         for (int i = 0; i < toStart; i++) {
             this.lastServerStartTime = System.currentTimeMillis();
 
-            int id = ServerUtils.getFreeId(template);
+            int id = ServerUtils.reserveId(template);
             if (id == -1) {
-                serverCounts.merge(template, -1, Integer::sum);
+                serverCounts.merge(template.name(), -1, Integer::sum);
                 continue;
             }
 
-            int port = ServerUtils.getFreePort(template.templateType());
+            int port = ServerUtils.reservePort(template.templateType());
             if (port <= 0) {
                 CloudLogger.get().warn("Failed to start any more servers of §b{}§8: §cNo available ports found.", template.name());
-                serverCounts.merge(template, -(toStart - i), Integer::sum);
+                serverCounts.merge(template.name(), -(toStart - i), Integer::sum);
                 break;
             }
 
@@ -231,6 +233,41 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
         return Promise.resolved(all);
     }
 
+    public Promise<Void> stopTemplateAndWait(ITemplate template, int timeoutMs) {
+        return Promise.supplyAsync(() -> {
+            Collection<ICloudServer> affectedServers;
+
+            try {
+                affectedServers = stop(template).get();
+            } catch (Throwable e) {
+                throw new RuntimeException("Failed to stop template " + template, e);
+            }
+
+            long deadline = System.nanoTime() + timeoutMs * 1_000_000L;
+            while (System.nanoTime() < deadline) {
+                boolean hasRunningServers = false;
+
+                for (ICloudServer server : affectedServers) {
+                    if (servers.containsKey(server.name())) {
+                        hasRunningServers = true;
+                        break;
+                    }
+                }
+
+                if (!hasRunningServers) return null;
+                LockSupport.parkNanos(1_000_000L);
+            }
+
+            for (ICloudServer server : affectedServers) {
+                if (servers.containsKey(server.name())) {
+                    stop(server, true);
+                }
+            }
+
+            return null;
+        });
+    }
+
     public void stopAllAndWait(int timeoutMs) {
         stopAll();
         long start = System.currentTimeMillis();
@@ -269,6 +306,7 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
     private void onStartFailed(Object[] crashData) {
         CloudServer server = (CloudServer) crashData[0];
         Throwable exception = crashData.length > 1 ? (Throwable) crashData[1] : null;
+        server.status(ServerStatus.OFFLINE);
 
         CloudLogger.get().warn(
                 "§cFailed to prepare server §e{}§8: §e{}",
@@ -278,15 +316,22 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
 
         if (exception != null) CloudLogger.get().exception(exception);
         if (startingServerTimestamps.remove(server.name()) != null) startingServers.decrementAndGet();
+        ServerUtils.removePort(server.data().port());
+        ServerUtils.removeId(server.template(), server.id());
     }
 
     @Override
     public void tick(long currentTick) {
+        Map<String, Integer> remaining = new HashMap<>();
+        for (CloudServer s : servers.values()) {
+            ServerStatus st = s.status();
+            if (!st.isStopping() && !st.isOffline()) remaining.merge(s.template().name(), 1, Integer::sum);
+        }
+
         servers.values().forEach(server -> {
             if (server.status().isOnline()) {
                 Template template = server.template();
                 int playerCount = server.playerCount();
-                long runningServers = serverCounts.getOrDefault(template, 0);
                 long zeroPlayersReachedTimestamp = zeroPlayersReachedTimestamps.getOrDefault(server.name(), 0L);
                 if (playerCount > 0) zeroPlayersReachedTimestamps.put(server.name(), 0L);
                 if (playerCount == 0 && template.settings().stopOnEmpty()) {
@@ -295,7 +340,9 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
                         zeroPlayersReachedTimestamps.put(server.name(), zeroPlayersReachedTimestamp);
                     }
 
-                    if (runningServers > template.settings().minServerCount() && (zeroPlayersReachedTimestamp + (template.settings().emptyServerGracePeriod() * 1000L)) <= System.currentTimeMillis()) {
+                    boolean graceOver = (zeroPlayersReachedTimestamp + (template.settings().emptyServerGracePeriod() * 1000L)) <= System.currentTimeMillis();
+                    if (graceOver && remaining.getOrDefault(template.name(), 0) > template.settings().minServerCount()) {
+                        remaining.merge(template.name(), -1, Integer::sum);
                         stop(server);
                         return;
                     }
@@ -374,10 +421,8 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
 
     @Override
     public Optional<ICloudServer> get(String name) {
-        return Optional.ofNullable(servers.getOrDefault(name, servers.values().stream()
-                .filter(s -> s.name().startsWith(name))
-                .findFirst().orElse(null)
-        ));
+        if (name == null) return Optional.empty();
+        return Optional.ofNullable(servers.get(name));
     }
 
     @Override

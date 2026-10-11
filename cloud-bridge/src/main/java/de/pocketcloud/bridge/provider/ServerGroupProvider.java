@@ -44,9 +44,10 @@ public final class ServerGroupProvider implements IWriteServerGroupProvider {
         boolean verified = CloudBridge.instance().status().isVerified();
         if (serverGroups.containsKey(serverGroup.name())) {
             ServerGroup localServerGroup = (ServerGroup) serverGroups.get(serverGroup.name());
+            Collection<String> oldTemplates = localServerGroup.templates();
             localServerGroup.syncIn(serverGroup);
             if (verified)
-                CloudAPI.instance().events().call(new ServerGroupUpdatedEvent(localServerGroup, localServerGroup.templates(), serverGroup.templates()));
+                CloudAPI.instance().events().call(new ServerGroupUpdatedEvent(localServerGroup, oldTemplates, serverGroup.templates()));
         } else {
             if (verified) CloudAPI.instance().events().call(new ServerGroupCreatedEvent(serverGroup));
             serverGroups.put(serverGroup.name(), serverGroup);
@@ -66,6 +67,7 @@ public final class ServerGroupProvider implements IWriteServerGroupProvider {
     @Override
     public void remove(IServerGroup serverGroup) {
         ServerGroup localServerGroup = (ServerGroup) serverGroups.get(serverGroup.name());
+        if (localServerGroup == null) return;
         if (CloudBridge.instance().status().isVerified())
             CloudAPI.instance().events().call(new ServerGroupDeletedEvent(localServerGroup));
         serverGroups.remove(serverGroup.name());

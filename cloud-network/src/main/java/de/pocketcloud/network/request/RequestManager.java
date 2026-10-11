@@ -22,7 +22,9 @@ public final class RequestManager implements Tickable {
     }
 
     public void remove(RequestPacket packet) {
-        remove(packet.getRequestId());
+        if (packet != null) {
+            requests.remove(packet.getRequestId(), packet);
+        }
     }
 
     public void remove(String requestId) {
@@ -30,21 +32,22 @@ public final class RequestManager implements Tickable {
     }
 
     public void resolve(ResponsePacket packet) {
-        RequestPacket request = requests.get(packet.getRequestId());
+        RequestPacket request = requests.remove(packet.getRequestId());
         if (request != null) {
             request.invokeClosures(false, packet, null, null);
-            remove(request);
         }
     }
 
     public void reject(RequestPacket packet) {
-        invokeTimeoutClosures(packet);
-        remove(packet);
+        if (requests.remove(packet.getRequestId(), packet)) {
+            invokeTimeoutClosures(packet);
+        }
     }
 
     public void reject(RequestPacket packet, Throwable e) {
-        invokeExceptionClosures(packet, e);
-        remove(packet);
+        if (requests.remove(packet.getRequestId(), packet)) {
+            invokeExceptionClosures(packet, e);
+        }
     }
 
     private void invokeTimeoutClosures(RequestPacket packet) {
@@ -58,16 +61,15 @@ public final class RequestManager implements Tickable {
     @Override
     public void tick(long currentTick) {
         long now = System.currentTimeMillis();
-        requests.entrySet().removeIf(entry -> {
+        for (Map.Entry<String, RequestPacket> entry : requests.entrySet()) {
             RequestPacket request = entry.getValue();
             Long sent = request.getSentTimestamp();
             if (sent != null && (now - sent) > 10_000) {
-                invokeTimeoutClosures(request);
-                return true;
+                if (requests.remove(entry.getKey(), request)) {
+                    invokeTimeoutClosures(request);
+                }
             }
-
-            return false;
-        });
+        }
     }
 
     public Optional<RequestPacket> get(String requestId) {

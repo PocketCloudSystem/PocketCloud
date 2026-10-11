@@ -38,9 +38,10 @@ public final class HttpServer {
     private final Router router;
 
     @Getter(AccessLevel.NONE)
-    private final EventLoopGroup bossGroup = new MultiThreadIoEventLoopGroup(new DefaultThreadFactory("HttpBossGroup"), NioIoHandler.newFactory());
+    private EventLoopGroup bossGroup;
+
     @Getter(AccessLevel.NONE)
-    private final EventLoopGroup workerGroup = new MultiThreadIoEventLoopGroup(new DefaultThreadFactory("HttpWorkerGroup"), NioIoHandler.newFactory());
+    private EventLoopGroup workerGroup;
 
     private boolean started = false;
     private final SocketAddress address;
@@ -55,8 +56,27 @@ public final class HttpServer {
         this.router = new Router(PocketCloud.instance().config().httpServer().routePrefix());
     }
 
+    private synchronized void initializeEventLoops() {
+        if (bossGroup == null || bossGroup.isShuttingDown() || bossGroup.isShutdown()) {
+            bossGroup = new MultiThreadIoEventLoopGroup(
+                    new DefaultThreadFactory("HttpBossGroup"),
+                    NioIoHandler.newFactory()
+            );
+        }
+
+        if (workerGroup == null || workerGroup.isShuttingDown() || workerGroup.isShutdown()) {
+            workerGroup = new MultiThreadIoEventLoopGroup(
+                    new DefaultThreadFactory("HttpWorkerGroup"),
+                    NioIoHandler.newFactory()
+            );
+        }
+    }
+
     public void start() {
+        if (started) return;
         try {
+            initializeEventLoops();
+
             try {
                 sslContext = buildSslContext(PocketCloud.instance().config().httpServer().ssl());
             } catch (Exception e) {

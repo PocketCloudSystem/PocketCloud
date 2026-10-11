@@ -107,7 +107,7 @@ public final class ServerRoutes {
         boolean force = optionalBoolean(body, "force", false);
 
         PocketCloud.instance().servers().stopAll(force)
-                .thenSuccess(servers -> response.json(toServerArray(servers).getAsJsonObject()))
+                .thenSuccess(servers -> response.json(stopResponse("Attempted to stop all servers.", servers)))
                 .failure(e -> response.internalServerError("Failed to stop servers"));
     }
 
@@ -117,8 +117,14 @@ public final class ServerRoutes {
         boolean force = optionalBoolean(body, "force", false);
 
         PocketCloud.instance().servers().stop(name, force)
-                .thenSuccess(servers -> response.json(toServerArray(servers).getAsJsonObject()))
+                .thenSuccess(servers -> response.json(stopResponse("Attempted to stop the server.", servers)))
                 .failure(e -> response.internalServerError("Failed to stop server"));
+    }
+
+    private JsonObject stopResponse(String message, Collection<ICloudServer> servers) {
+        JsonObject json = message(message);
+        json.add("stopped_servers", toServerArray(servers));
+        return json;
     }
 
     private JsonObject serverSummary(ICloudServer server) {

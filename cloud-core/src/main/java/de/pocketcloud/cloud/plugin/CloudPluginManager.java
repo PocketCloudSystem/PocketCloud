@@ -54,31 +54,43 @@ public final class CloudPluginManager implements Tickable, Loadable {
     @Override
     public void unload() {
         disableAll();
+        for (CloudPlugin plugin : plugins.values()) {
+            try {
+                if (plugin.getLoader() != null) {
+                    plugin.getLoader().close();
+                }
+            } catch (Exception _) {}
+        }
+
         this.plugins.clear();
     }
 
     public CloudPlugin loadPlugin(Path jarFile) {
-        if (pluginLoader.canLoad(jarFile)) {
-            CloudLogger.get().info("Loading plugin §b{}§r...", jarFile.getFileName().toString());
-            CloudPlugin plugin;
+        try {
+            if (pluginLoader.canLoad(jarFile)) {
+                CloudLogger.get().info("Loading plugin §b{}§r...", jarFile.getFileName().toString());
+                CloudPlugin plugin;
 
-            try {
-                plugin = pluginLoader.load(jarFile);
-            } catch (Exception e) {
-                CloudLogger.get().exception("Unable to load plugin " + jarFile.getFileName(), e);
-                return null;
-            }
+                try {
+                    plugin = pluginLoader.load(jarFile);
+                } catch (Exception e) {
+                    CloudLogger.get().exception("Unable to load plugin " + jarFile.getFileName(), e);
+                    return null;
+                }
 
-            try {
-                if (plugins.containsKey(plugin.getDescription().name())) throw new PluginLoadFailedException("Plugin with the same name already loaded");
-                plugins.put(plugin.getDescription().name(), plugin);
-                new PluginLoadEvent(plugin).call();
-                plugin.onLoad();
-                return plugin;
-            } catch (Exception e) {
-                CloudLogger.get().exception("Unable to load plugin " + jarFile.getFileName(), e);
-                disable(plugin);
+                try {
+                    if (plugins.containsKey(plugin.getDescription().name())) throw new PluginLoadFailedException("Plugin with the same name already loaded");
+                    plugins.put(plugin.getDescription().name(), plugin);
+                    new PluginLoadEvent(plugin).call();
+                    plugin.onLoad();
+                    return plugin;
+                } catch (Exception e) {
+                    CloudLogger.get().exception("Unable to load plugin " + jarFile.getFileName(), e);
+                    disable(plugin);
+                }
             }
+        } catch (PluginLoadFailedException e) {
+            CloudLogger.get().exception("Unable to load plugin " + jarFile.getFileName(), e);
         }
 
         return null;
@@ -109,18 +121,15 @@ public final class CloudPluginManager implements Tickable, Loadable {
     public void disable(CloudPlugin plugin) {
         if (plugin.isDisabled()) return;
         CloudLogger.get().info("§cDisabling §rplugin §b{}§r...", plugin.getDescription().name());
-        plugins.remove(plugin.getDescription().name());
+
         plugin.setState(CloudPluginState.DISABLED);
         PocketCloud.instance().events().unregisterAll(plugin);
+
         try {
             new PluginDisableEvent(plugin).call();
             plugin.onDisable();
         } catch (Exception e) {
             plugin.getLogger().exception("Unable to disable plugin", e);
-        } finally {
-            try {
-                plugin.getLoader().close();
-            } catch (Exception _) {}
         }
     }
 

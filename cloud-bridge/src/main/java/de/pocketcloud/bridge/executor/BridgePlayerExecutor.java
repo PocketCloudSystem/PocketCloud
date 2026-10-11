@@ -94,20 +94,24 @@ public final class BridgePlayerExecutor implements IPlayerExecutor {
         if (!server.status().isOnline() || !server.verificationStatus().isVerified()) return false;
         int maxPlayers = useCustomPlayerCount ? server.data().maxPlayers() : server.template().settings().maxPlayerCount();
         if (server.playerCount() >= maxPlayers) return false;
-        handle(nameOrXuid, (adapter, player) -> adapter.transfer(player, server));
+        return handle(nameOrXuid, (adapter, player) -> adapter.transfer(player, server));
+    }
+
+    private <T> boolean handle(UUID uuid, BiConsumer<NativePlayerAdapter<T>, T> action) {
+        NativePlayerAdapter<T> adapter = adapter();
+        T player = adapter.find(uuid).orElse(null);
+        if (player == null) return false;
+        action.accept(adapter, player);
         return true;
     }
 
-    private <T> void handle(UUID uuid, BiConsumer<NativePlayerAdapter<T>, T> action) {
+    private <T> boolean handle(String nameOrXuid, BiConsumer<NativePlayerAdapter<T>, T> action) {
         NativePlayerAdapter<T> adapter = adapter();
-        adapter.find(uuid).ifPresent(player -> action.accept(adapter, player));
+        T player = adapter.find(nameOrXuid).orElse(null);
+        if (player == null) return false;
+        action.accept(adapter, player);
+        return true;
     }
-
-    private <T> void handle(String nameOrXuid, BiConsumer<NativePlayerAdapter<T>, T> action) {
-        NativePlayerAdapter<T> adapter = adapter();
-        adapter.find(nameOrXuid).ifPresent(player -> action.accept(adapter, player));
-    }
-
 
     @SuppressWarnings("unchecked")
     private <T> NativePlayerAdapter<T> adapter() {

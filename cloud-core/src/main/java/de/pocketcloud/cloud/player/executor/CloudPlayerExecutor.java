@@ -55,7 +55,7 @@ public final class CloudPlayerExecutor implements IPlayerExecutor {
                 .ifPresent(p -> {
                     CloudServer selectedServer = (CloudServer) p.currentProxy().orElse(p.currentServer().orElse(null));
                     if (selectedServer != null) {
-                        selectedServer.sendPacket(PlayerTextPacket.create(p.name(), title, subtitle, TextType.MESSAGE, fadeIn, stay, fadeOut));
+                        selectedServer.sendPacket(PlayerTextPacket.create(p.name(), title, subtitle, TextType.TITLE, fadeIn, stay, fadeOut));
                     }
                 });
     }
@@ -149,7 +149,7 @@ public final class CloudPlayerExecutor implements IPlayerExecutor {
                 .ifPresent(p -> {
                     CloudServer selectedServer = (CloudServer) p.currentProxy().orElse(p.currentServer().orElse(null));
                     if (selectedServer != null) {
-                        selectedServer.sendPacket(PlayerTextPacket.create(p.name(), title, subtitle, TextType.MESSAGE, fadeIn, stay, fadeOut));
+                        selectedServer.sendPacket(PlayerTextPacket.create(p.name(), title, subtitle, TextType.TITLE, fadeIn, stay, fadeOut));
                     }
                 });
     }

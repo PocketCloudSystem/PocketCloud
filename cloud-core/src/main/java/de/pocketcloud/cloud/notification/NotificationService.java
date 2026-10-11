@@ -24,13 +24,15 @@ public final class NotificationService {
             Message message = craftDiscordMessage(type, args, extraArgs);
             Webhook webhook = PocketCloud.instance().logSettingsConfig().discordWebhook().buildWebhook();
             if (message != null && webhook != null) {
-                message.sendWithDiffWebhook(webhook).exceptionally(ex -> {
+                message.sendWithDiffWebhook(webhook).thenAccept(res -> {
+                    if (res != null && !res.isSuccess()) {
+                        CloudLogger.get().error("§cFailed to spread notification to discord responded with code §e{}§8: §e{}", res.statusCode(), res.body());
+                    } else if (res == null) {
+                        CloudLogger.get().error("§cFailed to spread notification to discord: Response was null");
+                    }
+                }).exceptionally(ex -> {
                     CloudLogger.get().exception("§cFailed to spread notification to discord", ex);
                     return null;
-                }).thenAccept(res -> {
-                    if (!res.isSuccess()) {
-                        CloudLogger.get().error("§cFailed to spread notification to discord responded with code §e{}§8: §e{}", res.statusCode(), res.body());
-                    }
                 });
             }
         }
@@ -45,6 +47,12 @@ public final class NotificationService {
             case SERVER_CRASHED -> {
                 @SuppressWarnings("unchecked")
                 CrashData crashData = CrashData.read((Map<String, Object>) extraArgs.getOrDefault("crashData", Map.of()));
+                String trace = crashData == null ? "" :
+                        String.join("\n", Optional.ofNullable(crashData.trace()).orElse(List.of()));
+                if (trace.isBlank()) {
+                    trace = "No stacktrace available.";
+                } else trace = trace.substring(0, Math.min(trace.length() - 1, 1000));
+
                 message.addEmbed(Embed.create()
                         .setTitle("Notification | Server Crash Report")
                         .setDescription("`The cloud detected a crash on the following server:`")
@@ -60,7 +68,7 @@ public final class NotificationService {
                         .addField("**Error Type**", "> " + Optional.ofNullable(crashData.errorType()).orElse("No error type found."), true)
                         .addField("**File**", "> " + Optional.ofNullable(crashData.file()).orElse("No file found.") + " (L: " + (crashData.line() == null ? "No line found." : crashData.line().toString()) + ")", true)
                         .addField("**Message**", "> " + Optional.ofNullable(crashData.message()).orElse("No message found."), false)
-                        .addField("**Trace**", "> " + String.join("\n", Optional.ofNullable(crashData.trace()).orElse(List.of())).substring(0, 1000), false)
+                        .addField("**Trace**", "``` " + trace + "```", false)
                 );
             }
             case SERVER_START_FAILED -> {

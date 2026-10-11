@@ -65,7 +65,7 @@ public final class GroupRoutes {
     @DeleteRoute("/groups/{name}")
     public void remove(HttpRequest request, HttpResponse response, @PathVariable("name") String name) {
         IServerGroup group = requireGroup(name);
-        PocketCloud.instance().serverGroups().remove(group);
+        PocketCloud.instance().serverGroups().delete(group);
         response.json(message("Removed the group."));
     }
 

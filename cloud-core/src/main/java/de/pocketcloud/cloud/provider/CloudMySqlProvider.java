@@ -102,13 +102,24 @@ public final class CloudMySqlProvider extends CloudProvider {
                     if (row.containsKey("settings")) row.put("settings", FileUtils.decodeJson(row.get("settings").toString(), new TypeToken<Map<String, Object>>() {}.getType()));
                     Template t = Template.read(row);
                     templates.put(t.name(), t);
-                } catch (Exception _) {}
+                } catch (Exception ex) {
+                    CloudLogger.get().debug("Skipping invalid template {}: {}", row.get("name"), ex.getMessage());
+                }
             });
 
             promise.resolve(templates);
         }).failure(promise::reject);
 
         return promise;
+    }
+
+    private ServerGroup readGroupProperly(Map<String, Object> rowData) {
+        Map<String, Object> data = new HashMap<>(rowData);
+        if (data.get("templates") instanceof String templates) {
+            data.put("templates", templates.isBlank() ? new ArrayList<>() : FileUtils.decodeJson(templates, new TypeToken<List<String>>() {}.getType()));
+        }
+
+        return ServerGroup.read(data);
     }
 
     @Override
@@ -140,7 +151,7 @@ public final class CloudMySqlProvider extends CloudProvider {
             }
 
             try {
-                ServerGroup sg = ServerGroup.read(rows.getFirst());
+                ServerGroup sg = readGroupProperly(rows.getFirst());
                 promise.resolve(Optional.of(sg));
             } catch (Exception e) {
                 promise.reject(e);
@@ -167,9 +178,11 @@ public final class CloudMySqlProvider extends CloudProvider {
             Map<String, ServerGroup> serverGroups = new HashMap<>();
             rows.forEach(row -> {
                 try {
-                    ServerGroup sg = ServerGroup.read(row);
+                    ServerGroup sg = readGroupProperly(row);
                     serverGroups.put(sg.name(), sg);
-                } catch (Exception _) {}
+                } catch (Exception ex) {
+                    CloudLogger.get().debug("Skipping invalid server group {}: {}", row.get("name"), ex.getMessage());
+                }
             });
             promise.resolve(serverGroups);
         }).failure(promise::reject);

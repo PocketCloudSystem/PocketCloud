@@ -37,10 +37,14 @@ public final class ServerProvider implements IWriteServerProvider {
         if (servers.containsKey(server.name())) {
             CloudServer localServer = (CloudServer) servers.get(server.name());
             ServerStatus oldStatus = localServer.status();
+
+            var oldVerificationStatus = localServer.verificationStatus();
             localServer.syncIn(server);
+
             if (verified && oldStatus != localServer.status())
-                CloudAPI.instance().events().call(new ServerChangedStatusEvent(localServer, localServer.status(), server.status()));
-            if (verified && !oldStatus.isOnline() && server.verificationStatus().isVerified())
+                CloudAPI.instance().events().call(new ServerChangedStatusEvent(localServer, oldStatus, server.status()));
+
+            if (verified && !oldVerificationStatus.isVerified() && localServer.verificationStatus().isVerified())
                 CloudAPI.instance().events().call(new ServerVerifiedEvent(localServer));
         } else {
             servers.put(server.name(), server);
@@ -52,6 +56,7 @@ public final class ServerProvider implements IWriteServerProvider {
     @Override
     public void remove(ICloudServer server) {
         CloudServer localServer = (CloudServer) servers.get(server.name());
+        if (localServer == null) return;
         if (CloudBridge.instance().status().isVerified()) {
             CloudAPI.instance().events().call(new ServerDisconnectedEvent(localServer));
             if (server.verificationStatus().isDenied())

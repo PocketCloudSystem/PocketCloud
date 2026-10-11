@@ -37,6 +37,7 @@ public final class PlayerProvider implements IWritePlayerProvider {
     @Override
     public void remove(ICloudPlayer player) {
         CloudPlayer localPlayer = (CloudPlayer) players.get(player.name());
+        if (localPlayer == null) return;
         if (CloudBridge.instance().status().isVerified())
             CloudAPI.instance().events().call(new PlayerLeftEvent(localPlayer, localPlayer.currentServer().orElse(null)));
         players.remove(player.name());

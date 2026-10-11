@@ -39,31 +39,36 @@ public abstract class Setup {
     protected Setup() {}
 
     public final void startSetup() {
-        synchronized (Setup.class) {
-            if (currentSetup != null) throw new IllegalStateException("Another setup is already running");
-            currentSetup = this;
+        try {
+            synchronized (Setup.class) {
+                if (currentSetup != null) throw new IllegalStateException("Another setup is already running");
+                currentSetup = this;
+            }
+
+            PocketCloud.instance().screens().set(new SetupScreen(this));
+
+            this.logger = CloudLogger.tmp();
+            SetupOutputHandler handler = new SetupOutputHandler();
+            handler.add(logger);
+            OutputManager.set(handler);
+
+            onStart(logger);
+            logSetupInstructions();
+
+            this.questions = List.copyOf(applyQuestions());
+
+            if (questions.isEmpty()) {
+                endSetup();
+                return;
+            }
+
+            PocketCloud.instance().console().setPrompt("§8» §r");
+
+            navigateToQuestion(0);
+        } catch (Exception e) {
+            cancel();
+            CloudLogger.get().exception("Failed to start setup", e);
         }
-
-        PocketCloud.instance().screens().set(new SetupScreen(this));
-
-        this.logger = CloudLogger.tmp();
-        SetupOutputHandler handler = new SetupOutputHandler();
-        handler.add(logger);
-        OutputManager.set(handler);
-
-        onStart(logger);
-        logSetupInstructions();
-
-        this.questions = List.copyOf(applyQuestions());
-
-        if (questions.isEmpty()) {
-            endSetup();
-            return;
-        }
-
-        PocketCloud.instance().console().setPrompt("§8» §r");
-
-        navigateToQuestion(0);
     }
 
     public final Setup onCompletion(Consumer<Map<String, Object>> handler) {

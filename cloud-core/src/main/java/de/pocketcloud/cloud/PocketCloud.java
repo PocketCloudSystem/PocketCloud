@@ -25,12 +25,14 @@ import de.pocketcloud.cloud.language.LanguageManager;
 import de.pocketcloud.cloud.load.Loader;
 import de.pocketcloud.cloud.network.NetworkNettyServer;
 import de.pocketcloud.cloud.network.client.ServerClientCache;
+import de.pocketcloud.cloud.network.packet.PacketQueue;
 import de.pocketcloud.cloud.network.packet.PacketRegistry;
 import de.pocketcloud.cloud.notification.NotificationService;
 import de.pocketcloud.cloud.player.CloudPlayerManager;
 import de.pocketcloud.cloud.player.executor.CloudPlayerExecutor;
 import de.pocketcloud.cloud.plugin.CloudPluginManager;
 import de.pocketcloud.cloud.provider.CloudProvider;
+import de.pocketcloud.cloud.server.CloudServer;
 import de.pocketcloud.cloud.server.CloudServerManager;
 import de.pocketcloud.cloud.server.config.ServerPropertiesGenerator;
 import de.pocketcloud.cloud.server.crash.CrashHandlerRegistry;
@@ -65,6 +67,8 @@ import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
 
 @Getter
 @Accessors(fluent = true)
@@ -78,7 +82,7 @@ public final class PocketCloud implements CloudAPI {
     private boolean hasStopped = false;
     private Instant startTime = null;
 
-    private final List<Map<String, Object>> startNotifications = new ArrayList<>();
+    private final List<Map<String, Object>> startNotifications = new CopyOnWriteArrayList<>();
     private boolean startNotificationsFlushed = false;
 
     private final PerformanceStats performanceStats = new PerformanceStats();
@@ -214,6 +218,7 @@ public final class PocketCloud implements CloudAPI {
         services.register(HttpServer.class, new HttpServer(config().httpServer().socketAddress(), config().httpServer().authKey()));
         services.register(RequestManager.class, new RequestManager());
         services.register(PacketRegistry.class, new PacketRegistry());
+        services.register(PacketQueue.class, new PacketQueue());
         services.register(ServerClientCache.class, new ServerClientCache());
         services.register(TrafficMonitorManager.class, new TrafficMonitorManager());
         services.register(CloudPluginManager.class, new CloudPluginManager());
@@ -388,7 +393,12 @@ public final class PocketCloud implements CloudAPI {
         CloudLogger.get().info("§cStopping §rall servers...");
         servers().stopAllAndWait(10 * 1000);
 
+        servers().stopAllAndWait(10 * 1000);
+        CloudServer.awaitPendingSaves(Duration.ofSeconds(30));
+        CloudServerManager.SERVER_EXECUTOR.shutdownNow();
+
         network().close();
+        httpServer().close();
         loader().unloadAll();
 
         if (config().writeTimingsOnShutdown()) {
@@ -515,6 +525,10 @@ public final class PocketCloud implements CloudAPI {
     @Override
     public PacketRegistry packets() {
         return services.get(PacketRegistry.class);
+    }
+
+    public PacketQueue packetQueue() {
+        return services.get(PacketQueue.class);
     }
 
     public ServerClientCache clients() {

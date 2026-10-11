@@ -64,7 +64,7 @@ public final class TemplateCommand extends Command implements TabComplete {
         Template template = ctx.arg("template", Template.class);
         boolean sure = ctx.hasFlag("y");
         if (sure) {
-            PocketCloud.instance().templates().remove(template);
+            PocketCloud.instance().templates().delete(template);
         } else {
             awaitConfirmation(sender, "Are you sure you want to §cremove §rthe template §b" + template.name() + "§r?")
                     .thenSuccess(r -> {

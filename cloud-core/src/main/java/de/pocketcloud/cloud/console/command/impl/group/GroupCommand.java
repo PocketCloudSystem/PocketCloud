@@ -31,7 +31,7 @@ public final class GroupCommand extends Command {
         registerSubCommand(SubCommand.lambda("edit", this::handleEditSub, true, subCommand -> {
             subCommand.addParameter(new ServerGroupParameter("group", false))
                     .addParameter(new StringEnumParameter("action", false, "add", "remove"))
-                    .addParameter(new StringParameter("template", false, true));
+                    .addParameter(new StringParameter("templates", false, true));
         }));
 
         registerSubCommand(SubCommand.lambda("remove", this::handleRemoveSub, true, subCommand -> {

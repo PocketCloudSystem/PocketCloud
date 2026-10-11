@@ -10,6 +10,8 @@ import io.netty.util.CharsetUtil;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public final class HttpRequest {
@@ -44,7 +46,12 @@ public final class HttpRequest {
     public String path() {
         String uri = request.uri();
         int queryIndex = uri.indexOf('?');
-        return queryIndex >= 0 ? uri.substring(0, queryIndex) : uri;
+        String rawPath = queryIndex >= 0 ? uri.substring(0, queryIndex) : uri;
+        try {
+            return URLDecoder.decode(rawPath, StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            return rawPath;
+        }
     }
 
     public HttpMethod method() {
@@ -60,7 +67,13 @@ public final class HttpRequest {
     }
 
     public String pathParam(String key) {
-        return pathParams.get(key);
+        String value = pathParams.get(key);
+        if (value == null) return null;
+        try {
+            return URLDecoder.decode(value, StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            return value;
+        }
     }
 
     private QueryStringDecoder queryDecoder() {
@@ -92,9 +105,7 @@ public final class HttpRequest {
 
     public JsonObject json() {
         JsonElement element = JsonParser.parseString(body());
-        if (!element.isJsonObject()) {
-            throw new IllegalStateException("Request body is not a JSON object");
-        }
+        if (!element.isJsonObject()) throw new IllegalStateException("Request body is not a JSON object");
         return element.getAsJsonObject();
     }
 
@@ -129,9 +140,7 @@ public final class HttpRequest {
 
     public Optional<String> bearerToken() {
         String value = header(HttpHeaderNames.AUTHORIZATION.toString());
-        if (value == null || !value.startsWith("Bearer ")) {
-            return Optional.empty();
-        }
+        if (value == null || !value.startsWith("Bearer ")) return Optional.empty();
         return Optional.of(value.substring("Bearer ".length()).trim());
     }
 

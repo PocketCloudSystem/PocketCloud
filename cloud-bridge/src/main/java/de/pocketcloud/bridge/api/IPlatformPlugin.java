@@ -11,7 +11,7 @@ public interface IPlatformPlugin {
 
     void onVerification();
 
-    void startTask(Runnable runnable, int period);
+    void startTask(Runnable runnable, int delay, int period);
 
     ILogger craftPlatformLogger();
 

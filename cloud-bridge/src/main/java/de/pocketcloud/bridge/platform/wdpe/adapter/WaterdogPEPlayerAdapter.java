@@ -34,14 +34,14 @@ public final class WaterdogPEPlayerAdapter implements NativePlayerAdapter<Proxie
 
     @Override
     public void sendActionbarMessage(ProxiedPlayer player, String message, int fadeIn, int stay, int fadeOut) {
-        player.sendPacket(null);
         SetTitlePacket packet = new SetTitlePacket();
         packet.setTitleType(SetTitlePacket.TitleType.ACTIONBAR);
         packet.setXuid(player.getXuid());
         packet.setPlatformOnlineId("");
         packet.setFadeInTime(fadeIn);
-        packet.setStayTime(fadeIn);
+        packet.setStayTime(stay);
         packet.setFadeOutTime(fadeOut);
+        packet.setTitleText(message);
         player.sendPacket(packet);
     }
 

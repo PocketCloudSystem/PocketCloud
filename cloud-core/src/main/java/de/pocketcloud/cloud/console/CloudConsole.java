@@ -116,11 +116,21 @@ public final class CloudConsole extends Thread implements Tickable {
                 if (line == null) continue;
                 consoleQueue.offer(line);
             } catch (UserInterruptException _) {
-                InterruptionResult res = interruptionHandler.get();
-                if (res == InterruptionResult.INTERRUPT) break;
+                try {
+                    InterruptionResult res = interruptionHandler.get();
+                    if (res == InterruptionResult.INTERRUPT) break;
+                } catch (Exception _) {
+                    PocketCloud.instance().shutdown();
+                    break;
+                }
             } catch (EndOfFileException _) {
-                PocketCloud.instance().screens().reset();
-                consoleQueue.offer("exit -y");
+                try {
+                    PocketCloud.instance().screens().reset();
+                    consoleQueue.offer("exit -y");
+                } catch (Exception _) {
+                    PocketCloud.instance().shutdown();
+                }
+
                 break;
             }
         }

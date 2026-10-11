@@ -98,60 +98,60 @@ public final class TemplateEditSetup extends Setup {
                         .parser((input, error) -> SetupHelper.parseDouble(input, error, 0, 100, true))
                         .canSkipped(true)
                         .recommendation("75")
-                        .defaultValue("0 (disabled)", 0.0)
+                        .defaultValue(settings.startNewServerThreshold() == 0.0 ? "0 (disabled)" : String.valueOf(settings.startNewServerThreshold()), settings.startNewServerThreshold())
                         .build(),
 
                 QuestionBuilder.builder("maxPlayerCount", "Maximum players per server of this template")
                         .parser((input, error) -> SetupHelper.parseInt(input, error, 0, 100_000))
                         .canSkipped(true)
-                        .defaultValue("20", 20)
+                        .defaultValue(String.valueOf(settings.maxPlayerCount()), settings.maxPlayerCount())
                         .build(),
 
                 QuestionBuilder.builder("minServerCount", "How many servers should always be online (minimum)?")
                         .parser((input, error) -> SetupHelper.parseInt(input, error, 0, 100))
                         .canSkipped(true)
-                        .defaultValue("1", 1)
+                        .defaultValue(String.valueOf(settings.minServerCount()), settings.minServerCount())
                         .build(),
 
                 QuestionBuilder.builder("maxServerCount", "Maximum number of servers that can run for this template")
                         .parser((input, error) -> SetupHelper.parseInt(input, error, 0, 100))
                         .canSkipped(true)
-                        .defaultValue("2", 2)
+                        .defaultValue(String.valueOf(settings.maxServerCount()), settings.maxServerCount())
                         .build(),
 
                 QuestionBuilder.builder("maxMemory", "Memory (RAM) per server in Megabytes")
                         .parser((input, error) -> SetupHelper.parseInt(input, error, 256, (int) Math.max(PocketCloud.instance().performanceStats().systemTotalMemory() / 1024 / 1024, 1024)))
                         .canSkipped(true)
                         .recommendation("1024")
-                        .defaultValue("1024", 1024)
+                        .defaultValue(String.valueOf(settings.maxMemory()), settings.maxMemory())
                         .build(),
 
                 QuestionBuilder.builder("startupTimeout", "Seconds to wait for a server to start successfully")
                         .parser((input, error) -> SetupHelper.parseInt(input, error, 5, 120))
                         .canSkipped(true)
                         .recommendation("15")
-                        .defaultValue("15", 15)
+                        .defaultValue(String.valueOf(settings.startupTimeout()), settings.startupTimeout())
                         .build(),
 
                 QuestionBuilder.builder("shutdownTimeout", "Seconds to wait for a server to stop cleanly")
                         .parser((input, error) -> SetupHelper.parseInt(input, error, 5, 120))
                         .canSkipped(true)
                         .recommendation("15")
-                        .defaultValue("15", 15)
+                        .defaultValue(String.valueOf(settings.shutdownTimeout()), settings.shutdownTimeout())
                         .build(),
 
                 QuestionBuilder.builder("emptyServerGracePeriod", "Seconds to wait after 0 players before stopping the server (only if stopOnEmpty = yes)")
                         .parser((input, error) -> SetupHelper.parseInt(input, error, 0, Integer.MAX_VALUE))
                         .canSkipped(true)
                         .recommendation("120")
-                        .defaultValue("120", 120)
+                        .defaultValue(String.valueOf(settings.emptyServerGracePeriod()), settings.emptyServerGracePeriod())
                         .build(),
 
                 QuestionBuilder.builder("priority", "Boot priority of this template (higher = more important, used for start order)")
                         .parser((input, error) -> SetupHelper.parseInt(input, error, 0, Integer.MAX_VALUE))
                         .canSkipped(true)
                         .recommendation("0")
-                        .defaultValue("0", 0)
+                        .defaultValue(String.valueOf(settings.priority()), settings.priority())
                         .build()
         );
     }

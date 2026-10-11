@@ -52,6 +52,9 @@ public final class Promise<T> {
                 .whenComplete((result, ex) -> {
                     if (ex != null) {
                         promise.reject(unwrap(ex));
+                    } else if (result == null) {
+                        // FIX: Abfangen, falls der Supplier null zurückgibt, um eine NPE und das Hängenbleiben des Promises zu verhindern
+                        promise.reject(new NullPointerException("Supplier returned null PromiseResult"));
                     } else if (result.success()) {
                         promise.resolve(result.value());
                     } else {

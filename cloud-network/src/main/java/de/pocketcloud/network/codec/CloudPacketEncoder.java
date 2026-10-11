@@ -26,15 +26,20 @@ public final class CloudPacketEncoder extends MessageToByteEncoder<Packet> {
     }
 
     @Override
-    protected void encode(ChannelHandlerContext ctx, Packet packet, ByteBuf out) {
+    protected void encode(ChannelHandlerContext ctx, Packet packet, ByteBuf out) throws Exception {
         byte[] bytes = PacketSerializer.encode(packet, encryptionEnabled.getAsBoolean(), authTokenSupplier.get());
-        if (bytes.length > maxPacketSizeSupplier.getAsInt()) {
+        int maxSize = maxPacketSizeSupplier.getAsInt();
+
+        if (bytes.length > maxSize) {
             trafficListener.onTooLargePacket(ctx.channel(), packet, bytes.length, TrafficDirection.OUT);
-            return;
+            throw new IllegalArgumentException("Packet " + packet.getClass().getSimpleName() + " is too large (" + bytes.length + " bytes > max " + maxSize + ")");
         }
 
         packet.setSize(bytes.length);
-        if (!trafficListener.onOutgoing(ctx.channel(), packet, bytes, bytes.length)) return;
+        if (!trafficListener.onOutgoing(ctx.channel(), packet, bytes, bytes.length)) {
+            throw new IllegalStateException("Packet " + packet.getClass().getSimpleName() + " transmission was cancelled by traffic listener");
+        }
+
         out.writeInt(bytes.length);
         out.writeBytes(bytes);
     }

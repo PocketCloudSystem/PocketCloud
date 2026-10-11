@@ -85,7 +85,19 @@ public class EventService<R> {
     }
 
     public void call(Event event) {
-        List<RegisteredHandler> toCall = handlers.getOrDefault(event.getClass(), new ArrayList<>());
+        List<RegisteredHandler> toCall = new ArrayList<>();
+        Class<?> eventClass = event.getClass();
+
+        for (Map.Entry<Class<?>, List<RegisteredHandler>> entry : handlers.entrySet()) {
+            if (entry.getKey().isAssignableFrom(eventClass)) {
+                for (RegisteredHandler rh : entry.getValue()) {
+                    if (!toCall.contains(rh)) {
+                        toCall.add(rh);
+                    }
+                }
+            }
+        }
+
         toCall.sort(Comparator.comparingInt(rh -> rh.priority().ordinal()));
         for (RegisteredHandler handler : toCall) {
             try {
@@ -108,6 +120,9 @@ public class EventService<R> {
     }
 
     protected boolean isValidListenerMethod(Method method) {
-        return method.getParameterCount() == 1 && !Modifier.isStatic(method.getModifiers()) && Modifier.isPublic(method.getModifiers());
+        return method.isAnnotationPresent(EventHandler.class)
+                && method.getParameterCount() == 1
+                && !Modifier.isStatic(method.getModifiers())
+                && Modifier.isPublic(method.getModifiers());
     }
 }

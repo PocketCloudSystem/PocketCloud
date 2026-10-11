@@ -40,7 +40,8 @@ public final class ServerPacketHandler implements PacketListener {
         var server = (CloudServer) PocketCloud.instance().servers().get(packet.getServerName()).orElse(null);
         if (server == null) return;
         PocketCloud.instance().servers().handleHandshakeReceived(server.name());
-        if (PocketCloud.instance().clients().getServer(sender).isEmpty()) {
+        if (PocketCloud.instance().clients().getServer(sender).isEmpty() &&
+                !PocketCloud.instance().clients().isRegistered(server)) {
             if (new ServerRequestVerificationEvent(server).call().isCancelled()) {
                 server.logger().warn("Denied server handshake request by event §8(§b{}§8)", sender.address());
                 server.verificationStatus(VerificationStatus.DENIED);

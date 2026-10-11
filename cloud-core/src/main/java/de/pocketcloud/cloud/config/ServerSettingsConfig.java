@@ -37,6 +37,6 @@ public final class ServerSettingsConfig extends OkaeriConfig implements ICloudCo
 
     @Override
     public void apply() {
-        ServerStartMethods.set(ServerStartMethods.get(startMethod).get());
+        ServerStartMethods.set(ServerStartMethods.get(startMethod.toLowerCase()).get());
     }
 }
