@@ -14,7 +14,7 @@ public final class VersionCommand extends Command {
 
     @Override
     public boolean run(CommandSender sender, CommandContext ctx) {
-        sender.info("Your version of §bPocket§3Cloud §ris currently running on §b{}§r.", VersionInfo.VERSION + (VersionInfo.BETA ? "§r§c@BETA" : ":"));
+        sender.info("Your version of §bPocket§3Cloud §ris currently running on §b{}§r.", VersionInfo.VERSION + (VersionInfo.BETA ? "§r§c@BETA" : ""));
         sender.info("Contributors: §b{}", String.join("§8, §b", VersionInfo.DEVELOPERS));
         return true;
     }

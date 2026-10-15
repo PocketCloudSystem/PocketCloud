@@ -189,7 +189,9 @@ public final class PacketData implements IPacketData {
     }
 
     public String readString() {
-        return String.valueOf(read());
+        Object read = read();
+        if (read == null) return null;
+        return String.valueOf(read);
     }
 
     public Integer readInt() {

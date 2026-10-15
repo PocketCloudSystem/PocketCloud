@@ -69,7 +69,9 @@ public final class SetupHelper {
     public static Double parseDouble(String input, ErrorHolder error, double min, double max, boolean percentage) {
         try {
             double value = Double.parseDouble(input);
-            if (value < min || value > max) throw new NumberFormatException();
+            if (Double.isNaN(value) || Double.isInfinite(value) || value < min || value > max) {
+                throw new NumberFormatException();
+            }
             return percentage ? (value / 100) : value;
         } catch (NumberFormatException | NullPointerException _) {
             error.set("Please enter a valid decimal number between " + formatNumber(min) + " and " + formatNumber(max) + "!");

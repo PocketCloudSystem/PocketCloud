@@ -64,8 +64,13 @@ public final class ArrayUtils {
                 affectedKeys.incrementAndGet();
                 map.put(key, defaultValue);
             } else if (defaultValue instanceof Map<?, ?> defaultNested && actualValue instanceof Map<?, ?> actualNested) {
-                affectedKeys.incrementAndGet();
-                Map<Object, Object> merged = fillMissingKeys((Map<Object, Object>) actualNested, (Map<Object, Object>) defaultNested, affectedKeys, enforceTypes);
+                Map<Object, Object> merged = fillMissingKeys(
+                        (Map<Object, Object>) actualNested,
+                        (Map<Object, Object>) defaultNested,
+                        affectedKeys,
+                        enforceTypes
+                );
+
                 map.put(key, (V) merged);
             } else if (defaultValue instanceof Map<?, ?>) {
                 affectedKeys.incrementAndGet();

@@ -182,8 +182,8 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
         Promise<Void> promise = new Promise<>();
         cloudServer.dispatch(saveCommandLine)
                 .thenSuccess(_ -> {
-                    cloudServer.save();
-                    promise.resolve(null);
+                    cloudServer.save().thenSuccess(_ -> promise.resolve(null))
+                                    .failure(promise::reject);
                 })
                 .failure(promise::reject);
 

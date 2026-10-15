@@ -282,7 +282,7 @@ public final class CloudConsole extends Thread implements Tickable {
                 terminal.flush();
                 reader.callWidget(LineReader.REDRAW_LINE);
                 reader.callWidget(LineReader.REDISPLAY);
-            } catch (Exception ignored) {}
+            } catch (Exception _) {}
         }
     }
 

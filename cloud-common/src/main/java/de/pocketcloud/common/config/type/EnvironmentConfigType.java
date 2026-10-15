@@ -42,7 +42,13 @@ public final class EnvironmentConfigType implements ConfigType {
     }
 
     private String stripQuotes(String value) {
-        if ((value.startsWith("\"") && value.endsWith("\"")) || (value.startsWith("'") && value.endsWith("'"))) {
+        if (value.startsWith("\"") && value.endsWith("\"") && value.length() >= 2) {
+            return value.substring(1, value.length() - 1)
+                    .replace("\\\"", "\"")
+                    .replace("\\\\", "\\");
+        }
+
+        if (value.startsWith("'") && value.endsWith("'") && value.length() >= 2) {
             return value.substring(1, value.length() - 1);
         }
 

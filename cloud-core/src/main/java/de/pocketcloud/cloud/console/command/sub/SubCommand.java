@@ -26,7 +26,7 @@ public abstract class SubCommand extends CommandUtilityHolder {
 
     public SubCommand() {
         if (!this.getClass().isAnnotationPresent(SubCommandDescription.class)) {
-            throw new IllegalStateException(this.getClass().getSimpleName() + " requires @CommandDescription");
+            throw new IllegalStateException(this.getClass().getSimpleName() + " requires @SubCommandDescription");
         }
 
         SubCommandDescription annotation = getClass().getAnnotation(SubCommandDescription.class);

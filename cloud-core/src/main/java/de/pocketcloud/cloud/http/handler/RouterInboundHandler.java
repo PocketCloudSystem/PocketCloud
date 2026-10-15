@@ -33,13 +33,11 @@ public final class RouterInboundHandler extends SimpleChannelInboundHandler<Full
         try {
             router.handle(request, response);
         } catch (HttpException e) {
-            if (!response.isSent()) {
-                response.error(HttpResponseStatus.valueOf(e.statusCode()), e.getMessage());
-            }
+            if (!response.isSent()) response.error(HttpResponseStatus.valueOf(e.statusCode()), e.getMessage());
             CloudLogger.get().debug("Request rejected (" + e.statusCode() + ") for " + request.path() + ": " + e.getMessage());
         } catch (Exception e) {
             boolean debugEnabled = CloudLogger.get().isDebugMode();
-            CloudLogger.get().error("Unhandled exception while routing request §b{}§r.{}" + request.path(), debugEnabled ? "" : " §8(§renable §edebug §rto view full stack trace§8)");
+            CloudLogger.get().error("Unhandled exception while routing request §b{}§r.{}", request.path(), debugEnabled ? "" : " §8(§renable §edebug §rto view full stack trace§8)");
             if (debugEnabled) CloudLogger.get().exception(e);
             if (!response.isSent()) {
                 response.internalServerError("An unexpected error occurred");

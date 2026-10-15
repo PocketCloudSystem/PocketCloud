@@ -55,7 +55,7 @@ public final class SetupScreen extends Screen {
             final List<String> words = new ArrayList<>(parsedLine.words());
             if (!question.getPossibleAnswers().isEmpty()) {
                 if (words.isEmpty() || words.size() == 1) {
-                    String current = words.isEmpty() ? "" : words.getFirst();
+                    String current = words.isEmpty() ? "" : words.getFirst().toLowerCase();
                     for (String possibleAnswer : question.getPossibleAnswers()) {
                         if (possibleAnswer.toLowerCase().startsWith(current)) {
                             list.add(new Candidate(possibleAnswer));

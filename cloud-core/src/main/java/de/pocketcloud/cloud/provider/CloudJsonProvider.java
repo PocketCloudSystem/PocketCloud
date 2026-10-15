@@ -75,7 +75,7 @@ public final class CloudJsonProvider extends CloudProvider {
 
     @Override
     public Promise<Boolean> checkTemplate(String template) {
-        return Promise.resolved(templatesConfig.get(template, false));
+        return Promise.resolved(templatesConfig.has(template));
     }
 
     @Override

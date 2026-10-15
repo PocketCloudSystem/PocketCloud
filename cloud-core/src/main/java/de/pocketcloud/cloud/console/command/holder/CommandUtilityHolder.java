@@ -41,24 +41,19 @@ public class CommandUtilityHolder {
 
         Iterator<String> it = args.iterator();
         while (it.hasNext()) {
-
             String arg = it.next();
             boolean removed = false;
 
             String[] parts = arg.split("=", 2);
             String flagKey = parts[0];
+
             if (new CommandLongFlag("x", false, false).isLikelyFlag(arg)) {
                 String valuePart = parts.length > 1 ? parts[1] : null;
                 String flagName = flagKey.substring(CommandLongFlag.PREFIX.length());
                 CommandFlag flag = flags.get(flagKey);
                 if (flag != null) {
-                    if (flag.isExpectValue()) {
-                        if (valuePart == null) throw new FlagParseException("Flag " + flagKey + " expects a value");
-                        storeFlag(flag, flagName, valuePart, mergeGlobalAndRegularFlags, globalFlags, regularFlags);
-                    } else {
-                        storeFlag(flag, flagName, true, mergeGlobalAndRegularFlags, globalFlags, regularFlags);
-                    }
-
+                    Object value = resolveFlagValue(flag, flagKey, valuePart);
+                    storeFlag(flag, flagName, value, mergeGlobalAndRegularFlags, globalFlags, regularFlags);
                     removed = true;
                 }
             } else if (new CommandShortFlag("x", false, false).isLikelyFlag(arg)) {
@@ -66,25 +61,22 @@ public class CommandUtilityHolder {
                 String flagName = flagKey.substring(CommandShortFlag.PREFIX.length());
                 CommandFlag flag = flags.get(flagKey);
                 if (flag != null) {
-                    if (flag.isExpectValue()) {
-                        if (valuePart == null) throw new FlagParseException("Flag " + flagKey + " expects a value");
-                        storeFlag(flag, flagName, valuePart, mergeGlobalAndRegularFlags, globalFlags, regularFlags);
-                    } else {
-                        storeFlag(flag, flagName, true, mergeGlobalAndRegularFlags, globalFlags, regularFlags);
-                    }
-
+                    Object value = resolveFlagValue(flag, flagKey, valuePart);
+                    storeFlag(flag, flagName, value, mergeGlobalAndRegularFlags, globalFlags, regularFlags);
                     removed = true;
                 } else if (valuePart == null && flagName.length() > 1) {
-                    // -abc -> -a -b -c
                     boolean anyMatched = false;
                     for (char c : flagName.toCharArray()) {
                         CommandFlag charFlag = flags.get(CommandShortFlag.PREFIX + c);
                         if (charFlag != null) {
-                            storeFlag(charFlag, String.valueOf(c), true, mergeGlobalAndRegularFlags, globalFlags, regularFlags);
+                            if (charFlag.isExpectValue()) {
+                                throw new FlagParseException("Combined short flag -" + c + " expects a value and cannot be grouped");
+                            }
+                            storeFlag(charFlag, String.valueOf(c), true,
+                                    mergeGlobalAndRegularFlags, globalFlags, regularFlags);
                             anyMatched = true;
                         }
                     }
-
                     removed = anyMatched;
                 }
             }
@@ -101,7 +93,41 @@ public class CommandUtilityHolder {
         return scanAndCleanFlags(args, false);
     }
 
-    private void storeFlag(CommandFlag flag, String name, Object value, boolean merge, Map<String, Object> global, Map<String, Object> regular) {
+    private Object resolveFlagValue(CommandFlag flag, String flagKey, String valuePart) throws FlagParseException {
+        if (!flag.isExpectValue()) {
+            return true;
+        }
+        if (valuePart == null) {
+            throw new FlagParseException("Flag " + flagKey + " expects a value");
+        }
+        return coerceFlagValue(valuePart);
+    }
+
+    private static Object coerceFlagValue(String raw) {
+        if (raw.equalsIgnoreCase("true") || raw.equalsIgnoreCase("false")) {
+            return Boolean.parseBoolean(raw);
+        }
+
+        if (raw.matches("-?\\d+")) {
+            try {
+                long l = Long.parseLong(raw);
+                if (l >= Integer.MIN_VALUE && l <= Integer.MAX_VALUE) {
+                    return (int) l;
+                }
+                return l;
+            } catch (NumberFormatException _) {}
+        }
+        
+        if (raw.matches("-?\\d+\\.\\d+([eE][-+]?\\d+)?")) {
+            try {
+                return Double.parseDouble(raw);
+            } catch (NumberFormatException _) {}
+        }
+        return raw;
+    }
+
+    private void storeFlag(CommandFlag flag, String name, Object value, boolean merge,
+                           Map<String, Object> global, Map<String, Object> regular) {
         if (flag.isGlobal() && !merge) {
             global.put(name, value);
         } else {
@@ -154,15 +180,28 @@ public class CommandUtilityHolder {
                 .count();
     }
 
-    public Map<String, Object> parseArgs(List<String> args, LastParsed lastParsed) throws ArgumentParseException, NoArgumentFoundException {
+    public Map<String, Object> parseArgs(List<String> args, LastParsed lastParsed)
+            throws ArgumentParseException, NoArgumentFoundException {
+        return parseArgs(args, lastParsed, null);
+    }
+    
+    public Map<String, Object> parseArgs(List<String> args, LastParsed lastParsed, String rawRemainder)
+            throws ArgumentParseException, NoArgumentFoundException {
         if (parameters.isEmpty()) return Map.of();
         Map<String, Object> result = new LinkedHashMap<>();
+
         for (int i = 0; i < parameters.size(); i++) {
             BaseCommandParameter param = parameters.get(i);
             lastParsed.value = param;
             boolean isMultiString = (param instanceof StringParameter sp) && sp.isMultiString();
+
             if (i < args.size()) {
-                String token = isMultiString ? String.join(" ", args.subList(i, args.size())) : args.get(i);
+                String token;
+                if (isMultiString) {
+                    token = (rawRemainder != null) ? rawRemainder : String.join(" ", args.subList(i, args.size()));
+                } else {
+                    token = args.get(i);
+                }
                 result.put(param.getName(), param.parseValue(token));
                 if (isMultiString) break;
             } else {

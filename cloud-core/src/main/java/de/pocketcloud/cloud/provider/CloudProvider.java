@@ -57,7 +57,7 @@ public abstract class CloudProvider {
 
     public static void select() {
         String provider = PocketCloud.instance().config().provider();
-        current = switch (provider) {
+        current = switch (provider.toLowerCase()) {
             case "mysql" -> new CloudMySqlProvider();
             default -> new CloudJsonProvider();
         };

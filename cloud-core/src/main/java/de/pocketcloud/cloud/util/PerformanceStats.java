@@ -54,7 +54,7 @@ public final class PerformanceStats {
         double avgTickTime = tickTimesSum / tickTimes.size();
         averageTPS = avgTickTime > 0 ? Math.min(20, 1 / avgTickTime) : 20;
 
-        tickUsage = Math.min(100, (tickEnd - tickStart) / 2000);
+        tickUsage = Math.min(100, (tickEnd - tickStart) * 2000);
     }
 
     public void updateSystemStats(long tick) {

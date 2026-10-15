@@ -47,11 +47,13 @@ public final class CloudServersHandler {
         if (!server.status().isOnline()) return;
         server.status(ServerStatus.OFFLINE);
         server.remove();
+
+        if (!checkForCrash(server))
+            CloudLogger.get().warn("The server §b{} §r§ctimed out§r, deleting data...", server.name());
+
         server.kill();
 
         CloudAPI.instance().events().call(new ServerTimedOutEvent(server));
-        if (!checkForCrash(server))
-            CloudLogger.get().warn("The server §b{} §r§ctimed out§r, deleting data...", server.name());
         PocketCloud.instance().notifications().sendNotification(NotificationType.SERVER_TIMED_OUT, Map.of("server", server.name()), Map.of());
 
         server.deleteTmpDir();

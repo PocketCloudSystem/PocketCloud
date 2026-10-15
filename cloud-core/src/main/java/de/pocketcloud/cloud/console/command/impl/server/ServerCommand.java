@@ -38,7 +38,6 @@ public final class ServerCommand extends Command {
         registerSubCommand(SubCommand.lambda("stop", this::handleStopSub, true, subCommand -> {
             subCommand.addParameter(new MultipleTypesParameter("server", false, new TemplateParameter("template", true),
                             new ServerParameter("server", true),
-                            new TemplateTypeParameter("server", true),
                             new ServerGroupParameter("server_group", true),
                             new TemplateTypeParameter("template_type", true),
                             new SoftwareParameter("software", true)))
@@ -140,7 +139,7 @@ public final class ServerCommand extends Command {
         CloudServer server = ctx.arg("server", CloudServer.class);
         sender.info("Saving §b{}§r...", server.name());
         Instant start = Instant.now();
-        server.save().thenSuccess(_ -> sender.success("Successfully §asaved §b{}§r. §8(§rTook §b{}ms§8)", server.name(), NumberUtils.formatNumber(Duration.between(start, Instant.now()).toMillis() / 1000F, 3)))
+        server.save().thenSuccess(_ -> sender.success("Successfully §asaved §b{}§r. §8(§rTook §b{}s§8)", server.name(), NumberUtils.formatNumber(Duration.between(start, Instant.now()).toMillis() / 1000F, 3)))
                 .failure(e -> sender.error("Failed to save §b{}§r: §c{}", server.name(), e.getMessage()));
         return true;
     }

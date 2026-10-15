@@ -160,37 +160,45 @@ public final class HttpResponse {
     }
 
     public void file(File file, String contentType) throws IOException {
-        RandomAccessFile raf = new RandomAccessFile(file, "r");
-        long length = raf.length();
+        if (sent) throw new IllegalStateException("Response was already sent");
+        sent = true;
 
-        DefaultHttpResponse response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, status);
-        response.headers().set(HttpHeaderNames.CONTENT_TYPE, contentType);
-        response.headers().set(HttpHeaderNames.CONTENT_LENGTH, length);
-        headers.forEach((k, v) -> response.headers().set(k, v));
+        RandomAccessFile raf = null;
+        try {
+            raf = new RandomAccessFile(file, "r");
+            long length = raf.length();
 
-        ctx.write(response);
-        ctx.write(new ChunkedFile(raf, 0, length, 8192), ctx.newProgressivePromise());
-        ctx.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT).addListener(keepAlive ? f -> {} : ChannelFutureListener.CLOSE);
-    }
+            DefaultHttpResponse response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, status);
+            response.headers().set(HttpHeaderNames.CONTENT_TYPE, contentType);
+            response.headers().set(HttpHeaderNames.CONTENT_LENGTH, length);
 
-    private void send(String contentType, String body) {
-        ByteBuf content = Unpooled.copiedBuffer(body, CharsetUtil.UTF_8);
-        write(contentType, content);
+            if (keepAlive) response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
+            headers.forEach((k, v) -> response.headers().set(k, v));
+            cookies.forEach(c -> response.headers().add(HttpHeaderNames.SET_COOKIE, c));
+
+            ctx.write(response);
+            ctx.write(new ChunkedFile(raf, 0, length, 8192), ctx.newProgressivePromise());
+            raf = null;
+            ctx.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT)
+                    .addListener(keepAlive ? f -> {} : ChannelFutureListener.CLOSE);
+        } finally {
+            if (raf != null) {
+                try {
+                    raf.close();
+                } catch (IOException _) {}
+            }
+        }
     }
 
     private void write(String contentType, ByteBuf content) {
         if (sent) throw new IllegalStateException("Response was already sent");
         sent = true;
-        FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, status, content);
 
+        FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, status, content);
         response.headers().set(HttpHeaderNames.CONTENT_TYPE, contentType + "; charset=UTF-8");
         response.headers().set(HttpHeaderNames.CONTENT_LENGTH, content.readableBytes());
-        PocketCloud.instance().traffic().pushBytes(HttpTrafficMonitor.class, TrafficDirection.OUT, content.readableBytes());
 
-        if (keepAlive) {
-            response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
-        }
-
+        if (keepAlive) response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
         headers.forEach((key, value) -> response.headers().set(key, value));
         cookies.forEach(c -> response.headers().add(HttpHeaderNames.SET_COOKIE, c));
 
@@ -199,5 +207,10 @@ public final class HttpResponse {
         } else {
             ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
         }
+    }
+
+    private void send(String contentType, String body) {
+        ByteBuf content = Unpooled.copiedBuffer(body, CharsetUtil.UTF_8);
+        write(contentType, content);
     }
 }

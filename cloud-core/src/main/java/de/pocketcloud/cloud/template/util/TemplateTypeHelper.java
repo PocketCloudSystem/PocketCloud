@@ -17,6 +17,10 @@ public final class TemplateTypeHelper {
 
     private static final Map<TemplateType, List<IServerSoftware>> softwareList = new HashMap<>();
 
+    public static void clearSoftwareList() {
+        softwareList.clear();
+    }
+
     public static Path globalTemplatePath(TemplateType type) {
         return PocketCloudPaths.templates().global().with(type.name().toLowerCase()).asPath();
     }

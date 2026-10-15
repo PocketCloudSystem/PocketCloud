@@ -57,6 +57,7 @@ public final class QuestionBuilder<T> {
         next.canSkipped = this.canSkipped;
         next.possibleAnswers = this.possibleAnswers;
         next.recommendation = this.recommendation;
+        next.defaultValueMessage = this.defaultValueMessage;
         return next;
     }
 

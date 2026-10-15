@@ -127,7 +127,7 @@ public abstract class ServerProperties implements IServerProperties {
     private void writeLocalVersion(String filePath, String version) {
         try {
             Files.writeString(versionFilePath(filePath), version);
-        } catch (IOException ignored) {}
+        } catch (IOException _) {}
     }
 
     private Map<String, Object> loadYaml(String filePath, Map<String, Object> defaultContent) {

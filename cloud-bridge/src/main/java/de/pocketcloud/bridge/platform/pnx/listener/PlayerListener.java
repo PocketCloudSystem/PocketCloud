@@ -74,6 +74,7 @@ public final class PlayerListener implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = false)
     public void handle(PlayerKickEvent event) {
+        if (event.isCancelled()) return;
         Player player = event.getPlayer();
         String finalReason = event.getReason();
         if (event.getPlayer().spawned) {

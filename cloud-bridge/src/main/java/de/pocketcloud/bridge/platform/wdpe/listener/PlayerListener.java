@@ -15,13 +15,13 @@ import dev.waterdog.waterdogpe.event.defaults.PlayerLoginEvent;
 import dev.waterdog.waterdogpe.event.defaults.ServerTransferEvent;
 import dev.waterdog.waterdogpe.player.ProxiedPlayer;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class PlayerListener {
 
-    private static final List<String> initialConnects = new ArrayList<>();
+    private static final Set<String> initialConnects = ConcurrentHashMap.newKeySet();
 
     public static void handle(PlayerLoginEvent event) {
         ProxiedPlayer player = event.getPlayer();

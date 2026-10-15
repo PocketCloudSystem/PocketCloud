@@ -68,16 +68,15 @@ public final class PacketSerializer {
 
             if (data.isEmpty()) throw new PacketException("Received buffer is empty");
 
-            String packetName = data.peek().toString();
-            if (packetName == null) throw new PacketException("Received buffer does not contain a valid packet name");
+            Object packetNameValue = data.peek();
+            if (packetNameValue == null) throw new PacketException("Received buffer does not contain a valid packet name");
+            String packetName = packetNameValue.toString();
 
-            if (data.isEmpty()) throw new PacketException("Received packet does not contain an authentication key");
+            Object givenKeyValue = data.readLast();
+            if (givenKeyValue == null) throw new PacketException("Received packet does not contain an authentication key");
+            String givenKey = givenKeyValue.toString();
 
-            String givenKey = data.readLast().toString();
-            if (givenKey == null) throw new PacketException("Received packet does not contain an authentication key");
-
-            if (!givenKey.equals(authenticationKey))
-                throw new PacketException("Received packet does not contain a valid authentication key");
+            if (!givenKey.equals(authenticationKey)) throw new PacketException("Received packet does not contain a valid authentication key");
 
             var packet = packetResolver.apply(packetName);
             if (packet == null) return null;
@@ -89,7 +88,7 @@ public final class PacketSerializer {
         } catch (DataFormatException e) {
             throw new PacketException("Failed to decompress data: " + e.getMessage(), e);
         } catch (AEADBadTagException e) {
-            throw new PacketException("Failed to decrypt packet: authentication tag mismatch");
+            throw new PacketException("Failed to decrypt packet: authentication tag mismatch", e);
         } catch (GeneralSecurityException e) {
             throw new PacketException("Failed to decrypt packet data: " + e.getMessage(), e);
         } catch (IOException e) {

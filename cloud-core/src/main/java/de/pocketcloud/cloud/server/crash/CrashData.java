@@ -53,8 +53,8 @@ public record CrashData(boolean crashed,
         try (FileWriter fileWriter = new FileWriter(path.toFile())) {
             fileWriter.write("Error: " + Objects.requireNonNullElse(errorType, "Unknown error type") + "\n");
             fileWriter.write("Message: " + Objects.requireNonNullElse(message, "Unknown error message") + "\n");
-            fileWriter.write("File: " + Objects.requireNonNullElse(message, "Unknown file") + "\n");
-            fileWriter.write("Line: " + Objects.requireNonNullElse(message, "Unknown line") + "\n");
+            fileWriter.write("File: " + Objects.requireNonNullElse(file, "Unknown file") + "\n");
+            fileWriter.write("Line: " + Objects.requireNonNullElse(line, "Unknown line") + "\n");
             fileWriter.write("Trace:");
             if (trace != null) {
                 for (String line : trace) {

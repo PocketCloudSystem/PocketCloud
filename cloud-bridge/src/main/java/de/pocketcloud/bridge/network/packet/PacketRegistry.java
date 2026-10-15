@@ -116,7 +116,19 @@ public final class PacketRegistry implements IPacketRegistry<Channel>, Loadable 
 
     @Override
     public void invokeHandlers(Packet packet, Channel sender) {
-        for (BiConsumer<Packet, Channel> handler : handlers.getOrDefault(packet.getClass(), new ArrayList<>())) {
+        List<BiConsumer<Packet, Channel>> packetHandlers =
+                handlers.get(packet.getClass());
+
+        if (packetHandlers == null) {
+            return;
+        }
+
+        List<BiConsumer<Packet, Channel>> snapshot;
+        synchronized (packetHandlers) {
+            snapshot = List.copyOf(packetHandlers);
+        }
+
+        for (BiConsumer<Packet, Channel> handler : snapshot) {
             handler.accept(packet, sender);
         }
     }

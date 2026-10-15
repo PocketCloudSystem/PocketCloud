@@ -53,22 +53,22 @@ public record SyncType(String type) implements Writable<String> {
     }
 
     public static SyncType register(SyncType type) {
-        if (customTypes.containsKey(type.type()))
-            throw new IllegalArgumentException("Custom SyncType with name " + type.type() + " already exists");
-        customTypes.put(type.type(), type);
+        SyncType existing = customTypes.putIfAbsent(type.type(), type);
+        if (existing != null) throw new IllegalArgumentException("Custom SyncType with name " + type.type() + " already exists");
         return type;
     }
 
     public static SyncType register(String name) {
-        if (customTypes.containsKey(name))
-            throw new IllegalArgumentException("Custom SyncType with name " + name + " already exists");
-        customTypes.put(name, new SyncType(name));
-        return customTypes.get(name);
+        SyncType created = new SyncType(name);
+        SyncType existing = customTypes.putIfAbsent(name, created);
+        if (existing != null) throw new IllegalArgumentException("Custom SyncType with name " + name + " already exists");
+        return created;
     }
 
     @NotNull
     public static SyncType get(@NotNull String type) {
-        if (!customTypes.containsKey(type)) return register(type);
-        return customTypes.get(type);
+        SyncType existing = customTypes.get(type);
+        if (existing != null) return existing;
+        throw new IllegalArgumentException("Unknown SyncType: " + type);
     }
 }

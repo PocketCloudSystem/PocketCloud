@@ -28,7 +28,7 @@ public class MultipleTypesParameter extends BaseCommandParameter {
         for (BaseCommandParameter type : allowedTypes) {
             try {
                 return type.parseValue(input);
-            } catch (ArgumentParseException ignored) {}
+            } catch (ArgumentParseException _) {}
         }
         throw new ArgumentParseException();
     }
@@ -42,6 +42,6 @@ public class MultipleTypesParameter extends BaseCommandParameter {
 
     @Override
     public String getType() {
-        return allowedTypes.stream().map(BaseCommandParameter::getName).collect(Collectors.joining("|"));
+        return allowedTypes.stream().map(BaseCommandParameter::getType).collect(Collectors.joining("|"));
     }
 }

@@ -126,7 +126,9 @@ public final class TemplateCommand extends Command implements TabComplete {
 
     @Override
     public Collection<String> onTabComplete(List<String> args) {
-        if (args.size() == 4) {
+        if (args.size() == 3) {
+            return TemplateHelper.EDITABLE_KEYS;
+        } else if (args.size() == 4) {
             // template (/) edit (0) Lobby-1 (1) autoStart (2) false (3)
             if (args.getFirst().equals("edit")) {
                 String key = TemplateHelper.convert(args.get(2));

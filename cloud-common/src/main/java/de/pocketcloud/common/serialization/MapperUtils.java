@@ -393,7 +393,8 @@ public final class MapperUtils {
 
         if (value.getClass().isArray()) {
             List<Object> result = new ArrayList<>();
-            for (Object item : (Object[]) value) result.add(convertToMap(item));
+            int length = Array.getLength(value);
+            for (int i = 0; i < length; i++) result.add(convertToMap(Array.get(value, i)));
             return result;
         }
 

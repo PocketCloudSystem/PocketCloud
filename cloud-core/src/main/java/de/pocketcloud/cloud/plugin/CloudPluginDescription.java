@@ -21,7 +21,10 @@ public final class CloudPluginDescription {
     public static CloudPluginDescription read(Map<String, Object> raw) {
         CloudPluginDescription description = new CloudPluginDescription();
         description.name = (String) raw.get("name");
-        description.version = String.valueOf(raw.get("version"));
+        Object rawVersion = raw.get("version");
+        String version = rawVersion == null ? null : String.valueOf(rawVersion).trim();
+        if (version != null && version.isEmpty()) version = null;
+        description.version = version;
         description.main = (String) raw.get("main");
         if (raw.containsKey("authors")) {
             Object authors = raw.get("authors");

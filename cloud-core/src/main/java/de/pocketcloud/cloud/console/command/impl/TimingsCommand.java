@@ -30,7 +30,7 @@ public final class TimingsCommand extends Command {
     }
 
     public boolean handlePasteSub(CommandSender sender, CommandContext ctx) {
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss_z");
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss_z");
         Path path = PocketCloudPaths.storage().timings().with(formatter.format(new Date()) + ".txt").asPath();
         sender.info("§aPasting §rtimings into §b{}§r...", path.toAbsolutePath().toString());
         if (Benchmark.writeTimings(path, true)) {

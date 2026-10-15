@@ -20,6 +20,7 @@ import de.pocketcloud.shared.network.packet.type.TextType;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Objects;
+import java.util.regex.Pattern;
 
 @CommandDescription(name = "player", description = "Manage the online players")
 public final class PlayerCommand extends Command {
@@ -28,7 +29,7 @@ public final class PlayerCommand extends Command {
     public void prepare() {
         registerSubCommand(SubCommand.lambda("kick", this::handleKickSub, true, subCommand -> {
             subCommand.addParameter(new PlayerParameter("player", false))
-                    .addParameter(new StringParameter("reason", true));
+                    .addParameter(new StringParameter("reason", true, true));
         }));
 
         registerSubCommand(SubCommand.lambda("text", this::handleTextSub, true, subCommand -> {
@@ -84,7 +85,7 @@ public final class PlayerCommand extends Command {
         } else if (type == TextType.ACTION_BAR) {
             player.sendActionbarMessage(text);
         } else if (type == TextType.TOAST) {
-            String[] parts = text.split("\n");
+            String[] parts = text.split(Pattern.quote("{LINE}"));
             String title = parts[0];
             String body = String.join("\n", Arrays.copyOfRange(parts, 1, parts.length));
             player.sendToast(title, body);
@@ -131,7 +132,7 @@ public final class PlayerCommand extends Command {
         for (ICloudPlayer player : players) {
             sender.info("Name§8: §b{} §8| §rCurrentServer§8: §b{} §8| §rCurrentProxy§8: §b{}", player.name(),
                     Objects.requireNonNullElse(player.currentServerName(), "§cNo server"),
-                    Objects.requireNonNullElse(player.currentProxyName(), "§cNo server"));
+                    Objects.requireNonNullElse(player.currentProxyName(), "§cNo proxy"));
         }
         return true;
     }

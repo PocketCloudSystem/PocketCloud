@@ -45,8 +45,9 @@ public final class FileUtils {
 
     public static String extensionOf(Path path) {
         String fileName = path.getFileName().toString();
-        int dotIndex = fileName.lastIndexOf(".");
-        return (dotIndex > 0 && dotIndex < fileName.length() - 1) ? fileName.substring(dotIndex + 1) : null;
+        int dotIndex = fileName.lastIndexOf('.');
+        if (dotIndex < 0 || dotIndex == fileName.length() - 1) return null;
+        return fileName.substring(dotIndex + 1);
     }
 
     public static void createDirs(Path... paths) {
@@ -109,10 +110,13 @@ public final class FileUtils {
                 paths.forEach(path -> {
                     try {
                         Path relative = source.relativize(path);
-                        String name = relative.toString();
                         for (String ex : exclusions) {
-                            if (name.startsWith(ex) || path.getFileName().toString().equals(ex)) return;
+                            Path exclusion = Path.of(ex);
+                            if (relative.equals(exclusion)
+                                    || relative.startsWith(exclusion)
+                                    || path.getFileName().toString().equals(ex)) return;
                         }
+
                         if (Files.isDirectory(path)) {
                             Files.createDirectories(destination.resolve(relative));
                         } else {

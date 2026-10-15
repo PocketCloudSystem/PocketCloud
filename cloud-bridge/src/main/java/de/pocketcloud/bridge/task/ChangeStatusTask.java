@@ -14,7 +14,7 @@ public final class ChangeStatusTask implements Runnable {
         int currentPlayers = CloudBridge.instance().platformPlugin().currentPlayers();
         int maxPlayers = CloudBridge.instance().platformPlugin().maxPlayers();
         if (currentPlayers >= maxPlayers) {
-            current.status(ServerStatus.FULL);
+            if (!current.status().isFull()) current.status(ServerStatus.FULL);
         } else {
             if (current.status().isFull()) {
                 current.status(ServerStatus.ONLINE);

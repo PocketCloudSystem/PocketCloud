@@ -101,7 +101,7 @@ public final class CloudBridge implements CloudAPI {
                 shutdown();
             }
         }, ServerHandshakeResponsePacket.class).failure((req, t, r) -> {
-            logger.warn("Cloud did not respond to ServerHandshakeRequestPacket, shutting down...");
+            logger.warn("Cloud did not respond to ServerHandshakeRequestPacket: " + r.name() + ", shutting down...");
             if (t != null) logger.exception(t);
             shutdown();
         });

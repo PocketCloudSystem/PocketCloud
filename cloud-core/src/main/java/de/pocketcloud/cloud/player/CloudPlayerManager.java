@@ -52,7 +52,7 @@ public final class CloudPlayerManager implements IWritePlayerProvider {
     @Override
     public void remove(ICloudPlayer player) {
         CloudPlayer cloudPlayer = requireCloudPlayer(player);
-        if (PocketCloud.instance().notifications().canLog(NotificationType.PLAYER_JOINED)) {
+        if (PocketCloud.instance().notifications().canLog(NotificationType.PLAYER_LEFT)) {
             String from = player.currentServerName() != null ? player.currentServerName() : cloudPlayer.currentProxyName();
             CloudLogger.get().info("Player §b{} §cdisconnected §rfrom §b{}§r.", cloudPlayer.name(), from);
         }

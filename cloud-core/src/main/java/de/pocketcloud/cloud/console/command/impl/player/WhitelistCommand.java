@@ -51,7 +51,7 @@ public final class WhitelistCommand extends Command implements TabComplete {
         String playerName = ctx.argString("player");
         if (LocalCache.get(WhitelistCache.class).contains(playerName)) {
             CloudProvider.current().removeFromWhitelist(playerName);
-            sender.success("Successfully §cremoved §b{} §rto the §bwhitelist§r.", playerName);
+            sender.success("Successfully §cremoved §b{} §rfrom the §bwhitelist§r.", playerName);
         } else {
             sender.warn("The player §b{} §ris §cnot §ron the whitelist.", playerName);
         }

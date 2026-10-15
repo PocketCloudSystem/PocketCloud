@@ -139,9 +139,9 @@ public abstract class Setup {
 
     private void displayPossibleAnswers() {
         List<String> answers = currentQuestion.getPossibleAnswers();
-        if (answers.isEmpty()) return;
-
-        logger.withoutFormat("Possible answers: §b{}", String.join("§8, §b", answers));
+        if (!answers.isEmpty()) {
+            logger.withoutFormat("Possible answers: §b{}", String.join("§8, §b", answers));
+        }
 
         if (currentQuestion.getRecommendation() != null) {
             logger.withoutFormat("Recommendation: §b{}", currentQuestion.getRecommendation());
@@ -193,23 +193,24 @@ public abstract class Setup {
     @SuppressWarnings("unchecked")
     private boolean validateAndProcessInput(String input) {
         Question<Object> question = (Question<Object>) currentQuestion;
+        String trimmed = input.trim();
 
-        if (canSkipCurrentQuestion() && input.isEmpty()) {
+        if (canSkipCurrentQuestion() && trimmed.isEmpty()) {
             if (question.isCanSkipped() && !results.containsKey(question.getId())) {
                 storeResult(question, question.getDefaultValue());
             }
             return true;
         }
 
-        if (input.isEmpty()) return false;
+        if (trimmed.isEmpty()) return false;
 
-        if (!isValidAnswer(input)) {
+        if (!isValidAnswer(trimmed)) {
             logger.withoutFormat("§cPlease provide a valid answer!");
             return false;
         }
 
         ErrorHolder error = new ErrorHolder();
-        Object result = question.getParser().parse(input.trim(), error);
+        Object result = question.getParser().parse(trimmed, error);
         if (result == null) {
             logger.withoutFormat("§c" + (error.isPresent() ? error.get() : "Please provide a valid answer!"));
             return false;
@@ -225,7 +226,9 @@ public abstract class Setup {
 
     private boolean isValidAnswer(String input) {
         List<String> possibleAnswers = currentQuestion.getPossibleAnswers();
-        return possibleAnswers.isEmpty() || possibleAnswers.contains(input.trim());
+        if (possibleAnswers.isEmpty()) return true;
+        String trimmed = input.trim();
+        return possibleAnswers.stream().anyMatch(a -> a.equalsIgnoreCase(trimmed));
     }
 
     private void storeResult(Question<Object> question, Object result) {

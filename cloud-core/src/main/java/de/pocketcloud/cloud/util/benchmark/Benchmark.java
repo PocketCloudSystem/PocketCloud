@@ -7,15 +7,13 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
 public final class Benchmark {
 
-    private static final Map<String, BenchmarkTiming> timings = new ConcurrentHashMap<>();
+    private static final Map<String, Deque<BenchmarkTiming>> timings = new ConcurrentHashMap<>();
     private static final Map<String, TimingSummaryAccumulator> timingsSummary = new ConcurrentHashMap<>();
 
     private Benchmark() {}
@@ -73,14 +71,16 @@ public final class Benchmark {
 
     public static BenchmarkTiming startTiming(String name) {
         BenchmarkTiming timing = new BenchmarkTiming(name, PocketCloud.instance().currentTick());
-        timings.put(name, timing);
+        timings.computeIfAbsent(name, k -> new ConcurrentLinkedDeque<>()).push(timing);
         timing.startTiming();
         return timing;
     }
 
     public static BenchmarkTiming stopTiming(String name) {
-        BenchmarkTiming timing = timings.remove(name);
-        if (timing == null) throw new RuntimeException("No timings started for '" + name + "'");
+        Deque<BenchmarkTiming> stack = timings.get(name);
+        if (stack == null || stack.isEmpty()) throw new RuntimeException("No timings started for '" + name + "'");
+        BenchmarkTiming timing = stack.pop();
+        if (stack.isEmpty()) timings.remove(name, stack);
         timing.stopTiming();
 
         timingsSummary.compute(name, (k, acc) -> {

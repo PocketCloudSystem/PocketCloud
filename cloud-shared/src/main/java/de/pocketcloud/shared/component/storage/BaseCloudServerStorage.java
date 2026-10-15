@@ -7,13 +7,14 @@ import lombok.Getter;
 import lombok.experimental.Accessors;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class BaseCloudServerStorage implements ICloudServerStorage {
 
     @Getter
     @Accessors(fluent = true)
     protected final UUID serverUuid;
-    protected final Map<String, Object> storage = new HashMap<>();
+    protected Map<String, Object> storage = new ConcurrentHashMap<>();
 
     public BaseCloudServerStorage(UUID serverUuid) {
         this.serverUuid = serverUuid;
@@ -21,7 +22,12 @@ public abstract class BaseCloudServerStorage implements ICloudServerStorage {
 
     @Override
     public BaseCloudServerStorage setAll(Map<String, Object> storage) {
-        this.storage.putAll(storage);
+        if (storage instanceof ConcurrentHashMap<String, Object>) {
+            this.storage = storage;
+        } else {
+            this.storage = new ConcurrentHashMap<>();
+            this.storage.putAll(storage);
+        }
         return this;
     }
 

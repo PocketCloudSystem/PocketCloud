@@ -182,6 +182,7 @@ public final class ServerSoftwareManager implements IWriteSoftwareProvider, Load
     public void unload() {
         softwareList.clear();
         disabledSoftware.clear();
+        TemplateTypeHelper.clearSoftwareList();
     }
 
     @Override

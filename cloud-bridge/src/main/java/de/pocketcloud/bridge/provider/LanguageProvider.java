@@ -6,6 +6,7 @@ import de.pocketcloud.bridge.component.MinimalLanguage;
 import lombok.Setter;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -49,6 +50,7 @@ public final class LanguageProvider implements ILanguageProvider {
 
     @Override
     public Collection<ILanguage> getAll() {
+        if (currentLanguage == null) return Collections.emptyList();
         return List.of(current());
     }
 }

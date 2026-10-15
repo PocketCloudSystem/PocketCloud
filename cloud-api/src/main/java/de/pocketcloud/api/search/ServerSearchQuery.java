@@ -85,7 +85,7 @@ public final class ServerSearchQuery implements ISearchQuery<ICloudServer>, Writ
             if (!group.templates().contains(s.templateName())) return false;
         }
 
-        if (lobby != null && !s.template().settings().lobby()) return false;
+        if (lobby != null && s.template().settings().lobby() != lobby) return false;
 
         if (status != null && !s.status().equals(status)) return false;
         if (verificationStatus != null && !s.verificationStatus().equals(verificationStatus)) return false;
@@ -117,7 +117,7 @@ public final class ServerSearchQuery implements ISearchQuery<ICloudServer>, Writ
         }
 
         try {
-            query.verificationStatus = data.get("verificationStatus") != null ? VerificationStatus.valueOf(data.get("status").toString()) : null;
+            query.verificationStatus = data.get("verificationStatus") != null ? VerificationStatus.valueOf(data.get("verificationStatus").toString().toUpperCase()) : null;
         } catch (IllegalArgumentException _) {
             query.verificationStatus = null;
         }

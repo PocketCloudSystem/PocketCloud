@@ -221,7 +221,21 @@ public final class Config {
         }
 
         Object value = current.get(keys[keys.length - 1]);
-        return type != null ? (type.isInstance(value) ? type.cast(value) : defaultValue) : (T) value;
+
+        if (value == null) return defaultValue;
+        if (type == null) return (T) value;
+        if (type.isInstance(value)) return type.cast(value);
+
+        if (value instanceof Number num && Number.class.isAssignableFrom(type)) {
+            if (type == Integer.class) return type.cast(num.intValue());
+            if (type == Long.class) return type.cast(num.longValue());
+            if (type == Double.class) return type.cast(num.doubleValue());
+            if (type == Float.class) return type.cast(num.floatValue());
+            if (type == Short.class) return type.cast(num.shortValue());
+            if (type == Byte.class) return type.cast(num.byteValue());
+        }
+
+        return defaultValue;
     }
 
     @SuppressWarnings("unchecked")
