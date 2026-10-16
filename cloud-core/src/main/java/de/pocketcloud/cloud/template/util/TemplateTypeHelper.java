@@ -29,10 +29,6 @@ public final class TemplateTypeHelper {
         return PocketCloud.instance().serverSettingsConfig().serverPortRanges().portRange(type);
     }
 
-    public static int timeout(TemplateType type) {
-        return PocketCloud.instance().serverSettingsConfig().serverTimeouts().timeout(type);
-    }
-
     public static void addSoftware(TemplateType type, IServerSoftware software) {
         if (!softwareList.containsKey(type)) softwareList.put(type, new ArrayList<>());
         softwareList.get(type).add(software);
