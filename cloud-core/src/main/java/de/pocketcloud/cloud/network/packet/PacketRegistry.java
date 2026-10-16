@@ -13,7 +13,11 @@ import de.pocketcloud.cloud.network.packet.handler.ServerPacketHandler;
 import de.pocketcloud.cloud.network.packet.handler.SyncPacketHandler;
 import de.pocketcloud.common.lifecycle.Loadable;
 import de.pocketcloud.network.packet.broadcast.InternalPacketBroadcaster;
-import org.reflections.Reflections;
+import de.pocketcloud.network.packet.impl.*;
+import de.pocketcloud.network.packet.impl.request.*;
+import de.pocketcloud.network.packet.impl.request.client.CommandExecuteRequestPacket;
+import de.pocketcloud.network.packet.impl.response.*;
+import de.pocketcloud.network.packet.impl.response.client.CommandExecuteResponsePacket;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -22,7 +26,6 @@ import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
-import java.util.stream.Collectors;
 
 public final class PacketRegistry implements IPacketRegistry<ServerClient>, Loadable {
 
@@ -45,15 +48,35 @@ public final class PacketRegistry implements IPacketRegistry<ServerClient>, Load
 
     @Override
     public void load() {
-        Reflections reflections = new Reflections("de.pocketcloud.network.packet.impl");
-        Set<Class<? extends Packet>> packetClasses = reflections.getSubTypesOf(Packet.class).stream()
-                .filter(clazz -> !clazz.isInterface())
-                .filter(clazz -> !Modifier.isAbstract(clazz.getModifiers()))
-                .collect(Collectors.toSet());
+        registerPacket(CommandExecuteRequestPacket.class);
+        registerPacket(PlayerNotificationCheckRequestPacket.class);
+        registerPacket(PlayerWhitelistCheckRequestPacket.class);
+        registerPacket(ServerHandshakeRequestPacket.class);
+        registerPacket(ServerSaveRequestPacket.class);
+        registerPacket(ServerStartRequestPacket.class);
+        registerPacket(ServerStopRequestPacket.class);
 
-        for (Class<? extends Packet> packetClass : packetClasses) {
-            registerPacket(packetClass);
-        }
+        registerPacket(CommandExecuteResponsePacket.class);
+        registerPacket(PlayerNotificationCheckResponsePacket.class);
+        registerPacket(PlayerWhitelistCheckResponsePacket.class);
+        registerPacket(ServerHandshakeResponsePacket.class);
+        registerPacket(ServerSaveResponsePacket.class);
+        registerPacket(ServerStartResponsePacket.class);
+        registerPacket(ServerStopResponsePacket.class);
+
+        registerPacket(CloudNotificationPacket.class);
+        registerPacket(ConsoleLogPacket.class);
+        registerPacket(DisconnectPacket.class);
+        registerPacket(KeepAlivePacket.class);
+        registerPacket(PlayerConnectPacket.class);
+        registerPacket(PlayerDisconnectPacket.class);
+        registerPacket(PlayerKickPacket.class);
+        registerPacket(PlayerSwitchServerPacket.class);
+        registerPacket(PlayerTextPacket.class);
+        registerPacket(PlayerTransferPacket.class);
+        registerPacket(ProxyRegisterServerPacket.class);
+        registerPacket(ProxyUnregisterServerPacket.class);
+        registerPacket(SyncPacket.class);
     }
 
     @Override

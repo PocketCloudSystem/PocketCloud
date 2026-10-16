@@ -9,9 +9,12 @@ import de.pocketcloud.bridge.CloudBridge;
 import de.pocketcloud.bridge.network.packet.handler.NormalPacketHandler;
 import de.pocketcloud.common.lifecycle.Loadable;
 import de.pocketcloud.network.packet.broadcast.InternalPacketBroadcaster;
+import de.pocketcloud.network.packet.impl.*;
+import de.pocketcloud.network.packet.impl.request.*;
+import de.pocketcloud.network.packet.impl.request.client.CommandExecuteRequestPacket;
+import de.pocketcloud.network.packet.impl.response.*;
+import de.pocketcloud.network.packet.impl.response.client.CommandExecuteResponsePacket;
 import io.netty.channel.Channel;
-import org.reflections.Reflections;
-import org.reflections.util.ConfigurationBuilder;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -20,7 +23,6 @@ import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
-import java.util.stream.Collectors;
 
 public final class PacketRegistry implements IPacketRegistry<Channel>, Loadable {
 
@@ -43,18 +45,35 @@ public final class PacketRegistry implements IPacketRegistry<Channel>, Loadable 
 
     @Override
     public void load() {
-        Reflections reflections = new Reflections(new ConfigurationBuilder()
-                .forPackage("de.pocketcloud.network.packet.impl", CloudBridge.class.getClassLoader())
-                .addClassLoaders(CloudBridge.class.getClassLoader()));
+        registerPacket(CommandExecuteRequestPacket.class);
+        registerPacket(PlayerNotificationCheckRequestPacket.class);
+        registerPacket(PlayerWhitelistCheckRequestPacket.class);
+        registerPacket(ServerHandshakeRequestPacket.class);
+        registerPacket(ServerSaveRequestPacket.class);
+        registerPacket(ServerStartRequestPacket.class);
+        registerPacket(ServerStopRequestPacket.class);
 
-        Set<Class<? extends Packet>> packetClasses = reflections.getSubTypesOf(Packet.class).stream()
-                .filter(clazz -> !clazz.isInterface())
-                .filter(clazz -> !Modifier.isAbstract(clazz.getModifiers()))
-                .collect(Collectors.toSet());
+        registerPacket(CommandExecuteResponsePacket.class);
+        registerPacket(PlayerNotificationCheckResponsePacket.class);
+        registerPacket(PlayerWhitelistCheckResponsePacket.class);
+        registerPacket(ServerHandshakeResponsePacket.class);
+        registerPacket(ServerSaveResponsePacket.class);
+        registerPacket(ServerStartResponsePacket.class);
+        registerPacket(ServerStopResponsePacket.class);
 
-        for (Class<? extends Packet> packetClass : packetClasses) {
-            registerPacket(packetClass);
-        }
+        registerPacket(CloudNotificationPacket.class);
+        registerPacket(ConsoleLogPacket.class);
+        registerPacket(DisconnectPacket.class);
+        registerPacket(KeepAlivePacket.class);
+        registerPacket(PlayerConnectPacket.class);
+        registerPacket(PlayerDisconnectPacket.class);
+        registerPacket(PlayerKickPacket.class);
+        registerPacket(PlayerSwitchServerPacket.class);
+        registerPacket(PlayerTextPacket.class);
+        registerPacket(PlayerTransferPacket.class);
+        registerPacket(ProxyRegisterServerPacket.class);
+        registerPacket(ProxyUnregisterServerPacket.class);
+        registerPacket(SyncPacket.class);
     }
 
     @Override
