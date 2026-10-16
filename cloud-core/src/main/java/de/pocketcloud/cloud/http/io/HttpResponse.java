@@ -2,9 +2,6 @@ package de.pocketcloud.cloud.http.io;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import de.pocketcloud.api.network.traffic.TrafficDirection;
-import de.pocketcloud.cloud.PocketCloud;
-import de.pocketcloud.cloud.http.traffic.HttpTrafficMonitor;
 import de.pocketcloud.common.util.FileUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;

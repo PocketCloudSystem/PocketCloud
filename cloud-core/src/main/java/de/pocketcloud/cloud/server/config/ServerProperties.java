@@ -1,5 +1,6 @@
 package de.pocketcloud.cloud.server.config;
 
+import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.server.config.overlay.PropertiesValueOverlay;
 import de.pocketcloud.cloud.server.config.overlay.YamlNodeOverlay;
 import de.pocketcloud.cloud.server.config.repo.RemoteConfigRepository;
@@ -39,6 +40,7 @@ public abstract class ServerProperties implements IServerProperties {
             content.putAll(updatedContent);
             return saveYaml(filePath, content);
         } catch (Exception e) {
+            CloudLogger.get().exception(e);
             return false;
         }
     }
@@ -49,14 +51,25 @@ public abstract class ServerProperties implements IServerProperties {
             if (remote == null) return false;
 
             Path path = Path.of(filePath);
-            String finalContent = Files.exists(path)
-                    ? YamlNodeOverlay.overlay(remote.rawContent(), Files.readString(path))
-                    : remote.rawContent();
+            String finalContent;
+
+            if (Files.exists(path)) {
+                String local = Files.readString(path);
+                try {
+                    finalContent = YamlNodeOverlay.overlay(remote.rawContent(), local);
+                } catch (Exception overlayError) {
+                    Files.writeString(path.resolveSibling(path.getFileName() + ".broken"), local);
+                    finalContent = remote.rawContent();
+                }
+            } else {
+                finalContent = remote.rawContent();
+            }
 
             Files.writeString(path, finalContent);
             writeLocalVersion(filePath, remote.version());
             return true;
         } catch (Exception e) {
+            CloudLogger.get().exception(e);
             return false;
         }
     }
@@ -68,6 +81,7 @@ public abstract class ServerProperties implements IServerProperties {
         if (remote == null) return false;
 
         String localVersion = readLocalVersion(filePath);
+        CloudLogger.get().info("[Renewal] " + filePath + " local=" + localVersion + " remote=" + remote.version());
         return localVersion == null || !localVersion.equals(remote.version());
     }
 

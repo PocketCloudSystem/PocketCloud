@@ -3,7 +3,6 @@ package de.pocketcloud.api.service;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 public final class ServiceRegistry {
 
