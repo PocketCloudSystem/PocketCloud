@@ -42,18 +42,134 @@ servers: {}
 
 # Connection and security related settings. Do NOT edit unless you know what you are doing!
 network_settings:
-  connection_throttle: 5
-  connection_throttle_time: 1000
+
+  # If enabled, the proxy will be able to bind to an Ipv6 Address
   enable_ipv6: false
+
+  # Maximum MTU size of user <-> proxy connection that is allowed
   max_user_mtu: 1400
-  enable_cookies: true
-  login_throttle: 2
-  enable_proxy_protocol: false
+
+  # Maximum MTU size of proxy <-> server connection that is allowed
   max_downstream_mtu: 1400
-  login_timeout: 10
+
+  # Server connection timeout in seconds
   connection_timeout: 15
+
+  # Connection throttle time in milliseconds
+  connection_throttle_time: 1000
+
+  # Number of connections that can be opened in "connection_throttle_time" interval from the same address. To disable set value to -1
+  connection_throttle: 5
+
+  # Number of login requests that can be made in "connection_throttle_time" interval from the same address. To disable set value to -1
+  login_throttle: 2
+
+  # Enable RakNet cookies for additional security. Do NOT disable this unless you know what you are doing.
+  enable_cookies: true
+
+  # Enable HAProxy PROXY protocol (v1/v2) so the proxy can read the real client address when running behind a load balancer (e.g. HAProxy/UDP forwarder)
+  enable_proxy_protocol: false
+
+  # How many seconds should a connection be blocked if an error is thrown. Set to 0 to disable.
   error_timeout: 15
+
+  # How many seconds a connection has to complete the login handshake (network settings -> login -> client-to-server handshake) before it is disconnected. Set to 0 to disable.
+  login_timeout: 10
+
+  # Bind each downstream connection to a random 127.0.0.0/8 source address when the target server is on loopback. Certain server softwares like BDS rate limit connections per IP, this causes problems when transferring multiple players at the same time to a certain server. Requires an OS that allows binding the whole loopback range.
   random_downstream_loopback_address: false
+
+# NetherNet transport settings.
+nethernet:
+
+  # Accept NetherNet connections alongside RakNet
+  enabled: false
+
+  # builtin: the proxy serves the HTTP signaling endpoint on the listener port
+  # nxs: the proxy registers with the provider configured below and it hands over players
+  # hybrid: both, so players can arrive either way
+  # plugin: nothing is bound, a plugin feeds offers through the signaling API
+  signaling_mode: builtin
+
+  # Settings for the NXS signaling provider. Only used in the nxs and hybrid modes
+  nxs:
+
+    # Bearer token, or file:/path/to/token. Empty registers anonymously
+    token: ''
+
+    # Provider origin used for discovery and registration
+    endpoint: https://agent.warden.cloud
+
+    # Reachable UDP endpoints, as 198.51.100.1:19133 or [2001:db8::1]:19133.
+    # Empty derives them from the addresses this host holds, which is wrong behind a NAT
+    # or a forwarder. Name the endpoint players actually reach in that case.
+    advertise_addresses: []
+
+    # Options most proxies leave unchanged
+    advanced:
+
+      # Lets the signaling service help players connect when they cannot reach this proxy directly,
+      # for example behind a NAT without port forwarding
+      assisted_joins: false
+
+      # Lets the signaling service check from several regions that players can reach this proxy,
+      # and stop offering addresses that fail
+      connection_checks: true
+
+      # Finds this proxy's public address through the signaling service's STUN servers when it has
+      # none of its own. Not used when advertise_addresses is set
+      stun_discovery: true
+
+      # Where this proxy is: country (a two-letter code), city, latitude and longitude. Leave empty
+      # to let the signaling service estimate it, which it may also let its operator override
+      location: {}
+
+      # Removes this proxy from the signaling service on shutdown. Enable this when the data folder
+      # does not survive a restart, such as in a container without a volume, or each restart adds a new proxy
+      deregister_on_shutdown: false
+
+  # Addresses allowed to set X-Forwarded-For on signaling requests, as hosts or CIDR ranges
+  # such as 10.0.0.0/8. An http or https entry is fetched and read as one address per line.
+  # Needed when a reverse proxy fronts the signaling port, so the real client address survives.
+  trusted_proxies: []
+
+  # Read a HAProxy PROXY header, v1 or v2, on signaling connections from a trusted_proxies
+  # address. Connections without one are still served and fall back to X-Forwarded-For.
+  proxy_protocol: false
+
+  # Addresses put in the ICE candidates clients connect to. Empty derives them from the
+  # listener bind address. Set it when clients reach a different address or the listener
+  # binds a wildcard. An address this machine does not hold is announced as the public side
+  # of a NAT forwarding udp_port here, same port. Media bypasses a signaling reverse proxy,
+  # so its address only belongs here if it forwards the media port too.
+  advertise_addresses: []
+
+  # Dedicated UDP port for NetherNet media, one socket for every peer.
+  # It must not be the listener port, which RakNet already holds.
+  # 0 picks an ephemeral port per peer, which needs no fixed port open but publishes a
+  # different one to every client.
+  udp_port: 0
+
+  # Serves signaling over HTTPS as well as HTTP, on the same port
+  https:
+
+    # Either a PEM chain, with its key in private_key, or a PKCS12 file, leaving that empty.
+    # Clients that reach signaling over TLS never see the first use trust prompt.
+    # Empty serves plaintext only.
+    certificate: ''
+
+    # PEM private key for the certificate. Leave empty when that is a PKCS12 file
+    private_key: ''
+
+    # Password for the PKCS12, or for the PEM key if it is encrypted.
+    # file:/path/to/password reads it from a file, which is the better place for it.
+    password: ''
+
+  # Unencrypted PEM private key holding the P-384 key identifying this operator to
+  # clients, generated on first start. Share it across a fleet to be trusted as one
+  # operator; replacing it re-prompts every returning player. An absolute path works,
+  # so it can be mounted from outside the proxy directory.
+  identity_file: keys/identity.pem
 
 # Case-Sensitive permission list for players (empty using {})
 permissions:
@@ -68,6 +184,7 @@ permissions:
 permissions_default:
   - waterdog.command.help
   - waterdog.command.info
+  - waterdog.command.me
 
 # Whether the debug output in the console should be enabled or not
 enable_debug: false
