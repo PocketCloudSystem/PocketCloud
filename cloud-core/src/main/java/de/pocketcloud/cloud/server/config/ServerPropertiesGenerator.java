@@ -2,6 +2,7 @@ package de.pocketcloud.cloud.server.config;
 
 import de.pocketcloud.api.component.software.IServerSoftware;
 import de.pocketcloud.api.template.TemplateType;
+import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.server.config.impl.PowerNukkitXConfig;
 import de.pocketcloud.cloud.server.config.impl.WaterdogConfig;
@@ -44,27 +45,29 @@ public final class ServerPropertiesGenerator implements Loadable {
             FileUtils.createDir(globalTemplatePath);
 
             Path propertiesPath = globalTemplatePath.resolve(properties.getFileName());
-            if (!Files.exists(propertiesPath) || properties.needsRenewal(propertiesPath.toString())) {
+            if (PocketCloud.instance().config().checkProperties() && (!Files.exists(propertiesPath) || properties.needsRenewal(propertiesPath.toString()))) {
                 CloudLogger.get().info("Updating server properties/config for {}: {}...", type.name(), properties.getFileName());
                 properties.renew(propertiesPath.toString());
+            }
+        }
 
-                int i = 0;
-                try (Stream<Path> dirs = Files.list(PocketCloudPaths.templates().asPath())) {
-                    for (Path dir : dirs.filter(Files::isDirectory).toList()) {
-                        if (dir.getFileName().toString().equals("global")) continue;
-                        Path filePath = dir.resolve(properties.getFileName());
-                        if (Files.exists(filePath) && properties.needsRenewal(filePath.toString())) {
-                            properties.renew(filePath.toString());
-                            i++;
-                        }
+        if (PocketCloud.instance().config().checkProperties()) {
+            int i = 0;
+            try (Stream<Path> dirs = Files.list(PocketCloudPaths.templates().asPath())) {
+                for (Path dir : dirs.filter(Files::isDirectory).toList()) {
+                    if (dir.getFileName().toString().equals("global")) continue;
+                    Path filePath = dir.resolve(properties.getFileName());
+                    if (Files.exists(filePath) && properties.needsRenewal(filePath.toString())) {
+                        properties.renew(filePath.toString());
+                        i++;
                     }
-                } catch (IOException e) {
-                    CloudLogger.get().error("Failed to update template properties", e);
                 }
+            } catch (IOException e) {
+                CloudLogger.get().error("Failed to update template properties", e);
+            }
 
-                if (i > 0) {
-                    CloudLogger.get().info("Also updating server properties/config for {} templates: {}...", i, properties.getFileName());
-                }
+            if (i > 0) {
+                CloudLogger.get().info("Also updating server properties/config for {} templates: {}...", i, properties.getFileName());
             }
         }
     }

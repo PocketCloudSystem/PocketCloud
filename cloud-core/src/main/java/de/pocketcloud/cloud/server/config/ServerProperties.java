@@ -81,7 +81,7 @@ public abstract class ServerProperties implements IServerProperties {
         if (remote == null) return false;
 
         String localVersion = readLocalVersion(filePath);
-        CloudLogger.get().info("[Renewal] " + filePath + " local=" + localVersion + " remote=" + remote.version());
+        CloudLogger.get().debug("[Renewal] " + filePath + " local=" + localVersion + " remote=" + remote.version());
         return localVersion == null || !localVersion.equals(remote.version());
     }
 

@@ -37,6 +37,9 @@ public final class MainConfig extends OkaeriConfig implements ICloudConfig {
     @Comment({"Whether the cloud should check for updates on startup.", "Only applies to cloud updates."})
     private boolean checkForUpdates = true;
 
+    @Comment({"Whether the cloud should check your server properties/config for updates on startup."})
+    private boolean checkProperties = true;
+
     @Comment({"The network configuration for the cloud."})
     private NetworkConfiguration network = new NetworkConfiguration();
 
