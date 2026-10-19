@@ -19,8 +19,12 @@ import java.util.function.Consumer;
  */
 public abstract class RequestPacket extends CloudPacket {
 
+    public static final int DEFAULT_TIMEOUT_MS = 10_000;
+
     @Getter
     private String requestId = null;
+    @Getter
+    private int timeoutMs = DEFAULT_TIMEOUT_MS;
     private Consumer<ResponsePacket> responseConsumer = null;
     private TriConsumer<RequestPacket, Throwable, RequestPacketFailureReason> failureConsumer = null;
 
@@ -37,10 +41,14 @@ public abstract class RequestPacket extends CloudPacket {
         requestId = packetData.readString();
     }
 
-    /**
-     * Only for cloud-bridge
-     */
+    // ------- cloud-bridge-only -------
+
     public RequestPacket sendRequest() {
+        return sendRequest(DEFAULT_TIMEOUT_MS);
+    }
+
+    public RequestPacket sendRequest(int timeoutMs) {
+        this.timeoutMs = timeoutMs;
         sendPacket();
         return this;
     }
@@ -52,10 +60,14 @@ public abstract class RequestPacket extends CloudPacket {
         InternalPacketBroadcaster.broadcast(new Packet[]{p}, null);
     }
 
-    /**
-     * Only for cloud-core
-     */
+    // ------- cloud-core-only -------
+
     public RequestPacket sendRequest(IServerClient client) {
+        return sendRequest(client, DEFAULT_TIMEOUT_MS);
+    }
+
+    public RequestPacket sendRequest(IServerClient client, int timeoutMs) {
+        this.timeoutMs = timeoutMs;
         sendPacket(client);
         return this;
     }

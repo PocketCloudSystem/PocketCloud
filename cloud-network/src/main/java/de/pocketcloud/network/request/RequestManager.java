@@ -64,7 +64,7 @@ public final class RequestManager implements Tickable {
         for (Map.Entry<String, RequestPacket> entry : requests.entrySet()) {
             RequestPacket request = entry.getValue();
             Long sent = request.getSentTimestamp();
-            if (sent != null && (now - sent) > 10_000) {
+            if (sent != null && (now - sent) > request.getTimeoutMs()) {
                 if (requests.remove(entry.getKey(), request)) {
                     invokeTimeoutClosures(request);
                 }
