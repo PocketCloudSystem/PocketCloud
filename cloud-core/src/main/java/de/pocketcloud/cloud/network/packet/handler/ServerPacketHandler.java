@@ -26,12 +26,14 @@ import de.pocketcloud.network.packet.impl.response.ServerStopResponsePacket;
 import de.pocketcloud.shared.event.server.ServerVerificationDeniedEvent;
 import de.pocketcloud.shared.event.server.ServerVerifiedEvent;
 import de.pocketcloud.shared.network.packet.type.ActionFailureReason;
+import de.pocketcloud.shared.network.packet.type.NotificationType;
 import lombok.SneakyThrows;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 public final class ServerPacketHandler implements PacketListener {
 
@@ -54,6 +56,7 @@ public final class ServerPacketHandler implements PacketListener {
 
             PocketCloud.instance().clients().add(server, sender);
             CloudLogger.get().success("The server §b{} §rhas §aconnected §rto the cloud. §8(§rTook §b{}§rs§8)", server.name(), elapsed);
+            PocketCloud.instance().notifications().sendNotification(NotificationType.SERVER_CONNECTED, Map.of("server", server.name()), Map.of());
             server.data().maxPlayers(packet.getMaxPlayers());
             server.data().processId(packet.getProcessId());
             server.verifiedTime(Instant.now());

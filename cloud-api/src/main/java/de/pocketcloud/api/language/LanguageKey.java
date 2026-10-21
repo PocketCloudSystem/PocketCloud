@@ -25,6 +25,7 @@ public enum LanguageKey {
     INGAME_NOTIFY_MESSAGE_SERVER_STOPPING("inGame.notify.message.server_stopping"),
     INGAME_NOTIFY_MESSAGE_SERVER_TIMED_OUT("inGame.notify.message.server_timed_out"),
     INGAME_NOTIFY_MESSAGE_SERVER_STOP_TIMED_OUT("inGame.notify.message.server_stop_timed_out"),
+    INGAME_NOTIFY_MESSAGE_SERVER_CONNECTED("inGame.notify.message.server_connected"),
     INGAME_NOTIFY_MESSAGE_SERVER_CRASHED("inGame.notify.message.server_crashed"),
     INGAME_NOTIFY_MESSAGE_SERVER_START_FAILED("inGame.notify.message.server_start_failed"),
     INGAME_NOTIFY_MESSAGE_PLAYER_JOINED("inGame.notify.message.player_joined"),

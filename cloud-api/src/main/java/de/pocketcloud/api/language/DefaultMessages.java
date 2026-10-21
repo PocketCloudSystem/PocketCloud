@@ -36,6 +36,7 @@ public final class DefaultMessages {
         MESSAGES_EN.put("inGame.notify.message.server_stop_timed_out", "{PREFIX}§fFailed to stop the server §e%server%§f.");
         MESSAGES_EN.put("inGame.notify.message.server_crashed", "{PREFIX}§fThe server §b%server% §chas crashed!");
         MESSAGES_EN.put("inGame.notify.message.server_start_failed", "{PREFIX}§fThe server §b%server% §cfailed §fto start: §b%reason%");
+        MESSAGES_EN.put("inGame.notify.message.server_connected", "{PREFIX}§fThe server §b%server% §fhas §aconnected §fto the cloud.");
         MESSAGES_EN.put("inGame.notify.message.player_joined", "{PREFIX}§fPlayer §b%player% §fhas §aconnected §fvia §b%server%§f.");
         MESSAGES_EN.put("inGame.notify.message.player_left", "{PREFIX}§fPlayer §b%player% §fhas §cdisconnected §ffrom §b%server%§f.");
         MESSAGES_EN.put("inGame.notify.message.player_join_failed", "{PREFIX}§fPlayer §b%player% §ftried to connect via §b%server%§f, but §cfailed§f: §b%reason%");
@@ -175,6 +176,7 @@ public final class DefaultMessages {
         MESSAGES_GER.put("inGame.notify.message.server_stop_timed_out", "{PREFIX}§fDer Server §e%server% §fkonnte nicht gestoppt werden.");
         MESSAGES_GER.put("inGame.notify.message.server_crashed", "{PREFIX}§fDer Server §b%server% §ist §cabgestürzt!");
         MESSAGES_GER.put("inGame.notify.message.server_start_failed", "{PREFIX}§fDer Server §b%server% §rkonnte §cnicht §rgestartet werden: §b%reason%");
+        MESSAGES_GER.put("inGame.notify.message.server_connected", "{PREFIX}§fDer Server §b%server% §fhat sich §aerfolgreich §fmit der cloud verbunden.");
         MESSAGES_GER.put("inGame.notify.message.player_joined", "{PREFIX}§fSpieler §b%player% §fhat §averbunden §füber §b%server%§f.");
         MESSAGES_GER.put("inGame.notify.message.player_left", "{PREFIX}§fSpieler §b%player% §fhat die Verbindung zu §b%server% §cgetrennt§f.");
         MESSAGES_GER.put("inGame.notify.message.player_join_failed", "{PREFIX}§fSpieler §b%player% §fversuchte über §b%server%§f zu verbinden, §cscheiterte §fjedoch: §b%reason%");
