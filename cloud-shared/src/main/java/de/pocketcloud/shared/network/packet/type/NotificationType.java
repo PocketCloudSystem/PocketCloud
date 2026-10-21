@@ -8,6 +8,7 @@ public enum NotificationType implements Writable<String> {
     SERVER_STOPPING,
     SERVER_TIMED_OUT,
     SERVER_STOP_TIMED_OUT,
+    SERVER_CONNECTED,
     SERVER_CRASHED,
     SERVER_START_FAILED,
     PLAYER_JOINED,
