@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeoutException;
 
 @ApiStatus.Internal
 public final class RequestManager implements Tickable {
@@ -51,7 +52,7 @@ public final class RequestManager implements Tickable {
     }
 
     private void invokeTimeoutClosures(RequestPacket packet) {
-        packet.invokeClosures(true, null, RequestPacketFailureReason.REQUEST_TIMEOUT, null);
+        packet.invokeClosures(true, null, RequestPacketFailureReason.REQUEST_TIMEOUT, new TimeoutException("RequestPacket timed out"));
     }
 
     private void invokeExceptionClosures(RequestPacket packet, Throwable e) {

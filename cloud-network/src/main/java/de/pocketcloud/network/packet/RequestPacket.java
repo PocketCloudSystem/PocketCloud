@@ -79,7 +79,7 @@ public abstract class RequestPacket extends CloudPacket {
         return client.sendPacket(p);
     }
 
-    public final void invokeClosures(boolean failed, ResponsePacket packet, RequestPacketFailureReason reason, @Nullable Throwable e) {
+    public final void invokeClosures(boolean failed, ResponsePacket packet, @Nullable RequestPacketFailureReason reason, @Nullable Throwable e) {
         if (failed) {
             if (failureConsumer != null) {
                 failureConsumer.accept(this, e, reason);
