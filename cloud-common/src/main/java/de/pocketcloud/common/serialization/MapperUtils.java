@@ -4,20 +4,36 @@ import de.pocketcloud.common.serialization.annotation.MapCreator;
 import de.pocketcloud.common.serialization.annotation.MapInline;
 import de.pocketcloud.common.serialization.annotation.MapKey;
 import de.pocketcloud.common.serialization.annotation.MapKeyConverter;
-import sun.misc.Unsafe;
-import sun.reflect.ReflectionFactory;
 
-import java.lang.reflect.*;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodHandles.Lookup;
+import java.lang.invoke.VarHandle;
+import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.Parameter;
+import java.lang.reflect.RecordComponent;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Reflection based Object <-> Map mapper.
+ * <p>
+ * Field access happens exclusively via {@link VarHandle}s (no {@code setAccessible}, no {@code Unsafe}).
+ * Consequently {@code final} fields can only be populated through a {@link MapCreator} constructor
+ * (or the canonical constructor of a record).
+ */
 public final class MapperUtils {
 
-    private static final Map<Class<?>, Field[]> FIELD_CACHE = new ConcurrentHashMap<>();
-
+    private static final Map<Class<?>, List<Property>> PROPERTY_CACHE = new ConcurrentHashMap<>();
+    private static final Map<Class<?>, Optional<Constructor<?>>> CREATOR_CACHE = new ConcurrentHashMap<>();
+    private static final Map<Constructor<?>, MethodHandle> CONSTRUCTOR_CACHE = new ConcurrentHashMap<>();
     private static final Map<Class<? extends MapKeyConverter<?, ?>>, MapKeyConverter<?, ?>> CONVERTER_CACHE = new ConcurrentHashMap<>();
-
     private static final Map<Class<?>, MapKeyConverter<?, ?>> TYPE_CONVERTERS = new ConcurrentHashMap<>();
+
+    private MapperUtils() {}
 
     public static <T, R> void registerConverter(Class<T> type, MapKeyConverter<T, R> converter) {
         Objects.requireNonNull(type, "type must not be null");
@@ -29,140 +45,29 @@ public final class MapperUtils {
         TYPE_CONVERTERS.remove(type);
     }
 
-    @SuppressWarnings("unchecked")
-    private static <T, R> MapKeyConverter<T, R> getTypeConverter(Class<?> type) {
-        return (MapKeyConverter<T, R>) TYPE_CONVERTERS.get(type);
-    }
-
     public static Map<String, Object> toMap(Object obj) {
         Objects.requireNonNull(obj, "obj must not be null");
-        try {
-            if (obj.getClass().isRecord()) {
-                return toMapRecord(obj);
+
+        Map<String, Object> map = new LinkedHashMap<>();
+        for (Property property : properties(obj.getClass())) {
+            Object value = property.get(obj);
+
+            if (value == null) {
+                map.put(property.key(), null);
+            } else if (property.inline()) {
+                map.putAll(toMap(value));
+            } else {
+                map.put(property.key(), writeValue(property, value));
             }
-
-            Map<String, Object> map = new LinkedHashMap<>();
-            for (Field field : getFields(obj.getClass())) {
-                field.setAccessible(true);
-                Object value = field.get(obj);
-
-                MapKey mapKey = field.getAnnotation(MapKey.class);
-                MapInline mapInline = field.getAnnotation(MapInline.class);
-
-                String name = mapKey != null && !mapKey.name().isBlank() ? mapKey.name() : field.getName();
-
-                if (value == null) {
-                    map.put(name, null);
-                    continue;
-                }
-
-                if (mapInline != null) {
-                    map.putAll(toMap(value));
-                } else if (mapKey != null && hasConverter(mapKey)) {
-                    MapKeyConverter<Object, Object> converter = getConverter(mapKey.converter());
-                    map.put(name, converter.toValue(value));
-                } else {
-                    MapKeyConverter<Object, Object> typeConverter = getTypeConverter(field.getType());
-                    if (typeConverter != null) {
-                        map.put(name, typeConverter.toValue(value));
-                    } else {
-                        map.put(name, convertToMap(value));
-                    }
-                }
-            }
-            return map;
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException("Failed to map object of type " + obj.getClass().getName() + " to map", e);
         }
-    }
-
-    private static Map<String, Object> toMapRecord(Object obj) {
-        try {
-            Map<String, Object> map = new LinkedHashMap<>();
-            for (RecordComponent component : obj.getClass().getRecordComponents()) {
-                var accessor = component.getAccessor();
-                accessor.setAccessible(true);
-                Object value = accessor.invoke(obj);
-
-                MapKey mapKey = component.getAnnotation(MapKey.class);
-                MapInline mapInline = component.getAnnotation(MapInline.class);
-
-                String name = mapKey != null && !mapKey.name().isBlank() ? mapKey.name() : component.getName();
-
-                if (value == null) {
-                    map.put(name, null);
-                    continue;
-                }
-
-                if (mapInline != null) {
-                    map.putAll(toMap(value));
-                } else if (mapKey != null && hasConverter(mapKey)) {
-                    MapKeyConverter<Object, Object> converter = getConverter(mapKey.converter());
-                    map.put(name, converter.toValue(value));
-                } else {
-                    MapKeyConverter<Object, Object> typeConverter = getTypeConverter(component.getType());
-                    if (typeConverter != null) {
-                        map.put(name, typeConverter.toValue(value));
-                    } else {
-                        map.put(name, convertToMap(value));
-                    }
-                }
-            }
-            return map;
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to map record of type " + obj.getClass().getName() + " to map", e);
-        }
+        return map;
     }
 
     public static <T> T fromMap(Map<String, Object> map, Class<T> clazz) {
         Objects.requireNonNull(map, "map must not be null");
         Objects.requireNonNull(clazz, "clazz must not be null");
         try {
-            if (clazz.isRecord()) {
-                return fromMapRecord(map, clazz);
-            }
-
-            Constructor<T> mapCreator = findMapCreator(clazz);
-            T instance;
-            Set<String> handledFields;
-            if (mapCreator != null) {
-                handledFields = new HashSet<>();
-                instance = invokeMapCreator(map, mapCreator, handledFields);
-            } else {
-                instance = createInstance(clazz);
-                handledFields = Collections.emptySet();
-            }
-
-            for (Field field : getFields(clazz)) {
-                if (handledFields.contains(field.getName())) continue;
-
-                field.setAccessible(true);
-                MapKey mapKey = field.getAnnotation(MapKey.class);
-                MapInline mapInline = field.getAnnotation(MapInline.class);
-
-                if (mapInline != null) {
-                    field.set(instance, fromMap(map, field.getType()));
-                } else {
-                    String name = mapKey != null && !mapKey.name().isBlank() ? mapKey.name() : field.getName();
-                    Object value = map.get(name);
-                    if (value == null) continue;
-
-                    Class<?> targetType = mapKey != null && mapKey.impl() != Void.class ? mapKey.impl() : field.getType();
-
-                    if (mapKey != null && hasConverter(mapKey)) {
-                        MapKeyConverter<Object, Object> converter = getConverter(mapKey.converter());
-                        field.set(instance, converter.fromValue(value));
-                    } else {
-                        MapKeyConverter<Object, Object> typeConverter = getTypeConverter(targetType);
-                        if (typeConverter != null) {
-                            field.set(instance, typeConverter.fromValue(value));
-                        } else {
-                            field.set(instance, convertFromMap(value, targetType));
-                        }
-                    }
-                }
-            }
-            return instance;
+            return clazz.isRecord() ? fromMapRecord(map, clazz) : fromMapObject(map, clazz);
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
@@ -170,86 +75,66 @@ public final class MapperUtils {
         }
     }
 
-    private static <T> T fromMapRecord(Map<String, Object> map, Class<T> clazz) throws Exception {
-        RecordComponent[] components = clazz.getRecordComponents();
+    /**
+     * Converts a serialized value back to the given target type,
+     * using the registered type converters.
+     */
+    public static Object convertValue(Object value, Class<?> targetType) {
+        Objects.requireNonNull(targetType, "targetType must not be null");
+        return convertFromMap(value, targetType);
+    }
 
-        Class<?>[] paramTypes = new Class<?>[components.length];
-        Object[] args = new Object[components.length];
+    private static <T> T fromMapObject(Map<String, Object> map, Class<T> clazz) {
+        Set<String> handledKeys = new HashSet<>();
+        Constructor<T> creator = findMapCreator(clazz);
+        T instance = creator != null ? invokeMapCreator(map, creator, handledKeys) : createInstance(clazz);
 
-        for (int i = 0; i < components.length; i++) {
-            RecordComponent component = components[i];
-            paramTypes[i] = component.getType();
+        for (Property property : properties(clazz)) {
+            if (handledKeys.contains(property.key())) continue;
 
-            MapKey mapKey = component.getAnnotation(MapKey.class);
-            MapInline mapInline = component.getAnnotation(MapInline.class);
-
-            if (mapInline != null) {
-                args[i] = fromMap(map, component.getType());
-            } else {
-                String name = mapKey != null && !mapKey.name().isBlank() ? mapKey.name() : component.getName();
-                Object value = map.get(name);
-                Class<?> targetType = mapKey != null && mapKey.impl() != Void.class ? mapKey.impl() : component.getType();
-
-                if (mapKey != null && hasConverter(mapKey)) {
-                    MapKeyConverter<Object, Object> converter = getConverter(mapKey.converter());
-                    args[i] = value == null ? null : converter.fromValue(value);
-                } else {
-                    MapKeyConverter<Object, Object> typeConverter = getTypeConverter(targetType);
-                    if (typeConverter != null) {
-                        args[i] = value == null ? null : typeConverter.fromValue(value);
-                    } else {
-                        args[i] = value == null ? null : convertFromMap(value, targetType);
-                    }
-                }
+            if (property.inline()) {
+                if (property.writable()) property.set(instance, fromMap(map, property.type()));
+                continue;
             }
-        }
 
-        Constructor<T> constructor = clazz.getDeclaredConstructor(paramTypes);
-        constructor.setAccessible(true);
-        return constructor.newInstance(args);
-    }
+            Object value = map.get(property.key());
+            if (value == null) continue;
 
-    @SuppressWarnings("unchecked")
-    private static <T> T createInstance(Class<T> clazz) throws Exception {
-        try {
-            var constructor = clazz.getDeclaredConstructor();
-            constructor.setAccessible(true);
-            return constructor.newInstance();
-        } catch (NoSuchMethodException _) {}
-
-        try {
-            Field unsafeField = Unsafe.class.getDeclaredField("theUnsafe");
-            unsafeField.setAccessible(true);
-            Unsafe unsafe = (Unsafe) unsafeField.get(null);
-            return (T) unsafe.allocateInstance(clazz);
-        } catch (Exception _) {}
-
-        try {
-            var rf = ReflectionFactory.getReflectionFactory();
-            var objConstructor = Object.class.getDeclaredConstructor();
-            var syntheticConstructor = (Constructor<T>) rf.newConstructorForSerialization(clazz, objConstructor);
-            return syntheticConstructor.newInstance();
-        } catch (Exception e) {
-            throw new RuntimeException("Cannot instantiate " + clazz.getName() + ": no no-arg constructor, Unsafe unavailable, and ReflectionFactory failed.", e);
-        }
-    }
-
-    private static boolean hasConverter(MapKey mapKey) {
-        return mapKey.converter() != MapKey.NoConverter.class;
-    }
-
-    @SuppressWarnings("unchecked")
-    private static <T> Constructor<T> findMapCreator(Class<T> clazz) {
-        for (Constructor<?> constructor : clazz.getDeclaredConstructors()) {
-            if (constructor.isAnnotationPresent(MapCreator.class)) {
-                constructor.setAccessible(true);
-                return (Constructor<T>) constructor;
+            if (!property.writable()) {
+                throw new IllegalStateException("Cannot set final field '" + property.fieldName() + "' of " + clazz.getName()
+                        + ". Final fields must be provided through a @MapCreator constructor.");
             }
+            property.set(instance, readValue(property, value));
         }
-        return null;
+        return instance;
     }
 
-    private static <T> T invokeMapCreator(Map<String, Object> map, Constructor<T> constructor, Set<String> handledFields) throws Exception {
+    private static <T> T fromMapRecord(Map<String, Object> map, Class<T> clazz) {
+        List<Property> properties = properties(clazz);
+        Class<?>[] paramTypes = new Class<?>[properties.size()];
+        Object[] args = new Object[properties.size()];
+
+        for (int i = 0; i < args.length; i++) {
+            Property property = properties.get(i);
+            paramTypes[i] = property.type();
+
+            if (property.inline()) {
+                args[i] = fromMap(map, property.type());
+                continue;
+            }
+
+            Object value = map.get(property.key());
+            args[i] = value == null ? defaultValue(property.type()) : readValue(property, value);
+        }
+
+        try {
+            return construct(clazz.getDeclaredConstructor(paramTypes), args);
+        } catch (NoSuchMethodException e) {
+            throw new IllegalStateException("Canonical constructor of record " + clazz.getName() + " not found", e);
+        }
+    }
+
+    private static <T> T invokeMapCreator(Map<String, Object> map, Constructor<T> constructor, Set<String> handledKeys) {
         Parameter[] parameters = constructor.getParameters();
         Object[] args = new Object[parameters.length];
 
@@ -257,77 +142,318 @@ public final class MapperUtils {
             Parameter parameter = parameters[i];
             MapKey mapKey = parameter.getAnnotation(MapKey.class);
 
-            // Without the -parameters compiler flag, parameter.getName() only yields "arg0", "arg1", ...
-            // so every @MapCreator parameter must explicitly declare its (field) name via @MapKey(name = "...").
-            String fieldName = mapKey != null && !mapKey.name().isBlank() ? mapKey.name() : null;
-            if (fieldName == null) {
+            if (mapKey == null || mapKey.name().isBlank()) {
                 throw new IllegalStateException(
-                        "Missing @MapKey(name = \"...\") on parameter " + i + " of @MapCreator constructor in " +
-                                constructor.getDeclaringClass().getName() +
-                                ". Since the project is not compiled with -parameters, every parameter must explicitly declare " +
-                                "the field/map key name it corresponds to."
-                );
+                        "Missing @MapKey(name = \"...\") on parameter " + i + " of @MapCreator constructor in "
+                                + constructor.getDeclaringClass().getName()
+                                + ". Since the project is not compiled with -parameters, every parameter must explicitly "
+                                + "declare the map key it corresponds to.");
             }
 
-            handledFields.add(fieldName);
+            handledKeys.add(mapKey.name());
 
-            Object value = map.get(fieldName);
+            Object value = map.get(mapKey.name());
             if (value == null) {
-                args[i] = null;
+                args[i] = defaultValue(parameter.getType());
                 continue;
             }
-
-            Class<?> targetType = mapKey.impl() != Void.class ? mapKey.impl() : parameter.getType();
 
             if (hasConverter(mapKey)) {
                 MapKeyConverter<Object, Object> converter = getConverter(mapKey.converter());
                 args[i] = converter.fromValue(value);
             } else {
-                MapKeyConverter<Object, Object> typeConverter = getTypeConverter(targetType);
-                args[i] = typeConverter != null ? typeConverter.fromValue(value) : convertFromMap(value, targetType);
+                Class<?> targetType = mapKey.impl() != Void.class ? mapKey.impl() : parameter.getType();
+                args[i] = convertFromMap(value, targetType);
             }
         }
 
-        return constructor.newInstance(args);
+        return construct(constructor, args);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> Constructor<T> findMapCreator(Class<T> clazz) {
+        return (Constructor<T>) CREATOR_CACHE.computeIfAbsent(clazz, c ->
+                Arrays.stream(c.getDeclaredConstructors())
+                        .filter(constructor -> constructor.isAnnotationPresent(MapCreator.class))
+                        .findFirst()
+                        .map(constructor -> (Constructor<?>) constructor)
+        ).orElse(null);
+    }
+
+    /**
+     * Creates an instance without a {@link MapCreator}: uses the no-arg constructor if present,
+     * otherwise the constructor with the fewest parameters, filled with default values.
+     */
+    private static <T> T createInstance(Class<T> clazz) {
+        if (clazz.isInterface() || Modifier.isAbstract(clazz.getModifiers())) {
+            throw new IllegalArgumentException("Cannot instantiate abstract type " + clazz.getName());
+        }
+
+        Constructor<T> constructor;
+        try {
+            constructor = clazz.getDeclaredConstructor();
+        } catch (NoSuchMethodException e) {
+            constructor = smallestConstructor(clazz);
+        }
+
+        Class<?>[] types = constructor.getParameterTypes();
+        Object[] args = new Object[types.length];
+        for (int i = 0; i < types.length; i++) {
+            args[i] = defaultValue(types[i]);
+        }
+
+        try {
+            return construct(constructor, args);
+        } catch (RuntimeException e) {
+            throw new IllegalStateException("Cannot instantiate " + clazz.getName() + " via " + constructor
+                    + " with default arguments. Add a no-arg constructor or a @MapCreator constructor.", e);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> Constructor<T> smallestConstructor(Class<T> clazz) {
+        return (Constructor<T>) Arrays.stream(clazz.getDeclaredConstructors())
+                .min(Comparator.comparingInt(Constructor::getParameterCount))
+                .orElseThrow(() -> new IllegalStateException("No constructor found for " + clazz.getName()));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> T construct(Constructor<T> constructor, Object... args) {
+        MethodHandle handle = CONSTRUCTOR_CACHE.computeIfAbsent(constructor, c -> {
+            try {
+                return MethodHandles.privateLookupIn(c.getDeclaringClass(), MethodHandles.lookup()).unreflectConstructor(c);
+            } catch (IllegalAccessException e) {
+                throw new IllegalStateException("No access to constructor " + c, e);
+            }
+        });
+
+        try {
+            return (T) handle.invokeWithArguments(args);
+        } catch (RuntimeException | Error e) {
+            throw e;
+        } catch (Throwable t) {
+            throw new RuntimeException("Failed to invoke constructor " + constructor, t);
+        }
+    }
+
+    private static Object defaultValue(Class<?> type) {
+        return type.isPrimitive() ? Array.get(Array.newInstance(type, 1), 0) : null;
+    }
+
+    // Property metadata (VarHandle based field access)
+
+    private record Property(
+            String fieldName,
+            String key,
+            Class<?> type,
+            Class<?> targetType,
+            Class<? extends MapKeyConverter<?, ?>> converter,
+            boolean inline,
+            boolean writable,
+            VarHandle handle
+    ) {
+        Object get(Object owner) {
+            return handle.get(owner);
+        }
+
+        void set(Object owner, Object value) {
+            try {
+                handle.set(owner, value);
+            } catch (ClassCastException e) {
+                throw new IllegalArgumentException("Cannot assign " + (value == null ? "null" : value.getClass().getName())
+                        + " to " + type.getName() + " (property '" + key + "')", e);
+            }
+        }
+    }
+
+    private static List<Property> properties(Class<?> clazz) {
+        return PROPERTY_CACHE.computeIfAbsent(clazz, MapperUtils::scanProperties);
+    }
+
+    private static List<Property> scanProperties(Class<?> clazz) {
+        try {
+            return clazz.isRecord() ? scanRecord(clazz) : scanClass(clazz);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("Cannot access properties of " + clazz.getName(), e);
+        }
+    }
+
+    private static List<Property> scanClass(Class<?> clazz) throws ReflectiveOperationException {
+        Map<String, Property> result = new LinkedHashMap<>();
+
+        for (Class<?> current = clazz; current != null && current != Object.class; current = current.getSuperclass()) {
+            Lookup lookup = MethodHandles.privateLookupIn(current, MethodHandles.lookup());
+
+            for (Field field : current.getDeclaredFields()) {
+                int mod = field.getModifiers();
+                if (Modifier.isStatic(mod) || Modifier.isTransient(mod) || field.isSynthetic()) continue;
+                if (result.containsKey(field.getName())) continue;
+
+                VarHandle handle = lookup.findVarHandle(current, field.getName(), field.getType());
+                result.put(field.getName(), createProperty(
+                        field.getName(), field.getType(),
+                        field.getAnnotation(MapKey.class), field.getAnnotation(MapInline.class),
+                        !Modifier.isFinal(mod), handle));
+            }
+        }
+        return List.copyOf(result.values());
+    }
+
+    private static List<Property> scanRecord(Class<?> clazz) throws ReflectiveOperationException {
+        Lookup lookup = MethodHandles.privateLookupIn(clazz, MethodHandles.lookup());
+        List<Property> result = new ArrayList<>();
+
+        for (RecordComponent component : clazz.getRecordComponents()) {
+            VarHandle handle = lookup.findVarHandle(clazz, component.getName(), component.getType());
+            result.add(createProperty(
+                    component.getName(), component.getType(),
+                    component.getAnnotation(MapKey.class), component.getAnnotation(MapInline.class),
+                    false, handle));
+        }
+        return List.copyOf(result);
+    }
+
+    private static Property createProperty(String fieldName, Class<?> type, MapKey mapKey, MapInline mapInline,
+                                           boolean writable, VarHandle handle) {
+        String key = mapKey != null && !mapKey.name().isBlank() ? mapKey.name() : fieldName;
+        Class<?> targetType = mapKey != null && mapKey.impl() != Void.class ? mapKey.impl() : type;
+        Class<? extends MapKeyConverter<?, ?>> converter = mapKey != null && hasConverter(mapKey) ? mapKey.converter() : null;
+        return new Property(fieldName, key, type, targetType, converter, mapInline != null, writable, handle);
+    }
+
+    private static boolean hasConverter(MapKey mapKey) {
+        return mapKey.converter() != MapKey.NoConverter.class;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T, R> MapKeyConverter<T, R> getTypeConverter(Class<?> type) {
+        return (MapKeyConverter<T, R>) TYPE_CONVERTERS.get(type);
     }
 
     @SuppressWarnings("unchecked")
     private static <T, R> MapKeyConverter<T, R> getConverter(Class<? extends MapKeyConverter<?, ?>> clazz) {
         return (MapKeyConverter<T, R>) CONVERTER_CACHE.computeIfAbsent(clazz, c -> {
             try {
-                var constructor = c.getDeclaredConstructor();
-                constructor.setAccessible(true);
-                return constructor.newInstance();
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to instantiate converter: " + c.getName(), e);
+                return construct(c.getDeclaredConstructor());
+            } catch (NoSuchMethodException e) {
+                throw new RuntimeException("Converter " + c.getName() + " needs a no-arg constructor", e);
             }
         });
     }
 
-    private static Field[] getFields(Class<?> clazz) {
-        return FIELD_CACHE.computeIfAbsent(clazz, c -> {
-            Map<String, Field> fields = new LinkedHashMap<>();
-            Class<?> current = c;
-            while (current != null && current != Object.class) {
-                for (Field f : current.getDeclaredFields()) {
-                    int mod = f.getModifiers();
-                    if (!Modifier.isStatic(mod) && !Modifier.isTransient(mod)) {
-                        fields.putIfAbsent(f.getName(), f);
-                    }
-                }
-                current = current.getSuperclass();
+    /** Property value -> map value */
+    private static Object writeValue(Property property, Object value) {
+        if (property.converter() != null) {
+            MapKeyConverter<Object, Object> converter = getConverter(property.converter());
+            return converter.toValue(value);
+        }
+        MapKeyConverter<Object, Object> typeConverter = getTypeConverter(property.type());
+        return typeConverter != null ? typeConverter.toValue(value) : convertToMap(value);
+    }
+
+    /** Map value -> property value */
+    private static Object readValue(Property property, Object value) {
+        if (property.converter() != null) {
+            MapKeyConverter<Object, Object> converter = getConverter(property.converter());
+            return converter.fromValue(value);
+        }
+        return convertFromMap(value, property.targetType());
+    }
+
+    private static Object convertToMap(Object value) {
+        if (value == null) return null;
+
+        MapKeyConverter<Object, Object> typeConverter = getTypeConverter(value.getClass());
+        if (typeConverter != null) return typeConverter.toValue(value);
+
+        if (isSimpleType(value.getClass())) return value;
+        if (value instanceof Enum<?> e) return e.name();
+        if (value instanceof UUID uuid) return uuid.toString();
+
+        if (value instanceof Map<?, ?> map) {
+            Map<String, Object> result = new LinkedHashMap<>();
+            map.forEach((k, v) -> result.put(k.toString(), convertToMap(v)));
+            return result;
+        }
+
+        if (value instanceof Collection<?> collection) {
+            List<Object> result = new ArrayList<>(collection.size());
+            for (Object item : collection) result.add(convertToMap(item));
+            return result;
+        }
+
+        if (value.getClass().isArray()) {
+            int length = Array.getLength(value);
+            List<Object> result = new ArrayList<>(length);
+            for (int i = 0; i < length; i++) result.add(convertToMap(Array.get(value, i)));
+            return result;
+        }
+
+        return toMap(value);
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static Object convertFromMap(Object value, Class<?> targetType) {
+        if (value == null) return null;
+
+        MapKeyConverter<Object, Object> typeConverter = getTypeConverter(targetType);
+        if (typeConverter != null) return typeConverter.fromValue(value);
+
+        if (isSimpleType(targetType)) return castValue(value, targetType);
+        if (targetType.isEnum()) return Enum.valueOf((Class<Enum>) targetType, value.toString());
+
+        if (targetType.isArray() && value instanceof Collection<?> collection) {
+            Class<?> componentType = targetType.getComponentType();
+            Object array = Array.newInstance(componentType, collection.size());
+            int i = 0;
+            for (Object item : collection) {
+                Array.set(array, i++, convertFromMap(item, componentType));
             }
-            return fields.values().toArray(Field[]::new);
-        });
+            return array;
+        }
+
+        if (targetType == List.class || targetType == ArrayList.class) {
+            return value instanceof List<?> list ? list : new ArrayList<>();
+        }
+
+        if (targetType == Set.class || targetType == HashSet.class) {
+            return value instanceof Collection<?> collection ? new HashSet<>(collection) : new HashSet<>();
+        }
+
+        if (Map.class.isAssignableFrom(targetType)) {
+            return value instanceof Map<?, ?> source ? copyMap(source, targetType) : new LinkedHashMap<>();
+        }
+
+        if (value instanceof Map<?, ?> map) {
+            return fromMap((Map<String, Object>) map, targetType);
+        }
+
+        if (targetType.isInstance(value)) return value;
+
+        return castValue(value, targetType);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<Object, Object> copyMap(Map<?, ?> source, Class<?> targetType) {
+        Map<Object, Object> target;
+        if (targetType.isInterface() || Modifier.isAbstract(targetType.getModifiers())) {
+            target = new LinkedHashMap<>();
+        } else {
+            try {
+                target = (Map<Object, Object>) createInstance(targetType);
+            } catch (RuntimeException e) {
+                target = new LinkedHashMap<>();
+            }
+        }
+        target.putAll(source);
+        return target;
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     private static Object castValue(Object value, Class<?> target) {
         if (value == null || target.isInstance(value)) return value;
 
-        if (target.isEnum()) {
-            return Enum.valueOf((Class<Enum>) target, value.toString());
-        }
+        if (target.isEnum()) return Enum.valueOf((Class<Enum>) target, value.toString());
 
         if (value instanceof Number n) {
             if (target == byte.class || target == Byte.class) return n.byteValue();
@@ -336,6 +462,8 @@ public final class MapperUtils {
             if (target == long.class || target == Long.class) return n.longValue();
             if (target == float.class || target == Float.class) return n.floatValue();
             if (target == double.class || target == Double.class) return n.doubleValue();
+            if (target == boolean.class || target == Boolean.class) return n.intValue() != 0;
+            if (target == char.class || target == Character.class) return (char) n.intValue();
         }
 
         if (value instanceof String s) {
@@ -350,127 +478,14 @@ public final class MapperUtils {
             if (target == UUID.class) return UUID.fromString(s);
         }
 
-        if (target == boolean.class || target == Boolean.class) {
-            if (value instanceof Number n) return n.intValue() != 0;
-        }
-
-        if (target == char.class || target == Character.class) {
-            if (value instanceof Number n) return (char) n.intValue();
-        }
-
         return value;
     }
 
-    public static Object convertValue(Object value, Class<?> targetType) {
-        Objects.requireNonNull(targetType, "targetType must not be null");
-        return convertFromMap(value, targetType);
-    }
-
-    private static Object convertToMap(Object value) {
-        if (value == null) return null;
-
-        MapKeyConverter<Object, Object> typeConverter = getTypeConverter(value.getClass());
-        if (typeConverter != null) {
-            return typeConverter.toValue(value);
-        }
-
-        if (isPrimitive(value.getClass())) return value;
-
-        if (value instanceof Enum<?> e) {
-            return e.name();
-        }
-
-        if (value instanceof UUID uuid) {
-            return uuid.toString();
-        }
-
-        if (value instanceof Map<?, ?> map) {
-            Map<String, Object> result = new LinkedHashMap<>();
-            map.forEach((k, v) -> result.put(k.toString(), convertToMap(v)));
-            return result;
-        }
-
-        if (value instanceof Collection<?> col) {
-            List<Object> result = new ArrayList<>();
-            for (Object item : col) result.add(convertToMap(item));
-            return result;
-        }
-
-        if (value.getClass().isArray()) {
-            List<Object> result = new ArrayList<>();
-            int length = Array.getLength(value);
-            for (int i = 0; i < length; i++) result.add(convertToMap(Array.get(value, i)));
-            return result;
-        }
-
-        return toMap(value);
-    }
-
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    private static Object convertFromMap(Object value, Class<?> targetType) {
-        if (value == null) return null;
-
-        MapKeyConverter<Object, Object> typeConverter = getTypeConverter(targetType);
-        if (typeConverter != null) {
-            return typeConverter.fromValue(value);
-        }
-
-        if (isPrimitive(targetType)) return castValue(value, targetType);
-        if (targetType.isEnum()) return Enum.valueOf((Class<Enum>) targetType, value.toString());
-
-        if (targetType.isArray()) {
-            if (value instanceof Collection<?> col) {
-                Class<?> componentType = targetType.getComponentType();
-                Object array = java.lang.reflect.Array.newInstance(componentType, col.size());
-                int i = 0;
-                for (Object item : col) {
-                    java.lang.reflect.Array.set(array, i++, convertFromMap(item, componentType));
-                }
-                return array;
-            }
-        }
-
-        if (targetType == List.class || targetType == ArrayList.class) {
-            if (value instanceof List<?> list) return list;
-            return new ArrayList<>();
-        }
-
-        if (targetType == Set.class || targetType == HashSet.class) {
-            if (value instanceof Collection<?> col) return new HashSet<>(col);
-            return new HashSet<>();
-        }
-
-        if (Map.class.isAssignableFrom(targetType)) {
-            if (value instanceof Map<?, ?> map) {
-                Map<Object, Object> targetMap;
-                if (targetType.isInterface() || Modifier.isAbstract(targetType.getModifiers())) {
-                    targetMap = new LinkedHashMap<>();
-                } else {
-                    try {
-                        targetMap = (Map<Object, Object>) createInstance(targetType);
-                    } catch (Exception e) {
-                        targetMap = new LinkedHashMap<>();
-                    }
-                }
-                targetMap.putAll(map);
-                return targetMap;
-            }
-            return new LinkedHashMap<>();
-        }
-
-        if (value instanceof Map<?, ?> map) {
-            return fromMap((Map<String, Object>) map, targetType);
-        }
-
-        if (targetType.isInstance(value)) return value;
-
-        return castValue(value, targetType);
-    }
-
-    private static boolean isPrimitive(Class<?> type) {
+    private static boolean isSimpleType(Class<?> type) {
         return type.isPrimitive()
                 || type == String.class
-                || Number.class.isAssignableFrom(type)
-                || type == Boolean.class;
+                || type == Boolean.class
+                || type == Character.class
+                || Number.class.isAssignableFrom(type);
     }
 }
