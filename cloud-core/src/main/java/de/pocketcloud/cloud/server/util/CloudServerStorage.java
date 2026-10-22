@@ -1,5 +1,7 @@
 package de.pocketcloud.cloud.server.util;
 
+import de.pocketcloud.common.serialization.annotation.MapCreator;
+import de.pocketcloud.common.serialization.annotation.MapKey;
 import de.pocketcloud.network.packet.impl.SyncPacket;
 import de.pocketcloud.shared.component.storage.BaseCloudServerStorage;
 import de.pocketcloud.shared.sync.SyncType;
@@ -9,7 +11,8 @@ import java.util.UUID;
 
 public final class CloudServerStorage extends BaseCloudServerStorage {
 
-    public CloudServerStorage(UUID serverUuid) {
+    @MapCreator
+    public CloudServerStorage(@MapKey(name = "serverUuid") UUID serverUuid) {
         super(serverUuid);
     }
 
