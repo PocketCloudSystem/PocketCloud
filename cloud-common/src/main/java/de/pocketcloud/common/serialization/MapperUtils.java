@@ -361,6 +361,11 @@ public final class MapperUtils {
         return value;
     }
 
+    public static Object convertValue(Object value, Class<?> targetType) {
+        Objects.requireNonNull(targetType, "targetType must not be null");
+        return convertFromMap(value, targetType);
+    }
+
     private static Object convertToMap(Object value) {
         if (value == null) return null;
 
