@@ -3,6 +3,8 @@ package de.pocketcloud.shared.component.storage;
 import de.pocketcloud.api.CloudAPI;
 import de.pocketcloud.api.component.server.ICloudServer;
 import de.pocketcloud.api.server.storage.ICloudServerStorage;
+import de.pocketcloud.common.serialization.annotation.MapCreator;
+import de.pocketcloud.common.serialization.annotation.MapKey;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
@@ -19,7 +21,8 @@ public abstract class BaseCloudServerStorage implements ICloudServerStorage {
     protected final UUID serverUuid;
     protected Map<String, Object> storage = new ConcurrentHashMap<>();
 
-    public BaseCloudServerStorage(UUID serverUuid) {
+    @MapCreator
+    public BaseCloudServerStorage(@MapKey(name = "serverUuid") UUID serverUuid) {
         this.serverUuid = serverUuid;
     }
 

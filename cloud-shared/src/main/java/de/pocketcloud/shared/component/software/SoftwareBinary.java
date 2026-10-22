@@ -1,6 +1,8 @@
 package de.pocketcloud.shared.component.software;
 
 import de.pocketcloud.api.component.software.ISoftwareBinary;
+import de.pocketcloud.common.serialization.annotation.MapCreator;
+import de.pocketcloud.common.serialization.annotation.MapKey;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.experimental.Accessors;
@@ -22,9 +24,17 @@ import lombok.experimental.Accessors;
 
 @Getter
 @Accessors(fluent = true)
-@AllArgsConstructor
 public class SoftwareBinary implements ISoftwareBinary {
 
     protected final String url;
     protected final boolean checkForUpdates;
+
+    @MapCreator
+    public SoftwareBinary(
+            @MapKey(name = "url") String url,
+            @MapKey(name = "checkForUpdates") boolean checkForUpdates
+    ) {
+        this.url = url;
+        this.checkForUpdates = checkForUpdates;
+    }
 }

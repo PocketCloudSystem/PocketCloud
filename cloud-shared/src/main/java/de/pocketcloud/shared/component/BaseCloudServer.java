@@ -3,6 +3,7 @@ package de.pocketcloud.shared.component;
 import de.pocketcloud.api.component.server.ICloudServer;
 import de.pocketcloud.api.server.ServerStatus;
 import de.pocketcloud.api.server.VerificationStatus;
+import de.pocketcloud.common.serialization.annotation.MapCreator;
 import de.pocketcloud.common.serialization.annotation.MapKey;
 import de.pocketcloud.shared.component.data.CloudServerData;
 import de.pocketcloud.shared.component.storage.BaseCloudServerStorage;
@@ -33,7 +34,14 @@ public class BaseCloudServer implements ICloudServer {
     @MapKey(converter = InstantConverter.class)
     protected Instant verifiedTime = Instant.EPOCH;
 
-    public BaseCloudServer(int id, UUID uuid, String templateName, CloudServerData data, BaseCloudServerStorage storage) {
+    @MapCreator
+    public BaseCloudServer(
+            @MapKey(name = "id") int id,
+            @MapKey(name = "uuid") UUID uuid,
+            @MapKey(name = "templateName") String templateName,
+            @MapKey(name = "data") CloudServerData data,
+            @MapKey(name = "storage") BaseCloudServerStorage storage
+    ) {
         this.id = id;
         this.uuid = uuid;
         this.templateName = templateName;

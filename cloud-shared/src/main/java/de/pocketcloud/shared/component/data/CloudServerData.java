@@ -1,6 +1,8 @@
 package de.pocketcloud.shared.component.data;
 
 import de.pocketcloud.api.server.data.ICloudServerData;
+import de.pocketcloud.common.serialization.annotation.MapCreator;
+import de.pocketcloud.common.serialization.annotation.MapKey;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -27,7 +29,13 @@ public class CloudServerData implements ICloudServerData {
     protected Long memoryLimit = null;
     protected Double cpuUsage = null;
 
-    public CloudServerData(UUID serverUuid, String address, int port, int maxPlayers) {
+    @MapCreator
+    public CloudServerData(
+            @MapKey(name = "serverUuid") UUID serverUuid,
+            @MapKey(name = "address") String address,
+            @MapKey(name = "port") int port,
+            @MapKey(name = "maxPlayers") int maxPlayers
+    ) {
         this.serverUuid = serverUuid;
         this.address = address;
         this.port = port;

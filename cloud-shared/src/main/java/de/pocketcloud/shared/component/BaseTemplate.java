@@ -4,6 +4,7 @@ import de.pocketcloud.api.component.software.IServerSoftware;
 import de.pocketcloud.api.component.template.ITemplate;
 import de.pocketcloud.api.template.TemplateType;
 import de.pocketcloud.api.template.settings.TemplateSettings;
+import de.pocketcloud.common.serialization.annotation.MapCreator;
 import de.pocketcloud.common.serialization.annotation.MapKey;
 import de.pocketcloud.shared.converter.SoftwareConverter;
 import lombok.Getter;
@@ -19,7 +20,13 @@ public class BaseTemplate implements ITemplate {
     @MapKey(converter = SoftwareConverter.class)
     protected final IServerSoftware serverSoftware;
 
-    public BaseTemplate(String name, TemplateSettings settings, TemplateType templateType, IServerSoftware serverSoftware) {
+    @MapCreator
+    public BaseTemplate(
+            @MapKey(name = "name") String name,
+            @MapKey(name = "settings") TemplateSettings settings,
+            @MapKey(name = "templateType") TemplateType templateType,
+            @MapKey(name = "serverSoftware", converter = SoftwareConverter.class) IServerSoftware serverSoftware
+    ) {
         this.name = name;
         this.settings = settings;
         this.templateType = templateType;

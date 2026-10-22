@@ -1,6 +1,8 @@
 package de.pocketcloud.shared.component;
 
 import de.pocketcloud.api.component.player.ICloudPlayer;
+import de.pocketcloud.common.serialization.annotation.MapCreator;
+import de.pocketcloud.common.serialization.annotation.MapKey;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -24,7 +26,15 @@ public class BaseCloudPlayer implements ICloudPlayer {
     @Setter(AccessLevel.NONE)
     protected String currentProxyName = null;
 
-    public BaseCloudPlayer(String name, String address, String xboxUserId, UUID uniqueId, int protocolVersion, String gameVersion) {
+    @MapCreator
+    public BaseCloudPlayer(
+            @MapKey(name = "name") String name,
+            @MapKey(name = "address") String address,
+            @MapKey(name = "xboxUserId") String xboxUserId,
+            @MapKey(name = "uniqueId") UUID uniqueId,
+            @MapKey(name = "protocolVersion") int protocolVersion,
+            @MapKey(name = "gameVersion") String gameVersion
+    ) {
         this.name = name;
         this.address = address;
         this.xboxUserId = xboxUserId;

@@ -106,6 +106,8 @@ public final class MapperUtils {
             }
             property.set(instance, readValue(property, value));
         }
+
+        if (instance instanceof PostMapped postMapped) postMapped.onPostMap();
         return instance;
     }
 
