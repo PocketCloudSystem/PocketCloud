@@ -3,6 +3,8 @@ package de.pocketcloud.cloud.player;
 import de.pocketcloud.api.sync.SyncingElement;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.common.serialization.MapperUtils;
+import de.pocketcloud.common.serialization.annotation.MapCreator;
+import de.pocketcloud.common.serialization.annotation.MapKey;
 import de.pocketcloud.network.packet.impl.SyncPacket;
 import de.pocketcloud.shared.component.BaseCloudPlayer;
 import de.pocketcloud.shared.sync.SyncType;
@@ -18,10 +20,20 @@ public final class CloudPlayer extends BaseCloudPlayer implements SyncingElement
     private transient boolean markedForRemoval = false;
 
     public CloudPlayer(String name, String address, String xboxUserId, UUID uniqueId, int protocolVersion, String gameVersion) {
-        super(name, address, xboxUserId, uniqueId, protocolVersion, gameVersion);
+        this(name, address, xboxUserId, uniqueId, protocolVersion, gameVersion, null, null);
     }
 
-    public CloudPlayer(String name, String address, String xboxUserId, UUID uniqueId, int protocolVersion, String gameVersion, String currentServerName, String currentProxyName) {
+    @MapCreator
+    public CloudPlayer(
+            @MapKey(name = "name") String name,
+            @MapKey(name = "address") String address,
+            @MapKey(name = "xboxUserId") String xboxUserId,
+            @MapKey(name = "uniqueId") UUID uniqueId,
+            @MapKey(name = "protocolVersion") int protocolVersion,
+            @MapKey(name = "gameVersion") String gameVersion,
+            @MapKey(name = "currentServerName") String currentServerName,
+            @MapKey(name = "currentProxyName") String currentProxyName
+    ) {
         super(name, address, xboxUserId, uniqueId, protocolVersion, gameVersion);
         this.currentServerName = currentServerName;
         this.currentProxyName = currentProxyName;

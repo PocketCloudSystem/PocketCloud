@@ -23,7 +23,8 @@ public class SoftwareConfig implements ISoftwareConfig {
             @MapKey(name = "mainConfigurationFile") String mainConfigurationFile,
             @MapKey(name = "relativeLogFileLocation") String relativeLogFileLocation,
             @MapKey(name = "savableFiles") List<String> savableFiles,
-            @MapKey(name = "saveCommandLine") String saveCommandLine) {
+            @MapKey(name = "saveCommandLine") String saveCommandLine
+    ) {
         this.mainConfigurationFile = mainConfigurationFile;
         this.relativeLogFileLocation = relativeLogFileLocation;
         this.savableFiles = savableFiles;

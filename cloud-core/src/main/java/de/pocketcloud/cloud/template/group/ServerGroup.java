@@ -3,6 +3,8 @@ package de.pocketcloud.cloud.template.group;
 import de.pocketcloud.api.sync.SyncingElement;
 import de.pocketcloud.cloud.util.PocketCloudPaths;
 import de.pocketcloud.common.serialization.MapperUtils;
+import de.pocketcloud.common.serialization.annotation.MapCreator;
+import de.pocketcloud.common.serialization.annotation.MapKey;
 import de.pocketcloud.network.packet.impl.SyncPacket;
 import de.pocketcloud.shared.component.BaseServerGroup;
 import de.pocketcloud.shared.sync.SyncType;
@@ -18,7 +20,11 @@ public final class ServerGroup extends BaseServerGroup implements SyncingElement
      */
     private transient boolean markedForRemoval = false;
 
-    public ServerGroup(String name, Collection<String> templates) {
+    @MapCreator
+    public ServerGroup(
+            @MapKey(name = "name") String name,
+            @MapKey(name = "templates") Collection<String> templates
+    ) {
         super(name, templates);
     }
 
