@@ -28,7 +28,7 @@ public final class WaterdogConfig extends ServerProperties {
     public Map<String, Object> replacePlaceholders(CloudServer server) {
         return Map.ofEntries(
                 Map.entry("%name%", server.name()),
-                Map.entry("%server_ip%", server.data().address()),
+                Map.entry("%server_ip%", server.bindAddress()),
                 Map.entry("%server_port%", server.data().port()),
                 Map.entry("%max_players%", server.template().settings().maxPlayerCount())
         );

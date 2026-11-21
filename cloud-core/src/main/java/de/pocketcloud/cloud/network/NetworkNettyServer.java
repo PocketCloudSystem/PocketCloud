@@ -2,6 +2,7 @@ package de.pocketcloud.cloud.network;
 
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.log.CloudLogger;
+import de.pocketcloud.cloud.util.PocketCloudPaths;
 import de.pocketcloud.common.util.StringUtils;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
@@ -20,7 +21,11 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
+import java.io.IOException;
 import java.net.SocketAddress;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermissions;
 
 @Getter
 @Accessors(fluent = true)
@@ -31,7 +36,13 @@ public class NetworkNettyServer {
     private final int packetSizeLimit;
     @Getter(AccessLevel.NONE)
     private final ChannelGroup channels = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
-    private final String authToken = StringUtils.generate(32);
+    private static final int AUTH_TOKEN_LENGTH = 32;
+
+    /**
+     * Persisted across restarts (storage/internal/auth-token), so servers can reconnect
+     * after the cloud has been restarted.
+     */
+    private final String authToken = loadOrCreateAuthToken(PocketCloudPaths.storage().internal().with("auth-token").asPath());
 
     private final EventLoopGroup bossGroup = new MultiThreadIoEventLoopGroup(
             new DefaultThreadFactory("boss-group"),
@@ -47,6 +58,34 @@ public class NetworkNettyServer {
         this.address = address;
         this.encryption = encryption;
         this.packetSizeLimit = packetSizeLimit;
+    }
+
+    static String loadOrCreateAuthToken(Path tokenPath) {
+        try {
+            if (Files.isRegularFile(tokenPath)) {
+                String stored = Files.readString(tokenPath).trim();
+                if (stored.length() >= AUTH_TOKEN_LENGTH && stored.chars().noneMatch(Character::isWhitespace)) {
+                    return stored;
+                }
+
+                CloudLogger.get().warn("Stored network auth token is invalid, generating a new one...");
+            }
+
+            String token = StringUtils.generate(AUTH_TOKEN_LENGTH);
+            if (tokenPath.getParent() != null) Files.createDirectories(tokenPath.getParent());
+            Files.writeString(tokenPath, token);
+
+            try {
+                Files.setPosixFilePermissions(tokenPath, PosixFilePermissions.fromString("rw-------"));
+            } catch (UnsupportedOperationException | IOException _) {
+                // non-posix filesystem, ignore
+            }
+
+            return token;
+        } catch (IOException e) {
+            CloudLogger.get().exception("Failed to persist the network auth token, using a temporary one", e);
+            return StringUtils.generate(AUTH_TOKEN_LENGTH);
+        }
     }
 
     public void start() {

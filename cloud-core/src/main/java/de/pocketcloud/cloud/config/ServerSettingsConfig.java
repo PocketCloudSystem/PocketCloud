@@ -1,6 +1,7 @@
 package de.pocketcloud.cloud.config;
 
 import de.pocketcloud.api.config.ICloudConfig;
+import de.pocketcloud.cloud.config.sub.ServerAddressesConfiguration;
 import de.pocketcloud.cloud.config.sub.ServerPortRangesConfiguration;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.server.util.ServerStartMethods;
@@ -21,12 +22,17 @@ public final class ServerSettingsConfig extends OkaeriConfig implements ICloudCo
     @Comment({"Server port ranges for the template types."})
     private ServerPortRangesConfiguration serverPortRanges = new ServerPortRangesConfiguration();
 
+    @Comment({"Addresses used by the servers and proxies started by the cloud."})
+    private ServerAddressesConfiguration addresses = new ServerAddressesConfiguration();
+
     @Override
     public void validate() {
         if (ServerStartMethods.get(startMethod.toLowerCase()).isEmpty()) {
             CloudLogger.get().warn("Invalid start method given in config, reset to default... §8(§bproc§8)");
             startMethod = "proc";
         }
+
+        addresses.validate();
     }
 
     @Override

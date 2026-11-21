@@ -31,7 +31,7 @@ public final class PowerNukkitXNightlyConfig extends ServerProperties {
                 Map.entry("%server_port%", server.data().port()),
                 Map.entry("%max_players%", server.template().settings().maxPlayerCount()),
                 Map.entry("%auto_save%", server.template().settings().saveOnShutdown() || server.template().settings().staticServers()),
-                Map.entry("%server_ip%", server.data().address())
+                Map.entry("%server_ip%", server.bindAddress())
         );
     }
 

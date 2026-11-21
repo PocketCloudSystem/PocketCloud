@@ -2,6 +2,7 @@ package de.pocketcloud.cloud.player;
 
 import de.pocketcloud.api.CloudAPI;
 import de.pocketcloud.api.component.player.ICloudPlayer;
+import de.pocketcloud.api.component.server.ICloudServer;
 import de.pocketcloud.api.provider.write.IWritePlayerProvider;
 import de.pocketcloud.api.search.PlayerSearchQuery;
 import de.pocketcloud.api.search.ServerSearchQuery;
@@ -70,6 +71,37 @@ public final class CloudPlayerManager implements IWritePlayerProvider {
         cloudPlayer.resetCurrentServer();
         cloudPlayer.resetCurrentProxy();
         cloudPlayer.markForRemoval().syncOut();
+    }
+
+    /**
+     * Cleans up players that were connected to a server or proxy which is gone
+     * (stopped, crashed, timed out). Without this, players of a crashed proxy stay
+     * in the player list forever and their rejoin is ignored.
+     */
+    public void handleServerRemoved(ICloudServer server) {
+        String name = server.name();
+        for (CloudPlayer player : List.copyOf(players.values())) {
+            if (name.equals(player.currentProxyName())) {
+                remove(player);
+            } else if (name.equals(player.currentServerName())) {
+                if (player.currentProxyName() == null || player.currentProxy().isEmpty()) {
+                    remove(player);
+                } else {
+                    player.resetCurrentServer();
+                }
+            }
+        }
+    }
+
+    /**
+     * Whether an already known player entry is outdated when a new connect for that player arrives.
+     * A connect via a proxy always starts a new session. Behind a proxy, a connect from a sub-server
+     * is a normal server switch, unless the player's proxy no longer exists.
+     */
+    public boolean isStaleOnConnect(ICloudPlayer existing, ICloudServer connectedTo) {
+        if (connectedTo.template().templateType().isProxy()) return true;
+        if (existing.currentProxyName() == null) return true;
+        return existing.currentProxy().isEmpty();
     }
 
     @Override

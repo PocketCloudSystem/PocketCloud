@@ -40,7 +40,13 @@ public final class PlayerPacketHandler implements PacketListener {
         var server = sender.server();
         if (server != null) {
             CloudPlayer player = new CloudPlayer(packet.getPlayerName(), packet.getAddress(), packet.getXboxUserId(), packet.getUniqueId(), packet.getProtocolVersion(), packet.getGameVersion());
-            if (PocketCloud.instance().players().get(player.name()).isEmpty()) {
+            var existing = PocketCloud.instance().players().get(player.name()).orElse(null);
+            if (existing != null && PocketCloud.instance().players().isStaleOnConnect(existing, server)) {
+                PocketCloud.instance().players().remove(existing);
+                existing = null;
+            }
+
+            if (existing == null) {
                 if (server.template().templateType().isServer()) player.changeCurrentServer(server);
                 else player.changeCurrentProxy(server);
                 PocketCloud.instance().players().add(player);

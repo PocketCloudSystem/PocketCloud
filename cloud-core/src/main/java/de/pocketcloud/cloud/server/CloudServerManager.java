@@ -114,6 +114,7 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
         ServerUtils.removePort(cloudServer.data().port());
         lastServerStopTime = System.currentTimeMillis();
         cloudServer.markForRemoval().syncOut();
+        PocketCloud.instance().players().handleServerRemoved(cloudServer);
     }
 
     @Override
@@ -157,7 +158,7 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
                     id,
                     uuid,
                     template.name(),
-                    new CloudServerData(uuid, template.templateType().isServer() ? "127.0.0.1" : "0.0.0.0", port, template.settings().maxPlayerCount()),
+                    new CloudServerData(uuid, PocketCloud.instance().serverSettingsConfig().addresses().publicAddress(), port, template.settings().maxPlayerCount()),
                     new CloudServerStorage(uuid)
             );
 

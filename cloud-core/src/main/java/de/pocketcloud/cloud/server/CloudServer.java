@@ -556,6 +556,14 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
         return PocketCloudPaths.tmp().with(name() + "_" + uuid.toString()).asPath();
     }
 
+    /**
+     * The address the server process binds to. Not to be confused with {@code data().address()},
+     * which is the public address other servers and proxies use to reach this server.
+     */
+    public String bindAddress() {
+        return PocketCloud.instance().serverSettingsConfig().addresses().bindAddress(template().templateType());
+    }
+
     public Path logFilePath() {
         return path().resolve(template().serverSoftware().config().relativeLogFileLocation());
     }
