@@ -4,6 +4,8 @@ import de.pocketcloud.api.component.template.ITemplate;
 import de.pocketcloud.api.search.TemplateSearchQuery;
 import de.pocketcloud.api.template.TemplateType;
 import de.pocketcloud.cloud.PocketCloud;
+import de.pocketcloud.cloud.cluster.sync.SyncUnit;
+import de.pocketcloud.cloud.cluster.sync.TemplateReplicator;
 import de.pocketcloud.cloud.console.command.Command;
 import de.pocketcloud.cloud.console.command.TabComplete;
 import de.pocketcloud.cloud.console.command.ctx.CommandContext;
@@ -22,6 +24,7 @@ import de.pocketcloud.shared.component.software.ServerSoftware;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 
 @CommandDescription(name = "template", description = "Manage the templates", aliases = {"temp"})
 public final class TemplateCommand extends Command implements TabComplete {
@@ -48,6 +51,59 @@ public final class TemplateCommand extends Command implements TabComplete {
                     new ServerGroupParameter("server_group", true),
                     new SoftwareParameter("software", true)));
         }));
+
+        registerSubCommand(SubCommand.lambda("history", this::handleHistorySub, true, subCommand -> {
+            subCommand.addParameter(new StringParameter("template", false));
+        }));
+
+        registerSubCommand(SubCommand.lambda("rollback", this::handleRollbackSub, true, subCommand -> {
+            subCommand.addParameter(new StringParameter("template", false))
+                    .addParameter(new IntegerParameter("version", false));
+        }));
+
+        registerSubCommand(SubCommand.lambda("sync", this::handleSyncSub, true, subCommand -> {
+            subCommand.addParameter(new StringEnumParameter("action", false, "pause", "resume", "status"))
+                    .addParameter(new StringParameter("template", true));
+        }));
+    }
+
+    private static Optional<TemplateReplicator> replicator(CommandSender sender) {
+        Optional<TemplateReplicator> replicator = TemplateReplicator.get();
+        if (replicator.isEmpty()) sender.error("Template replication only runs while this node is part of a cluster.");
+        return replicator;
+    }
+
+    public boolean handleHistorySub(CommandSender sender, CommandContext ctx) {
+        SyncUnit unit = SyncUnit.parse(ctx.argString("template"));
+        replicator(sender).ifPresent(r -> r.history(unit, lines -> lines.forEach(sender::info)));
+        return true;
+    }
+
+    public boolean handleRollbackSub(CommandSender sender, CommandContext ctx) {
+        SyncUnit unit = SyncUnit.parse(ctx.argString("template"));
+        int version = ctx.argInt("version");
+        replicator(sender).ifPresent(r -> r.rollback(unit, version, lines -> lines.forEach(sender::info)));
+        return true;
+    }
+
+    public boolean handleSyncSub(CommandSender sender, CommandContext ctx) {
+        String action = ctx.argString("action").toLowerCase();
+        String name = ctx.hasArg("template") ? ctx.argString("template") : null;
+        SyncUnit unit = name == null ? null : SyncUnit.parse(name);
+        replicator(sender).ifPresent(r -> {
+            switch (action) {
+                case "pause" -> {
+                    r.pause(unit);
+                    sender.success("Template sync §cpaused §rfor §b{}§r. Local changes are neither sent nor overwritten until §btemplate sync resume§r.", unit == null ? "all templates" : unit.display());
+                }
+                case "resume" -> {
+                    r.resume(unit);
+                    sender.success("Template sync §aresumed §rfor §b{}§r.", unit == null ? "all templates" : unit.display());
+                }
+                default -> r.statusLines().forEach(sender::info);
+            }
+        });
+        return true;
     }
 
     @Override

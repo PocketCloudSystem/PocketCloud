@@ -57,27 +57,29 @@ public final class LocalTemplateStorage implements TemplateStorage {
 
     @Override
     public void copyGlobalTo(TemplateType type, Path target) {
-        FileUtils.copyDirectory(globalPath(type), target, Set.of());
+        TemplateLocks.read(globalPath(type), () -> FileUtils.copyDirectory(globalPath(type), target, Set.of()));
     }
 
     @Override
     public void copyGroupTo(String group, Path target) {
-        FileUtils.copyDirectory(groupPath(group), target, Set.of());
+        TemplateLocks.read(groupPath(group), () -> FileUtils.copyDirectory(groupPath(group), target, Set.of()));
     }
 
     @Override
     public void copyTemplateTo(String template, Path target, Set<String> excludes) {
-        FileUtils.copyDirectory(localTemplatePath(template), target, excludes);
+        TemplateLocks.read(localTemplatePath(template), () -> FileUtils.copyDirectory(localTemplatePath(template), target, excludes));
     }
 
     @Override
     public void storeInTemplate(String template, String relativePath, Path source) throws IOException {
         Path dst = localTemplatePath(template).resolve(relativePath);
-        if (Files.isRegularFile(source)) {
-            Files.copy(source, dst, StandardCopyOption.REPLACE_EXISTING);
-        } else if (Files.isDirectory(source)) {
-            FileUtils.copyDirectory(source, dst, Set.of());
-        }
+        TemplateLocks.<IOException>read(localTemplatePath(template), () -> {
+            if (Files.isRegularFile(source)) {
+                Files.copy(source, dst, StandardCopyOption.REPLACE_EXISTING);
+            } else if (Files.isDirectory(source)) {
+                FileUtils.copyDirectory(source, dst, Set.of());
+            }
+        });
     }
 
     @Override

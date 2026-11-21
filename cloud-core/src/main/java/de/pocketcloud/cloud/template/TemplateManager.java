@@ -32,7 +32,7 @@ import java.util.function.Consumer;
 
 public final class TemplateManager implements Tickable, Loadable, IWriteTemplateProvider {
 
-    private final Map<String, Template> templates = new HashMap<>();
+    private final Map<String, Template> templates = new java.util.concurrent.ConcurrentHashMap<>();
 
     @Override
     public void load() {

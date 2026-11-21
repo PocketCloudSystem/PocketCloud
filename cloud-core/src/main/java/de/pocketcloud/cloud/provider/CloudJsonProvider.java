@@ -41,6 +41,12 @@ public final class CloudJsonProvider extends CloudProvider {
         }
     }
 
+    /** Re-reads templates.json and groups.json, e.g. after the cluster replicated a newer version. */
+    public synchronized void reloadTemplatesAndGroups() throws IOException, UnsupportedFileExtensionException {
+        templatesConfig.reload();
+        serverGroupsConfig.reload();
+    }
+
     @Override
     public Promise<Void> addTemplate(ITemplate template) {
         templatesConfig.set(template.name(), template.write());

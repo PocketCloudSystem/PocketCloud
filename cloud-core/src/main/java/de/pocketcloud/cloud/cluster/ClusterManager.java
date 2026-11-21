@@ -68,7 +68,7 @@ public final class ClusterManager {
     private final Set<String> dialing = ConcurrentHashMap.newKeySet();
 
     /** Features on top of the node protocol. Add new modules here. */
-    private final List<ClusterModule> modules = List.of();
+    private final List<ClusterModule> modules = List.of(new de.pocketcloud.cloud.cluster.sync.TemplateReplicator());
 
     private LocalNodeHandle localNode;
     @Getter
