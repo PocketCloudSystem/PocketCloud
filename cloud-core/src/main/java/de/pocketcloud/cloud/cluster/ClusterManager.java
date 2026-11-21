@@ -83,6 +83,9 @@ public final class ClusterManager {
     public void init() {
         NodeConfig config = nodeConfig();
         localNode = new LocalNodeHandle(config.name());
+        if (!PocketCloud.instance().services().getAll().containsKey(de.pocketcloud.api.cluster.INodeProvider.class)) {
+            PocketCloud.instance().services().register(de.pocketcloud.api.cluster.INodeProvider.class, new ClusterNodeProvider(this));
+        }
         election = new HeadElection(this, directory.resolve("term.json"));
 
         connectRedis();

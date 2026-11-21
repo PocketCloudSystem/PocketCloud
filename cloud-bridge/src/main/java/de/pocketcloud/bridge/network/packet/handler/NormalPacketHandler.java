@@ -2,6 +2,8 @@ package de.pocketcloud.bridge.network.packet.handler;
 
 import com.google.gson.reflect.TypeToken;
 import de.pocketcloud.api.CloudAPI;
+import de.pocketcloud.bridge.provider.NodeProvider;
+import de.pocketcloud.shared.cluster.BaseNode;
 import de.pocketcloud.api.language.LanguageKey;
 import de.pocketcloud.api.network.handler.PacketHandler;
 import de.pocketcloud.api.network.handler.PacketListener;
@@ -157,6 +159,10 @@ public final class NormalPacketHandler implements PacketListener {
             LocalCache.get(WhitelistCache.class).syncIn(remainingData.readMap(Boolean.class));
         } else if (type == SyncType.NOTIFICATION_LIST) {
             LocalCache.get(NotificationListCache.class).syncIn(remainingData.readMap(Boolean.class));
+        } else if (type == SyncType.NODES) {
+            List<BaseNode> nodes = handleBulkSync(remainingData, BaseNode.class);
+            if (CloudAPI.instance().nodes() instanceof NodeProvider provider) provider.syncIn(nodes);
+            CloudBridge.instance().logger().info("Nodes of the cloud: {}", nodes);
         } else if (type == SyncType.SOFTWARES) {
             for (ServerSoftware serverSoftware : handleBulkSync(remainingData, ServerSoftware.class)) {
                 CloudBridge.instance().softwares().register(serverSoftware, true);

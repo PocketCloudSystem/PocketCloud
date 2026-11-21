@@ -26,6 +26,8 @@ public record SyncType(String type) implements Writable<String> {
     public static final SyncType WHITELIST = new SyncType("WHITELIST");
     public static final SyncType NOTIFICATION_LIST = new SyncType("NOTIFICATION_LIST");
     public static final SyncType SOFTWARES = new SyncType("SOFTWARES");
+    /** All nodes of the cloud (sent on connect and whenever a node joins, leaves or the head changes). */
+    public static final SyncType NODES = new SyncType("NODES");
 
     static {
         register(SERVER);
@@ -45,6 +47,7 @@ public record SyncType(String type) implements Writable<String> {
         register(WHITELIST);
         register(NOTIFICATION_LIST);
         register(SOFTWARES);
+        register(NODES);
     }
 
     @Override

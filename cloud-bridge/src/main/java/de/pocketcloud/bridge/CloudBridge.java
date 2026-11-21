@@ -1,6 +1,7 @@
 package de.pocketcloud.bridge;
 
 import de.pocketcloud.api.CloudAPI;
+import de.pocketcloud.api.cluster.INodeProvider;
 import de.pocketcloud.api.config.IEnvironmentConfig;
 import de.pocketcloud.api.event.EventService;
 import de.pocketcloud.api.executor.IPlayerExecutor;
@@ -72,6 +73,7 @@ public final class CloudBridge implements CloudAPI {
         registry.register(PlayerProvider.class, new PlayerProvider());
         registry.register(SoftwareProvider.class, new SoftwareProvider());
         registry.register(LanguageProvider.class, new LanguageProvider());
+        registry.register(INodeProvider.class, new NodeProvider());
 
         try {
             network().start();

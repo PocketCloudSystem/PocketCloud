@@ -7,6 +7,7 @@ import de.pocketcloud.api.server.ServerStatus;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.cluster.ClusterManager;
 import de.pocketcloud.cloud.cluster.ClusterModule;
+import de.pocketcloud.cloud.cluster.ClusterNodeProvider;
 import de.pocketcloud.cloud.cluster.Peer;
 import de.pocketcloud.cloud.cluster.bridge.packet.*;
 import de.pocketcloud.cloud.console.log.CloudLogger;
@@ -67,6 +68,23 @@ public final class BridgeClusterModule implements ClusterModule {
     @Override
     public void start(ClusterManager cluster) {
         this.cluster = cluster;
+        cluster.scheduler().scheduleAtFixedRate(this::syncNodesIfChanged, 2, 2, TimeUnit.SECONDS);
+    }
+
+    private volatile String lastNodes = "";
+
+    /** Sends the nodes to the local bridges whenever a node joins, leaves, dies or the head changes. */
+    private void syncNodesIfChanged() {
+        try {
+            ClusterNodeProvider provider = new ClusterNodeProvider(cluster);
+            String current = provider.snapshot().toString();
+            if (current.equals(lastNodes)) return;
+            lastNodes = current;
+            provider.buildSyncPacket().broadcast();
+            CloudLogger.get().debug("Synced nodes to the bridges: {}", current);
+        } catch (Exception e) {
+            CloudLogger.get().debug("Failed to sync the nodes: {}", e.getMessage());
+        }
     }
 
     @Override

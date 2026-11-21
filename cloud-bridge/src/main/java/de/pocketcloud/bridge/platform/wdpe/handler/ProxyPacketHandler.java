@@ -38,11 +38,14 @@ public final class ProxyPacketHandler implements PacketListener {
                 packet.getServerName(),
                 new InetSocketAddress(packet.getAddress(), packet.getPort()),
                 null));
+        proxy.getLogger().info("Registered server " + packet.getServerName() + " (" + packet.getAddress() + ":" + packet.getPort() + ")");
     }
 
     @PacketHandler(ProxyUnregisterServerPacket.class)
     public void handle(ProxyUnregisterServerPacket packet) {
-        ProxyServer.getInstance().removeServerInfo(packet.getServerName());
+        if (ProxyServer.getInstance().removeServerInfo(packet.getServerName()) != null) {
+            ProxyServer.getInstance().getLogger().info("Unregistered server " + packet.getServerName());
+        }
     }
 
     @PacketHandler(PlayerTransferPacket.class)

@@ -26,6 +26,7 @@ public final class ServerSearchQuery implements ISearchQuery<ICloudServer>, Writ
     private VerificationStatus verificationStatus = null;
     private TemplateType templateType = null;
     private String serverSoftwareName = null;
+    private String nodeName = null;
 
     public ServerSearchQuery nameStartsWith(String prefix) {
         this.namePrefix = prefix;
@@ -75,8 +76,14 @@ public final class ServerSearchQuery implements ISearchQuery<ICloudServer>, Writ
         return this;
     }
 
+    public ServerSearchQuery onNode(String nodeName) {
+        this.nodeName = nodeName;
+        return this;
+    }
+
     @Override
     public boolean matches(ICloudServer s) {
+        if (nodeName != null && (s.node() == null || !nodeName.equals(s.node().name()))) return false;
         if (namePrefix != null && !s.name().startsWith(namePrefix)) return false;
         if (templateName != null && !s.templateName().equals(templateName)) return false;
         if (serverGroupName != null) {
@@ -129,6 +136,7 @@ public final class ServerSearchQuery implements ISearchQuery<ICloudServer>, Writ
         }
 
         query.serverSoftwareName = (String) data.get("serverSoftwareName");
+        query.nodeName = (String) data.get("nodeName");
 
         return query;
     }

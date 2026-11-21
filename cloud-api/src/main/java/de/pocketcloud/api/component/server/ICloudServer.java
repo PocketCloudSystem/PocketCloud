@@ -1,5 +1,7 @@
 package de.pocketcloud.api.component.server;
 
+import de.pocketcloud.api.cluster.INode;
+
 import de.pocketcloud.api.CloudAPI;
 import de.pocketcloud.api.component.player.ICloudPlayer;
 import de.pocketcloud.api.component.template.ITemplate;
@@ -32,6 +34,13 @@ public interface ICloudServer extends Writable<Map<String, Object>> {
     }
 
     ICloudServerData data();
+
+    /**
+     * The node this server runs on, or null if it is not known (e.g. an older cloud).
+     */
+    default INode node() {
+        return null;
+    }
 
     ICloudServerStorage storage();
 

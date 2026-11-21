@@ -1,5 +1,7 @@
 package de.pocketcloud.api;
 
+import de.pocketcloud.api.cluster.INodeProvider;
+
 import de.pocketcloud.api.config.IEnvironmentConfig;
 import de.pocketcloud.api.event.EventService;
 import de.pocketcloud.api.executor.IPlayerExecutor;
@@ -36,6 +38,14 @@ public interface CloudAPI {
     IEnvironmentConfig environmentConfig();
 
     ServiceRegistry services();
+
+    /**
+     * The nodes of the cloud. Without a cluster there is exactly one node.
+     */
+    default INodeProvider nodes() {
+        Object provider = services().getAll().get(INodeProvider.class);
+        return provider instanceof INodeProvider nodes ? nodes : INodeProvider.EMPTY;
+    }
 
     default <T> T service(Class<T> serviceClass) {
         return services().get(serviceClass);

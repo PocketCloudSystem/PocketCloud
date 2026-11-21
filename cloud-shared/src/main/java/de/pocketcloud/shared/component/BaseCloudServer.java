@@ -8,6 +8,10 @@ import de.pocketcloud.common.serialization.annotation.MapKey;
 import de.pocketcloud.shared.component.data.CloudServerData;
 import de.pocketcloud.shared.component.storage.BaseCloudServerStorage;
 import de.pocketcloud.shared.converter.InstantConverter;
+import de.pocketcloud.api.CloudAPI;
+import de.pocketcloud.api.cluster.INode;
+import de.pocketcloud.shared.cluster.BaseNode;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -34,6 +38,13 @@ public class BaseCloudServer implements ICloudServer {
     @MapKey(converter = InstantConverter.class)
     protected Instant verifiedTime = Instant.EPOCH;
 
+    /**
+     * Name of the node this server runs on (null if the cloud did not send it).
+     */
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
+    protected String node;
+
     @MapCreator
     public BaseCloudServer(
             @MapKey(name = "id") int id,
@@ -47,5 +58,11 @@ public class BaseCloudServer implements ICloudServer {
         this.templateName = templateName;
         this.data = data;
         this.storage = storage;
+    }
+
+    @Override
+    public INode node() {
+        if (node == null) return null;
+        return CloudAPI.instance().nodes().get(node).orElseGet(() -> new BaseNode(node, null, 0, "UNKNOWN", false));
     }
 }

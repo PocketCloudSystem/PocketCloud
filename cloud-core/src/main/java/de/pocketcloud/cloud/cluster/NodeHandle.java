@@ -1,6 +1,8 @@
 package de.pocketcloud.cloud.cluster;
 
+import de.pocketcloud.api.cluster.INode;
 import de.pocketcloud.api.template.TemplateType;
+import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.server.CloudServer;
 import de.pocketcloud.common.concurrent.Promise;
 
@@ -15,9 +17,39 @@ import java.util.Optional;
  * Today there is only the {@link LocalNodeHandle}. Remote nodes will implement the
  * same interface by sending cluster packets.
  */
-public interface NodeHandle {
+public interface NodeHandle extends INode {
 
     String name();
+
+    @Override
+    default String address() {
+        ClusterManager cluster = PocketCloud.instance().cluster();
+        return cluster.members().get(name()).map(ClusterMembers.Member::address)
+                .orElseGet(() -> PocketCloud.instance().nodeConfig().advertisedAddress());
+    }
+
+    @Override
+    default int port() {
+        ClusterManager cluster = PocketCloud.instance().cluster();
+        return cluster.members().get(name()).map(ClusterMembers.Member::port)
+                .orElseGet(() -> PocketCloud.instance().nodeConfig().clusterPort());
+    }
+
+    @Override
+    default String state() {
+        ClusterManager cluster = PocketCloud.instance().cluster();
+        if (local()) return cluster.election() == null ? NodeState.HEAD.name() : cluster.election().state().name();
+        Peer peer = cluster.peer(name()).orElse(null);
+        if (peer == null || "DEAD".equals(peer.health(System.currentTimeMillis()))) return "DEAD";
+        return peer.state();
+    }
+
+    @Override
+    default boolean head() {
+        ClusterManager cluster = PocketCloud.instance().cluster();
+        if (!cluster.clustered()) return local();
+        return name().equals(cluster.election().head());
+    }
 
     /**
      * Whether this node is the machine the current cloud process runs on.

@@ -16,6 +16,7 @@ import de.pocketcloud.api.template.TemplateType;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.cache.NotificationListCache;
 import de.pocketcloud.cloud.cache.WhitelistCache;
+import de.pocketcloud.cloud.cluster.ClusterNodeProvider;
 import de.pocketcloud.cloud.cluster.NodeHandle;
 import de.pocketcloud.cloud.cluster.ServerAddresses;
 import de.pocketcloud.cloud.cluster.bridge.BridgeClusterModule;
@@ -143,6 +144,16 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
     public boolean remote() {
         String node = nodeName;
         return node != null && !node.equals(PocketCloud.instance().cluster().nodeName());
+    }
+
+    /**
+     * Also carries the node, so bridges and plugins know where the server runs ({@code ICloudServer.node()}).
+     */
+    @Override
+    public Map<String, Object> write() {
+        Map<String, Object> document = MapperUtils.toMap(this);
+        document.put("node", node().name());
+        return document;
     }
 
     /**
@@ -430,7 +441,8 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
                 SyncPacket.create(SyncType.TEMPLATES, pData -> pData.write(PocketCloud.instance().templates().getAll().stream().map(ITemplate::write).toList())),
                 SyncPacket.create(SyncType.PLAYERS, pData -> pData.write(PocketCloud.instance().players().getAll().stream().map(ICloudPlayer::write).toList())),
                 SyncPacket.create(SyncType.SERVER_GROUPS, pData -> pData.write(PocketCloud.instance().serverGroups().getAll().stream().map(IServerGroup::write).toList())),
-                SyncPacket.create(SyncType.SOFTWARES, pData -> pData.write(PocketCloud.instance().softwares().getAll().stream().map(IServerSoftware::write).toList()))
+                SyncPacket.create(SyncType.SOFTWARES, pData -> pData.write(PocketCloud.instance().softwares().getAll().stream().map(IServerSoftware::write).toList())),
+                new ClusterNodeProvider(PocketCloud.instance().cluster()).buildSyncPacket()
         ));
 
         if (template().templateType().isProxy()) {
