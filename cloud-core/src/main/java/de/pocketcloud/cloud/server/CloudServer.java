@@ -17,6 +17,8 @@ import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.cache.NotificationListCache;
 import de.pocketcloud.cloud.cache.WhitelistCache;
 import de.pocketcloud.cloud.cluster.NodeHandle;
+import de.pocketcloud.cloud.cluster.ServerAddresses;
+import de.pocketcloud.cloud.cluster.bridge.BridgeClusterModule;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.console.log.def.PrefixedLogger;
 import de.pocketcloud.cloud.event.impl.server.ServerPrepareEvent;
@@ -376,6 +378,12 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
     }
 
     public Promise<ServerCommandExecutionResult> dispatch(String commandLine) {
+        if (remote()) {
+            return BridgeClusterModule.get()
+                    .map(module -> module.dispatch(this, commandLine))
+                    .orElseGet(() -> Promise.rejected(new IllegalStateException("Node " + nodeName + " is not reachable")));
+        }
+
         Optional<ServerClient> client = client();
         if (client.isEmpty()) return Promise.rejected(new IllegalStateException("Not verified yet"));
         if (new ServerSendCommandEvent(this, commandLine).call().isCancelled())
@@ -439,6 +447,12 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
     }
 
     public CompletableFuture<Void> sendPacket(ClientboundPacket packet) {
+        if (remote()) {
+            // The bridge of this server is connected to its own node: relay the packet there.
+            return BridgeClusterModule.get()
+                    .map(module -> module.relay(this, packet))
+                    .orElseGet(() -> CompletableFuture.failedFuture(new IllegalStateException("Node " + nodeName + " is not reachable")));
+        }
         if (client().isEmpty()) return CompletableFuture.failedFuture(new RuntimeException("Client is empty"));
         return client().get().sendPacket(packet);
     }
@@ -501,7 +515,7 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
      * which is the public address other servers and proxies use to reach this server.
      */
     public String bindAddress() {
-        return PocketCloud.instance().serverSettingsConfig().addresses().bindAddress(template().templateType());
+        return ServerAddresses.bindAddress(template().templateType());
     }
 
     public Path logFilePath() {

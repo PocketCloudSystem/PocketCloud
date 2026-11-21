@@ -7,7 +7,9 @@ import de.pocketcloud.common.serialization.Writable;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @Setter
 @Accessors(fluent = true)
@@ -32,6 +34,7 @@ public class TemplateEditData implements Writable<Map<String, Object>> {
     private Integer shutdownTimeout = null;
     private Integer emptyServerGracePeriod = null;
     private Integer priority = null;
+    private List<String> nodes = null;
 
     /**
      * {@link TemplateEditData#create()}
@@ -79,6 +82,7 @@ public class TemplateEditData implements Writable<Map<String, Object>> {
         if (shutdownTimeout != null) settings.shutdownTimeout(shutdownTimeout);
         if (emptyServerGracePeriod != null) settings.emptyServerGracePeriod(emptyServerGracePeriod);
         if (priority != null) settings.priority(priority);
+        if (nodes != null) settings.nodes(List.copyOf(nodes));
     }
 
     @Override
@@ -129,6 +133,8 @@ public class TemplateEditData implements Writable<Map<String, Object>> {
             data.emptyServerGracePeriod = newSettings.emptyServerGracePeriod();
         if (oldSettings.priority() != newSettings.priority())
             data.priority = newSettings.priority();
+        if (!Objects.equals(oldSettings.nodes(), newSettings.nodes()))
+            data.nodes = newSettings.nodes();
 
         return data;
     }
@@ -164,6 +170,8 @@ public class TemplateEditData implements Writable<Map<String, Object>> {
                 ? ((Number) data.get("emptyServerGracePeriod")).intValue() : null;
         editData.priority = data.get("priority") != null
                 ? ((Number) data.get("priority")).intValue() : null;
+        if (data.get("nodes") instanceof List<?> list)
+            editData.nodes = list.stream().map(String::valueOf).toList();
 
         return editData;
     }

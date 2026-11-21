@@ -134,7 +134,12 @@ public final class ServerRoutes {
         entry.addProperty("status", server.status().name());
         entry.addProperty("playerCount", server.playerCount());
         entry.addProperty("maxPlayers", server.data().maxPlayers());
+        entry.addProperty("node", nodeOf(server));
         return entry;
+    }
+
+    private static String nodeOf(ICloudServer server) {
+        return PocketCloud.instance().cluster().nodeOf(server).name();
     }
 
     private JsonArray toServerArray(Collection<ICloudServer> servers) {
@@ -192,6 +197,7 @@ public final class ServerRoutes {
         JsonObject json = new JsonObject();
         HttpUtils.appendWritable(server, json);
         json.addProperty("playerCount", server.playerCount());
+        json.addProperty("node", nodeOf(server));
         json.add("players", HttpUtils.toElement(server.players().stream().map(ICloudPlayer::name).toList()));
         return json;
     }

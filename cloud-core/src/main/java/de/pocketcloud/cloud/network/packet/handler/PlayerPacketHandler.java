@@ -7,6 +7,7 @@ import de.pocketcloud.api.network.handler.PacketHandler;
 import de.pocketcloud.api.network.handler.PacketListener;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.cache.NotificationListCache;
+import de.pocketcloud.cloud.cluster.bridge.BridgeClusterModule;
 import de.pocketcloud.cloud.cache.WhitelistCache;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.network.client.ServerClient;
@@ -22,8 +23,12 @@ import de.pocketcloud.shared.event.player.PlayerTransferredEvent;
 import de.pocketcloud.shared.network.packet.type.NotificationType;
 
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 public final class PlayerPacketHandler implements PacketListener {
+
+    private static final long CLUSTER_CONNECT_DELAY_MS = 1500;
 
     @PacketHandler({PlayerNotificationCheckRequestPacket.class})
     public void handle(PlayerNotificationCheckRequestPacket packet, ServerClient sender) {
@@ -37,8 +42,19 @@ public final class PlayerPacketHandler implements PacketListener {
 
     @PacketHandler({PlayerConnectPacket.class})
     public void handle(PlayerConnectPacket packet, ServerClient sender) {
-        var server = sender.server();
+        handleConnect(packet, sender.server(), false);
+    }
+
+    private void handleConnect(PlayerConnectPacket packet, CloudServer server, boolean retried) {
         if (server != null) {
+            // In a cluster the proxy may run on another node: its player may not have arrived here yet.
+            if (!retried && server.template().templateType().isServer() && BridgeClusterModule.get().isPresent()
+                    && PocketCloud.instance().players().get(packet.getPlayerName()).isEmpty()) {
+                CompletableFuture.delayedExecutor(CLUSTER_CONNECT_DELAY_MS, TimeUnit.MILLISECONDS)
+                        .execute(() -> handleConnect(packet, server, true));
+                return;
+            }
+
             CloudPlayer player = new CloudPlayer(packet.getPlayerName(), packet.getAddress(), packet.getXboxUserId(), packet.getUniqueId(), packet.getProtocolVersion(), packet.getGameVersion());
             var existing = PocketCloud.instance().players().get(player.name()).orElse(null);
             if (existing != null && PocketCloud.instance().players().isStaleOnConnect(existing, server)) {

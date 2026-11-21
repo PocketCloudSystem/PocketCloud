@@ -52,6 +52,11 @@ public final class TemplateManager implements Tickable, Loadable, IWriteTemplate
                             CloudProvider.current().editTemplate(template, template.write());
                         }
 
+                        if (PocketCloud.instance().cluster().clustered() && template.templateType().isProxy() && template.settings().nodes().isEmpty()) {
+                            CloudLogger.get().warn("The proxy template §b{} §rhas no §bnodes §rset and is §cdisabled §rin the cluster. " +
+                                    "Use §btemplate nodes {} <node,...> §rto choose the nodes for its proxies.", template.name(), template.name());
+                        }
+
                         if (template.settings().maxMemory() <= 0 && template.serverSoftware().download().realStartCommand().contains("{MAX_MEMORY}")) {
                             PocketCloud.instance().appendStartNotification("The setting §bmaxMemory §ccannot §rbe equal to §b0 §rfor template §b{}§r.", CloudLogLevel.WARN, template.name());
                             PocketCloud.instance().appendStartNotification("Setting it to §b1024M §rinstead...", CloudLogLevel.WARN, template.name());

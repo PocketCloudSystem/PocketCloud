@@ -9,7 +9,9 @@ import de.pocketcloud.cloud.http.handler.RouteHandler;
 import de.pocketcloud.cloud.http.io.HttpRequest;
 import de.pocketcloud.cloud.http.io.HttpResponse;
 import de.pocketcloud.cloud.http.route.HealthRoute;
+import de.pocketcloud.cloud.cluster.bridge.ClusterHttpForwarder;
 import de.pocketcloud.cloud.http.route.v1.GeneralRoutes;
+import de.pocketcloud.cloud.http.route.v1.node.NodeRoutes;
 import de.pocketcloud.cloud.http.route.v1.group.GroupRoutes;
 import de.pocketcloud.cloud.http.route.v1.maintenance.MaintenanceRoutes;
 import de.pocketcloud.cloud.http.route.v1.notification.NotificationRoutes;
@@ -64,6 +66,7 @@ public final class Router implements IRouter {
         registerCloudController(new GeneralRoutes());
         registerCloudController(new GroupRoutes());
         registerCloudController(new MaintenanceRoutes());
+        registerCloudController(new NodeRoutes());
         registerCloudController(new NotificationRoutes());
         registerCloudController(new PlayerRoutes());
         registerCloudController(new PluginRoutes());
@@ -192,11 +195,13 @@ public final class Router implements IRouter {
 
             @Override
             public void handle(HttpRequest req, HttpResponse res) {
-                if (!auth.authenticated(req)) {
+                // Requests forwarded by another node were authenticated there (cluster connections use mTLS).
+                if (!req.clusterForwarded() && !auth.authenticated(req)) {
                     onFail.handle(req, res);
                     return;
                 }
 
+                if (ClusterHttpForwarder.tryForward(req, res)) return;
                 handler.handle(req, res);
             }
         };

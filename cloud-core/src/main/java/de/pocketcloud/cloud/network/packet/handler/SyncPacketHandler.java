@@ -6,6 +6,9 @@ import de.pocketcloud.api.network.handler.PacketListener;
 import de.pocketcloud.api.network.packet.data.IPacketData;
 import de.pocketcloud.api.server.ServerStatus;
 import de.pocketcloud.cloud.PocketCloud;
+import de.pocketcloud.cloud.cluster.bridge.BridgeClusterModule;
+import de.pocketcloud.cloud.cluster.bridge.packet.NodeServerActionPacket;
+import de.pocketcloud.cloud.server.CloudServer;
 import de.pocketcloud.cloud.network.client.ServerClient;
 import de.pocketcloud.cloud.provider.CloudProvider;
 import de.pocketcloud.network.packet.impl.SyncPacket;
@@ -32,12 +35,26 @@ public final class SyncPacketHandler implements PacketListener {
     }
 
     public void handleServerStatus(IPacketData data, ServerClient sender) {
-        PocketCloud.instance().servers().get(data.readString()).ifPresent(server -> server.status(ServerStatus.valueOf(data.readString())));
+        PocketCloud.instance().servers().get(data.readString()).ifPresent(server -> {
+            String status = data.readString();
+            if (server instanceof CloudServer cs && cs.remote()) {
+                // The owning node publishes status changes of its servers.
+                BridgeClusterModule.get().ifPresent(m -> m.requestAction(cs, NodeServerActionPacket.Action.STATUS, status, null));
+                return;
+            }
+            server.status(ServerStatus.valueOf(status));
+        });
     }
 
     public void handleServerStorage(IPacketData data, ServerClient sender) {
         CloudAPI.instance().servers().get(UUID.fromString(data.readString()))
-                .ifPresent(s -> s.storage().syncIn(data.readMap()));
+                .ifPresent(s -> {
+                    var storage = data.readMap();
+                    s.storage().syncIn(storage);
+                    if (s instanceof CloudServer cs && cs.remote()) {
+                        BridgeClusterModule.get().ifPresent(m -> m.requestAction(cs, NodeServerActionPacket.Action.STORAGE, null, storage));
+                    }
+                });
     }
 
     public void handlePlayerUpdateNotificationState(IPacketData data, ServerClient sender) {

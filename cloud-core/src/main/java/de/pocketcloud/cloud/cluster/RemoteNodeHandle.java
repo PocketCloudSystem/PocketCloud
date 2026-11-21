@@ -2,6 +2,7 @@ package de.pocketcloud.cloud.cluster;
 
 import de.pocketcloud.api.template.TemplateType;
 import de.pocketcloud.cloud.PocketCloud;
+import de.pocketcloud.cloud.cluster.bridge.BridgeClusterModule;
 import de.pocketcloud.cloud.server.CloudServer;
 import de.pocketcloud.common.concurrent.Promise;
 
@@ -72,11 +73,16 @@ public final class RemoteNodeHandle implements NodeHandle {
 
     @Override
     public Promise<Void> saveFiles(CloudServer server) {
-        return Promise.rejected(new UnsupportedOperationException(server.name() + " is saved by node " + name));
+        return BridgeClusterModule.get()
+                .map(module -> module.save(server))
+                .orElseGet(() -> Promise.rejected(new IllegalStateException("node " + name + " is not reachable")));
     }
 
+    /**
+     * Asks the owning node for the log (blocks up to 5 seconds).
+     */
     @Override
     public Optional<List<String>> readLogs(CloudServer server) {
-        return Optional.empty();
+        return BridgeClusterModule.get().flatMap(module -> module.readLogs(server, 0));
     }
 }

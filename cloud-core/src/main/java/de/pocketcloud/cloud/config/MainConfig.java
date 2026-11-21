@@ -1,6 +1,7 @@
 package de.pocketcloud.cloud.config;
 
 import de.pocketcloud.api.config.ICloudConfig;
+import de.pocketcloud.cloud.config.sub.ClusterConfiguration;
 import de.pocketcloud.cloud.config.sub.HttpServerConfiguration;
 import de.pocketcloud.cloud.config.sub.MySqlConfiguration;
 import de.pocketcloud.cloud.config.sub.NetworkConfiguration;
@@ -53,6 +54,9 @@ public final class MainConfig extends OkaeriConfig implements ICloudConfig {
     @Comment({"The Redis configuration for the cloud. Holds the shared cluster state and caches the provider data."})
     private RedisConfiguration redis = new RedisConfiguration();
 
+    @Comment({"Settings for running several nodes as one cluster."})
+    private ClusterConfiguration cluster = new ClusterConfiguration();
+
     @Override
     public void validate() {
         if (!AVAILABLE_PROVIDERS.contains(provider.toLowerCase())) {
@@ -64,5 +68,6 @@ public final class MainConfig extends OkaeriConfig implements ICloudConfig {
         httpServer.validate();
         mysqlSettings.validate();
         redis.validate();
+        cluster.validate();
     }
 }

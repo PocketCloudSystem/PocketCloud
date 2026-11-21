@@ -21,10 +21,22 @@ public final class HttpRequest {
     private final Channel channel;
 
     private QueryStringDecoder queryDecoder;
+    private boolean clusterForwarded;
 
     public HttpRequest(FullHttpRequest request, Channel channel) {
         this.request = request;
         this.channel = channel;
+    }
+
+    /**
+     * Whether another node of the cluster forwarded this request (it was authenticated there).
+     */
+    public boolean clusterForwarded() {
+        return clusterForwarded;
+    }
+
+    public void clusterForwarded(boolean clusterForwarded) {
+        this.clusterForwarded = clusterForwarded;
     }
 
     public void setPathParam(String key, String value) {

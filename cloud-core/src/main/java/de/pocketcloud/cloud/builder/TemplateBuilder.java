@@ -42,6 +42,9 @@ public final class TemplateBuilder implements ITemplateBuilder {
 
     private List<String> jvmFlags = new ArrayList<>();
 
+    /** Nodes the servers may run on, empty = all. */
+    private List<String> nodes = new ArrayList<>();
+
     private TemplateType type = TemplateType.SERVER;
     private IServerSoftware software;
 
@@ -72,6 +75,7 @@ public final class TemplateBuilder implements ITemplateBuilder {
                 .emptyServerGracePeriod(settings.emptyServerGracePeriod())
                 .priority(settings.priority())
                 .jvmFlags(new ArrayList<>(settings.jvmFlags()))
+                .nodes(new ArrayList<>(settings.nodes()))
                 .type(template.templateType())
                 .software(template.serverSoftware());
     }
@@ -109,7 +113,8 @@ public final class TemplateBuilder implements ITemplateBuilder {
                         shutdownTimeout,
                         emptyServerGracePeriod,
                         priority,
-                        jvmFlags
+                        jvmFlags,
+                        nodes
                 ),
                 type,
                 software

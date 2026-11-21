@@ -93,6 +93,73 @@ public final class CloudPlayerManager implements IWritePlayerProvider {
         }
     }
 
+    // ------------------------------------------------------------------ cluster
+
+    /**
+     * A player reported by another node (joined there, switched server, ...). Only the bridges of this
+     * node are informed; the other node already published the change.
+     */
+    public void applyRemote(CloudPlayer incoming, String fromNode) {
+        CloudPlayer existing = players.get(incoming.name());
+        if (existing != null) {
+            existing.applyRemote(incoming);
+            existing.syncLocal();
+            return;
+        }
+
+        players.put(incoming.name(), incoming);
+        if (incoming.xboxUserId() != null) playersByXuid.put(incoming.xboxUserId(), incoming);
+        if (incoming.uniqueId() != null) playersByUuid.put(incoming.uniqueId(), incoming);
+        incoming.syncLocal();
+        CloudLogger.get().debug("Player {} joined via {} on node {}", incoming.name(), incoming.currentProxyName(), fromNode);
+    }
+
+    /**
+     * A player left on another node.
+     */
+    public void removeRemote(String name, String fromNode) {
+        CloudPlayer existing = players.get(name);
+        if (existing == null) return;
+        removeSilently(existing);
+        CloudLogger.get().debug("Player {} left on node {}", name, fromNode);
+    }
+
+    private void removeSilently(CloudPlayer player) {
+        players.remove(player.name(), player);
+        if (player.xboxUserId() != null) playersByXuid.remove(player.xboxUserId(), player);
+        if (player.uniqueId() != null) playersByUuid.remove(player.uniqueId(), player);
+        player.markForRemoval().syncLocal();
+    }
+
+    /**
+     * The node a player belongs to: the node of its proxy, or of its server if it joined without a proxy.
+     */
+    public String ownerNode(ICloudPlayer player) {
+        ICloudServer via = player.currentProxy().orElse(player.currentServer().orElse(null));
+        return via == null ? PocketCloud.instance().cluster().nodeName() : PocketCloud.instance().cluster().nodeOf(via).name();
+    }
+
+    /** Players whose proxy (or server) runs on this node. */
+    public Collection<CloudPlayer> ownedPlayers() {
+        String self = PocketCloud.instance().cluster().nodeName();
+        return players.values().stream().filter(p -> self.equals(ownerNode(p))).toList();
+    }
+
+    /**
+     * Removes the players of a node that is gone (their connection to its proxy is lost anyway).
+     * Every node does this itself, so nothing is published.
+     */
+    public int removePlayersOfNode(String node) {
+        int removed = 0;
+        for (CloudPlayer player : List.copyOf(players.values())) {
+            if (node.equals(ownerNode(player))) {
+                removeSilently(player);
+                removed++;
+            }
+        }
+        return removed;
+    }
+
     /**
      * Whether an already known player entry is outdated when a new connect for that player arrives.
      * A connect via a proxy always starts a new session. Behind a proxy, a connect from a sub-server

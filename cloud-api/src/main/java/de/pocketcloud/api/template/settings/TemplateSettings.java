@@ -45,6 +45,24 @@ public final class TemplateSettings implements Writable<Map<String, Object>> {
 
     private List<String> jvmFlags;
 
+    /**
+     * Names of the nodes servers of this template may run on. Empty means all nodes.
+     * In a cluster, templates of type PROXY must name their nodes.
+     */
+    private List<String> nodes;
+
+    public TemplateSettings(
+            Boolean lobby, Boolean maintenance, Boolean staticServers, Boolean alwaysCopyToStaticServers,
+            Boolean saveOnShutdown, Boolean deleteOnStop, Boolean stopOnEmpty, Boolean autoStart,
+            Double startNewServerThreshold, Integer maxPlayerCount, Integer minServerCount, Integer maxServerCount,
+            Integer maxMemory, Integer startupTimeout, Integer shutdownTimeout, Integer emptyServerGracePeriod,
+            Integer priority, List<String> jvmFlags
+    ) {
+        this(lobby, maintenance, staticServers, alwaysCopyToStaticServers, saveOnShutdown, deleteOnStop, stopOnEmpty, autoStart,
+                startNewServerThreshold, maxPlayerCount, minServerCount, maxServerCount, maxMemory, startupTimeout, shutdownTimeout,
+                emptyServerGracePeriod, priority, jvmFlags, List.of());
+    }
+
     @MapCreator
     public TemplateSettings(
             @MapKey(name = "lobby") Boolean lobby,
@@ -64,7 +82,8 @@ public final class TemplateSettings implements Writable<Map<String, Object>> {
             @MapKey(name = "shutdownTimeout") Integer shutdownTimeout,
             @MapKey(name = "emptyServerGracePeriod") Integer emptyServerGracePeriod,
             @MapKey(name = "priority") Integer priority,
-            @MapKey(name = "jvmFlags") List<String> jvmFlags
+            @MapKey(name = "jvmFlags") List<String> jvmFlags,
+            @MapKey(name = "nodes") List<String> nodes
     ) {
         boolean anyNull = Objects.isNull(lobby)
                         || Objects.isNull(maintenance)
@@ -83,7 +102,8 @@ public final class TemplateSettings implements Writable<Map<String, Object>> {
                         || Objects.isNull(shutdownTimeout)
                         || Objects.isNull(emptyServerGracePeriod)
                         || Objects.isNull(priority)
-                        || Objects.isNull(jvmFlags);
+                        || Objects.isNull(jvmFlags)
+                        || Objects.isNull(nodes);
 
         if (anyNull) usingDefaults = true;
 
@@ -110,6 +130,14 @@ public final class TemplateSettings implements Writable<Map<String, Object>> {
         this.priority = Objects.requireNonNullElse(priority, 0);
 
         this.jvmFlags = Objects.requireNonNullElse(jvmFlags, List.of());
+        this.nodes = Objects.requireNonNullElse(nodes, List.of());
+    }
+
+    /**
+     * Whether servers of this template may run on the given node.
+     */
+    public boolean allowsNode(String node) {
+        return nodes == null || nodes.isEmpty() || nodes.contains(node);
     }
 
     public void applyFrom(TemplateSettings templateSettings) {
@@ -136,6 +164,7 @@ public final class TemplateSettings implements Writable<Map<String, Object>> {
         this.priority = templateSettings.priority;
 
         this.jvmFlags = templateSettings.jvmFlags;
+        this.nodes = templateSettings.nodes;
     }
 
     @Override

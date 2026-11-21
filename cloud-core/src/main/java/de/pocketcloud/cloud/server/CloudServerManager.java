@@ -11,6 +11,7 @@ import de.pocketcloud.api.template.TemplateType;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.cluster.ClusterManager;
 import de.pocketcloud.cloud.cluster.NodeHandle;
+import de.pocketcloud.cloud.cluster.ServerAddresses;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.server.util.CloudServerStorage;
 import de.pocketcloud.cloud.server.util.ServerUtils;
@@ -153,6 +154,13 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
             }
 
             NodeHandle node = cluster.selectNodeForNewServer(template);
+            if (node == null) {
+                // No node may run this template right now (allowed nodes, memory, CPU): give the id back.
+                ServerUtils.removeId(template, id);
+                serverCounts.merge(template.name(), -(toStart - i), Integer::sum);
+                break;
+            }
+
             if (!node.local()) {
                 startOnRemoteNode(template, id, node);
                 latestServerStartTimes.put(template.name(), template.name() + "-" + id);
@@ -172,7 +180,7 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
                     id,
                     uuid,
                     template.name(),
-                    new CloudServerData(uuid, PocketCloud.instance().serverSettingsConfig().addresses().publicAddress(), port, template.settings().maxPlayerCount()),
+                    new CloudServerData(uuid, ServerAddresses.publicAddress(), port, template.settings().maxPlayerCount()),
                     new CloudServerStorage(uuid)
             );
 
@@ -225,7 +233,7 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
                 id,
                 uuid,
                 template.name(),
-                new CloudServerData(uuid, PocketCloud.instance().serverSettingsConfig().addresses().publicAddress(), port, template.settings().maxPlayerCount()),
+                new CloudServerData(uuid, ServerAddresses.publicAddress(), port, template.settings().maxPlayerCount()),
                 new CloudServerStorage(uuid)
         );
 
@@ -251,6 +259,9 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
         CloudServer existing = servers.get(incoming.name());
         if (existing == null) {
             servers.put(incoming.name(), incoming);
+            // Keep id and count bookkeeping cluster-wide, so a new head does not hand out the same id twice.
+            ServerUtils.addId(incoming.template(), incoming.id());
+            serverCounts.merge(incoming.templateName(), 1, Integer::sum);
             incoming.syncOut();
             if (incoming.status().isOnline()) incoming.addToProxies();
             return;
@@ -290,6 +301,7 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
     @Override
     public Promise<Void> save(ICloudServer server) {
         CloudServer cloudServer = requireCloudServer(server);
+        if (cloudServer.remote()) return cloudServer.node().saveFiles(cloudServer); // the owning node runs the save command too
         String saveCommandLine = cloudServer.template().serverSoftware().config().saveCommandLine();
         if (saveCommandLine == null) {
             return cloudServer.save();

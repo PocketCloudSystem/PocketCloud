@@ -13,7 +13,7 @@ public final class TemplateHelper {
             "maxMemory",
             "startupTimeout", "shutdownTimeout", "emptyServerGracePeriod",
             "startNewServerThreshold", "maxPlayerCount", "minServerCount", "maxServerCount",
-            "priority", "jvmFlags"
+            "priority", "jvmFlags", "nodes"
     );
 
     public static final List<String> EDITABLE_KEYS = List.of(
@@ -63,6 +63,7 @@ public final class TemplateHelper {
         KEY_TYPES.put("priority", Integer.class);
 
         KEY_TYPES.put("jvmFlags", List.class);
+        KEY_TYPES.put("nodes", List.class);
     }
 
     private static final Set<String> EDITABLE_KEYS_SET = Set.copyOf(EDITABLE_KEYS);

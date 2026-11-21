@@ -5,6 +5,7 @@ import de.pocketcloud.api.component.template.ITemplate;
 import de.pocketcloud.cloud.server.CloudServer;
 import de.pocketcloud.common.concurrent.Promise;
 import de.pocketcloud.cloud.PocketCloud;
+import de.pocketcloud.cloud.cluster.bridge.BridgeClusterModule;
 import de.pocketcloud.cloud.cluster.net.ClusterNetwork;
 import de.pocketcloud.cloud.cluster.net.packet.*;
 import de.pocketcloud.cloud.cluster.redis.RedisConnection;
@@ -68,7 +69,8 @@ public final class ClusterManager {
     private final Set<String> dialing = ConcurrentHashMap.newKeySet();
 
     /** Features on top of the node protocol. Add new modules here. */
-    private final List<ClusterModule> modules = List.of(new de.pocketcloud.cloud.cluster.sync.TemplateReplicator());
+    private final List<ClusterModule> modules = List.of(new de.pocketcloud.cloud.cluster.sync.TemplateReplicator(), new BridgeClusterModule());
+    private final NodeSelector selector = new NodeSelector(this);
 
     private LocalNodeHandle localNode;
     @Getter
@@ -451,6 +453,7 @@ public final class ClusterManager {
         stats.put("usedMemoryMb", (rt.totalMemory() - rt.freeMemory()) / 1024 / 1024);
         stats.put("maxMemoryMb", (long) nodeConfig().maxMemoryMb());
         stats.put("servers", PocketCloud.instance().servers().serverCount());
+        stats.put("cpu", PocketCloud.instance().performanceStats().systemCpuUsage());
         String head = election.head();
         long term = election.term();
         String nodeState = election.state().name();
@@ -831,25 +834,12 @@ public final class ClusterManager {
     }
 
     /**
-     * The node a new server will be started on (head only): the reachable node with the fewest servers.
-     * Proper selection (memory, software, allowed nodes, strategies) follows with the NodeSelector.
+     * The node a new server will be started on (head only), see {@link NodeSelector}.
+     *
+     * @return the node, or null if no node may run a server of the template right now
      */
     public NodeHandle selectNodeForNewServer(ITemplate template) {
-        if (!clustered) return localNode;
-        long now = System.currentTimeMillis();
-        var servers = PocketCloud.instance().servers();
-        String best = nodeName();
-        long bestCount = servers.localServers().size();
-        for (Peer peer : peers.values()) {
-            if (!peer.connected() || !peer.alive(now)) continue;
-            if (!NodeState.FOLLOWER.name().equals(peer.state()) && !NodeState.HEAD.name().equals(peer.state())) continue;
-            long count = servers.serversOfNode(peer.name()).size();
-            if (count < bestCount || (count == bestCount && peer.name().compareTo(best) < 0)) {
-                best = peer.name();
-                bestCount = count;
-            }
-        }
-        return best.equals(nodeName()) ? localNode : remoteHandles.computeIfAbsent(best, RemoteNodeHandle::new);
+        return selector.select(template);
     }
 
     public Collection<NodeHandle> nodes() {

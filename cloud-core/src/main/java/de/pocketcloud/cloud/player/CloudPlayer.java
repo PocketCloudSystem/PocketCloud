@@ -1,6 +1,7 @@
 package de.pocketcloud.cloud.player;
 
 import de.pocketcloud.cloud.PocketCloud;
+import de.pocketcloud.cloud.cluster.bridge.BridgeClusterModule;
 import de.pocketcloud.cloud.cluster.state.ClusterStateStore;
 import de.pocketcloud.cloud.cluster.state.StateKeys;
 import de.pocketcloud.api.sync.SyncingElement;
@@ -52,10 +53,26 @@ public final class CloudPlayer extends BaseCloudPlayer implements SyncingElement
 
     @Override
     public void syncOut() {
-        SyncPacket.create(SyncType.PLAYER, data -> data.writeAll(this, markedForRemoval)).broadcast();
+        syncLocal();
         ClusterStateStore state = PocketCloud.instance().cluster().state();
         if (markedForRemoval) state.remove(StateKeys.PLAYERS, name());
         else state.put(StateKeys.PLAYERS, name(), write());
+        BridgeClusterModule.get().ifPresent(module -> module.publishPlayer(this, markedForRemoval));
+    }
+
+    /**
+     * Only sends the player to the bridges of this node (used for changes that came from another node).
+     */
+    public void syncLocal() {
+        SyncPacket.create(SyncType.PLAYER, data -> data.writeAll(this, markedForRemoval)).broadcast();
+    }
+
+    /**
+     * Takes over the server and proxy of the same player reported by another node.
+     */
+    public void applyRemote(CloudPlayer other) {
+        this.currentServerName = other.currentServerName;
+        this.currentProxyName = other.currentProxyName;
     }
 
     @Override

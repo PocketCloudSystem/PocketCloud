@@ -21,6 +21,9 @@ import de.pocketcloud.cloud.template.group.ServerGroup;
 import de.pocketcloud.cloud.template.util.TemplateHelper;
 import de.pocketcloud.shared.component.software.ServerSoftware;
 
+import de.pocketcloud.api.template.util.TemplateEditData;
+
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
@@ -40,6 +43,11 @@ public final class TemplateCommand extends Command implements TabComplete {
 
         registerSubCommand(SubCommand.lambda("edit", this::handleEditSub, true, subCommand -> {
             subCommand.addParameter(new TemplateParameter("template", false));
+        }));
+
+        registerSubCommand(SubCommand.lambda("nodes", this::handleNodesSub, true, subCommand -> {
+            subCommand.addParameter(new TemplateParameter("template", false))
+                    .addParameter(new StringParameter("nodes", true));
         }));
 
         registerSubCommand(SubCommand.lambda("info", this::handleInfoSub, true, subCommand -> {
@@ -138,6 +146,38 @@ public final class TemplateCommand extends Command implements TabComplete {
         return true;
     }
 
+    /**
+     * {@code template nodes <template>} shows, {@code template nodes <template> <node,node|all>} sets the nodes
+     * servers of the template may run on.
+     */
+    public boolean handleNodesSub(CommandSender sender, CommandContext ctx) {
+        Template template = ctx.arg("template", Template.class);
+        if (!ctx.args().containsKey("nodes")) {
+            sender.info("Nodes of §b{}§8: §b{}", template.name(), formatNodes(template.settings().nodes()));
+            return true;
+        }
+
+        String raw = ctx.argString("nodes").trim();
+        List<String> nodes = raw.equalsIgnoreCase("all") || raw.equals("-") || raw.equals("[]")
+                ? List.of()
+                : Arrays.stream(raw.replace("[", "").replace("]", "").split(","))
+                .map(String::trim).filter(n -> !n.isEmpty()).distinct().toList();
+
+        for (String node : nodes) {
+            if (PocketCloud.instance().cluster().node(node).isEmpty()) {
+                sender.warn("The node §b{} §ris not a member of this cluster (yet).", node);
+            }
+        }
+
+        PocketCloud.instance().templates().edit(template, TemplateEditData.create().nodes(nodes));
+        sender.success("Servers of §b{} §rnow run on§8: §b{}", template.name(), formatNodes(nodes));
+        return true;
+    }
+
+    private static String formatNodes(List<String> nodes) {
+        return nodes == null || nodes.isEmpty() ? "all nodes" : String.join("§8, §b", nodes);
+    }
+
     public boolean handleInfoSub(CommandSender sender, CommandContext ctx) {
         Template template = ctx.arg("template", Template.class);
         sender.info("Name§8: §b{}", template.name());
@@ -151,6 +191,7 @@ public final class TemplateCommand extends Command implements TabComplete {
         sender.info("MaxServerCount§8: §b{} server(s)", template.settings().maxServerCount());
         sender.info("startNewServerThreshold§8: §b{}%", template.settings().startNewServerThreshold() * 100);
         sender.info("AutoStart§8: §b{}", template.settings().autoStart() ? "§aYes" : "§cNo");
+        sender.info("Nodes§8: §b{}", formatNodes(template.settings().nodes()));
         sender.info("Software§8: §b{} §8(§b{}§8)", template.serverSoftware().name(), template.templateType().name());
         sender.info("§b{} player(s) §racross §b{} server(s)§r.", template.playerCount(), template.serverCount());
         return true;
