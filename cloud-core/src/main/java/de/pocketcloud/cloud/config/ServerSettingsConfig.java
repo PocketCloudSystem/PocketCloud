@@ -32,6 +32,7 @@ public final class ServerSettingsConfig extends OkaeriConfig implements ICloudCo
             startMethod = "proc";
         }
 
+        serverPortRanges.validate();
         addresses.validate();
     }
 

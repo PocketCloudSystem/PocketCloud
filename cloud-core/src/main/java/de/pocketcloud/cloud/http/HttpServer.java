@@ -189,8 +189,9 @@ public final class HttpServer {
     }
 
     public void close() {
-        bossGroup.shutdownGracefully(0, 1, TimeUnit.SECONDS);
-        workerGroup.shutdownGracefully(0, 1, TimeUnit.SECONDS);
+        // the event loop groups only exist once the server has been started (HTTP may be disabled)
+        if (bossGroup != null) bossGroup.shutdownGracefully(0, 1, TimeUnit.SECONDS);
+        if (workerGroup != null) workerGroup.shutdownGracefully(0, 1, TimeUnit.SECONDS);
         if (sslContext != null) ReferenceCountUtil.release(sslContext);
     }
 }
