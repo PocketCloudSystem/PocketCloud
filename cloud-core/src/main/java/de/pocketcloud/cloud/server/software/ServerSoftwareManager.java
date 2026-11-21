@@ -74,6 +74,42 @@ public final class ServerSoftwareManager implements IWriteSoftwareProvider, Load
                     List.of("command_data", "players", "resource_packs", "worlds", "structures", "services", "banned-ips.json", "banned-players.json", "ops.txt", "white-list.txt"),
                     "save-all"
             )),
+            new ServerSoftware("powernukkitx-latest-nightly", "SERVER", new SoftwareDownload(
+                    "https://github.com/PowerNukkitX/PowerNukkitX/releases/download/nightly/powernukkitx.jar",
+                    "powernukkitx.jar",
+                    new String[]{
+                            "java",
+                            "-Dfile.encoding=UTF-8",
+                            "-Djansi.passthrough=true",
+                            "-Xmx{MAX_MEMORY}M",
+                            "-XX:+UseZGC",
+                            "-XX:+ZGenerational",
+                            "-XX:+UseStringDeduplication",
+                            "-XX:ActiveProcessorCount=2",
+                            "-XX:CICompilerCount=2",
+                            "-XX:ConcGCThreads=1",
+                            "-XX:+UnlockExperimentalVMOptions",
+                            "--add-opens", "java.base/java.lang=ALL-UNNAMED",
+                            "--add-opens", "java.base/java.io=ALL-UNNAMED",
+                            "--add-opens", "java.base/java.net=ALL-UNNAMED",
+                            "{JVM_FLAGS}",
+                            "-jar",
+                            "{SOFTWARE_PATH}powernukkitx.jar"
+                    },
+                    true
+            ), new SoftwareBinary(
+                    null,
+                    false
+            ), new SoftwareBridge(
+                    "https://github.com/PocketCloudSystem/PocketCloud/releases/download/latest-bridge/cloudbridge.jar",
+                    "plugins/cloudbridge.jar",
+                    true
+            ), new SoftwareConfig(
+                    "config.yml",
+                    "logs/server.log",
+                    List.of("command_data", "players", "resource_packs", "worlds", "structures", "services", "banned-ips.json", "banned-players.json", "ops.txt", "white-list.txt"),
+                    "save-all"
+            )),
             new ServerSoftware("waterdogpe-latest", "PROXY", new SoftwareDownload(
                     "https://github.com/WaterdogPE/WaterdogPE/releases/download/latest/Waterdog.jar",
                     "waterdog.jar",
