@@ -8,6 +8,7 @@ import de.pocketcloud.api.search.ServerSearchQuery;
 import de.pocketcloud.api.server.ServerStatus;
 import de.pocketcloud.api.template.TemplateType;
 import de.pocketcloud.cloud.PocketCloud;
+import de.pocketcloud.cloud.cluster.NodeHandle;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.server.util.CloudServerStorage;
 import de.pocketcloud.cloud.server.util.ServerUtils;
@@ -111,7 +112,7 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
         serverPrepareQueue.remove(cloudServer);
         serverStartQueue.remove(cloudServer);
         ServerUtils.removeId(cloudServer.template(), cloudServer.id());
-        ServerUtils.removePort(cloudServer.data().port());
+        cloudServer.node().releasePort(cloudServer.data().port());
         lastServerStopTime = System.currentTimeMillis();
         cloudServer.markForRemoval().syncOut();
         PocketCloud.instance().players().handleServerRemoved(cloudServer);
@@ -146,7 +147,8 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
                 continue;
             }
 
-            int port = ServerUtils.reservePort(template.templateType());
+            NodeHandle node = PocketCloud.instance().cluster().selectNodeForNewServer();
+            int port = node.reservePort(template.templateType());
             if (port <= 0) {
                 CloudLogger.get().warn("Failed to start any more servers of §b{}§8: §cNo available ports found.", template.name());
                 serverCounts.merge(template.name(), -(toStart - i), Integer::sum);
@@ -317,7 +319,7 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
 
         if (exception != null) CloudLogger.get().exception(exception);
         if (startingServerTimestamps.remove(server.name()) != null) startingServers.decrementAndGet();
-        ServerUtils.removePort(server.data().port());
+        server.node().releasePort(server.data().port());
         ServerUtils.removeId(server.template(), server.id());
     }
 

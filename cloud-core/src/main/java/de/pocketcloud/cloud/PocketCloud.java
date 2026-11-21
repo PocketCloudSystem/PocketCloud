@@ -7,6 +7,7 @@ import de.pocketcloud.api.config.IEnvironmentConfig;
 import de.pocketcloud.api.logging.CloudLogLevel;
 import de.pocketcloud.api.logging.ILogger;
 import de.pocketcloud.api.service.ServiceRegistry;
+import de.pocketcloud.cloud.cluster.ClusterManager;
 import de.pocketcloud.cloud.config.CloudEnvironmentConfig;
 import de.pocketcloud.cloud.config.LogSettingsConfig;
 import de.pocketcloud.cloud.config.MainConfig;
@@ -210,6 +211,7 @@ public final class PocketCloud implements CloudAPI {
         services.register(ServerPropertiesGenerator.class, new ServerPropertiesGenerator());
         services.register(TemplateManager.class, new TemplateManager());
         services.register(ServerGroupManager.class, new ServerGroupManager());
+        services.register(ClusterManager.class, new ClusterManager());
         services.register(CloudServerManager.class, new CloudServerManager());
         services.register(CloudPlayerExecutor.class, new CloudPlayerExecutor());
         services.register(CloudPlayerManager.class, new CloudPlayerManager());
@@ -502,6 +504,10 @@ public final class PocketCloud implements CloudAPI {
     @Override
     public CloudPlayerExecutor playerExecutor() {
         return services.get(CloudPlayerExecutor.class);
+    }
+
+    public ClusterManager cluster() {
+        return services.get(ClusterManager.class);
     }
 
     @Override

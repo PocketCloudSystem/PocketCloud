@@ -14,6 +14,7 @@ import de.pocketcloud.api.template.TemplateType;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.cache.NotificationListCache;
 import de.pocketcloud.cloud.cache.WhitelistCache;
+import de.pocketcloud.cloud.cluster.NodeHandle;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.console.log.def.PrefixedLogger;
 import de.pocketcloud.cloud.event.impl.server.ServerPrepareEvent;
@@ -21,11 +22,8 @@ import de.pocketcloud.cloud.event.impl.server.ServerSaveEvent;
 import de.pocketcloud.cloud.event.impl.server.ServerSendCommandEvent;
 import de.pocketcloud.cloud.event.impl.server.ServerStopEvent;
 import de.pocketcloud.cloud.network.client.ServerClient;
-import de.pocketcloud.cloud.server.config.IServerProperties;
 import de.pocketcloud.cloud.server.util.*;
 import de.pocketcloud.cloud.template.Template;
-import de.pocketcloud.cloud.template.group.ServerGroup;
-import de.pocketcloud.cloud.template.util.TemplateTypeHelper;
 import de.pocketcloud.cloud.util.PocketCloudPaths;
 import de.pocketcloud.common.cache.LocalCache;
 import de.pocketcloud.common.concurrent.Promise;
@@ -38,7 +36,6 @@ import de.pocketcloud.common.serialization.annotation.MapCreator;
 import de.pocketcloud.common.serialization.annotation.MapKey;
 import de.pocketcloud.common.util.ArrayUtils;
 import de.pocketcloud.common.util.FileUtils;
-import de.pocketcloud.common.util.ProcessUtils;
 import de.pocketcloud.common.util.StringUtils;
 import de.pocketcloud.network.packet.impl.DisconnectPacket;
 import de.pocketcloud.network.packet.impl.ProxyRegisterServerPacket;
@@ -48,7 +45,6 @@ import de.pocketcloud.network.packet.impl.request.client.CommandExecuteRequestPa
 import de.pocketcloud.network.packet.impl.response.client.CommandExecuteResponsePacket;
 import de.pocketcloud.shared.component.BaseCloudServer;
 import de.pocketcloud.shared.component.data.CloudServerData;
-import de.pocketcloud.shared.component.software.ServerSoftware;
 import de.pocketcloud.shared.component.storage.BaseCloudServerStorage;
 import de.pocketcloud.shared.event.server.ServerChangedStatusEvent;
 import de.pocketcloud.shared.event.server.ServerStartingEvent;
@@ -65,9 +61,6 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.nio.file.attribute.FileTime;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -75,7 +68,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.*;
 
-import static de.pocketcloud.common.util.FileUtils.IO_EXECUTOR;
 
 @Slf4j
 @Getter
@@ -138,7 +130,7 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
             if (!pidLookupDone && data.processId() == null && (lastPidLookupTime == 0 || (System.currentTimeMillis() - lastPidLookupTime) >= 1500) && lastPidLookupCounter < 5) {
                 lastPidLookupTime = System.currentTimeMillis();
                 lastPidLookupCounter++;
-                ServerStartMethods.current().lookupPid(this).thenSuccess(pid -> {
+                node().lookupPid(this).thenSuccess(pid -> {
                     if (pid.isPresent()) {
                         logger.debug("pid-Lookup succeeded after {} tries, set pid to {}", lastPidLookupCounter, pid.get());
                         pidLookupDone = true;
@@ -149,7 +141,7 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
 
             if ((startTime.toEpochMilli() + (template().settings().startupTimeout() * 1000L)) < System.currentTimeMillis()) {
                 CloudServersHandler.handleStartFailure(this, null, false);
-            } else if (pidLookupDone && ProcessHandle.of(data.processId()).isEmpty()) {
+            } else if (pidLookupDone && !node().processExists(this)) {
                 CloudServersHandler.handleStartFailure(this, null, false);
             }
         } else if (status.isOnline()) {
@@ -178,92 +170,7 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
 
     public Promise<Void> prepare() {
         new ServerPrepareEvent(this).call();
-        return Promise.runAsync(() -> {
-            Path logFileLocation = logFilePath();
-            if (Files.exists(logFileLocation)) {
-                Path logArchivePath = template().path().resolve("cloud_log_archive");
-                FileUtils.createDir(logArchivePath);
-
-                try {
-                    FileTime ctime = Files.readAttributes(logFileLocation, BasicFileAttributes.class).creationTime();
-                    String timestamp = DateTimeFormatter
-                            .ofPattern("yyyy-MM-dd_HH:mm:ss.SSS_z")
-                            .withZone(ZoneId.systemDefault())
-                            .format(ctime.toInstant());
-                    String archiveFileName = timestamp + "_" + logFileLocation.getFileName() + ".log";
-                    Files.copy(logFileLocation, logArchivePath.resolve(archiveFileName), StandardCopyOption.REPLACE_EXISTING);
-                } catch (IOException e) {
-                    CloudLogger.get().exception("Failed to archive log file", e);
-                }
-
-                FileUtils.unlinkFile(logFileLocation);
-            }
-
-            if (Files.exists(path()) && !template().settings().staticServers() && template().settings().deleteOnStop()) {
-                FileUtils.removeDirectory(path());
-            }
-
-            Path bridgePath = PocketCloud.instance().software().bridgeSourceFile((ServerSoftware) template().serverSoftware());
-            Path bridgeDstPath = path().resolve(template().serverSoftware().bridge().relativeServerPath());
-            if (!Files.isDirectory(bridgeDstPath.getParent())) FileUtils.createDir(bridgeDstPath.getParent());
-            if (Files.isRegularFile(bridgePath)) {
-                try {
-                    Files.copy(bridgePath, bridgeDstPath, StandardCopyOption.REPLACE_EXISTING);
-                } catch (IOException e) {
-                    CloudLogger.get().exception("Failed to copy bridge", e);
-                }
-            }
-
-            Path globalTemplatePath = TemplateTypeHelper.globalTemplatePath(template().templateType());
-            FileUtils.copyDirectory(globalTemplatePath, path(), Set.of());
-
-            Path softwareConfigPath = PocketCloud.instance().software()
-                    .configDirectoryPath((ServerSoftware) template().serverSoftware());
-            FileUtils.copyDirectory(softwareConfigPath, path(), Set.of());
-
-            boolean copyFromSources = template().settings().alwaysCopyToStaticServers() || !template().settings().staticServers();
-            if (copyFromSources) {
-                for (IServerGroup group : template().parentGroups()) {
-                    FileUtils.copyDirectory(((ServerGroup) group).path(), path(), Set.of());
-                }
-
-                FileUtils.copyDirectory(template().path(), path(), Set.of("cloud_log_archive/"));
-            }
-
-            List<IServerProperties> propertiesData = PocketCloud.instance().properties().getAll(template().serverSoftware());
-            if (propertiesData == null) {
-                throw new RuntimeException("No server configuration(s) found");
-            }
-
-            for (var properties : propertiesData) {
-                Path filePath = path().resolve(properties.getFileName());
-                Map<String, Object> replacements = properties.replacePlaceholders(this);
-                String content = FileUtils.fileGetContents(filePath);
-
-                for (Map.Entry<String, Object> entry : replacements.entrySet()) {
-                    Object value = entry.getValue();
-                    String key = entry.getKey();
-
-                    if (value instanceof Number || value instanceof Boolean) {
-                        content = content.replace("\"" + key + "\"", value.toString());
-                        content = content.replace("'" + key + "'", value.toString());
-                    }
-
-                    content = content.replace(key, value.toString());
-                }
-
-                FileUtils.filePutContents(filePath, unquotePrimitives(content));
-            }
-
-            FileUtils.unlinkFile(logFileLocation);
-        }, IO_EXECUTOR);
-    }
-
-    private static String unquotePrimitives(String content) {
-        return content.replaceAll(
-                "(?m)^(\\s*[\\w.\\-]+:\\s*)\"(-?\\d+(?:\\.\\d+)?|true|false)\"(\\s*(?:#.*)?)$",
-                "$1$2$3"
-        );
+        return node().prepare(this);
     }
 
     private void createCloudEnvironmentConfig() {
@@ -299,8 +206,8 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
     }
 
     public void boot() {
-        ServerStartMethods.current().start(new CloudServer[]{this})
-                .thenSuccess(m -> CloudServersHandler.handleStartSuccess(this, m.get(name())))
+        node().boot(this)
+                .thenSuccess(pid -> CloudServersHandler.handleStartSuccess(this, pid.orElse(null)))
                 .failure(t -> CloudServersHandler.handleStartFailure(this, t, true));
     }
 
@@ -353,23 +260,7 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
         if (new ServerSaveEvent(this).call().isCancelled())
             return Promise.rejected(new RuntimeException("Event cancelled"));
 
-        return Promise.supplyAsync(() -> {
-            for (String file : template().serverSoftware().config().savableFiles()) {
-                Path filePath = path().resolve(file);
-                Path dstPath = template().path().resolve(file);
-                if (Files.isRegularFile(filePath)) {
-                    try {
-                        Files.copy(filePath, dstPath, StandardCopyOption.REPLACE_EXISTING);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                } else if (Files.isDirectory(filePath)) {
-                    FileUtils.copyDirectory(filePath, dstPath, Set.of());
-                }
-            }
-
-            return null;
-        }, IO_EXECUTOR);
+        return node().saveFiles(this);
     }
 
     public void deleteTmpDir() {
@@ -427,8 +318,7 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
     }
 
     public void kill() {
-        Long pid = data.processId();
-        if (pid != null) ProcessUtils.kill(pid, true);
+        node().kill(this);
     }
 
     public Promise<ServerCommandExecutionResult> dispatch(String commandLine) {
@@ -518,16 +408,7 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
     }
 
     public List<String> retrieveLogs() {
-        Path logFilePath = logFilePath();
-        if (Files.exists(logFilePath)) {
-            try {
-                return Files.readAllLines(logFilePath);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        return null;
+        return node().readLogs(this).orElse(null);
     }
 
     public ServerLogStream openLogStream() {
@@ -535,9 +416,14 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
     }
 
     public boolean isAlive() {
-        if (data.processId() == null) return false;
-        Optional<ProcessHandle> proc = ProcessHandle.of(data.processId());
-        return proc.isPresent() && proc.get().isAlive();
+        return node().isProcessAlive(this);
+    }
+
+    /**
+     * The node this server runs on.
+     */
+    public NodeHandle node() {
+        return PocketCloud.instance().cluster().nodeOf(this);
     }
 
     @Override
