@@ -8,6 +8,7 @@ import de.pocketcloud.api.logging.CloudLogLevel;
 import de.pocketcloud.api.logging.ILogger;
 import de.pocketcloud.api.service.ServiceRegistry;
 import de.pocketcloud.cloud.cluster.ClusterManager;
+import de.pocketcloud.cloud.cluster.NodeConfig;
 import de.pocketcloud.cloud.config.CloudEnvironmentConfig;
 import de.pocketcloud.cloud.config.LogSettingsConfig;
 import de.pocketcloud.cloud.config.MainConfig;
@@ -188,6 +189,7 @@ public final class PocketCloud implements CloudAPI {
         services.register(MainConfig.class, loadYmlConfig(MainConfig.class, PocketCloudPaths.storage().configs().with("config.yml").asPath()));
         services.register(LogSettingsConfig.class, loadYmlConfig(LogSettingsConfig.class, PocketCloudPaths.storage().configs().with("log_settings.yml").asPath()));
         services.register(ServerSettingsConfig.class, loadYmlConfig(ServerSettingsConfig.class, PocketCloudPaths.storage().configs().with("server_settings.yml").asPath()));
+        services.register(NodeConfig.class, loadYmlConfig(NodeConfig.class, PocketCloudPaths.storage().configs().with("node.yml").asPath()));
         services.register(CloudEnvironmentConfig.class, new CloudEnvironmentConfig());
         services.register(NotificationService.class, new NotificationService());
 
@@ -441,6 +443,10 @@ public final class PocketCloud implements CloudAPI {
 
     public ServerSettingsConfig serverSettingsConfig() {
         return services.get(ServerSettingsConfig.class);
+    }
+
+    public NodeConfig nodeConfig() {
+        return services.get(NodeConfig.class);
     }
 
     public NotificationService notifications() {
