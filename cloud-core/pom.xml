@@ -32,6 +32,10 @@
 
     <dependencies>
         <dependency>
+            <groupId>io.lettuce</groupId>
+            <artifactId>lettuce-core</artifactId>
+        </dependency>
+        <dependency>
             <groupId>de.pocketcloud</groupId>
             <artifactId>cloud-common</artifactId>
             <version>${project.version}</version>

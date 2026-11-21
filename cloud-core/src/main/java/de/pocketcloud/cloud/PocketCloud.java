@@ -268,6 +268,7 @@ public final class PocketCloud implements CloudAPI {
                     .failure(ex -> appendStartNotification("§cFailed to check for updates: §e{}", CloudLogLevel.ERROR, ex.getMessage()));
         }
 
+        cluster().init();
         CloudProvider.select();
 
         clearAndFlushStartNotifications();
@@ -401,6 +402,7 @@ public final class PocketCloud implements CloudAPI {
         network().close();
         httpServer().close();
         loader().unloadAll();
+        cluster().close();
 
         if (config().writeTimingsOnShutdown()) {
             Path path = PocketCloudPaths.storage().timings().with("latest_timings.txt").asPath();

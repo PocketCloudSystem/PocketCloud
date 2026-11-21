@@ -5,6 +5,7 @@ import de.pocketcloud.api.template.TemplateType;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.cluster.state.ClusterStateStore;
 import de.pocketcloud.cloud.cluster.state.StateKeys;
+import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.template.util.TemplateTypeHelper;
 import de.pocketcloud.common.util.NetUtils;
 
@@ -25,8 +26,12 @@ public final class ServerUtils {
      */
     public static int reserveId(ITemplate template) {
         String key = StateKeys.ids(template.name());
-        for (int i = 1; i <= template.settings().maxServerCount(); i++) {
-            if (state().addToSet(key, String.valueOf(i))) return i;
+        try {
+            for (int i = 1; i <= template.settings().maxServerCount(); i++) {
+                if (state().addToSet(key, String.valueOf(i))) return i;
+            }
+        } catch (IllegalStateException e) {
+            CloudLogger.get().error("Cannot start a server of §b{}§r: {}", template.name(), e.getMessage());
         }
         return -1;
     }

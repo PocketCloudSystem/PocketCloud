@@ -57,10 +57,14 @@ public abstract class CloudProvider {
 
     public static void select() {
         String provider = PocketCloud.instance().config().provider();
-        current = switch (provider.toLowerCase()) {
+        CloudProvider persistent = switch (provider.toLowerCase()) {
             case "mysql" -> new CloudMySqlProvider();
             default -> new CloudJsonProvider();
         };
+
+        current = PocketCloud.instance().cluster().redisConnection()
+                .<CloudProvider>map(redis -> new CloudRedisProvider(persistent, redis))
+                .orElse(persistent);
     }
 
     public static CloudProvider current() {

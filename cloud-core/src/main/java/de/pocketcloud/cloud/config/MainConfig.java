@@ -4,6 +4,7 @@ import de.pocketcloud.api.config.ICloudConfig;
 import de.pocketcloud.cloud.config.sub.HttpServerConfiguration;
 import de.pocketcloud.cloud.config.sub.MySqlConfiguration;
 import de.pocketcloud.cloud.config.sub.NetworkConfiguration;
+import de.pocketcloud.cloud.config.sub.RedisConfiguration;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import eu.okaeri.configs.OkaeriConfig;
 import eu.okaeri.configs.annotation.Comment;
@@ -49,6 +50,9 @@ public final class MainConfig extends OkaeriConfig implements ICloudConfig {
     @Comment({"The MySQL configuration for the cloud. Only used if provider is set to 'mysql'"})
     private MySqlConfiguration mysqlSettings = new MySqlConfiguration();
 
+    @Comment({"The Redis configuration for the cloud. Holds the shared cluster state and caches the provider data."})
+    private RedisConfiguration redis = new RedisConfiguration();
+
     @Override
     public void validate() {
         if (!AVAILABLE_PROVIDERS.contains(provider.toLowerCase())) {
@@ -59,5 +63,6 @@ public final class MainConfig extends OkaeriConfig implements ICloudConfig {
         network.validate();
         httpServer.validate();
         mysqlSettings.validate();
+        redis.validate();
     }
 }
