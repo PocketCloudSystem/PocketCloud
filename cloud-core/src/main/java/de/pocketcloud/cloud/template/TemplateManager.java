@@ -8,7 +8,6 @@ import de.pocketcloud.api.logging.CloudLogLevel;
 import de.pocketcloud.api.provider.write.IWriteTemplateProvider;
 import de.pocketcloud.api.search.ServerSearchQuery;
 import de.pocketcloud.api.search.TemplateSearchQuery;
-import de.pocketcloud.api.template.TemplateType;
 import de.pocketcloud.api.template.util.TemplateEditData;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.builder.TemplateBuilder;
@@ -17,12 +16,10 @@ import de.pocketcloud.cloud.event.impl.template.TemplateCreateEvent;
 import de.pocketcloud.cloud.event.impl.template.TemplateEditEvent;
 import de.pocketcloud.cloud.event.impl.template.TemplateRemoveEvent;
 import de.pocketcloud.cloud.provider.CloudProvider;
-import de.pocketcloud.cloud.template.util.TemplateTypeHelper;
 import de.pocketcloud.cloud.util.benchmark.Benchmark;
 import de.pocketcloud.cloud.util.benchmark.BenchmarkTiming;
 import de.pocketcloud.common.lifecycle.Loadable;
 import de.pocketcloud.common.lifecycle.Tickable;
-import de.pocketcloud.common.util.FileUtils;
 import de.pocketcloud.common.util.NumberUtils;
 import de.pocketcloud.shared.event.template.TemplateCreatedEvent;
 import de.pocketcloud.shared.event.template.TemplateDeletedEvent;
@@ -30,7 +27,6 @@ import de.pocketcloud.shared.event.template.TemplateEditedEvent;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.*;
 import java.util.function.Consumer;
 
@@ -41,8 +37,11 @@ public final class TemplateManager implements Tickable, Loadable, IWriteTemplate
     @Override
     public void load() {
         CloudLogger.get().info("Loading templates...");
-        for (TemplateType type : TemplateType.values())
-            FileUtils.createDir(TemplateTypeHelper.globalTemplatePath(type));
+        try {
+            PocketCloud.instance().cluster().templateStorage().init();
+        } catch (IOException e) {
+            CloudLogger.get().exception("Failed to initialize the template storage", e);
+        }
         CloudProvider.current().getTemplates()
                 .thenSuccess(templates::putAll)
                 .thenSuccess(_ -> PocketCloud.instance().serverGroups().load())
@@ -84,7 +83,7 @@ public final class TemplateManager implements Tickable, Loadable, IWriteTemplate
             }
 
             CloudProvider.current().addTemplate(template);
-            if (!Files.isDirectory(template.path())) Files.createDirectories(template.path());
+            PocketCloud.instance().cluster().templateStorage().createTemplate(template.name());
             add(template);
             BenchmarkTiming res = Benchmark.stopTiming("template_creation");
             CloudLogger.get().success("Successfully §acreated §rthe template §b{}§r. §8(§rTook §b{}ms§8)", template.name(), NumberUtils.formatNumber(res.duration(), 2));
@@ -160,12 +159,10 @@ public final class TemplateManager implements Tickable, Loadable, IWriteTemplate
 
     private void continueDeletion(Template temp) {
         CloudProvider.current().removeTemplate(temp);
-        if (Files.isDirectory(temp.path())) {
-            try {
-                FileUtils.removeDirectory(temp.path());
-            } catch (Exception e) {
-                CloudLogger.get().exception("Failed to remove template directory of {}", e, temp.name());
-            }
+        try {
+            PocketCloud.instance().cluster().templateStorage().deleteTemplate(temp.name());
+        } catch (Exception e) {
+            CloudLogger.get().exception("Failed to remove template directory of {}", e, temp.name());
         }
 
         remove(temp);

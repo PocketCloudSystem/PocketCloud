@@ -2,44 +2,45 @@ package de.pocketcloud.cloud.server.util;
 
 import de.pocketcloud.api.component.template.ITemplate;
 import de.pocketcloud.api.template.TemplateType;
+import de.pocketcloud.cloud.PocketCloud;
+import de.pocketcloud.cloud.cluster.state.ClusterStateStore;
+import de.pocketcloud.cloud.cluster.state.StateKeys;
 import de.pocketcloud.cloud.template.util.TemplateTypeHelper;
 import de.pocketcloud.common.util.NetUtils;
 
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
 public final class ServerUtils {
 
     private static final Object LOCK = new Object();
-    private static final Map<String, Set<Integer>> ids = new HashMap<>();
     private static final Set<Integer> usedPorts = new HashSet<>();
 
     private ServerUtils() {}
 
+    /**
+     * Reserves the lowest free id of a template in the shared state, so two nodes can never
+     * hand out the same server name.
+     */
     public static int reserveId(ITemplate template) {
-        synchronized (LOCK) {
-            Set<Integer> templateIds = ids.computeIfAbsent(template.name(), _ -> new HashSet<>());
-            for (int i = 1; i <= template.settings().maxServerCount(); i++) {
-                if (templateIds.add(i)) return i;
-            }
-            return -1;
+        String key = StateKeys.ids(template.name());
+        for (int i = 1; i <= template.settings().maxServerCount(); i++) {
+            if (state().addToSet(key, String.valueOf(i))) return i;
         }
+        return -1;
     }
 
     public static void addId(ITemplate template, int id) {
-        synchronized (LOCK) {
-            ids.computeIfAbsent(template.name(), _ -> new HashSet<>()).add(id);
-        }
+        state().addToSet(StateKeys.ids(template.name()), String.valueOf(id));
     }
 
     public static void removeId(ITemplate template, int id) {
-        synchronized (LOCK) {
-            Set<Integer> templateIds = ids.get(template.name());
-            if (templateIds != null) templateIds.remove(id);
-        }
+        state().removeFromSet(StateKeys.ids(template.name()), String.valueOf(id));
+    }
+
+    private static ClusterStateStore state() {
+        return PocketCloud.instance().cluster().state();
     }
 
     public static int reservePort(TemplateType type) {

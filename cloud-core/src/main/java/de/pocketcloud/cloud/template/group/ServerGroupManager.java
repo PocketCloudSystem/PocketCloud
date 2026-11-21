@@ -6,6 +6,7 @@ import de.pocketcloud.api.component.group.IServerGroup;
 import de.pocketcloud.api.component.template.ITemplate;
 import de.pocketcloud.api.provider.write.IWriteServerGroupProvider;
 import de.pocketcloud.api.search.ServerGroupSearchQuery;
+import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.builder.ServerGroupBuilder;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.event.impl.group.ServerGroupAddTemplateEvent;
@@ -17,7 +18,6 @@ import de.pocketcloud.cloud.template.Template;
 import de.pocketcloud.cloud.util.benchmark.Benchmark;
 import de.pocketcloud.cloud.util.benchmark.BenchmarkTiming;
 import de.pocketcloud.common.lifecycle.Loadable;
-import de.pocketcloud.common.util.FileUtils;
 import de.pocketcloud.common.util.NumberUtils;
 import de.pocketcloud.shared.event.group.ServerGroupCreatedEvent;
 import de.pocketcloud.shared.event.group.ServerGroupDeletedEvent;
@@ -25,7 +25,6 @@ import de.pocketcloud.shared.event.group.ServerGroupUpdatedEvent;
 import lombok.Getter;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
@@ -63,7 +62,7 @@ public final class ServerGroupManager implements Loadable, IWriteServerGroupProv
             }
 
             CloudProvider.current().addServerGroup(serverGroup);
-            if (!Files.isDirectory(serverGroup.path())) Files.createDirectories(serverGroup.path());
+            PocketCloud.instance().cluster().templateStorage().createGroup(serverGroup.name());
             add(serverGroup);
             BenchmarkTiming res = Benchmark.stopTiming("server_group_creation");
             CloudLogger.get().success("Successfully §acreated §rthe server group §b{}§r. §8(§rTook §b{}ms§8)", serverGroup.name(), NumberUtils.formatNumber(res.duration(), 2));
@@ -157,12 +156,10 @@ public final class ServerGroupManager implements Loadable, IWriteServerGroupProv
         }
 
         CloudProvider.current().removeServerGroup(serverGroup);
-        if (Files.isDirectory(serverGroup.path())) {
-            try {
-                FileUtils.removeDirectory(serverGroup.path());
-            } catch (Exception e) {
-                CloudLogger.get().exception("Failed to remove server group directory of {}", e, serverGroup.name());
-            }
+        try {
+            PocketCloud.instance().cluster().templateStorage().deleteGroup(serverGroup.name());
+        } catch (Exception e) {
+            CloudLogger.get().exception("Failed to remove server group directory of {}", e, serverGroup.name());
         }
 
         remove(serverGroup);

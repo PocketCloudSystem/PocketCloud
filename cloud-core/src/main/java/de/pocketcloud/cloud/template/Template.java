@@ -5,7 +5,7 @@ import de.pocketcloud.api.component.software.IServerSoftware;
 import de.pocketcloud.api.sync.SyncingElement;
 import de.pocketcloud.api.template.TemplateType;
 import de.pocketcloud.api.template.settings.TemplateSettings;
-import de.pocketcloud.cloud.util.PocketCloudPaths;
+import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.util.gson.TemplateJsonSerializer;
 import de.pocketcloud.common.serialization.MapperUtils;
 import de.pocketcloud.common.serialization.annotation.MapCreator;
@@ -60,7 +60,7 @@ public final class Template extends BaseTemplate implements SyncingElement<Templ
     }
 
     public Path path() {
-        return PocketCloudPaths.templates().with(name).asPath();
+        return PocketCloud.instance().cluster().templateStorage().localTemplatePath(name);
     }
 
     public static Template read(Map<String, Object> map) {

@@ -1,5 +1,8 @@
 package de.pocketcloud.cloud.player;
 
+import de.pocketcloud.cloud.PocketCloud;
+import de.pocketcloud.cloud.cluster.state.ClusterStateStore;
+import de.pocketcloud.cloud.cluster.state.StateKeys;
 import de.pocketcloud.api.sync.SyncingElement;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.common.serialization.MapperUtils;
@@ -50,6 +53,9 @@ public final class CloudPlayer extends BaseCloudPlayer implements SyncingElement
     @Override
     public void syncOut() {
         SyncPacket.create(SyncType.PLAYER, data -> data.writeAll(this, markedForRemoval)).broadcast();
+        ClusterStateStore state = PocketCloud.instance().cluster().state();
+        if (markedForRemoval) state.remove(StateKeys.PLAYERS, name());
+        else state.put(StateKeys.PLAYERS, name(), write());
     }
 
     @Override

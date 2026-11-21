@@ -1,5 +1,7 @@
 package de.pocketcloud.cloud.server;
 
+import de.pocketcloud.cloud.cluster.state.ClusterStateStore;
+import de.pocketcloud.cloud.cluster.state.StateKeys;
 import de.pocketcloud.api.CloudAPI;
 import de.pocketcloud.api.component.group.IServerGroup;
 import de.pocketcloud.api.component.player.ICloudPlayer;
@@ -121,6 +123,25 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
     @Override
     public void syncOut() {
         SyncPacket.create(SyncType.SERVER, data -> data.writeAll(this, markedForRemoval)).broadcast();
+        publishState();
+    }
+
+    /**
+     * Mirrors this server into the shared cluster state (or removes it, once marked for removal).
+     */
+    public void publishState() {
+        ClusterStateStore state = PocketCloud.instance().cluster().state();
+        String nodeName = node().name();
+        if (markedForRemoval) {
+            state.remove(StateKeys.SERVERS, name());
+            state.removeFromSet(StateKeys.nodeServers(nodeName), name());
+            return;
+        }
+
+        Map<String, Object> document = new HashMap<>(write());
+        document.put("node", nodeName);
+        state.put(StateKeys.SERVERS, name(), document);
+        state.addToSet(StateKeys.nodeServers(nodeName), name());
     }
 
     @Override
@@ -235,24 +256,15 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
 
     public void saveLogFiles() {
         Path logFileLocation = logFilePath();
-        Path logArchivePath = template().path().resolve("cloud_log_archive");
-        if (Files.exists(logFileLocation)) {
-            if (!Files.isDirectory(logArchivePath)) {
-                try {
-                    Files.createDirectory(logArchivePath);
-                } catch (IOException e) {
-                    CloudLogger.get().exception("Failed to create log archive directory", e);
-                }
-            }
+        if (!Files.exists(logFileLocation)) return;
 
-            String formatted = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH:mm:ss.SSS_z")
-                    .format(startTime.atZone(ZoneId.systemDefault()));
-
-            try {
-                Files.copy(logFileLocation, logArchivePath.resolve(formatted + "_" + logFileLocation.getFileName().toString() + ".log"));
-            } catch (IOException e) {
-                CloudLogger.get().exception("Failed to copy log file", e);
-            }
+        String formatted = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH:mm:ss.SSS_z")
+                .format(startTime.atZone(ZoneId.systemDefault()));
+        try {
+            PocketCloud.instance().cluster().templateStorage()
+                    .archiveLog(templateName(), formatted + "_" + logFileLocation.getFileName().toString() + ".log", logFileLocation);
+        } catch (IOException e) {
+            CloudLogger.get().exception("Failed to copy log file", e);
         }
     }
 
