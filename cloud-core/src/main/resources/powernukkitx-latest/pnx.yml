@@ -202,10 +202,6 @@ chunk-settings:
   disableBlockTicking: []
 # Network settings for PowerNukkitX
 network-settings:
-  # Which transport carries Bedrock sessions. raknet: the classic UDP transport
-  # every client finds through the server list. nethernet: WebRTC data channels
-  # reached through a signalling endpoint. Only one is bound
-  transport: raknet
   # Whether the query protocol displays plugin information
   queryPlugins: true
   # Compression level of the compression algorithm used by the server
@@ -224,31 +220,8 @@ network-settings:
   maxDecompressSize: 268435456
   # Whether to enable query
   enableQuery: true
-  # Whether to enable Bedrock packet encryption. Only applies to the raknet
-  # transport; NetherNet already carries the session inside DTLS
-  networkEncryption: true
   # Login time
   checkLoginTime: false
-  # RakNet transport settings
-  raknet:
-    # Maximum number of packets per second
-    packetLimit: 8000
-    # Whether RakNet automatically flushes each connection's outgoing packet queue on
-    # a timer. Disabling stops packets from being sent until something flushes
-    # manually, so leave this on unless you flush yourself
-    autoFlush: true
-    # Time in milliseconds between automatic RakNet flushes when auto-flush is on.
-    # Lower values cut latency but send more, smaller datagrams; higher values batch
-    # more per packet
-    flushInterval: 10
-    # Maximum unsent bytes RakNet will buffer for a single connection before it stops
-    # queueing more (backpressure). Guards server memory against slow or stalled
-    # clients
-    maxQueuedBytes: 67108864
-    # RakNet connection-cookie handling, which mitigates IP-spoofed connection floods.
-    # ACTIVE: validate cookies in-process; OFFLOADED / OFFLOADED_PSK: cookies are
-    # validated by an upstream proxy/DDoS layer; OFF: disable cookies
-    cookieMode: ACTIVE
   # NetherNet transport settings
   nethernet:
     # How the server obtains SDP offers. builtin: it serves the HTTP signalling
@@ -267,9 +240,24 @@ network-settings:
       # derives them from the addresses this host holds, which is wrong behind a NAT or
       # a forwarder; name the endpoint players actually reach in that case
       advertise-addresses: []
-      # Instance metadata. The region and pool keys place this instance, anything else
-      # is a registration tag
-      data: {}
+      # NXS options most servers leave unchanged
+      advanced:
+        # Lets the provider help players connect when they cannot reach this server
+        # directly, for example behind a NAT without port forwarding
+        assisted-joins: false
+        # Lets the provider check from several regions that players can reach this server,
+        # and stop offering addresses that fail
+        connection-checks: true
+        # Finds this server's public address through the provider's STUN servers when it
+        # has none of its own. Not used when advertise-addresses is set
+        stun-discovery: true
+        # Where this server is: country (a two-letter code), city, latitude and longitude.
+        # Empty lets the provider estimate it
+        location: {}
+        # Removes this server from the provider on shutdown. Turn it on when the data
+        # folder does not survive a restart, such as a container without a volume, or
+        # every restart registers a new server
+        deregister-on-shutdown: false
     # TCP port for the NetherNet signalling endpoint. 0 mirrors the server port, which
     # is where clients look for it
     signalingPort: 0
@@ -283,6 +271,12 @@ network-settings:
     # server behind NAT needs one to put a reachable address in the offer. TURN
     # credentials go in the URL, as turn:user:password@host:3478
     ice-servers: []
+    # STUN servers asked for this server's public address, which is then offered to
+    # every player, as stun:host:port. Needs a fixed UDP port for ICE and is not used
+    # when advertise-addresses is set. Empty turns discovery off
+    stun-servers:
+      - stun:stun.cloudflare.com:3478
+      - stun:stun.l.google.com:19302
     # Addresses to put in the ICE candidates clients connect to. Empty derives them
     # from the bind address, which is usually what you want
     advertise-addresses: []
@@ -385,4 +379,4 @@ performance-settings:
   batchOperation: 32
 # Version of your pnx.yml. DO NOT MODIFY!
 config:
-  version: 3.0.1
+  version: 3.0.2

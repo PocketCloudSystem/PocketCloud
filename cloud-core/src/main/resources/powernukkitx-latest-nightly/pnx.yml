@@ -1,0 +1,432 @@
+# Basic settings for your PowerNukkitX server
+settings:
+  # Server's IP address
+  ip: '%server_ip%'
+  # Server's port
+  port: '%server_port%'
+  # Maximum number of players
+  maxPlayers: '%max_players%'
+  # Default world name
+  defaultLevelName: world
+  # Whether to enable the allowlist
+  allowList: false
+  # The allowlist kick message, applies if the allowlist is enabled
+  allowListMessage: Server is white-listed
+  # Server's MOTD
+  motd: '%name%'
+  # Server's sub-MOTD
+  sub-motd: powernukkitx.org
+  # Server's language settings
+  language: eng
+  # Whether the server translates the text when sending or the client translates
+  forceServerTranslate: false
+  # Whether to enable safe spawn
+  safeSpawn: true
+  # Tick cycle for server auto-save
+  autoSave: '%auto_save%'
+  autosaveDelay: 6000
+  # Whether to save unknown blocks, such as custom blocks that are not registered
+  saveUnknownBlock: true
+  # Whether to enable Xbox authentication
+  xboxAuth: true
+# Player specific configuration
+player-settings:
+  # Whether to save player data
+  savePlayerData: true
+  # Cooldown time for players changing skins
+  skinChangeCooldown: 30
+  # Whether to force trust player skins, allowing players to use third-party skins
+  # freely
+  forceSkinTrusted: false
+  # Whether to check player movement
+  checkMovement: true
+  # Rotation update threshold
+  rotationUpdateThreshold: 1.0
+  # Movement distance threshold
+  movementDistanceThreshold: 0.1
+  # Spawn radius
+  spawnRadius: 16
+# Settings affecting the gameplay on your server
+gameplay-settings:
+  # Whether to allow players to use command blocks
+  enableCommandBlocks: true
+  # Whether to allow beta clients to join
+  allowBeta: false
+  # Whether to enable Redstone functionality
+  enableRedstone: true
+  # Whether to tick Redstone
+  tickRedstone: true
+  # View distance
+  viewDistance: 8
+  # Whether to enable achievements
+  achievements: true
+  # Whether to announce achievements
+  announceAchievements: true
+  # Spawn protection radius
+  spawnProtection: 16
+  # Default game mode
+  gamemode: 0
+  # Whether to force the default game mode
+  forceGamemode: false
+  # Whether to enable hardcore mode
+  hardcore: false
+  # Whether to enable PVP
+  pvp: true
+  # Game difficulty
+  difficulty: 1
+  # Whether to force resources
+  forceResources: false
+  # Whether to allow client packs
+  allowClientPacks: true
+  # Resource packs hosted on an external server, the client downloads them from the
+  # given url instead of receiving them through the game connection
+  cdnPacks: []
+  # Whether to allow vibrant visuals
+  allowVibrantVisuals: true
+  # Experiments to be enabled
+  experiments:
+    - data_driven_vanilla_blocks_and_items
+  # Whether to cache structures
+  cacheStructures: false
+  # Whether to enable education features
+  enableEducation: false
+  # Whether to mute emote announcements
+  muteEmoteAnnouncements: false
+  # Whether to enable intelligent mobs
+  enableMobAi: true
+  # Whether to load the recipe registry. Disabling skips recipe loading at boot
+  # (faster startup, less RAM) and sends clients an empty recipe book; all craft
+  # requests are rejected. Restart required
+  enableRecipes: true
+  # Whether to load the creative inventory registry. Disabling sends clients an
+  # empty creative inventory and also force-disables recipes (hard dependency).
+  # Restart required
+  enableCreativeInventory: true
+  # Whether world time advances at all. Disabling freezes time server-side every
+  # tick (stronger than the dodaylightcycle gamerule, which is ignored). Important
+  # for high tick rates where time would otherwise race
+  enableDaylightCycle: true
+  # Whether to run the weather cycle at all. Disabling skips all weather processing
+  # every tick and forces clear weather (stronger than the doweathercycle gamerule,
+  # which is ignored)
+  enableWeather: true
+  # Whether to run natural entity spawning. Disabling skips all spawn rule
+  # processing every tick (stronger than the domobspawning gamerule, which is
+  # ignored). Spawn eggs and plugins can still spawn entities
+  enableEntitySpawning: true
+  # Whether to run random block ticks. Disabling stops crop growth, fire spread,
+  # leaf decay, ice melting etc. and skips the random tick chunk scan every tick
+  # (stronger than randomtickspeed 0). Scheduled updates (redstone, pistons,
+  # liquids) keep working
+  enableBlockRandomTicking: true
+  # Whether liquids flow. Disabling makes water and lava static (placed liquid stays
+  # a source block and never spreads)
+  enableLiquidFlow: true
+  # Whether breaking blocks and killing entities drop items. Disabling prevents all
+  # item entity drops from block breaks and deaths (item entities cost tick time)
+  enableItemDrops: true
+  # Whether XP orbs spawn. Disabling prevents all experience orb entities (mob
+  # kills, mining, furnaces give no XP)
+  enableXpOrbs: true
+  # How long a dropped item lives before it despawns, in ticks (20 ticks = 1
+  # second). Lower values keep fewer item entities alive and directly cut level
+  # worker time
+  itemDespawnTicks: 6000
+  # How often, in ticks, a dropped item looks for nearby stacks to merge with. Lower
+  # values collapse item piles faster at the cost of more frequent lookups
+  itemMergeInterval: 25
+  # How far, in blocks, a dropped item looks for stacks to merge with
+  itemMergeRadius: 1.0
+  # How many ticks a resting dropped item waits between scans of the blocks around
+  # it (fire, lava, water, collisions). 1 scans every tick, like vanilla. Higher
+  # values save work on large item piles but make reactions up to that many ticks
+  # late
+  itemRestingScanInterval: 1
+  # Whether explosions destroy blocks. Disabling keeps explosion knockback and
+  # entity damage but never breaks blocks (stronger than the mobgriefing gamerule;
+  # also affects TNT)
+  enableExplosionBlockDamage: true
+  # Whether gravity-affected blocks (sand, gravel, concrete powder etc.) fall.
+  # Disabling keeps them floating in place
+  enableBlockGravity: true
+  # Whether player hunger depletes. Disabling freezes the food level (no starvation,
+  # no sprint-jump drain)
+  enableHunger: true
+# Misc settings for your server like add-ons
+misc-settings:
+  # Message sent when the server shuts down
+  shutdownMessage: Server closed
+  # Whether to install the Spark plugin on the server as profiler
+  installSpark: false
+  # Ignore plugin API check
+  bypassAPICheck: false
+  # pnx.settings.misc.overrideserverauthblockbreaking
+  overrideServerAuthBlockBreaking: false
+  # Enables anonymous usage statistics collection via bStats. When enabled,
+  # PowerNukkitX sends anonymous data (server version, player count, OS, Java
+  # version, etc.) to help the developers understand usage and improve the software.
+  # Metrics do not affect performance.
+  enableMetrics: true
+  # Optional global Dynamic Properties UUID. Overrides the persisted UUID on startup
+  # when configured.
+  defaultDynamicPropertiesGroupUUID: ''
+# Settings affecting how levels are handled by PowerNukkitX
+level-settings:
+  # Whether to enable level thread (Every level has its own thread)
+  levelThread: false
+  # Whether the server dynamically adjusts the tick rate
+  autoTickRate: true
+  # Maximum adjustable tick count
+  autoTickRateLimit: 20
+  # Base tick rate
+  baseTickRate: 1
+  # Whether to tick all players from the main loop before the levels tick, instead
+  # of during their level's tick. Has no effect when levelThread is enabled
+  alwaysTickPlayers: false
+  # Whether to load all levels
+  loadAllLevels: true
+  # Chunk unload tick cycle
+  chunkUnloadDelay: 15000
+  # Limits how many entites can spawn in a world
+  entitySpawnCap: 512
+  # Defines the level worker threads. -1 to use all available processors
+  levelWorkerThreads: -1
+  # LevelDB backend: java or jni
+  leveldb-backend: java
+# Settings affecting how chunks are handled by PowerNukkitX
+chunk-settings:
+  # Limits how many entities can spawn naturally in a chunk.
+  spawnLimit: 3
+  # Number of chunks a player needs to receive upon first spawn
+  spawnThreshold: 56
+  # Tick cycle of chunks
+  chunksPerTicks: -1
+  # Tick radius of chunks
+  tickRadius: 4
+  # Whether to clear the tick list at the end of each tick
+  clearTickList: true
+  # Maximum number of terrain generation tasks executed simultaneously. Set to -1 or
+  # 0 to disable this limit and use dynamic generation scheduling.
+  generationQueueSize: 8
+  # Heap memory budget in MB for caching serialized chunk payloads, so a chunk sent
+  # to several players is only serialized once. Capped at 10% of the maximum heap;
+  # payloads unused for a minute are dropped. 0 disables the cache
+  payloadCacheMemoryMb: 256
+  # Threads that load chunks from disk for players. 0 picks a value from the CPU
+  # count
+  chunkIoThreads: 0
+  # Maximum number of chunk loads a single player may start per tick. Keeps players
+  # joining at once from flooding the disk and the loader threads. 0 or less removes
+  # the limit
+  maxChunkLoadsPerPlayerTick: 32
+  # If enabled, every new generated chunk will be saved. Improves performance but
+  # world sizes will grow faster.
+  saveGenerated: true
+  # List for ticking disabled blocks. Example: minecraft:lava
+  disableBlockTicking: []
+# Network settings for PowerNukkitX
+network-settings:
+  # Server upstream bandwidth in Mbps used to budget chunk publication across all
+  # players
+  upstream-bandwidth: 1000
+  # Whether the query protocol displays plugin information
+  queryPlugins: true
+  # Compression level of the compression algorithm used by the server
+  compressionLevel: 4
+  # Batches smaller than this many bytes are sent uncompressed; 1 compresses
+  # everything
+  compressionThreshold: 1
+  # Zlib compression algorithm provider used by the server. 0 for Java's original
+  # algorithm
+  # 1 for single-threaded low memory usage algorithm
+  # 2 for multi-threaded caching algorithm
+  # 3 for hardware-accelerated algorithm
+  zlibProvider: 3
+  # Whether the server uses Snappy compression (not recommended)
+  snappy: false
+  # Buffer for server decompression
+  compressionBufferSize: 1048576
+  # Maximum number of bytes the server can decompress
+  maxDecompressSize: 268435456
+  # Whether to enable query
+  enableQuery: true
+  # Login time
+  checkLoginTime: false
+  # Maximum number of logins verified at the same time. Further logins wait for a
+  # free slot, see maxQueuedLogins. 0 picks a value from the CPU count
+  maxPendingLogins: 0
+  # Maximum number of logins from one public IP address verified at the same time,
+  # so a single host cannot take every login slot. Loopback and private network
+  # addresses, such as a proxy in front of the server, are not limited. 0 removes
+  # the limit
+  maxPendingLoginsPerAddress: 4
+  # Maximum number of logins waiting for one of the maxPendingLogins slots. Logins
+  # beyond that are refused with a server full message. 0 uses eight times
+  # maxPendingLogins
+  maxQueuedLogins: 0
+  # Threads that verify login chains and prepare encryption. They are kept apart
+  # from world generation so a slow authentication service cannot stall the world. 0
+  # picks a value from the CPU count
+  loginThreads: 0
+  # NetherNet transport settings
+  nethernet:
+    # How the server obtains SDP offers. builtin: it serves the HTTP signalling
+    # endpoint on the listener port. nxs: it registers with the provider configured
+    # below and the provider hands over players. hybrid: both, so players can arrive
+    # either way. plugin: nothing is served and a plugin feeds offers through the
+    # signalling API
+    signalingMode: builtin
+    # Settings for the NXS signalling provider. Only used in the nxs and hybrid modes
+    nxs:
+      # Provider origin used for discovery and registration
+      endpoint: https://agent.warden.cloud
+      # Bearer token, or file:/path/to/token. Empty registers anonymously
+      token: ''
+      # Reachable UDP endpoints, as 198.51.100.1:19133 or [2001:db8::1]:19133. Empty
+      # derives them from the addresses this host holds, which is wrong behind a NAT or
+      # a forwarder; name the endpoint players actually reach in that case
+      advertise-addresses: []
+      # NXS options most servers leave unchanged
+      advanced:
+        # Lets the provider help players connect when they cannot reach this server
+        # directly, for example behind a NAT without port forwarding
+        assisted-joins: false
+        # Lets the provider check from several regions that players can reach this server,
+        # and stop offering addresses that fail
+        connection-checks: true
+        # Finds this server's public address through the provider's STUN servers when it
+        # has none of its own. Not used when advertise-addresses is set
+        stun-discovery: true
+        # Where this server is: country (a two-letter code), city, latitude and longitude.
+        # Empty lets the provider estimate it
+        location: {}
+        # Removes this server from the provider on shutdown. Turn it on when the data
+        # folder does not survive a restart, such as a container without a volume, or
+        # every restart registers a new server
+        deregister-on-shutdown: false
+    # TCP port for the NetherNet signalling endpoint. 0 mirrors the server port, which
+    # is where clients look for it
+    signalingPort: 0
+    # Dedicated UDP port for NetherNet media, multiplexing every peer over one socket.
+    # 0 gathers ICE on the server port when query is disabled, and on an ephemeral
+    # port per peer otherwise
+    udpPort: 0
+    # Seconds a connection has to finish ICE and DTLS before it is dropped
+    handshakeTimeout: 30
+    # STUN and TURN servers ICE may use, such as stun:stun.l.google.com:19302. A
+    # server behind NAT needs one to put a reachable address in the offer. TURN
+    # credentials go in the URL, as turn:user:password@host:3478
+    ice-servers: []
+    # STUN servers asked for this server's public address, which is then offered to
+    # every player, as stun:host:port. Needs a fixed UDP port for ICE and is not used
+    # when advertise-addresses is set. Empty turns discovery off
+    stun-servers:
+      - stun:stun.cloudflare.com:3478
+      - stun:stun.l.google.com:19302
+    # Addresses to put in the ICE candidates clients connect to. Empty derives them
+    # from the bind address, which is usually what you want
+    advertise-addresses: []
+    # Addresses allowed to set X-Forwarded-For on signalling requests, as single hosts
+    # or CIDR ranges such as 10.0.0.0/8. An http or https entry is fetched and read as
+    # one address per line
+    trusted-proxies: []
+    # Read a HAProxy PROXY header, v1 or v2, from signalling connections arriving from
+    # a trusted proxy. Connections without a header are still served
+    proxyProtocol: false
+    # Unencrypted PEM private key holding the P-384 key identifying this server to
+    # clients, generated on first start. Share it across a fleet to be trusted as one
+    # operator; replacing it re-prompts every returning player
+    identityFile: keys/identity.pem
+    # The operator name players see in the first-use trust prompt. Empty falls back to
+    # the MOTD. Changing it prompts nobody again, because clients pin the key and not
+    # the name
+    identityDomain: ''
+    # Log level for the native ICE and DTLS library: TRACE, DEBUG, INFO, WARN, ERROR
+    # or NONE
+    nativeLogLevel: WARN
+  # Settings related to inbound packet rate limiting
+  rate-limit:
+    # Whether to enable per-session and per-player inbound packet rate limiting
+    rateLimitEnabled: true
+    # Maximum inbound packets per second per session before the player is kicked for
+    # flooding
+    maxInboundPacketsPerSecond: 1500
+    # Maximum inbound packets processed per server tick per session (hard cap, excess
+    # is dropped)
+    maxPacketsPerTick: 500
+    # Maximum command packets per second per player. 0 disables the limit
+    maxCommandsPerSecondPerPlayer: 10
+    # Maximum chat packets per second per player. 0 disables the limit
+    maxChatPerSecondPerPlayer: 2
+    # Maximum form response packets per second per player. 0 disables the limit
+    maxFormResponsesPerSecondPerPlayer: 20
+    # Maximum movement packets per second per player. 0 disables the limit
+    # Players can only send one per tick (20/s), but high ping may lead to false
+    # rate-limiting.
+    maxMovementPacketsPerSecondPerPlayer: 40
+    # Maximum packets per second per player for requests that make the server scan the
+    # level or broadcast to nearby players (map info, lectern updates, sounds,
+    # animations, emotes). Excess is dropped silently. 0 disables the limit
+    maxWorldInteractionPacketsPerSecondPerPlayer: 30
+  # Settings related to inbound packet rate limiting
+  botnet:
+    # Whether to enable botnet / distributed flood detection
+    detectionEnabled: false
+    # Packets per second a single session must exceed to be considered suspicious
+    suspiciousThreshold: 300
+    # Minimum number of simultaneously suspicious sessions required to evaluate botnet
+    # signals
+    minSuspiciousIps: 3
+    # Whether to automatically block all suspicious IPs when a botnet attack is
+    # detected
+    autoBlock: true
+    # Duration (seconds) to block suspicious IPs when auto-block is enabled
+    autoBlockDurationSeconds: 60
+    # Minimum corroborating signal score (1-5) required to fire a botnet alert. Score
+    # 1 = volume only, higher scores require additional signals (timing, packet type,
+    # subnet, session age)
+    minScore: 2
+# Debug configuration for PowerNukkitX
+debug-settings:
+  # Whether to prompt for deprecated events for plugin
+  deprecatedVerbose: true
+  # Server's debug level [INFO, DEBUG, TRACE, ALL]
+  level: INFO
+  # Whether to enable debug commands
+  command: false
+  # Packet log mode (false = list contains ignored packets, true = list contains
+  # logged packets)
+  mode: false
+  # pnx.settings.debug.packetList
+  packetList: []
+  # pnx.settings.debug.disableencodinglimits
+  disableEncodingLimits: false
+# Performance settings for PowerNukkitX
+performance-settings:
+  # Number of threads used by the server scheduler, 'auto' means automatic
+  # allocation
+  asyncWorkers: auto
+  # How many ticks per second should be targeted (1-100000). Above ~500 TPS the tick
+  # thread busy-waits for sub-millisecond precision and will fully use one CPU core
+  # per tick loop
+  baseTps: 20
+  # Whether to enable the registry cache. Recommended for larger networks that often
+  # boot subservers.
+  registryCacheEnabled: false
+  # Path to the registry cache file
+  registryCachePath: path/to/your/registry_cache.bin
+  # When should the level GC force all chunks to be checked.
+  forceGCpercentage: 1.0
+  # Whether to enable the freeze array
+  enable: true
+  slots: 32
+  defaultTemperature: 32
+  freezingPoint: 0
+  boilingPoint: 1024
+  absoluteZero: -256
+  melting: 16
+  singleOperation: 1
+  batchOperation: 32
+# Version of your pnx.yml. DO NOT MODIFY!
+config:
+  version: 3.1.0

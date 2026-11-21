@@ -35,6 +35,12 @@ listener:
   # The reconnect handler used to determine fallback connections. Possible options: DefaultReconnectHandler, RoundRobinReconnectHandler
   reconnect_handler: DefaultReconnectHandler
 
+  # How players connect, which takes a restart to change:
+  # nethernet: the connection method of current Bedrock Edition, set up in the nethernet section
+  # raknet: the old method, which Bedrock Edition will stop supporting. Query runs on it
+  # both: either way, each on its own UDP port, the listener's and nethernet.webrtc_port
+  transport: both
+
 # A list of all downstream servers that are available right after starting
 # address field is formatted using ip:port
 # publicAddress is optional and can be set to the ip players can directly connect through
@@ -67,8 +73,24 @@ network_settings:
   # Enable RakNet cookies for additional security. Do NOT disable this unless you know what you are doing.
   enable_cookies: true
 
-  # Enable HAProxy PROXY protocol (v1/v2) so the proxy can read the real client address when running behind a load balancer (e.g. HAProxy/UDP forwarder)
-  enable_proxy_protocol: false
+  # The HAProxy PROXY protocol (v1/v2) speaking proxies in front of this proxy, as hosts or CIDR ranges such as 10.0.0.0/8.
+  # Listing one turns PROXY protocol on, so leave this empty unless you run such a proxy.
+  # RakNet: only these proxies may connect, and each connection has to start with a PROXY header.
+  # NetherNet signaling: PROXY headers are read from these proxies. Their connections without one are still accepted.
+  # Proxies in this list are also not affected by built-in signaling's per-address connection limit.
+  # An http or https entry is fetched and read as one address per line.
+  # IF YOU DON'T KNOW WHAT THIS IS, DON'T TOUCH IT!
+  proxy_protocol_whitelisted_ips: []
+
+  # UDP relays in front of nethernet.webrtc_port that send a PROXY protocol v2 header with each player's address,
+  # as hosts or CIDR ranges. Leave this empty unless you run such a relay.
+  # While set, players can only reach webrtc_port through these relays, so nethernet.signaling.advertise_addresses
+  # should name the relays. Without any, NXS does not start, and built-in signaling only works if something
+  # in front of it rewrites its answers to name the relays.
+  # This is separate from proxy_protocol_whitelisted_ips and nethernet.signaling.trusted_proxies, which only cover
+  # RakNet and signaling. An http or https entry is fetched and read as one address per line.
+  # IF YOU DON'T KNOW WHAT THIS IS, DON'T TOUCH IT!
+  webrtc_proxy_protocol_relays: []
 
   # How many seconds should a connection be blocked if an error is thrown. Set to 0 to disable.
   error_timeout: 15
@@ -78,98 +100,6 @@ network_settings:
 
   # Bind each downstream connection to a random 127.0.0.0/8 source address when the target server is on loopback. Certain server softwares like BDS rate limit connections per IP, this causes problems when transferring multiple players at the same time to a certain server. Requires an OS that allows binding the whole loopback range.
   random_downstream_loopback_address: false
-
-# NetherNet transport settings.
-nethernet:
-
-  # Accept NetherNet connections alongside RakNet
-  enabled: false
-
-  # builtin: the proxy serves the HTTP signaling endpoint on the listener port
-  # nxs: the proxy registers with the provider configured below and it hands over players
-  # hybrid: both, so players can arrive either way
-  # plugin: nothing is bound, a plugin feeds offers through the signaling API
-  signaling_mode: builtin
-
-  # Settings for the NXS signaling provider. Only used in the nxs and hybrid modes
-  nxs:
-
-    # Bearer token, or file:/path/to/token. Empty registers anonymously
-    token: ''
-
-    # Provider origin used for discovery and registration
-    endpoint: https://agent.warden.cloud
-
-    # Reachable UDP endpoints, as 198.51.100.1:19133 or [2001:db8::1]:19133.
-    # Empty derives them from the addresses this host holds, which is wrong behind a NAT
-    # or a forwarder. Name the endpoint players actually reach in that case.
-    advertise_addresses: []
-
-    # Options most proxies leave unchanged
-    advanced:
-
-      # Lets the signaling service help players connect when they cannot reach this proxy directly,
-      # for example behind a NAT without port forwarding
-      assisted_joins: false
-
-      # Lets the signaling service check from several regions that players can reach this proxy,
-      # and stop offering addresses that fail
-      connection_checks: true
-
-      # Finds this proxy's public address through the signaling service's STUN servers when it has
-      # none of its own. Not used when advertise_addresses is set
-      stun_discovery: true
-
-      # Where this proxy is: country (a two-letter code), city, latitude and longitude. Leave empty
-      # to let the signaling service estimate it, which it may also let its operator override
-      location: {}
-
-      # Removes this proxy from the signaling service on shutdown. Enable this when the data folder
-      # does not survive a restart, such as in a container without a volume, or each restart adds a new proxy
-      deregister_on_shutdown: false
-
-  # Addresses allowed to set X-Forwarded-For on signaling requests, as hosts or CIDR ranges
-  # such as 10.0.0.0/8. An http or https entry is fetched and read as one address per line.
-  # Needed when a reverse proxy fronts the signaling port, so the real client address survives.
-  trusted_proxies: []
-
-  # Read a HAProxy PROXY header, v1 or v2, on signaling connections from a trusted_proxies
-  # address. Connections without one are still served and fall back to X-Forwarded-For.
-  proxy_protocol: false
-
-  # Addresses put in the ICE candidates clients connect to. Empty derives them from the
-  # listener bind address. Set it when clients reach a different address or the listener
-  # binds a wildcard. An address this machine does not hold is announced as the public side
-  # of a NAT forwarding udp_port here, same port. Media bypasses a signaling reverse proxy,
-  # so its address only belongs here if it forwards the media port too.
-  advertise_addresses: []
-
-  # Dedicated UDP port for NetherNet media, one socket for every peer.
-  # It must not be the listener port, which RakNet already holds.
-  # 0 picks an ephemeral port per peer, which needs no fixed port open but publishes a
-  # different one to every client.
-  udp_port: 0
-
-  # Serves signaling over HTTPS as well as HTTP, on the same port
-  https:
-
-    # Either a PEM chain, with its key in private_key, or a PKCS12 file, leaving that empty.
-    # Clients that reach signaling over TLS never see the first use trust prompt.
-    # Empty serves plaintext only.
-    certificate: ''
-
-    # PEM private key for the certificate. Leave empty when that is a PKCS12 file
-    private_key: ''
-
-    # Password for the PKCS12, or for the PEM key if it is encrypted.
-    # file:/path/to/password reads it from a file, which is the better place for it.
-    password: ''
-
-  # Unencrypted PEM private key holding the P-384 key identifying this operator to
-  # clients, generated on first start. Share it across a fleet to be trusted as one
-  # operator; replacing it re-prompts every returning player. An absolute path works,
-  # so it can be mounted from outside the proxy directory.
-  identity_file: keys/identity.pem
 
 # Case-Sensitive permission list for players (empty using {})
 permissions:
@@ -184,7 +114,6 @@ permissions:
 permissions_default:
   - waterdog.command.help
   - waterdog.command.info
-  - waterdog.command.me
 
 # Whether the debug output in the console should be enabled or not
 enable_debug: false
@@ -256,3 +185,102 @@ enable_statistics: true
 
 # Enables anonymous error reporting using bugsnag. This allows the WaterdogPE team to automatically collect issues occurring on WaterdogPE instances.
 enable_error_reporting: true
+
+# NetherNet settings, used when listener.transport is nethernet or both
+nethernet:
+
+  # Dedicated UDP port for NetherNet media, one socket for every peer, which STUN discovery
+  # shares. While RakNet runs it must not be a listener port, which RakNet holds. 0 picks the
+  # listener port with listener.transport nethernet, otherwise the first port after it that no
+  # listener or server in servers uses, which the startup log names. Players connect to it
+  # directly, so forward it like the listener port when behind a router. With NXS signaling and
+  # assisted_joins off, they cannot connect otherwise.
+  webrtc_port: 0
+
+  # How players find this proxy to open a NetherNet connection to it
+  signaling:
+
+    # builtin: the proxy serves the HTTP signaling endpoint on the listener port
+    # nxs: the proxy registers with the provider configured below and it hands over players
+    # hybrid: both, so players can arrive either way
+    # plugin: nothing is bound, a plugin feeds offers through the signaling API
+    mode: builtin
+
+    # Addresses players connect to for NetherNet media, for built-in signaling and NXS alike: IP
+    # addresses or host names, such as play.example.com or [2001:db8::1]:19133. One without a
+    # port uses webrtc_port. A host name is looked up when signaling starts, which fails if it
+    # does not resolve. An address this machine does not hold is announced as the public side of
+    # a NAT forwarding that port here. Media bypasses a signaling reverse proxy, so its address
+    # only belongs here if it forwards the media port too. With network_settings.webrtc_proxy_protocol_relays
+    # set, name the relays here. Empty derives them from the listener bind address, or from this
+    # host's addresses and what stun_discovery finds.
+    advertise_addresses: []
+
+    # Finds this proxy's public address through STUN when advertise_addresses is empty. Built-in
+    # signaling asks public STUN servers from webrtc_port, NXS the signaling service's own. Off behind
+    # PROXY protocol relays, which players reach instead of this proxy's own addresses
+    stun_discovery: true
+
+    # Reverse proxies, such as an HTTP load balancer, whose X-Forwarded-For header built-in signaling
+    # trusts for the player's address, as hosts or CIDR ranges such as 10.0.0.0/8. An http or https
+    # entry is fetched and read as one address per line. Built-in signaling also lifts its per-address
+    # connection limit for them. PROXY protocol proxies go in network_settings.proxy_protocol_whitelisted_ips.
+    # With more than one proxy in front of signaling, such as a CDN in front of nginx, list every one of
+    # them, or have the last one send only the player's address in X-Forwarded-For.
+    trusted_proxies: []
+
+    # Settings for built-in signaling. Only used in the builtin and hybrid modes
+    builtin:
+
+      # Serves signaling over HTTPS as well as HTTP, on the same port
+      https:
+
+        # Either a PEM chain, with its key in private_key, or a PKCS12 file, leaving that empty.
+        # Clients that reach signaling over TLS never see the first use trust prompt.
+        # Empty serves plaintext only.
+        certificate: ''
+
+        # PEM private key for the certificate. Leave empty when that is a PKCS12 file
+        private_key: ''
+
+        # Password for the PKCS12, or for the PEM key if it is encrypted.
+        # file:/path/to/password reads it from a file, which is the better place for it.
+        password: ''
+
+    # Settings for the NXS signaling provider. Only used in the nxs and hybrid modes
+    nxs:
+
+      # Bearer token, or file:/path/to/token. Empty registers anonymously
+      token: ''
+
+      # Provider origin used for discovery and registration
+      endpoint: https://agent.warden.cloud
+
+      # Options most proxies leave unchanged
+      advanced:
+
+        # Lets the signaling service help players connect when they cannot reach this proxy directly,
+        # for example behind a NAT without port forwarding. Off while network_settings.webrtc_proxy_protocol_relays
+        # lists relays
+        assisted_joins: false
+
+        # Lets the signaling service check from several regions that players can reach this proxy,
+        # and stop offering addresses that fail
+        connection_checks: true
+
+        # Where this proxy is: country (a two-letter code), city, latitude and longitude. Leave empty
+        # to let the signaling service estimate it, which it may also let its operator override
+        location: {}
+
+        # Removes this proxy from the signaling service on shutdown. Enable this when the data folder
+        # does not survive a restart, such as in a container without a volume, or each restart adds a new proxy
+        deregister_on_shutdown: false
+
+  # Unencrypted PEM private key holding the P-384 key identifying this operator to
+  # clients, generated on first start. Share it across a fleet to be trusted as one
+  # operator; replacing it re-prompts every returning player. An absolute path works,
+  # so it can be mounted from outside the proxy directory.
+  identity_file: nethernet/identity.pem
+
+# The layout of this file, used to upgrade it. Do not change it
+config_version: 3
