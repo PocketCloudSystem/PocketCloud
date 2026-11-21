@@ -31,7 +31,7 @@ public final class ClusterPacketRegistry {
         register(HeadForwardStartResultPacket.class);
     }
 
-    private void register(Class<? extends Packet> type) {
+    public void register(Class<? extends Packet> type) {
         try {
             packets.put(type.getSimpleName(), type.getDeclaredConstructor());
         } catch (NoSuchMethodException e) {

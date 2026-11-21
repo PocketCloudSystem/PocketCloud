@@ -117,6 +117,10 @@ public final class ClusterNetwork {
         if (channel != null && channel.isActive()) channel.writeAndFlush(packet);
     }
 
+    public ClusterPacketRegistry registry() {
+        return registry;
+    }
+
     public RequestManager requests() {
         return requests;
     }

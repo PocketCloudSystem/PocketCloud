@@ -67,6 +67,9 @@ public final class ClusterManager {
     private final Map<String, Peer> peers = new ConcurrentHashMap<>();
     private final Set<String> dialing = ConcurrentHashMap.newKeySet();
 
+    /** Features on top of the node protocol. Add new modules here. */
+    private final List<ClusterModule> modules = List.of();
+
     private LocalNodeHandle localNode;
     @Getter
     private HeadElection election;
@@ -116,6 +119,7 @@ public final class ClusterManager {
                 members.put(new ClusterMembers.Member(config.name(), config.advertisedAddress(), config.clusterPort()));
             }
             network = new ClusterNetwork(this, certificates);
+            for (ClusterModule module : modules) module.packets().forEach(network.registry()::register);
             network.start(config.clusterBindAddress(), config.clusterPort());
         } catch (Exception e) {
             CloudLogger.get().exception("Failed to start the cluster port {}:{}", e, config.clusterBindAddress(), config.clusterPort());
@@ -136,6 +140,14 @@ public final class ClusterManager {
         scheduler.scheduleAtFixedRate(safe(() -> network.requests().tick(0)), 1, 1, TimeUnit.SECONDS);
         scheduler.scheduleAtFixedRate(safe(this::dropServersOfDeadNodes), 2, 1, TimeUnit.SECONDS);
         scheduler.scheduleAtFixedRate(safe(() -> broadcast(() -> fullReport())), 10, 10, TimeUnit.SECONDS);
+
+        for (ClusterModule module : modules) {
+            try {
+                module.start(this);
+            } catch (Exception e) {
+                CloudLogger.get().exception("Failed to start cluster module {}", e, module.getClass().getSimpleName());
+            }
+        }
     }
 
     private Runnable safe(Runnable task) {
@@ -149,6 +161,15 @@ public final class ClusterManager {
     }
 
     public void close() {
+        if (network != null) {
+            for (ClusterModule module : modules) {
+                try {
+                    module.stop();
+                } catch (Exception e) {
+                    CloudLogger.get().exception("Failed to stop cluster module {}", e, module.getClass().getSimpleName());
+                }
+            }
+        }
         if (scheduler != null) scheduler.shutdownNow();
         if (network != null) {
             for (Peer peer : peers.values()) {
@@ -348,6 +369,9 @@ public final class ClusterManager {
             case NodeServerStatePacket report -> handleServerState(from, report);
             case NodeForwardStartPacket forward -> handleForwardedStart(channel, forward);
             default -> {
+                for (ClusterModule module : modules) {
+                    if (module.onPacket(from, channel, packet)) break;
+                }
             }
         }
     }
@@ -404,6 +428,7 @@ public final class ClusterManager {
         }
 
         network.send(channel, fullReport());
+        for (ClusterModule module : modules) module.onPeerConnected(id.name());
 
         election.observe(id.term(), id.head());
     }
@@ -451,7 +476,23 @@ public final class ClusterManager {
         }
     }
 
-    private void respond(Channel channel, RequestPacket request, ResponsePacket response) {
+    public List<ClusterModule> modules() {
+        return modules;
+    }
+
+    public ScheduledExecutorService scheduler() {
+        return scheduler;
+    }
+
+    /** Sends a packet to a connected node. Returns false if the node is not connected. */
+    public boolean send(String peerName, CloudPacket packet) {
+        Peer p = peers.get(peerName);
+        if (p == null || !p.connected()) return false;
+        network.send(p.channel(), packet);
+        return true;
+    }
+
+    public void respond(Channel channel, RequestPacket request, ResponsePacket response) {
         response.setRequestId(request.getRequestId());
         network.send(channel, response);
     }
@@ -712,6 +753,7 @@ public final class ClusterManager {
         for (Peer peer : peers.values()) {
             if (peer.alive(now) || peer.serversDropped()) continue;
             peer.serversDropped(true);
+            for (ClusterModule module : modules) module.onPeerGone(peer.name());
             Collection<CloudServer> lost = PocketCloud.instance().servers().serversOfNode(peer.name());
             if (lost.isEmpty()) continue;
             CloudLogger.get().warn("Node §b{} §ris gone, its §b{} §rserver(s) are treated as offline: §b{}", peer.name(), lost.size(),
