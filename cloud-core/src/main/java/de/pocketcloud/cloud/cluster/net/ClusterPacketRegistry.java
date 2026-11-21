@@ -23,6 +23,12 @@ public final class ClusterPacketRegistry {
         register(HeadClaimPacket.class);
         register(HeadVotePacket.class);
         register(HeadAnnouncePacket.class);
+        register(HeadStartServerPacket.class);
+        register(NodeStartServerResultPacket.class);
+        register(NodeStopServerPacket.class);
+        register(NodeServerStatePacket.class);
+        register(NodeForwardStartPacket.class);
+        register(HeadForwardStartResultPacket.class);
     }
 
     private void register(Class<? extends Packet> type) {

@@ -183,10 +183,12 @@ public final class ServerCommand extends Command {
         Collection<ICloudServer> servers = PocketCloud.instance().servers().query(query).stream().sorted(Comparator.comparingInt(ICloudServer::playerCount)).toList();
         sender.info("Servers §8(§b{}§8/§b{}§8)§r:", servers.size(), PocketCloud.instance().servers().serverCount());
         if (servers.isEmpty()) sender.info("§cNo servers found.");
+        boolean clustered = PocketCloud.instance().cluster().clustered();
         for (ICloudServer server : servers) {
-            sender.info("Name§8: §b{} §8| §rPlayers§8: §b{}§8/§c{} §8| §rPort§8: §b{} §8| §rStatus§8: §b{} §8| §rSoftware§8: §b{} §8(§b{}§8)", server.name(),
+            sender.info("Name§8: §b{} §8| §rPlayers§8: §b{}§8/§c{} §8| §rPort§8: §b{} §8| §rStatus§8: §b{} §8| §rSoftware§8: §b{} §8(§b{}§8){}", server.name(),
                     server.playerCount(), server.data().maxPlayers(), server.data().port(), server.status().getDisplay(),
-                    server.template().serverSoftware().name(), server.template().templateType().name());
+                    server.template().serverSoftware().name(), server.template().templateType().name(),
+                    clustered ? " §8| §rNode§8: §b" + PocketCloud.instance().cluster().nodeOf(server).name() : "");
         }
 
         return true;

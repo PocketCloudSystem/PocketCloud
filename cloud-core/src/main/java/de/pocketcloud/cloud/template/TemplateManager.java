@@ -196,7 +196,7 @@ public final class TemplateManager implements Tickable, Loadable, IWriteTemplate
     public void tick(long currentTick) {
         if (!PocketCloud.instance().serverGroups().isLoaded()) return;
         // Only the head schedules servers (auto start and scaling).
-        if (!PocketCloud.instance().cluster().isHead()) return;
+        if (!PocketCloud.instance().cluster().canSchedule()) return;
         for (ITemplate template : templates.values()) {
             if (template.settings().autoStart()) {
                 int runningServers = PocketCloud.instance().servers().query(ServerSearchQuery.create().ofTemplate(template)).size();

@@ -101,6 +101,12 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
     @Setter
     private transient long queuedAt = 0;
 
+    /**
+     * The node that runs this server. {@code null} means this node (servers created here).
+     */
+    @Setter
+    private transient volatile String nodeName = null;
+
     @MapCreator
     public CloudServer(
             @MapKey(name = "id") int id,
@@ -123,7 +129,40 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
     @Override
     public void syncOut() {
         SyncPacket.create(SyncType.SERVER, data -> data.writeAll(this, markedForRemoval)).broadcast();
+        if (remote()) return; // the owning node publishes the state of its servers
+
         publishState();
+        PocketCloud.instance().cluster().broadcastServerState(this, markedForRemoval);
+    }
+
+    /**
+     * Whether this server runs on another node (then it is only a data object here).
+     */
+    public boolean remote() {
+        String node = nodeName;
+        return node != null && !node.equals(PocketCloud.instance().cluster().nodeName());
+    }
+
+    /**
+     * Document sent to other nodes and stored in the shared state.
+     */
+    public Map<String, Object> writeForCluster() {
+        Map<String, Object> document = new HashMap<>(write());
+        document.put("node", node().name());
+        return de.pocketcloud.common.util.FileUtils.GSON.fromJson(
+                de.pocketcloud.common.util.FileUtils.GSON.toJson(document),
+                new com.google.gson.reflect.TypeToken<Map<String, Object>>() {}.getType());
+    }
+
+    /**
+     * Builds the local data object for a server of another node.
+     */
+    public static CloudServer fromCluster(Map<String, Object> document) {
+        Map<String, Object> copy = new HashMap<>(document);
+        Object node = copy.remove("node");
+        CloudServer server = de.pocketcloud.common.serialization.MapperUtils.fromMap(copy, CloudServer.class);
+        server.nodeName = node == null ? null : node.toString();
+        return server;
     }
 
     /**
@@ -138,15 +177,13 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
             return;
         }
 
-        Map<String, Object> document = new HashMap<>(write());
-        document.put("node", nodeName);
-        state.put(StateKeys.SERVERS, name(), document);
+        state.put(StateKeys.SERVERS, name(), writeForCluster());
         state.addToSet(StateKeys.nodeServers(nodeName), name());
     }
 
     @Override
     public void tick(long currentTick) {
-        if (startTime == null) return;
+        if (startTime == null || remote()) return;
         if (status.isStarting()) {
             if (!pidLookupDone && data.processId() == null && (lastPidLookupTime == 0 || (System.currentTimeMillis() - lastPidLookupTime) >= 1500) && lastPidLookupCounter < 5) {
                 lastPidLookupTime = System.currentTimeMillis();
@@ -233,6 +270,11 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
     }
 
     public void stop(boolean force) {
+        if (remote()) {
+            PocketCloud.instance().cluster().forwardStop(nodeName, name(), force);
+            return;
+        }
+
         new ServerStopEvent(this, force).call();
         PocketCloud.instance().notifications().sendNotification(NotificationType.SERVER_STOPPING, Map.of("server", name()), Map.of());
         stopTime = Instant.now();

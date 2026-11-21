@@ -28,6 +28,8 @@ public final class Peer {
     private volatile String head = "";
     private volatile String state = NodeState.JOINING.name();
     private volatile Map<String, Object> stats = Map.of();
+    /** Whether the servers of this node were already dropped after it went dead. */
+    private volatile boolean serversDropped;
 
     public Peer(String name) {
         this.name = name;

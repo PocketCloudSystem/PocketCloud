@@ -43,6 +43,7 @@ public final class HeadElection {
     private long claimDeadline;
     private final Set<String> votes = new HashSet<>();
     private long nextAttempt;
+    private long headSince;
 
     HeadElection(ClusterManager cluster, Path termFile) {
         this.cluster = cluster;
@@ -68,6 +69,11 @@ public final class HeadElection {
 
     public synchronized boolean isHead() {
         return state == NodeState.HEAD;
+    }
+
+    /** Time this node became head (0 in single-node mode). */
+    public synchronized long headSince() {
+        return headSince;
     }
 
     /** Called every 250 ms. */
@@ -169,6 +175,7 @@ public final class HeadElection {
         term = newTerm;
         head = cluster.nodeName();
         state = NodeState.HEAD;
+        headSince = System.currentTimeMillis();
         saveTerm();
         CloudLogger.get().success("This node is now §bhead §8(§rterm §b{}§8)§r.", term);
         cluster.broadcast(() -> new HeadAnnouncePacket(newTerm));

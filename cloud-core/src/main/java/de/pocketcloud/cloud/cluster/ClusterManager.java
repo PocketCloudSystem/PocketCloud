@@ -1,6 +1,9 @@
 package de.pocketcloud.cloud.cluster;
 
 import de.pocketcloud.api.component.server.ICloudServer;
+import de.pocketcloud.api.component.template.ITemplate;
+import de.pocketcloud.cloud.server.CloudServer;
+import de.pocketcloud.common.concurrent.Promise;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.cluster.net.ClusterNetwork;
 import de.pocketcloud.cloud.cluster.net.packet.*;
@@ -53,6 +56,8 @@ public final class ClusterManager {
     @Getter
     private volatile ClusterStateStore state = new LocalStateStore();
     private volatile RedisConnection redis;
+
+    private static final long SCHEDULE_SETTLE_MS = 3_000;
 
     private final Path directory = PocketCloudPaths.storage().internal().with("cluster").asPath();
     @Getter
@@ -129,6 +134,8 @@ public final class ClusterManager {
         scheduler.scheduleAtFixedRate(safe(this::heartbeat), 1, 1, TimeUnit.SECONDS);
         scheduler.scheduleAtFixedRate(safe(() -> election.tick()), 250, 250, TimeUnit.MILLISECONDS);
         scheduler.scheduleAtFixedRate(safe(() -> network.requests().tick(0)), 1, 1, TimeUnit.SECONDS);
+        scheduler.scheduleAtFixedRate(safe(this::dropServersOfDeadNodes), 2, 1, TimeUnit.SECONDS);
+        scheduler.scheduleAtFixedRate(safe(() -> broadcast(() -> fullReport())), 10, 10, TimeUnit.SECONDS);
     }
 
     private Runnable safe(Runnable task) {
@@ -332,7 +339,14 @@ public final class ClusterManager {
                 peer.lastSeen(0);
                 election.peerLeft(from);
                 CloudLogger.get().info("Node §b{} §rleft the cluster.", from);
+                dropServersOfDeadNodes();
             }
+            case HeadStartServerPacket start -> respond(channel, start, handleStartRequest(from, start));
+            case NodeStopServerPacket stop -> PocketCloud.instance().servers().get(stop.getServerName()).ifPresent(server -> {
+                if (server instanceof CloudServer cs && !cs.remote()) cs.stop(stop.isForce());
+            });
+            case NodeServerStatePacket report -> handleServerState(from, report);
+            case NodeForwardStartPacket forward -> handleForwardedStart(channel, forward);
             default -> {
             }
         }
@@ -385,8 +399,11 @@ public final class ClusterManager {
             peer.term(id.term());
             peer.head(id.head());
             peer.lastSeen(System.currentTimeMillis());
+            peer.serversDropped(false);
             if (!wasAlive) CloudLogger.get().info("Node §b{} §8(§b{}:{}§8) §ris §aconnected§r.", id.name(), id.address(), id.port());
         }
+
+        network.send(channel, fullReport());
 
         election.observe(id.term(), id.head());
     }
@@ -539,6 +556,16 @@ public final class ClusterManager {
         return election == null || election.isHead();
     }
 
+    /**
+     * Whether this node may schedule servers now: it is head and, in a cluster, has been head for a few
+     * seconds so the followers' states (heartbeats) are known and servers are spread across the nodes.
+     */
+    public boolean canSchedule() {
+        if (!isHead()) return false;
+        if (election == null || !clustered) return true;
+        return System.currentTimeMillis() - election.headSince() >= SCHEDULE_SETTLE_MS;
+    }
+
     public Collection<Peer> peers() {
         return List.copyOf(peers.values());
     }
@@ -609,7 +636,141 @@ public final class ClusterManager {
         CloudLogger.get().info("Removed §b{} §rstale server(s) and §b{} §rplayer(s) of this node from the shared state.", staleServers.size(), players);
     }
 
+    // ------------------------------------------------------------------ servers across nodes
+
+    private NodeStartServerResultPacket handleStartRequest(String from, HeadStartServerPacket request) {
+        if (request.getTerm() < election.term()) {
+            return new NodeStartServerResultPacket(false, "stale head term " + request.getTerm() + " < " + election.term(), 0);
+        }
+
+        var template = PocketCloud.instance().templates().get(request.getTemplateName()).orElse(null);
+        if (template == null) return new NodeStartServerResultPacket(false, "template " + request.getTemplateName() + " does not exist on " + nodeName(), 0);
+
+        try {
+            int port = PocketCloud.instance().servers().startLocal(template, request.getId(), UUID.fromString(request.getUuid()));
+            CloudLogger.get().info("Head §b{} §rstarts §b{}-{} §ron this node.", from, template.name(), request.getId());
+            return new NodeStartServerResultPacket(true, null, port);
+        } catch (Exception e) {
+            return new NodeStartServerResultPacket(false, e.getMessage(), 0);
+        }
+    }
+
+    private void handleServerState(String from, NodeServerStatePacket packet) {
+        var servers = PocketCloud.instance().servers();
+        Set<String> reported = new HashSet<>();
+        for (Map<String, Object> document : packet.getServers()) {
+            try {
+                CloudServer server = CloudServer.fromCluster(document);
+                if (server.nodeName() == null || server.nodeName().equals(nodeName())) continue;
+                reported.add(server.name());
+                servers.applyRemoteServer(server);
+            } catch (Exception e) {
+                CloudLogger.get().exception("Invalid server state from node {}", e, from);
+            }
+        }
+
+        for (String removed : packet.getRemoved()) servers.removeRemoteServer(removed);
+
+        if (packet.isFullReport()) {
+            for (CloudServer known : servers.serversOfNode(from)) {
+                if (!reported.contains(known.name()) && !known.status().isStarting() && known.status() != de.pocketcloud.api.server.ServerStatus.PENDING) {
+                    servers.removeRemoteServer(known.name());
+                }
+            }
+        }
+    }
+
+    private void handleForwardedStart(Channel channel, NodeForwardStartPacket request) {
+        var template = PocketCloud.instance().templates().get(request.getTemplateName()).orElse(null);
+        if (!isHead() || template == null) {
+            respond(channel, request, new HeadForwardStartResultPacket(List.of()));
+            return;
+        }
+
+        PocketCloud.instance().servers().start(template, request.getCount())
+                .thenSuccess(names -> respond(channel, request, new HeadForwardStartResultPacket(List.copyOf(names))))
+                .failure(_ -> respond(channel, request, new HeadForwardStartResultPacket(List.of())));
+    }
+
+    /** Called by the owning node whenever one of its servers changes. */
+    public void broadcastServerState(CloudServer server, boolean removed) {
+        if (!clustered || network == null) return;
+        Map<String, Object> document = removed ? null : server.writeForCluster();
+        broadcast(() -> removed
+                ? new NodeServerStatePacket(false, List.of(), List.of(server.name()))
+                : new NodeServerStatePacket(false, List.of(document), List.of()));
+    }
+
+    private NodeServerStatePacket fullReport() {
+        List<Map<String, Object>> documents = new ArrayList<>();
+        for (CloudServer server : PocketCloud.instance().servers().localServers()) documents.add(server.writeForCluster());
+        return new NodeServerStatePacket(true, documents, List.of());
+    }
+
+    private void dropServersOfDeadNodes() {
+        long now = System.currentTimeMillis();
+        for (Peer peer : peers.values()) {
+            if (peer.alive(now) || peer.serversDropped()) continue;
+            peer.serversDropped(true);
+            Collection<CloudServer> lost = PocketCloud.instance().servers().serversOfNode(peer.name());
+            if (lost.isEmpty()) continue;
+            CloudLogger.get().warn("Node §b{} §ris gone, its §b{} §rserver(s) are treated as offline: §b{}", peer.name(), lost.size(),
+                    String.join("§8, §b", lost.stream().map(CloudServer::name).toList()));
+            for (CloudServer server : lost) PocketCloud.instance().servers().removeRemoteServer(server.name());
+        }
+    }
+
+    /** Head → node: start a server there. Resolves with the port the node reserved. */
+    public Promise<Integer> requestRemoteStart(String node, String template, int id, UUID uuid) {
+        Promise<Integer> promise = new Promise<>();
+        Peer peer = peers.get(node);
+        if (peer == null || !peer.connected()) {
+            promise.reject(new IllegalStateException("node " + node + " is not connected"));
+            return promise;
+        }
+
+        HeadStartServerPacket request = new HeadStartServerPacket(election.term(), template, id, uuid.toString());
+        request.then(response -> {
+            if (response instanceof NodeStartServerResultPacket r && r.isSuccess()) promise.resolve(r.getPort());
+            else if (response instanceof NodeStartServerResultPacket r) promise.reject(new IllegalStateException(r.getError()));
+            else promise.reject(new IllegalStateException("unexpected response"));
+        }).failure((_, ex, reason) -> promise.reject(ex != null ? ex : new IllegalStateException(String.valueOf(reason))));
+        network.send(peer.channel(), request);
+        return promise;
+    }
+
+    /** Non-head → head: start servers. */
+    public Promise<Collection<String>> forwardStart(String template, int count) {
+        String head = election.head();
+        Peer peer = head == null ? null : peers.get(head);
+        if (peer == null || !peer.connected()) {
+            CloudLogger.get().warn("Cannot start §b{}§r: there is §cno head §rright now.", template);
+            return Promise.resolved(List.of());
+        }
+
+        Promise<Collection<String>> promise = new Promise<>();
+        NodeForwardStartPacket request = new NodeForwardStartPacket(template, count);
+        request.then(response -> promise.resolve(response instanceof HeadForwardStartResultPacket r ? r.getServers() : List.of()))
+                .failure((_, ex, reason) -> promise.reject(ex != null ? ex : new IllegalStateException(String.valueOf(reason))));
+        network.send(peer.channel(), request);
+        CloudLogger.get().info("Forwarded the start of §b{}x {} §rto head §b{}§r.", count, template, head);
+        return promise;
+    }
+
+    /** Any node → owning node: stop a server there. */
+    public void forwardStop(String node, String server, boolean force) {
+        Peer peer = peers.get(node);
+        if (peer == null || !peer.connected()) {
+            CloudLogger.get().warn("Cannot stop §b{}§r: node §b{} §ris not connected.", server, node);
+            return;
+        }
+        network.send(peer.channel(), new NodeStopServerPacket(server, force));
+        CloudLogger.get().info("§cStopping §b{} §ron node §b{}§r...", server, node);
+    }
+
     // ------------------------------------------------------------------ node handles
+
+    private final Map<String, RemoteNodeHandle> remoteHandles = new ConcurrentHashMap<>();
 
     public LocalNodeHandle localNode() {
         return localNode;
@@ -617,21 +778,44 @@ public final class ClusterManager {
 
     public Optional<NodeHandle> node(String name) {
         if (localNode.name().equals(name)) return Optional.of(localNode);
+        if (members.contains(name)) return Optional.of(remoteHandles.computeIfAbsent(name, RemoteNodeHandle::new));
         return Optional.empty();
     }
 
     public NodeHandle nodeOf(ICloudServer server) {
-        return localNode;
+        String name = server instanceof CloudServer cs ? cs.nodeName() : null;
+        if (name == null || name.equals(localNode.name())) return localNode;
+        return remoteHandles.computeIfAbsent(name, RemoteNodeHandle::new);
     }
 
     /**
-     * The node a new server will be started on.
+     * The node a new server will be started on (head only): the reachable node with the fewest servers.
+     * Proper selection (memory, software, allowed nodes, strategies) follows with the NodeSelector.
      */
-    public NodeHandle selectNodeForNewServer() {
-        return localNode;
+    public NodeHandle selectNodeForNewServer(ITemplate template) {
+        if (!clustered) return localNode;
+        long now = System.currentTimeMillis();
+        var servers = PocketCloud.instance().servers();
+        String best = nodeName();
+        long bestCount = servers.localServers().size();
+        for (Peer peer : peers.values()) {
+            if (!peer.connected() || !peer.alive(now)) continue;
+            if (!NodeState.FOLLOWER.name().equals(peer.state()) && !NodeState.HEAD.name().equals(peer.state())) continue;
+            long count = servers.serversOfNode(peer.name()).size();
+            if (count < bestCount || (count == bestCount && peer.name().compareTo(best) < 0)) {
+                best = peer.name();
+                bestCount = count;
+            }
+        }
+        return best.equals(nodeName()) ? localNode : remoteHandles.computeIfAbsent(best, RemoteNodeHandle::new);
     }
 
     public Collection<NodeHandle> nodes() {
-        return List.of(localNode);
+        List<NodeHandle> all = new ArrayList<>();
+        all.add(localNode);
+        for (ClusterMembers.Member m : members.all()) {
+            if (!m.name().equals(nodeName())) all.add(remoteHandles.computeIfAbsent(m.name(), RemoteNodeHandle::new));
+        }
+        return all;
     }
 }

@@ -1,5 +1,6 @@
 package de.pocketcloud.cloud.server;
 
+import de.pocketcloud.api.CloudAPI;
 import de.pocketcloud.api.component.group.IServerGroup;
 import de.pocketcloud.api.component.server.ICloudServer;
 import de.pocketcloud.api.component.template.ITemplate;
@@ -8,6 +9,7 @@ import de.pocketcloud.api.search.ServerSearchQuery;
 import de.pocketcloud.api.server.ServerStatus;
 import de.pocketcloud.api.template.TemplateType;
 import de.pocketcloud.cloud.PocketCloud;
+import de.pocketcloud.cloud.cluster.ClusterManager;
 import de.pocketcloud.cloud.cluster.NodeHandle;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.server.util.CloudServerStorage;
@@ -120,6 +122,9 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
 
     @Override
     public Promise<Collection<String>> start(ITemplate template, int count) {
+        ClusterManager cluster = PocketCloud.instance().cluster();
+        if (!cluster.isHead()) return cluster.forwardStart(template.name(), count);
+
         Collection<String> startedServers = new ArrayList<>();
         int maxCount = template.settings().maxServerCount();
 
@@ -147,7 +152,14 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
                 continue;
             }
 
-            NodeHandle node = PocketCloud.instance().cluster().selectNodeForNewServer();
+            NodeHandle node = cluster.selectNodeForNewServer(template);
+            if (!node.local()) {
+                startOnRemoteNode(template, id, node);
+                latestServerStartTimes.put(template.name(), template.name() + "-" + id);
+                startedServers.add(template.name() + "-" + id);
+                continue;
+            }
+
             int port = node.reservePort(template.templateType());
             if (port <= 0) {
                 CloudLogger.get().warn("Failed to start any more servers of §b{}§8: §cNo available ports found.", template.name());
@@ -172,6 +184,107 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
         }
 
         return Promise.resolved(startedServers);
+    }
+
+    /**
+     * Head side: registers a placeholder for the server and asks the node to start it.
+     */
+    private void startOnRemoteNode(ITemplate template, int id, NodeHandle node) {
+        UUID uuid = UUID.randomUUID();
+        CloudServer placeholder = new CloudServer(id, uuid, template.name(),
+                new CloudServerData(uuid, "0.0.0.0", 0, template.settings().maxPlayerCount()),
+                new CloudServerStorage(uuid));
+        placeholder.nodeName(node.name());
+        add(placeholder);
+        CloudLogger.get().info("§aStarting §b{} §ron node §b{}§r...", placeholder.name(), node.name());
+
+        PocketCloud.instance().cluster().requestRemoteStart(node.name(), template.name(), id, uuid)
+                .failure(e -> {
+                    CloudLogger.get().warn("Node §b{} §rcould not start §b{}§8: §c{}", node.name(), placeholder.name(), e.getMessage());
+                    if (servers.get(placeholder.name()) == placeholder) {
+                        placeholder.status(ServerStatus.OFFLINE);
+                        remove(placeholder);
+                    }
+                });
+    }
+
+    /**
+     * Node side: the head asked this node to start a server with a given id and uuid.
+     *
+     * @return the reserved port
+     */
+    public int startLocal(ITemplate template, int id, UUID uuid) {
+        String name = template.name() + "-" + id;
+        if (servers.containsKey(name)) throw new IllegalStateException("Server " + name + " already exists on this node");
+
+        NodeHandle node = PocketCloud.instance().cluster().localNode();
+        int port = node.reservePort(template.templateType());
+        if (port <= 0) throw new IllegalStateException("No free port");
+
+        CloudServer server = new CloudServer(
+                id,
+                uuid,
+                template.name(),
+                new CloudServerData(uuid, PocketCloud.instance().serverSettingsConfig().addresses().publicAddress(), port, template.settings().maxPlayerCount()),
+                new CloudServerStorage(uuid)
+        );
+
+        serverCounts.merge(template.name(), 1, Integer::sum);
+        latestServerStartTimes.put(template.name(), server.name());
+        add(server);
+        server.queuedAt(queueSequence.incrementAndGet());
+        serverPrepareQueue.offer(server);
+        server.syncOut();
+        return port;
+    }
+
+    /**
+     * Applies the state of a server running on another node.
+     */
+    public void applyRemoteServer(CloudServer incoming) {
+        // Templates may not be loaded yet (early full report) or not replicated to this node: the next full report adds the server.
+        if (CloudAPI.instance().templates().get(incoming.templateName()).isEmpty()) {
+            CloudLogger.get().debug("Ignoring server {} of node {}: template {} is unknown here.", incoming.name(), incoming.nodeName(), incoming.templateName());
+            return;
+        }
+
+        CloudServer existing = servers.get(incoming.name());
+        if (existing == null) {
+            servers.put(incoming.name(), incoming);
+            incoming.syncOut();
+            if (incoming.status().isOnline()) incoming.addToProxies();
+            return;
+        }
+
+        if (!existing.remote()) {
+            if (existing.nodeName() == null || existing.nodeName().equals(incoming.nodeName())) return;
+            CloudLogger.get().warn("Node §b{} §rreports a server §b{} §rthat also exists on this node. Ignoring it.", incoming.nodeName(), incoming.name());
+            return;
+        }
+
+        // Replace the data object: address and port are only known once the node has reserved them.
+        boolean wasOnline = existing.status().isOnline();
+        servers.replace(incoming.name(), existing, incoming);
+        incoming.syncOut();
+        if (!wasOnline && incoming.status().isOnline()) incoming.addToProxies();
+    }
+
+    /**
+     * Removes a server of another node (it stopped, or the node is gone).
+     */
+    public void removeRemoteServer(String name) {
+        CloudServer existing = servers.get(name);
+        if (existing == null || !existing.remote()) return;
+        existing.status(ServerStatus.OFFLINE);
+        existing.remove();
+    }
+
+    public Collection<CloudServer> serversOfNode(String nodeName) {
+        return servers.values().stream().filter(s -> nodeName.equals(s.nodeName())).toList();
+    }
+
+    public Collection<CloudServer> localServers() {
+        return servers.values().stream().filter(s -> !s.remote()).toList();
     }
 
     @Override
@@ -271,18 +384,24 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
         });
     }
 
+    /**
+     * Stops the servers of this node (used on shutdown). Servers of other nodes keep running.
+     */
     public void stopAllAndWait(int timeoutMs) {
-        stopAll();
+        localServers().forEach(s -> s.stop(false));
         long start = System.currentTimeMillis();
         while ((System.currentTimeMillis() - start) < timeoutMs) {
-            if (servers.isEmpty()) break;
+            if (localServers().isEmpty()) break;
             LockSupport.parkNanos(1_000_000);
         }
 
-        if (!servers.isEmpty()) {
+        if (!localServers().isEmpty()) {
             CloudLogger.get().warn("Some servers still running after trying to shut them down, force stopping...");
-            stopAll(true);
+            localServers().forEach(s -> s.stop(true));
         }
+
+        // Servers of other nodes keep running there; this node simply stops tracking them.
+        servers.values().removeIf(CloudServer::remote);
     }
 
     @Override
@@ -328,11 +447,13 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
         Map<String, Integer> remaining = new HashMap<>();
         for (CloudServer s : servers.values()) {
             ServerStatus st = s.status();
-            if (!st.isStopping() && !st.isOffline()) remaining.merge(s.template().name(), 1, Integer::sum);
+            if (!st.isStopping() && !st.isOffline()) remaining.merge(s.templateName(), 1, Integer::sum);
         }
 
+        // Only the head decides about stopping empty servers (cluster-wide counts, no double stops).
+        boolean scheduler = PocketCloud.instance().cluster().canSchedule();
         servers.values().forEach(server -> {
-            if (server.status().isOnline()) {
+            if (scheduler && server.status().isOnline()) {
                 Template template = server.template();
                 int playerCount = server.playerCount();
                 long zeroPlayersReachedTimestamp = zeroPlayersReachedTimestamps.getOrDefault(server.name(), 0L);
