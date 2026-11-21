@@ -217,6 +217,10 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
             Path globalTemplatePath = TemplateTypeHelper.globalTemplatePath(template().templateType());
             FileUtils.copyDirectory(globalTemplatePath, path(), Set.of());
 
+            Path softwareConfigPath = PocketCloud.instance().software()
+                    .configDirectoryPath((ServerSoftware) template().serverSoftware());
+            FileUtils.copyDirectory(softwareConfigPath, path(), Set.of());
+
             boolean copyFromSources = template().settings().alwaysCopyToStaticServers() || !template().settings().staticServers();
             if (copyFromSources) {
                 for (IServerGroup group : template().parentGroups()) {
@@ -233,18 +237,6 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
 
             for (var properties : propertiesData) {
                 Path filePath = path().resolve(properties.getFileName());
-                if (!copyFromSources) {
-                    try {
-                        Files.copy(
-                                globalTemplatePath.resolve(properties.getFileName()),
-                                filePath,
-                                StandardCopyOption.REPLACE_EXISTING
-                        );
-                    } catch (IOException e) {
-                        CloudLogger.get().exception("Failed to copy properties", e);
-                    }
-                }
-
                 Map<String, Object> replacements = properties.replacePlaceholders(this);
                 String content = FileUtils.fileGetContents(filePath);
 

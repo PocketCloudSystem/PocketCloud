@@ -17,17 +17,20 @@ public class SoftwareConfig implements ISoftwareConfig {
     protected final String relativeLogFileLocation;
     protected final List<String> savableFiles;
     protected final String saveCommandLine;
+    protected final String transport;
 
     @MapCreator
     public SoftwareConfig(
             @MapKey(name = "mainConfigurationFile") String mainConfigurationFile,
             @MapKey(name = "relativeLogFileLocation") String relativeLogFileLocation,
             @MapKey(name = "savableFiles") List<String> savableFiles,
-            @MapKey(name = "saveCommandLine") String saveCommandLine
+            @MapKey(name = "saveCommandLine") String saveCommandLine,
+            @MapKey(name = "transport") String transport
     ) {
         this.mainConfigurationFile = mainConfigurationFile;
         this.relativeLogFileLocation = relativeLogFileLocation;
         this.savableFiles = savableFiles;
         this.saveCommandLine = saveCommandLine;
+        this.transport = transport;
     }
 }

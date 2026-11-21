@@ -307,6 +307,10 @@ public final class SoftwareService {
         return PocketCloudPaths.storage().software().with(software.normalizedName() + ".json").asPath();
     }
 
+    public Path configDirectoryPath(ServerSoftware software) {
+        return directoryPath(software).resolve("config");
+    }
+
     public Path binaryDirectoryPath(ServerSoftware software) {
         return directoryPath(software).resolve("binary");
     }

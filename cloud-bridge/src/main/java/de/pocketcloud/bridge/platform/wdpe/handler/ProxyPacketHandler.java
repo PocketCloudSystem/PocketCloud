@@ -10,8 +10,8 @@ import de.pocketcloud.network.packet.impl.request.client.CommandExecuteRequestPa
 import de.pocketcloud.network.packet.impl.response.client.CommandExecuteResponsePacket;
 import de.pocketcloud.shared.network.packet.type.ServerCommandExecutionResult;
 import dev.waterdog.waterdogpe.ProxyServer;
-import dev.waterdog.waterdogpe.network.serverinfo.BedrockServerInfo;
 import dev.waterdog.waterdogpe.network.serverinfo.ServerInfo;
+import dev.waterdog.waterdogpe.network.serverinfo.ServerInfoType;
 import dev.waterdog.waterdogpe.player.ProxiedPlayer;
 
 import java.net.InetSocketAddress;
@@ -27,13 +27,17 @@ public final class ProxyPacketHandler implements PacketListener {
 
     @PacketHandler(ProxyRegisterServerPacket.class)
     public void handle(ProxyRegisterServerPacket packet) {
-        if (ProxyServer.getInstance().getServerInfo(packet.getServerName()) != null)
-            ProxyServer.getInstance().removeServerInfo(packet.getServerName());
-        ProxyServer.getInstance().registerServerInfo(new BedrockServerInfo(
+        ProxyServer proxy = ProxyServer.getInstance();
+        if (proxy.getServerInfo(packet.getServerName()) != null)
+            proxy.removeServerInfo(packet.getServerName());
+
+        ServerInfoType type = ServerInfoType.fromString(packet.getTransport());
+        if (type == null) type = ServerInfoType.BEDROCK;
+
+        proxy.registerServerInfo(type.getServerInfoFactory().createServerInfo(
                 packet.getServerName(),
                 new InetSocketAddress(packet.getAddress(), packet.getPort()),
-                null
-        ));
+                null));
     }
 
     @PacketHandler(ProxyUnregisterServerPacket.class)

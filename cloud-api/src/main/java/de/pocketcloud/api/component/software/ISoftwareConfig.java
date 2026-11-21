@@ -11,4 +11,6 @@ public interface ISoftwareConfig {
     List<String> savableFiles();
 
     String saveCommandLine();
+
+    String transport();
 }

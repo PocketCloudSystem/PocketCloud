@@ -72,7 +72,8 @@ public final class ServerSoftwareManager implements IWriteSoftwareProvider, Load
                     "config.yml",
                     "logs/server.log",
                     List.of("command_data", "players", "resource_packs", "worlds", "structures", "services", "banned-ips.json", "banned-players.json", "ops.txt", "white-list.txt"),
-                    "save-all"
+                    "save-all",
+                    "nethernet"
             )),
             new ServerSoftware("powernukkitx-latest-nightly", "SERVER", new SoftwareDownload(
                     "https://github.com/PowerNukkitX/PowerNukkitX/releases/download/nightly/powernukkitx.jar",
@@ -108,7 +109,8 @@ public final class ServerSoftwareManager implements IWriteSoftwareProvider, Load
                     "config.yml",
                     "logs/server.log",
                     List.of("command_data", "players", "resource_packs", "worlds", "structures", "services", "banned-ips.json", "banned-players.json", "ops.txt", "white-list.txt"),
-                    "save-all"
+                    "save-all",
+                    "nethernet"
             )),
             new ServerSoftware("waterdogpe-latest", "PROXY", new SoftwareDownload(
                     "https://github.com/WaterdogPE/WaterdogPE/releases/download/latest/Waterdog.jar",
@@ -139,6 +141,7 @@ public final class ServerSoftwareManager implements IWriteSoftwareProvider, Load
                     "config.yml",
                     "logs/server.log",
                     List.of("packs", "lang.ini"),
+                    null,
                     null
             ))
     );

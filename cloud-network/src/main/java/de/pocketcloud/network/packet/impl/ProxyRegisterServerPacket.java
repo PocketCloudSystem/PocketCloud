@@ -14,16 +14,18 @@ public final class ProxyRegisterServerPacket extends CloudPacket implements Clie
     private String serverName;
     private String address;
     private int port;
+    private String transport;
 
-    public ProxyRegisterServerPacket(String serverName, String address, int port) {
+    public ProxyRegisterServerPacket(String serverName, String address, int port, String transport) {
         this.serverName = serverName != null ? serverName : "";
         this.address = address;
         this.port = port;
+        this.transport = transport;
     }
 
     @Override
     public void encodePayload(IPacketData packetData) {
-        packetData.writeAll(serverName, address, port);
+        packetData.writeAll(serverName, address, port, transport);
     }
 
     @Override
@@ -31,13 +33,14 @@ public final class ProxyRegisterServerPacket extends CloudPacket implements Clie
         serverName = packetData.readString();
         address = packetData.readString();
         port = packetData.readInt();
+        transport = packetData.readString();
     }
 
-    public static ProxyRegisterServerPacket create(String serverName, String address, int port) {
-        return new ProxyRegisterServerPacket(serverName, address, port);
+    public static ProxyRegisterServerPacket create(String serverName, String address, int port, String transport) {
+        return new ProxyRegisterServerPacket(serverName, address, port, transport);
     }
 
     public static ProxyRegisterServerPacket create(ICloudServer server) {
-        return create(server.name(), server.data().address(), server.data().port());
+        return create(server.name(), server.data().address(), server.data().port(), server.template().serverSoftware().config().transport());
     }
 }
