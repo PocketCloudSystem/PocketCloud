@@ -50,6 +50,11 @@ public final class TemplateCommand extends Command implements TabComplete {
                     .addParameter(new StringParameter("nodes", true));
         }));
 
+        registerSubCommand(SubCommand.lambda("staticnode", this::handleStaticNodeSub, true, subCommand -> {
+            subCommand.addParameter(new TemplateParameter("template", false))
+                    .addParameter(new StringParameter("node", true));
+        }));
+
         registerSubCommand(SubCommand.lambda("info", this::handleInfoSub, true, subCommand -> {
             subCommand.addParameter(new TemplateParameter("template", false));
         }));
@@ -174,6 +179,39 @@ public final class TemplateCommand extends Command implements TabComplete {
         return true;
     }
 
+    /**
+     * {@code template staticnode <template>} shows, {@code template staticnode <template> <node|none>} sets the node
+     * the static servers of the template live on (required for static templates in a cluster).
+     */
+    public boolean handleStaticNodeSub(CommandSender sender, CommandContext ctx) {
+        Template template = ctx.arg("template", Template.class);
+        if (!ctx.args().containsKey("node")) {
+            sender.info("Static node of §b{}§8: §b{}", template.name(), formatStaticNode(template));
+            return true;
+        }
+
+        String raw = ctx.argString("node").trim();
+        String node = raw.equalsIgnoreCase("none") || raw.equals("-") ? "" : raw;
+        if (!node.isEmpty() && PocketCloud.instance().cluster().node(node).isEmpty()) {
+            sender.warn("The node §b{} §ris not a member of this cluster (yet).", node);
+        }
+        if (!node.isEmpty() && !template.settings().allowsNode(node)) {
+            sender.warn("The node §b{} §ris not in the nodes of §b{}§r: its servers will not start until you add it.", node, template.name());
+        }
+
+        PocketCloud.instance().templates().edit(template, TemplateEditData.create().staticNode(node));
+        if (node.isEmpty()) sender.success("Removed the static node of §b{}§r.", template.name());
+        else sender.success("Static servers of §b{} §rnow live on node §b{}§r.", template.name(), node);
+        if (!template.settings().staticServers()) sender.info("§7(The template has no static servers; the setting only matters once it has.)");
+        return true;
+    }
+
+    private static String formatStaticNode(ITemplate template) {
+        if (template.settings().hasStaticNode()) return template.settings().staticNode();
+        boolean required = template.settings().staticServers() && PocketCloud.instance().cluster().clustered();
+        return required ? "§cnot set §8(§rrequired: no static server starts§8)" : "§7not set";
+    }
+
     private static String formatNodes(List<String> nodes) {
         return nodes == null || nodes.isEmpty() ? "all nodes" : String.join("§8, §b", nodes);
     }
@@ -192,6 +230,7 @@ public final class TemplateCommand extends Command implements TabComplete {
         sender.info("startNewServerThreshold§8: §b{}%", template.settings().startNewServerThreshold() * 100);
         sender.info("AutoStart§8: §b{}", template.settings().autoStart() ? "§aYes" : "§cNo");
         sender.info("Nodes§8: §b{}", formatNodes(template.settings().nodes()));
+        sender.info("StaticNode§8: §b{}", formatStaticNode(template));
         sender.info("Software§8: §b{} §8(§b{}§8)", template.serverSoftware().name(), template.templateType().name());
         sender.info("§b{} player(s) §racross §b{} server(s)§r.", template.playerCount(), template.serverCount());
         return true;

@@ -178,6 +178,7 @@ public final class LocalNodeHandle implements NodeHandle {
 
     @Override
     public Promise<Void> saveFiles(CloudServer server) {
+        de.pocketcloud.cloud.cluster.sync.TemplateReplicator.get().ifPresent(r -> r.noteSave(server.templateName(), server.name()));
         return Promise.supplyAsync(() -> {
             for (String file : server.template().serverSoftware().config().savableFiles()) {
                 Path filePath = server.path().resolve(file);

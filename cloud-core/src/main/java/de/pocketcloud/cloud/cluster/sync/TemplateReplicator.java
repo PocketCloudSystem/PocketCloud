@@ -70,6 +70,8 @@ public final class TemplateReplicator implements ClusterModule {
     private final Map<String, String> pushedHashes = new ConcurrentHashMap<>();
     private final Map<String, HeadTemplateListPacket.Item> lastHeadVersions = new ConcurrentHashMap<>();
     private final Set<String> paused = ConcurrentHashMap.newKeySet();
+    /** unit → (note, time): why its files are about to change (server saves), shown in the history. */
+    private final Map<String, Map.Entry<String, Long>> notes = new ConcurrentHashMap<>();
     private volatile boolean pausedAll;
 
     private ClusterManager cluster;
@@ -544,7 +546,7 @@ public final class TemplateReplicator implements ClusterModule {
         pushPending.put(unit.id(), System.currentTimeMillis());
         pushedHashes.put(unit.id(), scan == null ? DELETED : scan.manifest().hash());
         NodeTemplatePushPacket packet = new NodeTemplatePushPacket(unit.id(), base == null ? 0 : base.version(), scan == null,
-                Manifest.compress(GSON.toJson(changes)), Manifest.compress(GSON.toJson(removed)));
+                Manifest.compress(GSON.toJson(changes)), Manifest.compress(GSON.toJson(removed)), takeNote(unit));
         try {
             HeadTemplatePushAckPacket ack = request(head, packet, HeadTemplatePushAckPacket.class);
             if (!ack.isAccepted()) {
@@ -838,7 +840,8 @@ public final class TemplateReplicator implements ClusterModule {
         }
         Manifest previous = current == null ? null : current.manifest();
         UnitVersion now = new UnitVersion(current == null ? 1 : current.version() + 1, scan.manifest(), false);
-        record(unit, now, previous, node, "changed on " + node, List.of());
+        String note = node.equals(cluster.nodeName()) ? takeNote(unit) : "";
+        record(unit, now, previous, node, "changed on " + node + (note.isEmpty() ? "" : " (" + note + ")"), List.of());
         headVersions.put(unit, now);
         CloudLogger.get().info("Template §b{} §ris now version §b{} §8(§rchanged on §b{}§r: §b{} §rchanged, §b{} §rremoved§8)§r.",
                 unit.display(), now.version(), node, files(Manifest.changed(previous, now.manifest())), files(Manifest.removed(previous, now.manifest())));
@@ -936,7 +939,8 @@ public final class TemplateReplicator implements ClusterModule {
                     unit.display(), path, from, lastNode == null ? "another node" : lastNode, from, current == null ? 0 : current.version());
         }
         UnitVersion now = new UnitVersion(current == null ? 1 : current.version() + 1, target, false);
-        record(unit, now, exists ? current.manifest() : null, from, conflicts.isEmpty() ? "changed on " + from : "changed on " + from + " (conflict)", conflicts);
+        String note = push.getNote() == null || push.getNote().isEmpty() ? "" : " (" + push.getNote() + ")";
+        record(unit, now, exists ? current.manifest() : null, from, (conflicts.isEmpty() ? "changed on " + from : "changed on " + from + " (conflict)") + note, conflicts);
         headVersions.put(unit, now);
         CloudLogger.get().info("Template §b{} §ris now version §b{} §8(§rchanged on §b{}§r: §b{} §rchanged, §b{} §rremoved§8)§r.",
                 unit.display(), now.version(), from, files(Manifest.changed(exists ? current.manifest() : null, target)),
@@ -1095,6 +1099,147 @@ public final class TemplateReplicator implements ClusterModule {
         }
         if (unit != null) markDirty(unit);
         lastFullSync = 0;
+    }
+
+    // ------------------------------------------------------------------ versions for server starts
+
+    /**
+     * A server of the template is saved into the template on this node: the next version of the template
+     * is tagged with it in the history (e.g. "changed on node-2 (save of Lobby-1)").
+     */
+    public void noteSave(String template, String serverName) {
+        notes.put("templates/" + template, Map.entry("save of " + serverName, System.currentTimeMillis()));
+    }
+
+    private String takeNote(SyncUnit unit) {
+        Map.Entry<String, Long> note = notes.remove(unit.id());
+        return note == null || System.currentTimeMillis() - note.getValue() > 60_000 ? "" : note.getKey();
+    }
+
+
+    /** Units a server of the template is built from: the template, the global folder of its type and its groups. */
+    public static List<SyncUnit> unitsOf(de.pocketcloud.api.component.template.ITemplate template) {
+        List<SyncUnit> units = new ArrayList<>();
+        units.add(new SyncUnit("templates/" + template.name()));
+        units.add(new SyncUnit("templates/global/" + template.templateType().name().toLowerCase()));
+        for (var group : template.parentGroups()) {
+            if (SyncUnit.validName(group.name())) units.add(new SyncUnit("groups/" + group.name()));
+        }
+        return units;
+    }
+
+    /**
+     * Head: the valid versions ({@code unit → "version:hash"}) a node must have before it starts a server of the
+     * template. Changes made on the head that are still waiting for the watcher's debounce are taken over first,
+     * so a start right after an edit uses the edited files. Resolves with an empty map if this node does not
+     * (yet) serve versions.
+     */
+    public CompletableFuture<Map<String, Object>> expectedVersions(de.pocketcloud.api.component.template.ITemplate template) {
+        CompletableFuture<Map<String, Object>> future = new CompletableFuture<>();
+        if (!running || !isHead() || !headReady) {
+            future.complete(Map.of());
+            return future;
+        }
+        List<SyncUnit> units = unitsOf(template);
+        submit(() -> {
+            try {
+                Map<String, Object> versions = new LinkedHashMap<>();
+                for (SyncUnit unit : units) {
+                    if (isHead() && headReady && !paused(unit) && dirty.remove(unit.id()) != null) acceptLocal(unit, cluster.nodeName(), null);
+                    UnitVersion v = headVersions.get(unit);
+                    if (v != null && !v.deleted()) versions.put(unit.id(), v.version() + ":" + v.hash());
+                }
+                future.complete(versions);
+            } catch (Exception e) {
+                future.complete(Map.of());
+                throw e;
+            }
+        });
+        // replication shut down or stuck meanwhile: start without the check
+        return future.completeOnTimeout(Map.of(), 3, TimeUnit.SECONDS);
+    }
+
+    /**
+     * Node: makes sure the local copies have the versions the head expects ({@link #expectedVersions}) before a
+     * server is prepared, fetching them from the head if not.
+     *
+     * @return true if something had to be synced; fails if a unit could not be brought to the expected version
+     * within the timeout or has local changes the head does not have yet
+     */
+    public CompletableFuture<Boolean> ensureVersions(Map<String, Object> expected, String serverName, long timeoutMs) {
+        CompletableFuture<Boolean> future = new CompletableFuture<>();
+        if (expected == null || expected.isEmpty() || !running || isHead()) {
+            future.complete(false);
+            return future;
+        }
+        // Versions this node has not taken over yet when the request arrives (an update may already be queued).
+        Set<String> behind = new HashSet<>();
+        for (Map.Entry<String, Object> e : expected.entrySet()) {
+            String value = String.valueOf(e.getValue());
+            int colon = value.indexOf(':');
+            if (!validUnit(e.getKey()) || colon < 0) continue;
+            UnitVersion have = applied.get(new SyncUnit(e.getKey()));
+            if (have == null || !have.hash().equals(value.substring(colon + 1))) {
+                behind.add(e.getKey());
+                CloudLogger.get().info("The head expects version §b{} §rof §b{} §rfor §b{}§r, this node has §b{}§r: making sure it is synced first...",
+                        value.substring(0, colon), new SyncUnit(e.getKey()).display(), serverName, have == null ? "-" : have.version());
+            }
+        }
+        try {
+            syncExecutor.execute(() -> {
+                try {
+                    boolean synced = false;
+                    for (Map.Entry<String, Object> e : expected.entrySet()) {
+                        String value = String.valueOf(e.getValue());
+                        int colon = value.indexOf(':');
+                        if (!validUnit(e.getKey()) || colon < 0) continue;
+                        SyncUnit unit = new SyncUnit(e.getKey());
+                        boolean fetched = ensureVersion(unit, Long.parseLong(value.substring(0, colon)), value.substring(colon + 1), serverName);
+                        if (!fetched && behind.contains(e.getKey())) {
+                            UnitVersion v = applied.get(unit);
+                            CloudLogger.get().success("Template §b{} §ris synced §8(§rversion §b{}§8)§r, starting §b{}§r.", unit.display(), v == null ? "-" : v.version(), serverName);
+                        }
+                        synced |= fetched || behind.contains(e.getKey());
+                    }
+                    future.complete(synced);
+                } catch (Throwable t) {
+                    future.completeExceptionally(t);
+                }
+            });
+        } catch (RejectedExecutionException e) {
+            future.completeExceptionally(new IllegalStateException("template replication is shutting down"));
+        }
+        return future.orTimeout(timeoutMs, TimeUnit.MILLISECONDS);
+    }
+
+    /** Runs on the sync thread. Returns true if the unit was fetched. */
+    private boolean ensureVersion(SyncUnit unit, long version, String hash, String serverName) throws Exception {
+        if (paused(unit)) {
+            CloudLogger.get().warn("Sync of §b{} §ris paused: starting §b{} §rwith the local copy.", unit.display(), serverName);
+            return false;
+        }
+        UnitScanner.Scan scan = scanner.scan(unit);
+        String local = scan == null ? null : scan.manifest().hash();
+        if (hash.equals(local)) return false;
+
+        UnitVersion base = applied.get(unit);
+        boolean synced = base != null && !base.deleted();
+        if (synced && local != null && !local.equals(base.hash()) && !local.equals(pushedHashes.get(unit.id()))) {
+            throw new IllegalStateException("the template " + unit.display() + " has local changes on " + cluster.nodeName() + " that are not replicated yet");
+        }
+        CloudLogger.get().info("Template §b{} §ris at version §b{} §rhere, the head expects §b{}§r: syncing it before starting §b{}§r...",
+                unit.display(), base == null ? "-" : base.version(), version, serverName);
+        pull(unit);
+        UnitScanner.Scan after = scanner.scan(unit);
+        String now = after == null ? null : after.manifest().hash();
+        UnitVersion v = applied.get(unit);
+        // the head may have moved on to an even newer version meanwhile: that one is fine too
+        boolean newer = v != null && !v.deleted() && v.version() >= version && v.hash().equals(now);
+        if (!hash.equals(now) && !newer) {
+            throw new IllegalStateException("could not sync the template " + unit.display() + " to version " + version);
+        }
+        CloudLogger.get().success("Template §b{} §rsynced to version §b{} §rbefore starting §b{}§r.", unit.display(), v == null ? version : v.version(), serverName);
+        return true;
     }
 
     public List<String> statusLines() {

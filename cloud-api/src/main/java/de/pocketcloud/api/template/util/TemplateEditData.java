@@ -35,6 +35,8 @@ public class TemplateEditData implements Writable<Map<String, Object>> {
     private Integer emptyServerGracePeriod = null;
     private Integer priority = null;
     private List<String> nodes = null;
+    /** Empty string clears the static node. */
+    private String staticNode = null;
 
     /**
      * {@link TemplateEditData#create()}
@@ -83,6 +85,7 @@ public class TemplateEditData implements Writable<Map<String, Object>> {
         if (emptyServerGracePeriod != null) settings.emptyServerGracePeriod(emptyServerGracePeriod);
         if (priority != null) settings.priority(priority);
         if (nodes != null) settings.nodes(List.copyOf(nodes));
+        if (staticNode != null) settings.staticNode(staticNode.trim());
     }
 
     @Override
@@ -135,6 +138,8 @@ public class TemplateEditData implements Writable<Map<String, Object>> {
             data.priority = newSettings.priority();
         if (!Objects.equals(oldSettings.nodes(), newSettings.nodes()))
             data.nodes = newSettings.nodes();
+        if (!Objects.equals(oldSettings.staticNode(), newSettings.staticNode()))
+            data.staticNode = newSettings.staticNode();
 
         return data;
     }
@@ -172,6 +177,8 @@ public class TemplateEditData implements Writable<Map<String, Object>> {
                 ? ((Number) data.get("priority")).intValue() : null;
         if (data.get("nodes") instanceof List<?> list)
             editData.nodes = list.stream().map(String::valueOf).toList();
+        if (data.get("staticNode") instanceof String node)
+            editData.staticNode = node;
 
         return editData;
     }

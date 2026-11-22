@@ -6,6 +6,7 @@ import io.netty.channel.Channel;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 /**
  * A feature that plugs into the node-to-node protocol (template replication, bridge/proxy sync, ...).
@@ -38,5 +39,13 @@ public interface ClusterModule {
 
     /** A node left or is considered dead. */
     default void onPeerGone(String name) {
+    }
+
+    /** Adds values to the stats of this node's next heartbeat (sent every second). */
+    default void heartbeatStats(Map<String, Object> stats) {
+    }
+
+    /** The stats of a heartbeat received from another node (already stored in its {@link Peer}). */
+    default void onHeartbeat(String from, Map<String, Object> stats) {
     }
 }

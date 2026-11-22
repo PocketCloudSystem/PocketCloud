@@ -162,42 +162,88 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
             }
 
             if (!node.local()) {
-                startOnRemoteNode(template, id, node);
+                startOnRemoteNode(template, id, node, false);
                 latestServerStartTimes.put(template.name(), template.name() + "-" + id);
                 startedServers.add(template.name() + "-" + id);
                 continue;
             }
 
-            int port = node.reservePort(template.templateType());
-            if (port <= 0) {
+            String name = queueLocalStart(template, id, node);
+            if (name == null) {
                 CloudLogger.get().warn("Failed to start any more servers of §b{}§8: §cNo available ports found.", template.name());
+                ServerUtils.removeId(template, id);
                 serverCounts.merge(template.name(), -(toStart - i), Integer::sum);
                 break;
             }
-
-            UUID uuid = UUID.randomUUID();
-            CloudServer server = new CloudServer(
-                    id,
-                    uuid,
-                    template.name(),
-                    new CloudServerData(uuid, ServerAddresses.publicAddress(), port, template.settings().maxPlayerCount()),
-                    new CloudServerStorage(uuid)
-            );
-
-            latestServerStartTimes.put(template.name(), server.name());
-            add(server);
-            server.queuedAt(queueSequence.incrementAndGet());
-            serverPrepareQueue.offer(server);
-            startedServers.add(server.name());
+            startedServers.add(name);
         }
 
         return Promise.resolved(startedServers);
     }
 
     /**
+     * Head: creates a server of this node and puts it into the prepare queue.
+     *
+     * @return the server name, or null if no port is free
+     */
+    private String queueLocalStart(ITemplate template, int id, NodeHandle node) {
+        int port = node.reservePort(template.templateType());
+        if (port <= 0) return null;
+
+        UUID uuid = UUID.randomUUID();
+        CloudServer server = new CloudServer(
+                id,
+                uuid,
+                template.name(),
+                new CloudServerData(uuid, ServerAddresses.publicAddress(), port, template.settings().maxPlayerCount()),
+                new CloudServerStorage(uuid)
+        );
+
+        latestServerStartTimes.put(template.name(), server.name());
+        add(server);
+        server.queuedAt(queueSequence.incrementAndGet());
+        serverPrepareQueue.offer(server);
+        return server.name();
+    }
+
+    /**
+     * Head: a node could not start a server of the template (rejected, failed or no answer). Tries once more
+     * on the next best node; gives up with a warning if there is none or that start fails too.
+     */
+    private void retryStart(ITemplate template, String failedNode) {
+        ClusterManager cluster = PocketCloud.instance().cluster();
+        if (!cluster.isHead()) return;
+        boolean[] allowed = new boolean[1];
+        serverCounts.compute(template.name(), (_, current) -> {
+            int existing = current == null ? 0 : current;
+            allowed[0] = existing < template.settings().maxServerCount();
+            return allowed[0] ? existing + 1 : existing;
+        });
+        if (!allowed[0]) return;
+
+        NodeHandle node = cluster.selectNodeForNewServer(template, Set.of(failedNode));
+        int id = node == null ? -1 : ServerUtils.reserveId(template);
+        if (node == null || id == -1) {
+            serverCounts.merge(template.name(), -1, Integer::sum);
+            CloudLogger.get().warn("§cGiving up §rthe start of a server of §b{}§r: it failed on §b{} §rand no other node can take it.", template.name(), failedNode);
+            return;
+        }
+
+        CloudLogger.get().info("Retrying the start of a server of §b{} §ron node §b{} §8(§rfailed on §b{}§8)§r...", template.name(), node.name(), failedNode);
+        if (!node.local()) {
+            startOnRemoteNode(template, id, node, true);
+            latestServerStartTimes.put(template.name(), template.name() + "-" + id);
+        } else if (queueLocalStart(template, id, node) == null) {
+            ServerUtils.removeId(template, id);
+            serverCounts.merge(template.name(), -1, Integer::sum);
+            CloudLogger.get().warn("§cGiving up §rthe start of a server of §b{}§r: no free port on §b{}§r.", template.name(), node.name());
+        }
+    }
+
+    /**
      * Head side: registers a placeholder for the server and asks the node to start it.
      */
-    private void startOnRemoteNode(ITemplate template, int id, NodeHandle node) {
+    private void startOnRemoteNode(ITemplate template, int id, NodeHandle node, boolean retry) {
         UUID uuid = UUID.randomUUID();
         CloudServer placeholder = new CloudServer(id, uuid, template.name(),
                 new CloudServerData(uuid, "0.0.0.0", 0, template.settings().maxPlayerCount()),
@@ -209,9 +255,15 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
         PocketCloud.instance().cluster().requestRemoteStart(node.name(), template.name(), id, uuid)
                 .failure(e -> {
                     CloudLogger.get().warn("Node §b{} §rcould not start §b{}§8: §c{}", node.name(), placeholder.name(), e.getMessage());
-                    if (servers.get(placeholder.name()) == placeholder) {
-                        placeholder.status(ServerStatus.OFFLINE);
-                        remove(placeholder);
+                    // without an answer the node may still start it later: cancel it there
+                    PocketCloud.instance().cluster().cancelRemoteStart(node.name(), placeholder.name());
+                    if (servers.get(placeholder.name()) != placeholder) return;
+                    placeholder.status(ServerStatus.OFFLINE);
+                    remove(placeholder);
+                    if (retry) {
+                        CloudLogger.get().warn("§cGiving up §rthe start of a server of §b{}§r: the retry on §b{} §rfailed too.", template.name(), node.name());
+                    } else {
+                        retryStart(template, node.name());
                     }
                 });
     }

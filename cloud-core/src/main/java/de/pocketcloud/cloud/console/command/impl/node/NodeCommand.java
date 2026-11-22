@@ -4,7 +4,10 @@ import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.cluster.ClusterManager;
 import de.pocketcloud.cloud.cluster.ClusterMembers;
 import de.pocketcloud.cloud.cluster.HeadElection;
+import de.pocketcloud.cloud.cluster.NodeSelector;
 import de.pocketcloud.cloud.cluster.Peer;
+import de.pocketcloud.cloud.cluster.scheduling.SchedulingModule;
+import de.pocketcloud.cloud.console.command.flag.CommandFlag;
 import de.pocketcloud.cloud.console.command.Command;
 import de.pocketcloud.cloud.console.command.TabComplete;
 import de.pocketcloud.cloud.console.command.ctx.CommandContext;
@@ -33,6 +36,39 @@ public final class NodeCommand extends Command implements TabComplete {
                         .addParameter(new IntegerParameter("port", true))));
         registerSubCommand(SubCommand.lambda("remove", this::handleRemove, true, sub ->
                 sub.addParameter(new StringParameter("node", false))));
+        registerSubCommand(SubCommand.lambda("drain", (sender, ctx) -> handleDrain(sender, ctx, true), true, sub ->
+                sub.addParameter(new StringParameter("node", false))
+                        .addFlag(CommandFlag.longFlag("stop"))));
+        registerSubCommand(SubCommand.lambda("undrain", (sender, ctx) -> handleDrain(sender, ctx, false), true, sub ->
+                sub.addParameter(new StringParameter("node", false))));
+    }
+
+    /**
+     * {@code node drain <node> [--stop]}: the node gets no new servers; running servers keep running unless
+     * {@code --stop} is given (then its non-static servers are stopped and replaced on other nodes).
+     * {@code node undrain <node>} ends it. Works on every node, the change is made by the head.
+     */
+    private boolean handleDrain(CommandSender sender, CommandContext ctx, boolean drain) {
+        String name = ctx.argString("node");
+        SchedulingModule module = SchedulingModule.get().orElse(null);
+        if (module == null) {
+            sender.error("Drain mode only exists in a cluster.");
+            return true;
+        }
+        module.setDrain(name, drain, drain && ctx.hasFlag("stop"))
+                .thenSuccess(sender::success)
+                .failure(e -> sender.error("Could not {} §b{}§r: {}", drain ? "drain" : "undrain", name, e.getMessage()));
+        return true;
+    }
+
+    private static String drainTag(String node) {
+        return SchedulingModule.get().map(m -> m.draining(node)).orElse(false) ? " §e[DRAIN]" : "";
+    }
+
+    private static String cpu(Object value) {
+        if (!(value instanceof Number n)) return "§7-";
+        double cpu = n.doubleValue();
+        return (cpu >= NodeSelector.CPU_LIMIT ? "§c" : "§a") + String.format(java.util.Locale.ROOT, "%.0f%%", cpu);
     }
 
     @Override
@@ -54,9 +90,10 @@ public final class NodeCommand extends Command implements TabComplete {
                 members.size(), election.head() == null ? "§cnone" : election.head(), election.term(), cluster.quorum());
         for (ClusterMembers.Member member : members) {
             boolean self = member.name().equals(cluster.nodeName());
-            String head = member.name().equals(election.head()) ? " §6[HEAD]" : "";
+            String head = (member.name().equals(election.head()) ? " §6[HEAD]" : "") + drainTag(member.name());
             if (self) {
-                sender.info("§b{}{} §8(§rthis node§8) §8| §r{}:{} §8| §rstate§8: §b{}", member.name(), head, member.address(), member.port(), election.state());
+                sender.info("§b{}{} §8(§rthis node§8) §8| §r{}:{} §8| §rstate§8: §b{} §8| §rcpu§8: {}", member.name(), head, member.address(), member.port(), election.state(),
+                        cpu(PocketCloud.instance().performanceStats().systemCpuUsage()));
                 continue;
             }
 
@@ -64,7 +101,8 @@ public final class NodeCommand extends Command implements TabComplete {
             String health = peer == null ? "§cDEAD" : color(peer.health(now));
             String seen = peer == null || peer.lastSeen() == 0 ? "never" : ((now - peer.lastSeen()) / 1000) + "s ago";
             String state = peer == null ? "-" : peer.state();
-            sender.info("§b{}{} §8| §r{}:{} §8| §r{} §8| §rstate§8: §b{} §8| §rlast seen§8: §b{}", member.name(), head, member.address(), member.port(), health, state, seen);
+            sender.info("§b{}{} §8| §r{}:{} §8| §r{} §8| §rstate§8: §b{} §8| §rcpu§8: {} §8| §rlast seen§8: §b{}", member.name(), head, member.address(), member.port(), health, state,
+                    cpu(peer == null ? null : peer.stats().get("cpu")), seen);
         }
         return true;
     }
@@ -80,9 +118,16 @@ public final class NodeCommand extends Command implements TabComplete {
 
         sender.info("Name§8: §b{}", member.name());
         sender.info("Address§8: §b{}:{}", member.address(), member.port());
+        SchedulingModule scheduling = SchedulingModule.get().orElse(null);
+        if (scheduling != null) {
+            sender.info("Drain§8: {}", scheduling.draining(name) ? "§eYes §8(§rno new servers§8)" : "§aNo");
+            Collection<String> softwares = scheduling.softwaresOf(name);
+            sender.info("Software§8: §b{}", softwares == null ? "§7unknown" : softwares.isEmpty() ? "§cnone" : String.join("§8, §b", softwares));
+        }
         if (member.name().equals(cluster.nodeName())) {
             sender.info("State§8: §b{} §8(§rthis node§8)", cluster.election().state());
             sender.info("Running since§8: §b{}", format(System.currentTimeMillis() - cluster.election().startedAt()));
+            cpuLine(sender, PocketCloud.instance().performanceStats().systemCpuUsage());
             return true;
         }
 
@@ -98,8 +143,16 @@ public final class NodeCommand extends Command implements TabComplete {
             }
             Map<String, Object> stats = peer.stats();
             if (!stats.isEmpty()) sender.info("Servers§8: §b{} §8| §rCloud memory§8: §b{} MB", stats.get("servers"), stats.get("usedMemoryMb"));
+            cpuLine(sender, stats.get("cpu"));
         }, () -> sender.info("Health§8: §cDEAD §8(§rnever connected§8)"));
         return true;
+    }
+
+    private static void cpuLine(CommandSender sender, Object value) {
+        boolean busy = value instanceof Number n && n.doubleValue() >= NodeSelector.CPU_LIMIT;
+        sender.info("CPU§8: {} {}", cpu(value), busy
+                ? "§8(§cover the limit of " + (int) NodeSelector.CPU_LIMIT + "%§r: no new servers right now§8)"
+                : "§8(§rlimit for new servers§8: §b" + (int) NodeSelector.CPU_LIMIT + "%§8)");
     }
 
     private boolean handleAdd(CommandSender sender, CommandContext ctx) {
@@ -146,7 +199,7 @@ public final class NodeCommand extends Command implements TabComplete {
 
     @Override
     public Collection<String> onTabComplete(List<String> args) {
-        if (args.size() == 2 && (args.getFirst().equals("info") || args.getFirst().equals("remove"))) {
+        if (args.size() == 2 && List.of("info", "remove", "drain", "undrain").contains(args.getFirst())) {
             return PocketCloud.instance().cluster().members().all().stream().map(ClusterMembers.Member::name).toList();
         }
         return List.of();

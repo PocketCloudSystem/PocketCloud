@@ -51,6 +51,13 @@ public final class TemplateSettings implements Writable<Map<String, Object>> {
      */
     private List<String> nodes;
 
+    /**
+     * The node static servers of this template live on (cluster only). Required when {@link #staticServers} is
+     * true in a cluster: static servers keep their data in {@code storage/staticServers} of one machine and
+     * start nowhere else. Empty means not set. Ignored on a single node.
+     */
+    private String staticNode;
+
     public TemplateSettings(
             Boolean lobby, Boolean maintenance, Boolean staticServers, Boolean alwaysCopyToStaticServers,
             Boolean saveOnShutdown, Boolean deleteOnStop, Boolean stopOnEmpty, Boolean autoStart,
@@ -61,6 +68,18 @@ public final class TemplateSettings implements Writable<Map<String, Object>> {
         this(lobby, maintenance, staticServers, alwaysCopyToStaticServers, saveOnShutdown, deleteOnStop, stopOnEmpty, autoStart,
                 startNewServerThreshold, maxPlayerCount, minServerCount, maxServerCount, maxMemory, startupTimeout, shutdownTimeout,
                 emptyServerGracePeriod, priority, jvmFlags, List.of());
+    }
+
+    public TemplateSettings(
+            Boolean lobby, Boolean maintenance, Boolean staticServers, Boolean alwaysCopyToStaticServers,
+            Boolean saveOnShutdown, Boolean deleteOnStop, Boolean stopOnEmpty, Boolean autoStart,
+            Double startNewServerThreshold, Integer maxPlayerCount, Integer minServerCount, Integer maxServerCount,
+            Integer maxMemory, Integer startupTimeout, Integer shutdownTimeout, Integer emptyServerGracePeriod,
+            Integer priority, List<String> jvmFlags, List<String> nodes
+    ) {
+        this(lobby, maintenance, staticServers, alwaysCopyToStaticServers, saveOnShutdown, deleteOnStop, stopOnEmpty, autoStart,
+                startNewServerThreshold, maxPlayerCount, minServerCount, maxServerCount, maxMemory, startupTimeout, shutdownTimeout,
+                emptyServerGracePeriod, priority, jvmFlags, nodes, "");
     }
 
     @MapCreator
@@ -83,7 +102,8 @@ public final class TemplateSettings implements Writable<Map<String, Object>> {
             @MapKey(name = "emptyServerGracePeriod") Integer emptyServerGracePeriod,
             @MapKey(name = "priority") Integer priority,
             @MapKey(name = "jvmFlags") List<String> jvmFlags,
-            @MapKey(name = "nodes") List<String> nodes
+            @MapKey(name = "nodes") List<String> nodes,
+            @MapKey(name = "staticNode") String staticNode
     ) {
         boolean anyNull = Objects.isNull(lobby)
                         || Objects.isNull(maintenance)
@@ -103,7 +123,8 @@ public final class TemplateSettings implements Writable<Map<String, Object>> {
                         || Objects.isNull(emptyServerGracePeriod)
                         || Objects.isNull(priority)
                         || Objects.isNull(jvmFlags)
-                        || Objects.isNull(nodes);
+                        || Objects.isNull(nodes)
+                        || Objects.isNull(staticNode);
 
         if (anyNull) usingDefaults = true;
 
@@ -131,6 +152,14 @@ public final class TemplateSettings implements Writable<Map<String, Object>> {
 
         this.jvmFlags = Objects.requireNonNullElse(jvmFlags, List.of());
         this.nodes = Objects.requireNonNullElse(nodes, List.of());
+        this.staticNode = Objects.requireNonNullElse(staticNode, "");
+    }
+
+    /**
+     * Whether {@link #staticNode} is set.
+     */
+    public boolean hasStaticNode() {
+        return staticNode != null && !staticNode.isBlank();
     }
 
     /**
@@ -165,6 +194,7 @@ public final class TemplateSettings implements Writable<Map<String, Object>> {
 
         this.jvmFlags = templateSettings.jvmFlags;
         this.nodes = templateSettings.nodes;
+        this.staticNode = templateSettings.staticNode;
     }
 
     @Override

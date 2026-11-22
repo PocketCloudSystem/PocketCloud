@@ -45,6 +45,9 @@ public final class TemplateBuilder implements ITemplateBuilder {
     /** Nodes the servers may run on, empty = all. */
     private List<String> nodes = new ArrayList<>();
 
+    /** Node of the static servers (cluster), empty = not set. */
+    private String staticNode = "";
+
     private TemplateType type = TemplateType.SERVER;
     private IServerSoftware software;
 
@@ -76,6 +79,7 @@ public final class TemplateBuilder implements ITemplateBuilder {
                 .priority(settings.priority())
                 .jvmFlags(new ArrayList<>(settings.jvmFlags()))
                 .nodes(new ArrayList<>(settings.nodes()))
+                .staticNode(settings.staticNode())
                 .type(template.templateType())
                 .software(template.serverSoftware());
     }
@@ -114,7 +118,8 @@ public final class TemplateBuilder implements ITemplateBuilder {
                         emptyServerGracePeriod,
                         priority,
                         jvmFlags,
-                        nodes
+                        nodes,
+                        staticNode
                 ),
                 type,
                 software

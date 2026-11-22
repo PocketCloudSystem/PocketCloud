@@ -9,6 +9,9 @@ import de.pocketcloud.cloud.cluster.Peer;
 import de.pocketcloud.cloud.http.annotation.ApiVersion;
 import de.pocketcloud.cloud.http.annotation.GetRoute;
 import de.pocketcloud.cloud.http.annotation.PathVariable;
+import de.pocketcloud.cloud.http.annotation.PostRoute;
+import de.pocketcloud.cloud.cluster.NodeSelector;
+import de.pocketcloud.cloud.cluster.scheduling.SchedulingModule;
 import de.pocketcloud.cloud.http.exception.HttpException;
 import de.pocketcloud.cloud.http.io.HttpRequest;
 import de.pocketcloud.cloud.http.io.HttpResponse;
@@ -48,6 +51,44 @@ public final class NodeRoutes {
         response.json(json);
     }
 
+    /**
+     * Puts the node into drain mode: it gets no new servers. {@code ?stop=true} (or {@code {"stop": true}})
+     * also stops its non-static servers so they are replaced on other nodes. Processed by the head.
+     */
+    @PostRoute("/nodes/{name}/drain")
+    public void drain(HttpRequest request, HttpResponse response, @PathVariable("name") String name) {
+        boolean stop = Boolean.parseBoolean(request.queryParam("stop", "false"));
+        if (!stop && request.hasBody()) {
+            try {
+                var body = request.json();
+                stop = body != null && body.has("stop") && body.get("stop").getAsBoolean();
+            } catch (RuntimeException ignored) {
+                // no JSON body
+            }
+        }
+        setDrain(response, name, true, stop);
+    }
+
+    @PostRoute("/nodes/{name}/undrain")
+    public void undrain(HttpRequest request, HttpResponse response, @PathVariable("name") String name) {
+        setDrain(response, name, false, false);
+    }
+
+    private void setDrain(HttpResponse response, String name, boolean drain, boolean stop) {
+        SchedulingModule module = SchedulingModule.get().orElseThrow(() -> new HttpException(409, "Drain mode only exists in a cluster."));
+        if (!names().contains(name)) throw new HttpException(404, "Node not found.");
+        String message;
+        try {
+            message = module.setDrain(name, drain, stop).get();
+        } catch (Throwable e) {
+            Throwable cause = e.getCause() != null ? e.getCause() : e;
+            throw new HttpException(409, String.valueOf(cause.getMessage()));
+        }
+        JsonObject json = node(name);
+        json.addProperty("message", message.replaceAll("§.", ""));
+        response.json(json);
+    }
+
     private List<String> names() {
         ClusterManager cluster = PocketCloud.instance().cluster();
         List<String> names = new ArrayList<>();
@@ -84,6 +125,18 @@ public final class NodeRoutes {
             json.addProperty("port", PocketCloud.instance().nodeConfig().clusterPort());
         }
 
+        SchedulingModule scheduling = SchedulingModule.get().orElse(null);
+        json.addProperty("drain", scheduling != null && scheduling.draining(name));
+        if (scheduling != null) {
+            var softwares = scheduling.softwaresOf(name);
+            if (softwares != null) {
+                JsonArray list = new JsonArray();
+                softwares.forEach(list::add);
+                json.add("softwares", list);
+            }
+        }
+        json.addProperty("cpuLimit", NodeSelector.CPU_LIMIT);
+
         List<CloudServer> servers = serversOf(name);
         json.addProperty("servers", servers.size());
         json.addProperty("usedMemoryMb", servers.stream().mapToInt(s -> s.template().settings().maxMemory()).sum());
@@ -94,6 +147,7 @@ public final class NodeRoutes {
             json.addProperty("version", VersionInfo.VERSION);
             json.addProperty("maxMemoryMb", PocketCloud.instance().nodeConfig().maxMemoryMb());
             json.addProperty("startedAt", cluster.election().startedAt());
+            json.addProperty("cpu", PocketCloud.instance().performanceStats().systemCpuUsage());
             return json;
         }
 

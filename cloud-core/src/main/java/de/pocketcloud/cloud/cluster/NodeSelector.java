@@ -2,6 +2,7 @@ package de.pocketcloud.cloud.cluster;
 
 import de.pocketcloud.api.component.template.ITemplate;
 import de.pocketcloud.cloud.PocketCloud;
+import de.pocketcloud.cloud.cluster.scheduling.SchedulingModule;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.server.CloudServer;
 
@@ -9,19 +10,20 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Picks the node for a new server (head only).
+ * Picks the node for a new server (head only), cluster spec "Node-Auswahl".
  * <p>
  * Filters (all must match):
  * <ul>
- *     <li>the node is connected and FOLLOWER or HEAD (not suspect, not joining)</li>
+ *     <li>the node is connected, ALIVE and FOLLOWER or HEAD (not suspect, not joining) and not in drain mode</li>
+ *     <li>the node has the software of the template (reported in its heartbeat)</li>
  *     <li>{@code template.nodes} is empty or contains the node; in a cluster PROXY templates must name their nodes</li>
+ *     <li>static templates: only {@code template.staticNode} (required in a cluster)</li>
  *     <li>free memory budget: {@code maxMemoryMb} of the node (0 = unlimited) minus the {@code maxMemory} of its servers
  *     is at least {@code template.maxMemory}</li>
+ *     <li>CPU load of the node (heartbeat) below {@value #CPU_LIMIT} %</li>
  * </ul>
- * Nodes with a CPU load of 85 % or more (heartbeat) are only used when no other node fits; the node itself
- * also delays starts while its CPU is busy.
- * <p>
  * Sorting by {@code cluster.strategy} in config.yml: {@code least-memory} (default), {@code fill}, {@code round-robin}.
+ * If no node fits, the reason per node is logged.
  */
 public final class NodeSelector {
 
@@ -41,6 +43,14 @@ public final class NodeSelector {
      * @return the node, or null if no node may run a server of the template right now
      */
     public NodeHandle select(ITemplate template) {
+        return select(template, Set.of());
+    }
+
+    /**
+     * @param exclude nodes that must not be used (e.g. a node that just failed to start a server of the template)
+     * @return the node, or null if no node may run a server of the template right now
+     */
+    public NodeHandle select(ITemplate template, Set<String> exclude) {
         // A single node runs everything, whatever the template says (unchanged single-node behaviour).
         if (!cluster.clustered()) return cluster.localNode();
 
@@ -52,11 +62,25 @@ public final class NodeSelector {
             return null;
         }
 
-        List<Candidate> candidates = candidates(template);
-        if (candidates.isEmpty()) return nodeOrWarn(template, null);
+        if (template.settings().staticServers() && !template.settings().hasStaticNode()) {
+            if (cluster.throttle("static-without-node:" + template.name())) {
+                CloudLogger.get().warn("The static template §b{} §rhas no §bstaticNode §rset and is §cdisabled §rin the cluster. " +
+                        "Use §btemplate staticnode {} <node> §rto choose the node its static servers live on.", template.name(), template.name());
+            }
+            return null;
+        }
 
-        List<Candidate> idle = candidates.stream().filter(c -> c.cpu() < CPU_LIMIT).toList();
-        if (!idle.isEmpty()) candidates = idle;
+        Map<String, String> rejected = new LinkedHashMap<>();
+        List<Candidate> candidates = candidates(template, exclude, rejected);
+        if (candidates.isEmpty()) {
+            if (cluster.throttle("no-node:" + template.name())) {
+                List<String> reasons = new ArrayList<>();
+                rejected.forEach((node, reason) -> reasons.add("§b" + node + "§8: §r" + reason));
+                CloudLogger.get().warn("No node can start a server of §b{} §rright now§8: {}", template.name(),
+                        reasons.isEmpty() ? "no nodes" : String.join("§8; ", reasons));
+            }
+            return null;
+        }
 
         Candidate chosen = switch (strategy()) {
             case "fill" -> candidates.stream()
@@ -71,45 +95,101 @@ public final class NodeSelector {
                     .orElseThrow();
         };
 
+        if (!rejected.isEmpty()) {
+            CloudLogger.get().debug("Node for {}: {} (skipped: {})", template.name(), chosen.name(), rejected);
+        }
         return cluster.node(chosen.name()).orElse(null);
     }
 
-    private NodeHandle nodeOrWarn(ITemplate template, NodeHandle node) {
-        if (node == null && cluster.throttle("no-node:" + template.name())) {
-            List<String> allowed = template.settings().nodes();
-            CloudLogger.get().warn("No node can start a server of §b{} §rright now §8(§rallowed nodes§8: §b{}§8, §rneeds §b{} MB§8)§r.",
-                    template.name(), allowed.isEmpty() ? "all" : String.join("§8, §b", allowed), template.settings().maxMemory());
-        }
-        return node;
+    /**
+     * Why a node may not run a new server of the template right now, or null if it may.
+     */
+    public String reject(ITemplate template, String node) {
+        Map<String, String> rejected = new LinkedHashMap<>();
+        List<Candidate> list = candidates(template, Set.of(), rejected);
+        if (list.stream().anyMatch(c -> c.name().equals(node))) return null;
+        return rejected.getOrDefault(node, "not a member");
     }
 
-    private List<Candidate> candidates(ITemplate template) {
+    private List<Candidate> candidates(ITemplate template, Set<String> exclude, Map<String, String> rejected) {
         long now = System.currentTimeMillis();
         List<Candidate> result = new ArrayList<>();
         int needed = Math.max(0, template.settings().maxMemory());
+        SchedulingModule scheduling = SchedulingModule.get().orElse(null);
+        String software = template.serverSoftware().name();
 
         String self = cluster.nodeName();
-        if (template.settings().allowsNode(self)) {
-            long max = PocketCloud.instance().nodeConfig().maxMemoryMb();
-            Collection<CloudServer> servers = PocketCloud.instance().servers().localServers();
-            long free = free(max, servers);
-            if (free >= needed) {
-                result.add(new Candidate(self, free, servers.size(), PocketCloud.instance().performanceStats().systemCpuUsage()));
+        List<String> names = new ArrayList<>();
+        names.add(self);
+        for (ClusterMembers.Member member : cluster.members().all()) if (!names.contains(member.name())) names.add(member.name());
+
+        for (String name : names) {
+            boolean local = name.equals(self);
+            Peer peer = local ? null : cluster.peer(name).orElse(null);
+
+            String state;
+            if (local) {
+                state = cluster.election().state().name();
+            } else if (peer == null || !peer.connected()) {
+                rejected.put(name, "not connected");
+                continue;
+            } else {
+                String health = peer.health(now);
+                if (!"ALIVE".equals(health)) {
+                    rejected.put(name, health);
+                    continue;
+                }
+                state = peer.state();
             }
-        }
+            if (!NodeState.FOLLOWER.name().equals(state) && !NodeState.HEAD.name().equals(state)) {
+                rejected.put(name, "state " + state);
+                continue;
+            }
+            if (exclude.contains(name)) {
+                rejected.put(name, "failed to start it just now");
+                continue;
+            }
+            if (scheduling != null && scheduling.draining(name)) {
+                rejected.put(name, "draining");
+                continue;
+            }
+            if (template.settings().staticServers() && !name.equals(template.settings().staticNode())) {
+                rejected.put(name, "static servers live on " + template.settings().staticNode());
+                continue;
+            }
+            if (!template.settings().allowsNode(name)) {
+                rejected.put(name, "not in the template's nodes");
+                continue;
+            }
+            Collection<String> softwares = scheduling == null ? null : scheduling.softwaresOf(name);
+            if (softwares != null && !softwares.contains(software)) {
+                rejected.put(name, "software " + software + " missing");
+                continue;
+            }
 
-        for (Peer peer : cluster.peers()) {
-            if (!peer.connected() || !"ALIVE".equals(peer.health(now))) continue;
-            if (!NodeState.FOLLOWER.name().equals(peer.state()) && !NodeState.HEAD.name().equals(peer.state())) continue;
-            if (!cluster.members().contains(peer.name()) || !template.settings().allowsNode(peer.name())) continue;
-
-            Map<String, Object> stats = peer.stats();
-            long max = stats.get("maxMemoryMb") instanceof Number n ? n.longValue() : 0;
-            double cpu = stats.get("cpu") instanceof Number n ? n.doubleValue() : 0;
-            Collection<CloudServer> servers = PocketCloud.instance().servers().serversOfNode(peer.name());
+            long max;
+            double cpu;
+            Collection<CloudServer> servers;
+            if (local) {
+                max = PocketCloud.instance().nodeConfig().maxMemoryMb();
+                cpu = PocketCloud.instance().performanceStats().systemCpuUsage();
+                servers = PocketCloud.instance().servers().localServers();
+            } else {
+                Map<String, Object> stats = peer.stats();
+                max = stats.get("maxMemoryMb") instanceof Number n ? n.longValue() : 0;
+                cpu = stats.get("cpu") instanceof Number n ? n.doubleValue() : 0;
+                servers = PocketCloud.instance().servers().serversOfNode(name);
+            }
             long free = free(max, servers);
-            if (free < needed) continue;
-            result.add(new Candidate(peer.name(), free, servers.size(), cpu));
+            if (free < needed) {
+                rejected.put(name, "memory budget " + Math.max(0, free) + " MB < " + needed + " MB");
+                continue;
+            }
+            if (cpu >= CPU_LIMIT) {
+                rejected.put(name, String.format(Locale.ROOT, "CPU %.0f %% >= %.0f %%", cpu, CPU_LIMIT));
+                continue;
+            }
+            result.add(new Candidate(name, free, servers.size(), cpu));
         }
         return result;
     }

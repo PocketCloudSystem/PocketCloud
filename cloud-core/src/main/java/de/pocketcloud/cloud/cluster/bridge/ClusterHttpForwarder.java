@@ -46,7 +46,7 @@ public final class ClusterHttpForwarder {
     private static final long TIMEOUT_MS = 8_000;
 
     private static final Pattern SERVER_ROUTE = Pattern.compile("^.*/v\\d+/servers/([^/]+)/(logs|dispatch|save|stop)$");
-    private static final Pattern HEAD_ROUTE = Pattern.compile("^.*/v\\d+/(servers/start|templates(/.*)?|groups(/.*)?|maintenance(/.*)?)$");
+    private static final Pattern HEAD_ROUTE = Pattern.compile("^.*/v\\d+/(servers/start|templates(/.*)?|groups(/.*)?|maintenance(/.*)?|nodes/[^/]+/(drain|undrain))$");
     private static final Set<String> READ_METHODS = Set.of("GET", "HEAD", "OPTIONS", "QUERY");
     private static final Set<String> SKIPPED_HEADERS = Set.of("content-type", "content-length", "connection", "x-api-version");
 

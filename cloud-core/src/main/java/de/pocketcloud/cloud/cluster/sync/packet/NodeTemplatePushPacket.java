@@ -21,18 +21,21 @@ public final class NodeTemplatePushPacket extends RequestPacket {
     private boolean unitDeleted;
     private String changes;
     private String removed;
+    /** Why the files changed, for the history (e.g. "save of Lobby-1"); empty if unknown. */
+    private String note;
 
-    public NodeTemplatePushPacket(String unit, long baseVersion, boolean unitDeleted, String changes, String removed) {
+    public NodeTemplatePushPacket(String unit, long baseVersion, boolean unitDeleted, String changes, String removed, String note) {
         this.unit = unit;
         this.baseVersion = baseVersion;
         this.unitDeleted = unitDeleted;
         this.changes = changes;
         this.removed = removed;
+        this.note = note == null ? "" : note;
     }
 
     @Override
     public void encodePayload(IPacketData data) {
-        data.writeAll(unit, baseVersion, unitDeleted, changes, removed);
+        data.writeAll(unit, baseVersion, unitDeleted, changes, removed, note);
     }
 
     @Override
@@ -42,5 +45,6 @@ public final class NodeTemplatePushPacket extends RequestPacket {
         unitDeleted = data.readBool();
         changes = data.readString();
         removed = data.readString();
+        note = data.readString();
     }
 }

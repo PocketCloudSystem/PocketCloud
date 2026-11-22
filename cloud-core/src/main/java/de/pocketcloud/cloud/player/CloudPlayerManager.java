@@ -80,7 +80,17 @@ public final class CloudPlayerManager implements IWritePlayerProvider {
      */
     public void handleServerRemoved(ICloudServer server) {
         String name = server.name();
+        // A server of another node: that node removes (and notifies about) the players of its own proxies/servers.
+        // Here only players of this node's proxies that were on that server are updated, nothing is announced twice.
+        boolean remote = server instanceof de.pocketcloud.cloud.server.CloudServer cs && cs.remote();
         for (CloudPlayer player : List.copyOf(players.values())) {
+            if (remote) {
+                if (name.equals(player.currentServerName()) && !name.equals(player.currentProxyName())
+                        && player.currentProxy().map(p -> p instanceof de.pocketcloud.cloud.server.CloudServer proxy && !proxy.remote()).orElse(false)) {
+                    player.resetCurrentServer();
+                }
+                continue;
+            }
             if (name.equals(player.currentProxyName())) {
                 remove(player);
             } else if (name.equals(player.currentServerName())) {

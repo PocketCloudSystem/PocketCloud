@@ -69,7 +69,8 @@ public final class ClusterManager {
     private final Set<String> dialing = ConcurrentHashMap.newKeySet();
 
     /** Features on top of the node protocol. Add new modules here. */
-    private final List<ClusterModule> modules = List.of(new de.pocketcloud.cloud.cluster.sync.TemplateReplicator(), new BridgeClusterModule());
+    private final List<ClusterModule> modules = List.of(new de.pocketcloud.cloud.cluster.sync.TemplateReplicator(), new BridgeClusterModule(),
+            new de.pocketcloud.cloud.cluster.scheduling.SchedulingModule());
     private final NodeSelector selector = new NodeSelector(this);
 
     private LocalNodeHandle localNode;
@@ -358,6 +359,7 @@ public final class ClusterManager {
                 peer.stats(hb.getStats());
                 adoptMembers(hb.getMembers());
                 election.observe(hb.getTerm(), hb.getHead());
+                for (ClusterModule module : modules) module.onHeartbeat(from, hb.getStats());
             }
             case HeadClaimPacket claim -> respond(channel, claim, election.onClaim(from, claim));
             case HeadAnnouncePacket announce -> election.onAnnounce(from, announce.getTerm());
@@ -367,10 +369,10 @@ public final class ClusterManager {
                 CloudLogger.get().info("Node §b{} §rleft the cluster.", from);
                 dropServersOfDeadNodes();
             }
-            case HeadStartServerPacket start -> respond(channel, start, handleStartRequest(from, start));
-            case NodeStopServerPacket stop -> PocketCloud.instance().servers().get(stop.getServerName()).ifPresent(server -> {
+            case HeadStartServerPacket start -> handleStartRequest(from, channel, start);
+            case NodeStopServerPacket stop -> PocketCloud.instance().servers().get(stop.getServerName()).ifPresentOrElse(server -> {
                 if (server instanceof CloudServer cs && !cs.remote()) cs.stop(stop.isForce());
-            });
+            }, () -> cancelledStarts.put(stop.getServerName(), System.currentTimeMillis()));
             case NodeServerStatePacket report -> handleServerState(from, report);
             case NodeForwardStartPacket forward -> handleForwardedStart(channel, forward);
             default -> {
@@ -457,6 +459,7 @@ public final class ClusterManager {
         stats.put("maxMemoryMb", (long) nodeConfig().maxMemoryMb());
         stats.put("servers", PocketCloud.instance().servers().serverCount());
         stats.put("cpu", PocketCloud.instance().performanceStats().systemCpuUsage());
+        for (ClusterModule module : modules) module.heartbeatStats(stats);
         String head = election.head();
         long term = election.term();
         String nodeState = election.state().name();
@@ -685,21 +688,52 @@ public final class ClusterManager {
 
     // ------------------------------------------------------------------ servers across nodes
 
-    private NodeStartServerResultPacket handleStartRequest(String from, HeadStartServerPacket request) {
+    /** Time the node waits for the template versions of a start before it reports a failure (below the 10 s request timeout). */
+    private static final long START_SYNC_TIMEOUT_MS = 7_000;
+    /** Starts the head gave up on (stop received before the server existed), so a late start is not executed. */
+    private final Map<String, Long> cancelledStarts = new ConcurrentHashMap<>();
+
+    private void handleStartRequest(String from, Channel channel, HeadStartServerPacket request) {
         if (request.getTerm() < election.term()) {
-            return new NodeStartServerResultPacket(false, "stale head term " + request.getTerm() + " < " + election.term(), 0);
+            respond(channel, request, new NodeStartServerResultPacket(false, "stale head term " + request.getTerm() + " < " + election.term(), 0));
+            return;
         }
 
         var template = PocketCloud.instance().templates().get(request.getTemplateName()).orElse(null);
-        if (template == null) return new NodeStartServerResultPacket(false, "template " + request.getTemplateName() + " does not exist on " + nodeName(), 0);
-
-        try {
-            int port = PocketCloud.instance().servers().startLocal(template, request.getId(), UUID.fromString(request.getUuid()));
-            CloudLogger.get().info("Head §b{} §rstarts §b{}-{} §ron this node.", from, template.name(), request.getId());
-            return new NodeStartServerResultPacket(true, null, port);
-        } catch (Exception e) {
-            return new NodeStartServerResultPacket(false, e.getMessage(), 0);
+        if (template == null) {
+            respond(channel, request, new NodeStartServerResultPacket(false, "template " + request.getTemplateName() + " does not exist on " + nodeName(), 0));
+            return;
         }
+
+        String name = template.name() + "-" + request.getId();
+        long now = System.currentTimeMillis();
+        cancelledStarts.values().removeIf(t -> now - t > 60_000);
+        cancelledStarts.remove(name);
+        // The node first makes sure it has the template version the head expects, then prepares the server.
+        de.pocketcloud.cloud.cluster.sync.TemplateReplicator.get()
+                .map(r -> r.ensureVersions(request.getVersions(), name, START_SYNC_TIMEOUT_MS))
+                .orElseGet(() -> java.util.concurrent.CompletableFuture.completedFuture(false))
+                .whenComplete((_, error) -> {
+                    if (error != null) {
+                        Throwable cause = error instanceof java.util.concurrent.CompletionException && error.getCause() != null ? error.getCause() : error;
+                        String reason = cause instanceof java.util.concurrent.TimeoutException ? "template version not synced within " + START_SYNC_TIMEOUT_MS / 1000 + " s" : cause.getMessage();
+                        CloudLogger.get().warn("Cannot start §b{} §rfor head §b{}§8: §c{}", name, from, reason);
+                        respond(channel, request, new NodeStartServerResultPacket(false, reason, 0));
+                        return;
+                    }
+                    if (cancelledStarts.remove(name) != null) {
+                        CloudLogger.get().warn("Not starting §b{}§r: the head cancelled the start.", name);
+                        respond(channel, request, new NodeStartServerResultPacket(false, "cancelled by the head", 0));
+                        return;
+                    }
+                    try {
+                        int port = PocketCloud.instance().servers().startLocal(template, request.getId(), UUID.fromString(request.getUuid()));
+                        CloudLogger.get().info("Head §b{} §rstarts §b{} §ron this node.", from, name);
+                        respond(channel, request, new NodeStartServerResultPacket(true, null, port));
+                    } catch (Exception e) {
+                        respond(channel, request, new NodeStartServerResultPacket(false, e.getMessage(), 0));
+                    }
+                });
     }
 
     private void handleServerState(String from, NodeServerStatePacket packet) {
@@ -777,13 +811,22 @@ public final class ClusterManager {
             return promise;
         }
 
-        HeadStartServerPacket request = new HeadStartServerPacket(election.term(), template, id, uuid.toString());
-        request.then(response -> {
-            if (response instanceof NodeStartServerResultPacket r && r.isSuccess()) promise.resolve(r.getPort());
-            else if (response instanceof NodeStartServerResultPacket r) promise.reject(new IllegalStateException(r.getError()));
-            else promise.reject(new IllegalStateException("unexpected response"));
-        }).failure((_, ex, reason) -> promise.reject(ex != null ? ex : new IllegalStateException(String.valueOf(reason))));
-        network.send(peer.channel(), request);
+        long term = election.term();
+        var tmpl = PocketCloud.instance().templates().get(template).orElse(null);
+        // The node must have the template version the head knows (spec: "stellt die Template-Version sicher").
+        de.pocketcloud.cloud.cluster.sync.TemplateReplicator.get()
+                .filter(_ -> tmpl != null)
+                .map(r -> r.expectedVersions(tmpl))
+                .orElseGet(() -> java.util.concurrent.CompletableFuture.completedFuture(Map.of()))
+                .thenAccept(versions -> {
+                    HeadStartServerPacket request = new HeadStartServerPacket(term, template, id, uuid.toString(), versions);
+                    request.then(response -> {
+                        if (response instanceof NodeStartServerResultPacket r && r.isSuccess()) promise.resolve(r.getPort());
+                        else if (response instanceof NodeStartServerResultPacket r) promise.reject(new IllegalStateException(r.getError()));
+                        else promise.reject(new IllegalStateException("unexpected response"));
+                    }).failure((_, ex, reason) -> promise.reject(ex != null ? ex : new IllegalStateException(String.valueOf(reason))));
+                    if (!send(node, request)) promise.reject(new IllegalStateException("node " + node + " is not connected"));
+                });
         return promise;
     }
 
@@ -803,6 +846,11 @@ public final class ClusterManager {
         network.send(peer.channel(), request);
         CloudLogger.get().info("Forwarded the start of §b{}x {} §rto head §b{}§r.", count, template, head);
         return promise;
+    }
+
+    /** Head → node: the head gave up on a start; stop the server there if it was started anyway (late answer). */
+    public void cancelRemoteStart(String node, String server) {
+        send(node, new NodeStopServerPacket(server, true));
     }
 
     /** Any node → owning node: stop a server there. */
@@ -843,6 +891,15 @@ public final class ClusterManager {
      */
     public NodeHandle selectNodeForNewServer(ITemplate template) {
         return selector.select(template);
+    }
+
+    /** Like {@link #selectNodeForNewServer(ITemplate)}, without the given nodes (retry after a failed start). */
+    public NodeHandle selectNodeForNewServer(ITemplate template, Set<String> exclude) {
+        return selector.select(template, exclude);
+    }
+
+    public NodeSelector selector() {
+        return selector;
     }
 
     public Collection<NodeHandle> nodes() {

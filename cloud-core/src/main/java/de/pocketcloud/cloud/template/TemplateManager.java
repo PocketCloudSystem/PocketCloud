@@ -57,6 +57,11 @@ public final class TemplateManager implements Tickable, Loadable, IWriteTemplate
                                     "Use §btemplate nodes {} <node,...> §rto choose the nodes for its proxies.", template.name(), template.name());
                         }
 
+                        if (PocketCloud.instance().cluster().clustered() && template.settings().staticServers() && !template.settings().hasStaticNode()) {
+                            CloudLogger.get().warn("The static template §b{} §rhas no §bstaticNode §rset and is §cdisabled §rin the cluster. " +
+                                    "Use §btemplate staticnode {} <node> §rto choose the node its static servers live on.", template.name(), template.name());
+                        }
+
                         if (template.settings().maxMemory() <= 0 && template.serverSoftware().download().realStartCommand().contains("{MAX_MEMORY}")) {
                             PocketCloud.instance().appendStartNotification("The setting §bmaxMemory §ccannot §rbe equal to §b0 §rfor template §b{}§r.", CloudLogLevel.WARN, template.name());
                             PocketCloud.instance().appendStartNotification("Setting it to §b1024M §rinstead...", CloudLogLevel.WARN, template.name());
