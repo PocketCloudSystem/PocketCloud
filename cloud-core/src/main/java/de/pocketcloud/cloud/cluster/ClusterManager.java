@@ -247,9 +247,9 @@ public final class ClusterManager {
     /**
      * {@code --join <token>} stores the token in {@code join-token}; it is applied once on the next start.
      */
-    private void processJoinToken() {
+    private boolean processJoinToken() {
         Path file = directory.resolve("join-token");
-        if (!Files.isRegularFile(file)) return;
+        if (!Files.isRegularFile(file)) return false;
         try {
             String raw = Files.readString(file).trim();
             String advertised = null;
@@ -274,9 +274,40 @@ public final class ClusterManager {
 
             Files.delete(file);
             CloudLogger.get().success("Joined the cluster as §b{}§r. Seeds: §b{}", token.nodeName(), String.join("§8, §b", token.seeds()));
+            return true;
         } catch (Exception e) {
             CloudLogger.get().exception("Invalid join token", e);
+            return false;
         }
+    }
+
+    /**
+     * {@code node join <token|file>}: a running single node joins a cluster without a restart.
+     * Its own servers are stopped first: their names would clash with the servers of the cluster,
+     * and from now on the cluster's head decides what runs where.
+     */
+    public synchronized void joinNow(String tokenOrFile) throws Exception {
+        if (clustered) throw new IllegalStateException("This node is already part of a cluster.");
+
+        storeJoinToken(tokenOrFile);
+        HeadElection previous = election;
+        // Leave the single-node head role first, so the auto-scaling doesn't start servers again.
+        election = new HeadElection(this, directory.resolve("term.json"));
+        if (!processJoinToken()) {
+            election = previous;
+            throw new IllegalArgumentException("Invalid join token (see the log).");
+        }
+
+        var servers = PocketCloud.instance().servers();
+        if (!servers.localServers().isEmpty()) {
+            CloudLogger.get().info("Stopping the §b{} §rserver(s) of this node before joining...", servers.localServers().size());
+            servers.stopAllAndWait(20_000);
+        }
+
+        members.load();
+        clustered = certificates.load();
+        if (!clustered) throw new IllegalStateException("The certificates of the token could not be loaded.");
+        startCluster();
     }
 
     /** Writes a join token to storage/internal/cluster/join-tokens/<node>.token, readable only by the owner. */

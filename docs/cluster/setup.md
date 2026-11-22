@@ -134,6 +134,15 @@ Copy `node-2.token` to machine 2 (e.g. with `scp`), put `pocketcloud.jar` into a
 java -jar pocketcloud.jar --join /path/to/node-2.token
 ```
 
+Alternatives without `--join`:
+
+- On a node that is already running (single node): `node join /path/to/node-2.token` in its console. Its own
+  servers are stopped first, then it connects right away.
+- Before starting: put the token text into `storage/internal/cluster/join-token` of the new node and start it
+  normally; the file is applied and deleted on start.
+
+Later starts never need `--join` again.
+
 The node stores the certificates in `storage/internal/cluster/`, writes `name`, `seeds`, `advertisedAddress` and
 `clusterPort` into its `node.yml` and logs:
 

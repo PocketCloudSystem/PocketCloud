@@ -39,6 +39,8 @@ public final class NodeCommand extends Command implements TabComplete {
                 sub.addParameter(new StringParameter("node", false))
                         .addParameter(new StringParameter("address", false))
                         .addParameter(new IntegerParameter("port", true))));
+        registerSubCommand(SubCommand.lambda("join", this::handleJoin, true, sub ->
+                sub.addParameter(new StringParameter("token", false))));
         registerSubCommand(SubCommand.lambda("remove", this::handleRemove, true, sub ->
                 sub.addParameter(new StringParameter("node", false))));
         registerSubCommand(SubCommand.lambda("drain", (sender, ctx) -> handleDrain(sender, ctx, true), true, sub ->
@@ -211,6 +213,16 @@ public final class NodeCommand extends Command implements TabComplete {
         sender.info("CPU§8: {} {}", cpu(value), busy
                 ? "§8(§cover the limit of " + (int) NodeSelector.CPU_LIMIT + "%§r: no new servers right now§8)"
                 : "§8(§rlimit for new servers§8: §b" + (int) NodeSelector.CPU_LIMIT + "%§8)");
+    }
+
+    private boolean handleJoin(CommandSender sender, CommandContext ctx) {
+        try {
+            PocketCloud.instance().cluster().joinNow(ctx.argString("token"));
+            sender.info("Connecting to the cluster... check with §bnode list§r.");
+        } catch (Exception e) {
+            sender.error("Could not join the cluster: {}", e.getMessage());
+        }
+        return true;
     }
 
     private boolean handleAdd(CommandSender sender, CommandContext ctx) {
