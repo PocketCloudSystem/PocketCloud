@@ -52,12 +52,12 @@ public final class ServerRecovery implements ClusterModule {
     static final String KILL = "KILL";
     private static final long REPORT_INTERVAL_MS = 5_000;
     private static final long PROTECT_MS = 30_000;
-    private static final long WRITTEN_OFF_KEEP_MS = 30 * 60_000;
+    static final String STAT_WRITTEN_OFF = "writtenOff";
 
     private final Path file = PocketCloudPaths.storage().internal().with("cluster").asPath().resolve("local-servers.json");
     private final Map<String, LocalServerRecord> candidates = new ConcurrentHashMap<>(); // uuid → record
     private final Map<String, String> decisions = new ConcurrentHashMap<>(); // uuid → ADOPT/KILL
-    private final Map<String, Long> writtenOff = new ConcurrentHashMap<>(); // uuid → time
+    private final WrittenOffList writtenOff = new WrittenOffList(PocketCloudPaths.storage().internal().with("cluster").asPath().resolve("written-off.json"));
     private final Map<String, Long> protectedServers = new ConcurrentHashMap<>(); // node/name → until
     private final Map<String, Long> killOrders = new ConcurrentHashMap<>(); // uuid → last order
 
@@ -83,6 +83,7 @@ public final class ServerRecovery implements ClusterModule {
     /** Reads the servers of the last run. Called from {@link ClusterManager#init()}, before the cluster connects. */
     public void load() {
         loadedAt = System.currentTimeMillis();
+        writtenOff.load();
         if (!Files.isRegularFile(file)) return;
         try {
             Map<String, Object> root = FileUtils.decodeJsonFile(file, new TypeToken<Map<String, Object>>() {});
@@ -149,7 +150,8 @@ public final class ServerRecovery implements ClusterModule {
 
     private void tick() {
         long now = System.currentTimeMillis();
-        writtenOff.values().removeIf(time -> now - time > WRITTEN_OFF_KEEP_MS);
+        writtenOff.expire(now);
+        writtenOff.flush();
         protectedServers.values().removeIf(until -> until < now);
         killOrders.values().removeIf(time -> now - time > 60_000);
 
@@ -269,7 +271,7 @@ public final class ServerRecovery implements ClusterModule {
         if (existing != null) {
             return nodeOf(existing).equals(from) && existing.uuid().toString().equals(record.uuid) ? ADOPT : KILL;
         }
-        return writtenOff.containsKey(record.uuid) ? KILL : ADOPT;
+        return writtenOff.contains(record.uuid) ? KILL : ADOPT;
     }
 
     private void handleReport(String from, NodeStateReportPacket packet) {
@@ -285,7 +287,7 @@ public final class ServerRecovery implements ClusterModule {
                 result.put(record.uuid, decision);
                 if (KILL.equals(decision)) protectedServers.remove(from + "/" + record.name);
                 if (cluster.throttle("report:" + from + "/" + record.uuid)) CloudLogger.get().info("Node §b{} §rstill runs §b{} §rfrom before its restart: {}", from, record.name,
-                        ADOPT.equals(decision) ? "§aadopt" : "§ckill §r(written off or replaced)");
+                        ADOPT.equals(decision) ? "§aadopt" : "§ckill §r(" + killReason(record) + ")");
             }
         }
         if (cluster.isHead() && !result.isEmpty()) cluster.send(from, new HeadStateReportResultPacket(cluster.election().term(), result));
@@ -327,11 +329,9 @@ public final class ServerRecovery implements ClusterModule {
         }
 
         protectedServers.remove(from + "/" + incoming.name());
-        if (writtenOff.containsKey(uuid)) {
-            if (!cluster().isHead()) {
-                writtenOff.remove(uuid); // only the head decides; it will order a kill if needed
-                return true;
-            }
+        if (writtenOff.contains(uuid)) {
+            // Only the head decides; it will order a kill. The entry stays, so a later head knows it too.
+            if (!cluster().isHead()) return true;
             if (incoming.status().isOffline() || incoming.status().isStopping()) return false;
             orderKill(from, incoming, "written off after its node was gone");
             return false;
@@ -392,7 +392,30 @@ public final class ServerRecovery implements ClusterModule {
     public void onPeerGone(String name) {
         // Called before the servers of the dead node are dropped: remember them as written off.
         long now = System.currentTimeMillis();
-        for (CloudServer server : PocketCloud.instance().servers().serversOfNode(name)) writtenOff.put(server.uuid().toString(), now);
+        for (CloudServer server : PocketCloud.instance().servers().serversOfNode(name)) writtenOff.add(server.uuid().toString(), server.name(), name, now);
+        writtenOff.flush();
+    }
+
+    @Override
+    public void heartbeatStats(Map<String, Object> stats) {
+        if (writtenOff.size() > 0) stats.put(STAT_WRITTEN_OFF, writtenOff.write());
+    }
+
+    @Override
+    public void onHeartbeat(String from, Map<String, Object> stats) {
+        if (stats == null) return;
+        List<String> added = writtenOff.merge(stats.get(STAT_WRITTEN_OFF));
+        if (!added.isEmpty()) {
+            writtenOff.flush();
+            CloudLogger.get().info("Learned §b{} §rwritten-off server(s) from node §b{}§r: §b{}", added.size(), from, String.join("§8, §b", added));
+        }
+    }
+
+    private String killReason(LocalServerRecord record) {
+        CloudServer existing = (CloudServer) PocketCloud.instance().servers().get(record.name).orElse(null);
+        if (existing != null) return "name now belongs to the server on " + nodeOf(existing);
+        WrittenOffList.Entry entry = writtenOff.get(record.uuid);
+        return entry == null ? "written off" : "written off at " + java.time.LocalTime.ofInstant(Instant.ofEpochMilli(entry.time()), java.time.ZoneId.systemDefault()).withNano(0) + " after node " + entry.node() + " was gone";
     }
 
     // ------------------------------------------------------------------ persistence
