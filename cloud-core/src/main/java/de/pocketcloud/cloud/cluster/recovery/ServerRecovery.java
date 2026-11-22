@@ -98,8 +98,8 @@ public final class ServerRecovery implements ClusterModule {
                 else dead.add(record);
             }
             if (!candidates.isEmpty()) {
-                CloudLogger.get().info("Found §b{} §rserver(s) of the last run that are still running: §b{}", candidates.size(),
-                        String.join("§8, §b", candidates.values().stream().map(LocalServerRecord::toString).toList()));
+                CloudLogger.get().debug("Found {} server(s) of the last run that are still running: {}", candidates.size(),
+                        String.join(", ", candidates.values().stream().map(LocalServerRecord::toString).toList()));
             }
             for (LocalServerRecord record : dead) cleanup(record, false);
         } catch (Exception e) {
@@ -159,7 +159,7 @@ public final class ServerRecovery implements ClusterModule {
             if (!record.alive()) {
                 candidates.remove(record.uuid);
                 decisions.remove(record.uuid);
-                CloudLogger.get().info("Server §b{} §rof the last run has exited, cleaning up.", record.name);
+                CloudLogger.get().debug("Server {} of the last run has exited, cleaning up.", record.name);
                 cleanup(record, false);
                 dirty = true;
             }
@@ -185,7 +185,7 @@ public final class ServerRecovery implements ClusterModule {
             long giveUpAfter = (reconnectTimeoutSeconds() + 30) * 1000L;
             if (now - loadedAt > giveUpAfter) {
                 for (LocalServerRecord record : List.copyOf(candidates.values())) {
-                    CloudLogger.get().warn("No head decided about §b{} §rin time, stopping it.", record.name);
+                    CloudLogger.get().warn("Stopping §b{} §rfrom the last run: no head confirmed it in time.", record.name);
                     candidates.remove(record.uuid);
                     cleanup(record, true);
                 }
@@ -202,7 +202,8 @@ public final class ServerRecovery implements ClusterModule {
         if (candidates.remove(record.uuid) == null) return;
         dirty = true;
         if (KILL.equals(decision)) {
-            CloudLogger.get().warn("Server §b{} §rof the last run was §cwritten off §ror replaced §8(§r{}§8)§r, killing it §8(§rpid {}§8)§r.", record.name, by, record.pid);
+            CloudLogger.get().warn("Stopping §b{} §rfrom the last run: another server replaced it in the meantime.", record.name);
+            CloudLogger.get().debug("Killing {} (pid {}): written off or replaced ({}).", record.name, record.pid, by);
             cleanup(record, true);
             return;
         }
@@ -210,7 +211,7 @@ public final class ServerRecovery implements ClusterModule {
         var servers = PocketCloud.instance().servers();
         Template template = (Template) PocketCloud.instance().templates().get(record.template).orElse(null);
         if (template == null || servers.get(record.name).isPresent()) {
-            CloudLogger.get().warn("Cannot adopt §b{}§r: {}. Killing it.", record.name, template == null ? "its template does not exist" : "the name is taken");
+            CloudLogger.get().warn("Stopping §b{} §rfrom the last run: {}.", record.name, template == null ? "its template does not exist" : "the name is taken");
             cleanup(record, true);
             return;
         }
@@ -229,8 +230,8 @@ public final class ServerRecovery implements ClusterModule {
             return;
         }
         server.status(ServerStatus.STARTING);
-        CloudLogger.get().success("§aAdopted §b{} §rfrom the last run §8(§rpid {}, port {}, {}§8)§r. Waiting for its bridge to reconnect...",
-                record.name, record.pid, record.port, by);
+        CloudLogger.get().success("The server §b{} §ris still running from the last run and was §aadopted§r.", record.name);
+        CloudLogger.get().debug("Adopted {} (pid {}, port {}, {}), waiting for its bridge to reconnect.", record.name, record.pid, record.port, by);
     }
 
     /** Kills the process (if asked) and removes the temporary server directory. */
@@ -286,8 +287,9 @@ public final class ServerRecovery implements ClusterModule {
                 String decision = decide(from, record);
                 result.put(record.uuid, decision);
                 if (KILL.equals(decision)) protectedServers.remove(from + "/" + record.name);
-                if (cluster.throttle("report:" + from + "/" + record.uuid)) CloudLogger.get().info("Node §b{} §rstill runs §b{} §rfrom before its restart: {}", from, record.name,
-                        ADOPT.equals(decision) ? "§aadopt" : "§ckill §r(" + killReason(record) + ")");
+                if (!cluster.throttle("report:" + from + "/" + record.uuid)) continue;
+                if (ADOPT.equals(decision)) CloudLogger.get().debug("Node {} still runs {} from before its restart: adopt", from, record.name);
+                else CloudLogger.get().info("Node §b{} §rstill runs §b{} §rfrom before its restart. §cStopping §rit: {}.", from, record.name, killReason(record));
             }
         }
         if (cluster.isHead() && !result.isEmpty()) cluster.send(from, new HeadStateReportResultPacket(cluster.election().term(), result));
@@ -321,10 +323,10 @@ public final class ServerRecovery implements ClusterModule {
             }
             if (incoming.status().isOffline() || incoming.status().isStopping()) return false;
             if (cluster().throttle("duplicate:" + from + "/" + incoming.name())) {
-                CloudLogger.get().warn("Node §b{} §rreports §b{}§r, but that name belongs to a server on node §b{}§r. Ignoring it.",
+                CloudLogger.get().warn("Node §b{} §rreports a server §b{}§r, but that name belongs to a server on §b{}§r. Ignoring it.",
                         from, incoming.name(), owner);
             }
-            if (cluster().isHead()) orderKill(from, incoming, "name taken by the server on " + owner);
+            if (cluster().isHead()) orderKill(from, incoming, "the name belongs to the server on " + owner);
             return false;
         }
 
@@ -333,7 +335,7 @@ public final class ServerRecovery implements ClusterModule {
             // Only the head decides; it will order a kill. The entry stays, so a later head knows it too.
             if (!cluster().isHead()) return true;
             if (incoming.status().isOffline() || incoming.status().isStopping()) return false;
-            orderKill(from, incoming, "written off after its node was gone");
+            orderKill(from, incoming, "it was replaced while " + from + " was gone");
             return false;
         }
         return true;
@@ -376,14 +378,16 @@ public final class ServerRecovery implements ClusterModule {
     private void handleKill(String from, HeadKillServerPacket packet) {
         LocalServerRecord candidate = candidates.remove(packet.getUuid());
         if (candidate != null) {
-            CloudLogger.get().warn("Head §b{} §rorders to kill §b{}§r: {}.", from, candidate.name, packet.getReason());
+            CloudLogger.get().warn("Stopping §b{} §rfrom the last run: {}.", candidate.name, packet.getReason());
+            CloudLogger.get().debug("Kill of {} ordered by head {}.", candidate.name, from);
             cleanup(candidate, true);
             dirty = true;
             return;
         }
         PocketCloud.instance().servers().get(packet.getServerName()).ifPresent(server -> {
             if (!(server instanceof CloudServer cs) || cs.remote() || !cs.uuid().toString().equals(packet.getUuid())) return;
-            CloudLogger.get().warn("Head §b{} §rorders to stop the duplicate §b{}§r: {}.", from, cs.name(), packet.getReason());
+            CloudLogger.get().warn("Stopping §b{}§r: {}.", cs.name(), packet.getReason());
+            CloudLogger.get().debug("Stop of the duplicate {} ordered by head {}.", cs.name(), from);
             cs.stop(true);
         });
     }
@@ -407,15 +411,15 @@ public final class ServerRecovery implements ClusterModule {
         List<String> added = writtenOff.merge(stats.get(STAT_WRITTEN_OFF));
         if (!added.isEmpty()) {
             writtenOff.flush();
-            CloudLogger.get().info("Learned §b{} §rwritten-off server(s) from node §b{}§r: §b{}", added.size(), from, String.join("§8, §b", added));
+            CloudLogger.get().debug("Learned {} written-off server(s) from node {}: {}", added.size(), from, String.join(", ", added));
         }
     }
 
     private String killReason(LocalServerRecord record) {
         CloudServer existing = (CloudServer) PocketCloud.instance().servers().get(record.name).orElse(null);
-        if (existing != null) return "name now belongs to the server on " + nodeOf(existing);
+        if (existing != null) return "the name belongs to the server on " + nodeOf(existing);
         WrittenOffList.Entry entry = writtenOff.get(record.uuid);
-        return entry == null ? "written off" : "written off at " + java.time.LocalTime.ofInstant(Instant.ofEpochMilli(entry.time()), java.time.ZoneId.systemDefault()).withNano(0) + " after node " + entry.node() + " was gone";
+        return entry == null ? "it was replaced in the meantime" : "it was replaced at " + java.time.LocalTime.ofInstant(Instant.ofEpochMilli(entry.time()), java.time.ZoneId.systemDefault()).withNano(0) + " while " + entry.node() + " was gone";
     }
 
     // ------------------------------------------------------------------ persistence

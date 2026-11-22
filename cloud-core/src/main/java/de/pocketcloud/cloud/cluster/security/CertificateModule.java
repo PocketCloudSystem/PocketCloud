@@ -161,18 +161,20 @@ public final class CertificateModule implements ClusterModule {
         boolean autoRenewOwn = cluster.isHead() && certificates().hasCaKey() && own.due(now);
         if (own.notAfter() <= now) {
             if (warnOnce("expired:" + own.serial())) {
-                CloudLogger.get().error("The certificate of this node §chas expired §8(§r{}§8)§r: other nodes reject its connections. On a node holding ca.key, run "
-                        + "§bnode add {} <address> <port> §rand start this node once with §b--join <token>§r.", DATE.format(Instant.ofEpochMilli(own.notAfter())), cluster.nodeName());
+                CloudLogger.get().error("The certificate of this node §chas expired§r, other nodes reject it. Run §bnode add {} <address> <port> §ron a node with ca.key "
+                        + "and start this node once with §b--join <token>§r.", cluster.nodeName());
+                CloudLogger.get().debug("Own certificate (serial {}) expired on {}.", own.serial(), DATE.format(Instant.ofEpochMilli(own.notAfter())));
             }
         } else if (own.expiresSoon(now) && !autoRenewOwn && warnOnce("own:" + own.serial())) {
-            CloudLogger.get().warn("The certificate of this node §cexpires in {} §8(§r{}§8)§r. {}", remaining(own.notAfter(), now), DATE.format(Instant.ofEpochMilli(own.notAfter())),
-                    certificates().hasCaKey() ? "Renew it with §bnode cert renew§r." : "Run §bnode cert renew " + cluster.nodeName() + " §ron a node holding ca.key" + holdersHint() + ".");
+            CloudLogger.get().warn("The certificate of this node §cexpires in {}§r. {}", remaining(own.notAfter(), now),
+                    certificates().hasCaKey() ? "Renew it with §bnode cert renew§r." : "Run §bnode cert renew " + cluster.nodeName() + " §ron a node with ca.key" + holdersHint() + ".");
         }
 
         X509Certificate ca = certificates().caCertificate();
         if (ca.getNotAfter().getTime() - now <= Duration.ofDays(CA_WARN_DAYS).toMillis() && warnOnce("ca:" + ClusterCertificates.serialOf(ca))) {
-            CloudLogger.get().warn("The §bcluster CA §cexpires in {} §8(§r{}§8)§r. Renewing the CA is not supported yet: all node certificates become invalid with it.",
-                    remaining(ca.getNotAfter().getTime(), now), DATE.format(ca.getNotAfter().toInstant()));
+            CloudLogger.get().warn("The cluster CA §cexpires in {}§r. It cannot be renewed yet, and all node certificates stop working with it.",
+                    remaining(ca.getNotAfter().getTime(), now));
+            CloudLogger.get().debug("Cluster CA valid until {}.", DATE.format(ca.getNotAfter().toInstant()));
         }
 
         if (!cluster.isHead()) return;
@@ -186,15 +188,18 @@ public final class CertificateModule implements ClusterModule {
             if (status == null || !status.due(now) || inflight.containsKey(node)) continue;
             if (!certificates().hasCaKey()) {
                 if (warnOnce("noca:" + node + ":" + status.serial())) {
-                    CloudLogger.get().warn("The certificate of node §b{} §cexpires in {}§r, but this head has no §bca.key §rto renew it. Run §bnode cert renew {} §ron a node holding ca.key{}.",
+                    CloudLogger.get().warn("The certificate of node §b{} §cexpires in {}§r and this node cannot renew it. Run §bnode cert renew {} §ron a node with ca.key{}.",
                             node, remaining(status.notAfter(), now), node, holdersHint());
                 }
                 continue;
             }
-            CloudLogger.get().info("The certificate of node §b{} §rexpires in §e{}§r: §brenewing §rit automatically...", node, remaining(status.notAfter(), now));
+            CloudLogger.get().info("Renewing the certificate of node §b{} §8(§rexpires in §e{}§8)§r...", node, remaining(status.notAfter(), now));
             renew(node, "automatic renewal by head " + cluster.nodeName()).whenComplete((message, error) -> {
-                if (error != null) CloudLogger.get().warn("Automatic renewal of the certificate of §b{} §cfailed§r: {}", node, rootMessage(error));
-                else CloudLogger.get().success(message);
+                if (error != null) CloudLogger.get().warn("Could not renew the certificate of node §b{}§r: {}", node, rootMessage(error));
+                else {
+                    CloudLogger.get().success("Renewed the certificate of node §b{}§r.", node);
+                    CloudLogger.get().debug(message);
+                }
             });
         }
     }
@@ -280,7 +285,7 @@ public final class CertificateModule implements ClusterModule {
                 try {
                     KeyPair pair = ClusterCertificates.newKeyPair();
                     pendingKey = new PendingKey(pair, from, System.currentTimeMillis());
-                    CloudLogger.get().info("Node §b{} §rrenews the certificate of this node §8(§r{}§8)§r: generated a new key.", from, request.getReason());
+                    CloudLogger.get().debug("Node {} renews the certificate of this node ({}): generated a new key.", from, request.getReason());
                     cluster.respond(channel, request, new NodeCertKeyResultPacket(true, null, Base64.getEncoder().encodeToString(pair.getPublic().getEncoded())));
                 } catch (Exception e) {
                     cluster.respond(channel, request, new NodeCertKeyResultPacket(false, e.getMessage(), null));
@@ -297,7 +302,7 @@ public final class CertificateModule implements ClusterModule {
                     pendingKey = null;
                     cluster.respond(channel, request, new NodeCertInstallResultPacket(true, null));
                 } catch (Exception e) {
-                    CloudLogger.get().warn("§cRejected §rthe certificate from §b{}§r: {}", from, e.getMessage());
+                    CloudLogger.get().warn("§cRejected §ra new certificate from §b{}§r: {}", from, e.getMessage());
                     cluster.respond(channel, request, new NodeCertInstallResultPacket(false, e.getMessage()));
                 }
             }
@@ -312,8 +317,12 @@ public final class CertificateModule implements ClusterModule {
         X509Certificate old = certificates().nodeCertificate();
         certificates().installRenewed(certificate, pair.getPrivate(), pair.getPublic(), cluster.nodeName());
         cluster.reloadTls();
-        CloudLogger.get().success("§aInstalled a renewed certificate §rfor this node §8(§rissued by §b{}§8)§r: serial §b{}§r, valid until §b{}§r. "
-                        + "Old certificate §8(§rserial {}§8) §rkept as node.crt.bak. New connections use the new certificate, open ones keep running.",
+        // renewed on this node: the command or the automatic renewal reports it
+        if (!issuedBy.equals("this node")) {
+            CloudLogger.get().success("The certificate of this node was §arenewed §8(§rvalid until §b{}§8)§r.", DATE.format(certificate.getNotAfter().toInstant()));
+        }
+        CloudLogger.get().debug("Installed a renewed certificate (issued by {}): serial {}, valid until {}. Old certificate (serial {}) kept as node.crt.bak. "
+                        + "New connections use the new certificate, open ones keep running.",
                 issuedBy, ClusterCertificates.serialOf(certificate), DATE.format(certificate.getNotAfter().toInstant()), ClusterCertificates.serialOf(old));
     }
 

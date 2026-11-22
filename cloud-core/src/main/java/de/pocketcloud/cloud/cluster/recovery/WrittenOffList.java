@@ -39,7 +39,7 @@ final class WrittenOffList {
             expire(System.currentTimeMillis());
             dirty = false;
             if (!entries.isEmpty()) {
-                CloudLogger.get().info("Loaded §b{} §rwritten-off server(s) from written-off.json: §b{}", entries.size(), names());
+                CloudLogger.get().debug("Loaded {} written-off server(s) from written-off.json: {}", entries.size(), names());
             }
         } catch (Exception e) {
             CloudLogger.get().exception("Failed to read {}", e, file.toString());
@@ -117,6 +117,6 @@ final class WrittenOffList {
     }
 
     private String names() {
-        return String.join("§8, §b", entries.values().stream().map(e -> e.name() + "@" + e.node()).toList());
+        return String.join(", ", entries.values().stream().map(e -> e.name() + "@" + e.node()).toList());
     }
 }

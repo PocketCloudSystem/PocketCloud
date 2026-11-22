@@ -29,18 +29,16 @@ Templates are copied into a server folder only when the server is **prepared**. 
 2. After **3 s without file events** the node lists the changed folder (size and modification time of every file)
    and checks again a second later. If something still moves (an SFTP upload in progress), it waits again.
 3. The node sends a **delta** to the head: the version it last took over (the base), the new or changed files and
-   the removed files.
-
-   ```text
-   Sent 1 changed and 0 removed file(s) of Lobby to head node-1.
-   ```
+   the removed files (with debug logging: `Sent 1 changed and 0 removed file(s) of Lobby to head node-1.`).
 
 4. The head merges the delta into its current version, fetches the new files from the node (256 KiB chunks over
    the cluster connection), stores the new version and announces it:
 
    ```text
-   Template Lobby is now version 7 (changed on node-2: 1 changed, 0 removed).
+   Template Lobby was updated (changed on node-2).
    ```
+
+   The version number and the number of changed files appear with debug logging and in `template history`.
 
    Changes made on the head itself are taken over directly.
 5. Every other node compares the announced version with its copy, fetches the file list (manifest: path, size,
@@ -49,8 +47,12 @@ Templates are copied into a server folder only when the server is **prepared**. 
    old or the new version, never a mix.
 
    ```text
-   Template Lobby updated to version 7 (1 file(s) fetched, 2048 KB).
+   Template Lobby was updated (changed on node-2).
    ```
+
+   The node where the change was made logs nothing more; the version, the number of fetched files and their size
+   appear with debug logging. A change of `templates.json`/`groups.json` is logged as
+   `The template and group settings were updated (changed on node-2).`
 
 In addition every node compares all units with the head every 30 s and right after (re)connecting to it.
 
@@ -58,11 +60,11 @@ A node never lets a head overwrite its copy with an **older** version than the o
 happen after a head change, see below). It keeps its copy and sends it to the head, which makes it a new version:
 
 ```text
-Head node-3 serves version 6 of Lobby, but this node has the newer version 7: keeping it and sending it to the head.
+This node has a newer copy of template Lobby than the head; keeping it and sending it to the cluster.
 ```
 
-Deleting a template folder deletes it on all nodes
-(`Template Lobby was deleted on node-2 (version 8), removing it on all nodes.`).
+Deleting a template folder deletes it on all nodes (head: `Template Lobby was deleted (on node-2).`, other nodes:
+`Template Lobby was deleted on another node and removed here.`).
 
 With the `json` provider, creating, editing or removing a template or group on one node changes
 `templates.json`/`groups.json`, which are replicated like files. The other nodes reload them:
@@ -76,12 +78,9 @@ Template Lobby was removed on another node.
 ## Starting a server with an outdated copy
 
 When the head starts a server on a node, it sends the versions it expects for the template, its global template and
-its groups. If the node's copy is different, the node syncs first and starts afterwards:
-
-```text
-Template Lobby is at version 6 here, the head expects 7: syncing it before starting Lobby-4...
-Template Lobby synced to version 7 before starting Lobby-4.
-```
+its groups. If the node's copy is different, the node syncs first (`Template Lobby was updated.`) and starts
+afterwards. The expected and the local version appear with debug logging
+(`Template Lobby is at version 6 here, the head expects 7: syncing it before starting Lobby-4.`).
 
 The start fails (and the head retries on another node, see [Scheduling](scheduling.md#start-retries)) if
 
@@ -96,22 +95,23 @@ The start fails (and the head retries on another node, see [Scheduling](scheduli
 A new head does not trust its own disk copy. Before it serves any template it asks every reachable node which
 version of every unit it has (the version it took over last, or the version it served while it was head itself),
 and takes the **highest version** of each unit (same version with different content: the answer of the previous
-head wins, then its own):
+head wins, then its own). This happens silently; with debug logging:
 
 ```text
 Template replication: collected the template versions of 3 node(s) (node-2, node-1, node-3).
 Template Lobby was at version 2 here, the cluster has version 3 (from node-3): took it over before serving.
-Template replication: this node is head and serves 4 unit(s) (0 new version(s), 1 taken over from other nodes).
+Template replication: serving 4 unit(s) as head (0 new version(s), 1 taken over from other nodes).
 ```
 
 - If the new head is behind, it fetches that version (from a node whose folder or history has it) before serving.
 - If its folder is **missing**, the template is restored the same way. A missing folder only becomes a deletion when
   the newest version in the cluster is a deletion.
 - Local changes on the new head that no head had seen yet are merged onto the newest version and become the next
-  version (`... had local changes: merged them onto version 3, now version 4.`).
+  version (`Template Lobby was outdated here and had local changes; merged them into the cluster version.`).
 - If no reachable node can serve the newest version, the head serves its own copy as a new version
-  (`No reachable node can serve version 7 of Lobby: serving the local copy as version 8.`), or, if it has no copy,
-  does not serve the template until a node that has it offers it again. It never deletes it.
+  (`The newest version of template Lobby is on no reachable node; using the copy of this node.`), or, if it has no
+  copy, does not serve the template until a node that has it offers it again
+  (`Template Lobby is missing here and no reachable node has it. ...`). It never deletes it.
 - A node that was not reachable while the head collected the versions and has a newer one sends it when it
   reconnects (see above); the head also copies the history entries it missed from that node.
 
@@ -145,7 +145,7 @@ The delta contains the base version. If the same file was changed on two nodes s
 (the one that reaches the head last) wins**. The other version stays in the history and the head warns:
 
 ```text
-Conflict in Lobby/plugins/MyPlugin/config.yml: changed on node-3 and on node-2 at the same time. The later change from node-3 wins, the other version stays in the history (version 7).
+Conflict in Lobby/plugins/MyPlugin/config.yml: changed on node-3 and node-2 at the same time. The change from node-3 is kept, the other one stays in the history.
 ```
 
 Changes to different files on different nodes are simply merged. To avoid conflicts, make larger changes on one
@@ -172,8 +172,7 @@ v7 | 2026-11-22 13:58:40 | node node-3 | changed on node-3 (conflict) | 1 change
 template rollback Lobby 6
 ```
 
-restores version 6 as a **new** version (`Rolled back Lobby to version 6 (now version 9), distributing it to all
-nodes.`) and distributes it. Both commands work on every node; on a follower they are forwarded to the head.
+restores version 6 as a **new** version (`Rolled back template Lobby to version 6.`) and distributes it. Both commands work on every node; on a follower they are forwarded to the head.
 `history` and `rollback` take the unit names from the table above (e.g. `template history global/server`).
 
 The history survives a head change. It is replicated lazily:
@@ -185,7 +184,7 @@ The history survives a head change. It is replicated lazily:
 - a new head copies missing entries from the node it takes the newest version from, and from a node that pushes a
   version newer than the head's;
 - a rollback to a version whose files the head does not have fetches them from any node that still has them
-  (`Fetched plugins/conf.yml of Lobby for the rollback from node-1.`).
+  (with debug logging: `Fetched plugins/conf.yml of Lobby for the rollback from node-1.`).
 
 A version made while a node was offline is missing in that node's history (it never saw it); `template history`
 on a new head shows the entries it has. Like on the head, every follower keeps the files of the last 10 versions,
@@ -212,8 +211,8 @@ node (stored in `storage/internal/cluster/template-sync/paused.json`; on start t
   version** (the version the node took over last, kept as history blobs), not the local changes:
 
   ```text
-  Sync of Lobby is paused here: starting Lobby-1 with the last distributed version 4, not the local changes.
-  Sync of Lobby is paused here: used the last distributed version 4 (not the local changes).
+  Sync of Lobby is paused here: starting Lobby-1 with the last synced version, not the local changes.
+  Sync of Lobby is paused here: used the last synced version, not the local changes.
   ```
 
 - if a newer version was distributed meanwhile, the node does not have it: it refuses starts of that template

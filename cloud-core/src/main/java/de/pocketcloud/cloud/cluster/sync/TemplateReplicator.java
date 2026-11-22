@@ -69,6 +69,8 @@ public final class TemplateReplicator implements ClusterModule {
     /** Local manifest hash last sent to the head; the head's next version already contains these changes. */
     private final Map<String, String> pushedHashes = new ConcurrentHashMap<>();
     private final Map<String, HeadTemplateListPacket.Item> lastHeadVersions = new ConcurrentHashMap<>();
+    /** Node where the last announced change of a unit was made (follower, only for the log). */
+    private final Map<String, String> lastOrigin = new ConcurrentHashMap<>();
     private final Set<String> paused = ConcurrentHashMap.newKeySet();
     /** unit → (note, time): why its files are about to change (server saves), shown in the history. */
     private final Map<String, Map.Entry<String, Long>> notes = new ConcurrentHashMap<>();
@@ -139,7 +141,7 @@ public final class TemplateReplicator implements ClusterModule {
         }
         running = true;
         cluster.scheduler().scheduleAtFixedRate(this::tickSafe, 1, 1, TimeUnit.SECONDS);
-        CloudLogger.get().info("Template replication §aenabled §8(§b{} §rfolders watched§8)§r.", watcher.watchedFolders());
+        CloudLogger.get().debug("Template replication enabled ({} folders watched).", watcher.watchedFolders());
     }
 
     @Override
@@ -520,7 +522,7 @@ public final class TemplateReplicator implements ClusterModule {
             UnitScanner.Scan scan = base == null || base.deleted() ? null : scanner.scan(unit);
             if (scan != null && scan.manifest().hash().equals(base.hash())) {
                 // a version the head does not serve (e.g. a new head that could not get it): offer it again
-                CloudLogger.get().info("Head §b{} §rdoes not serve §b{}§r: offering this node's copy §8(§rversion §b{}§8)§r.", head, unit.display(), base.version());
+                CloudLogger.get().debug("Head {} does not serve {}: offering this node's copy (version {}).", head, unit.display(), base.version());
                 push(unit, scan, new UnitVersion(base.version(), Manifest.EMPTY, false));
                 continue;
             }
@@ -531,6 +533,8 @@ public final class TemplateReplicator implements ClusterModule {
 
     private void onVersion(HeadTemplateVersionPacket packet) throws Exception {
         if (packet.getOrigin().equals(cluster.nodeName())) pushPending.remove(packet.getUnit());
+        if (packet.getOrigin().isEmpty()) lastOrigin.remove(packet.getUnit());
+        else lastOrigin.put(packet.getUnit(), packet.getOrigin()); // only for the log line of the update
         lastHeadVersions.put(packet.getUnit(), new HeadTemplateListPacket.Item(packet.getUnit(), packet.getVersion(), packet.getHash()));
         if (!ready()) return; // the full sync after startup catches up
         if (packet.getUnit().equals(SyncUnit.META_ID) && !jsonMeta) return;
@@ -554,7 +558,7 @@ public final class TemplateReplicator implements ClusterModule {
         if (DELETED.equals(hash)) {
             if (scan != null) {
                 deleteLocal(unit);
-                CloudLogger.get().info("Template §b{} §rwas deleted on the cluster and removed here.", unit.display());
+                CloudLogger.get().info("Template §b{} §rwas §cdeleted §ron another node and removed here.", unit.display());
             }
             if (base == null || !base.deleted() || base.version() != version) applied.put(unit, new UnitVersion(version, Manifest.EMPTY, true));
             return;
@@ -573,7 +577,8 @@ public final class TemplateReplicator implements ClusterModule {
             return;
         }
         if (base == null && scan != null) {
-            CloudLogger.get().warn("The local copy of §b{} §rdiffers from the cluster version; replacing it with version §b{}§r.", unit.display(), version);
+            CloudLogger.get().warn("The local copy of template §b{} §rdiffers from the cluster and is replaced by the cluster version.", unit.display());
+            CloudLogger.get().debug("Replacing the local copy of {} with version {}.", unit.display(), version);
         }
         pull(unit);
     }
@@ -583,8 +588,8 @@ public final class TemplateReplicator implements ClusterModule {
         String head = knownHead;
         if (head == null || head.equals(cluster.nodeName())) return;
         if (cluster.throttle("template-newer:" + unit.id() + ":" + headVersion)) {
-            CloudLogger.get().warn("Head §b{} §rserves version §b{} §rof §b{}§r, but this node has the newer version §b{}§r: keeping it and sending it to the head.",
-                    head, headVersion, unit.display(), base.version());
+            CloudLogger.get().warn("This node has a newer copy of template §b{} §rthan the head; keeping it and sending it to the cluster.", unit.display());
+            CloudLogger.get().debug("Head {} serves version {} of {}, this node has version {}.", head, headVersion, unit.display(), base.version());
         }
         if (scan == null) {
             push(unit, null, base);
@@ -709,9 +714,9 @@ public final class TemplateReplicator implements ClusterModule {
             throw e;
         }
         if (scan == null) {
-            CloudLogger.get().info("Sent the deletion of §b{} §rto head §b{}§r.", unit.display(), head);
+            CloudLogger.get().debug("Sent the deletion of {} to head {}.", unit.display(), head);
         } else {
-            CloudLogger.get().info("Sent §b{} §rchanged and §b{} §rremoved file(s) of §b{} §rto head §b{}§r.",
+            CloudLogger.get().debug("Sent {} changed and {} removed file(s) of {} to head {}.",
                     changes.stream().filter(r -> !String.valueOf(r.getFirst()).endsWith("/")).count(),
                     removed.stream().filter(r -> !String.valueOf(r.getFirst()).endsWith("/")).count(), unit.display(), head);
         }
@@ -764,7 +769,8 @@ public final class TemplateReplicator implements ClusterModule {
         applied.put(unit, new UnitVersion(response.getVersion(), target, false));
         pushedHashes.remove(unit.id());
         scanner.remember(unit, target);
-        CloudLogger.get().info("Template §b{} §rupdated to version §b{} §8(§b{} §rfile(s) fetched, §b{} KB§8)§r.",
+        logUpdated(unit, lastOrigin.remove(unit.id()));
+        CloudLogger.get().debug("Template {} updated to version {} ({} file(s) fetched, {} KB).",
                 unit.display(), response.getVersion(), fetched.size(), (bytes + 1023) / 1024);
         if (unit.meta()) MetaReloader.reload();
         afterApplied(unit, response.getVersion(), target);
@@ -957,11 +963,11 @@ public final class TemplateReplicator implements ClusterModule {
                 }
                 answered.add(e.getKey());
             } catch (Exception ex) {
-                CloudLogger.get().warn("Node §b{} §rdid not report its template versions §8(§r{}§8)§r; it is compared again when it syncs.", e.getKey(), ex.getMessage());
+                CloudLogger.get().debug("Node {} did not report its template versions ({}); it is compared again when it syncs.", e.getKey(), ex.getMessage());
             }
         }
         if (!isHead()) return;
-        CloudLogger.get().info("Template replication: collected the template versions of §b{} §rnode(s) §8(§r{}§8)§r.", answered.size() + 1,
+        CloudLogger.get().debug("Template replication: collected the template versions of {} node(s) ({}).", answered.size() + 1,
                 String.join(", ", answered.isEmpty() ? List.of(self) : concat(self, answered)));
 
         Set<String> ids = new TreeSet<>(reports.keySet());
@@ -984,7 +990,7 @@ public final class TemplateReplicator implements ClusterModule {
             }
         }
         headReady = true;
-        CloudLogger.get().info("Template replication: this node is §6head §rand serves §b{} §runit(s) §8(§b{} §rnew version(s), §b{} §rtaken over from other nodes§8)§r.",
+        CloudLogger.get().debug("Template replication: serving {} unit(s) as head ({} new version(s), {} taken over from other nodes).",
                 headVersions.all().size(), changed, fetched);
         for (Map.Entry<String, UnitVersion> e : headVersions.all().entrySet()) broadcastVersion(new SyncUnit(e.getKey()), null);
     }
@@ -1031,7 +1037,8 @@ public final class TemplateReplicator implements ClusterModule {
             if (scan == null || (!localChanges && mine != null)) {
                 if (scan != null) {
                     deleteLocal(unit);
-                    CloudLogger.get().info("Template §b{} §rwas deleted on the cluster §8(§rversion §b{}§8)§r, removed the copy here.", unit.display(), best.version());
+                    CloudLogger.get().info("Template §b{} §rwas §cdeleted §ron another node and removed here.", unit.display());
+                    CloudLogger.get().debug("{} deleted in version {}.", unit.display(), best.version());
                 }
                 UnitVersion tomb = new UnitVersion(best.version(), Manifest.EMPTY, true);
                 if (history.record(unit, tomb.version()).isEmpty()) record(unit, tomb, previousManifest, best.node(), "deleted", List.of());
@@ -1040,14 +1047,15 @@ public final class TemplateReplicator implements ClusterModule {
             }
             if (mine == null) {
                 // a stale folder this node never took over: the cluster's deletion wins
-                CloudLogger.get().warn("The local folder of §b{} §ris unknown to the cluster, which deleted it in version §b{}§r: removing it.", unit.display(), best.version());
+                CloudLogger.get().warn("Template §b{} §rwas deleted in the cluster; removing the old folder here.", unit.display());
+                CloudLogger.get().debug("{}: unknown local folder, deleted in version {}.", unit.display(), best.version());
                 deleteLocal(unit);
                 headVersions.put(unit, new UnitVersion(best.version(), Manifest.EMPTY, true));
                 return 2;
             }
             UnitVersion now = new UnitVersion(maxVersion + 1, scan.manifest(), false);
-            CloudLogger.get().warn("§b{} §rwas deleted on the cluster §8(§rversion §b{}§8)§r, but it was changed here afterwards: keeping it as version §b{}§r.",
-                    unit.display(), best.version(), now.version());
+            CloudLogger.get().warn("Template §b{} §rwas deleted in the cluster, but changed here afterwards; keeping it.", unit.display());
+            CloudLogger.get().debug("{} deleted in version {}, kept as version {}.", unit.display(), best.version(), now.version());
             adoptLocal(unit, now, null, "recreated on " + self);
             return 1;
         }
@@ -1077,7 +1085,7 @@ public final class TemplateReplicator implements ClusterModule {
                 merged = !result.hash().equals(target.hash());
             }
             if (!materialize(unit, result, candidate.node(), scan)) {
-                CloudLogger.get().warn("§b{} §rchanged here while taking over version §b{}§r; trying the next source.", unit.display(), candidate.version());
+                CloudLogger.get().debug("{} changed here while taking over version {}; trying the next source.", unit.display(), candidate.version());
                 scan = scanner.scan(unit);
                 continue;
             }
@@ -1088,12 +1096,13 @@ public final class TemplateReplicator implements ClusterModule {
                 UnitVersion now = new UnitVersion(maxVersion + 1, result, false);
                 record(unit, now, target, self, "changed on " + self + " (merged onto version " + candidate.version() + ")", List.of());
                 headVersions.put(unit, now);
-                CloudLogger.get().warn("Template §b{} §rwas behind here §8(§rversion §b{}§r, cluster §b{}§8)§r and had local changes: merged them onto version §b{}§r, now version §b{}§r.",
+                CloudLogger.get().warn("Template §b{} §rwas outdated here and had local changes; merged them into the cluster version.", unit.display());
+                CloudLogger.get().debug("{}: local version {}, cluster {}, merged onto {}, now version {}.",
                         unit.display(), mine.version(), candidate.version(), candidate.version(), now.version());
                 return 1;
             }
             headVersions.put(unit, taken);
-            CloudLogger.get().info("Template §b{} §rwas at version §b{} §rhere, the cluster has version §b{} §8(§rfrom §b{}§8)§r: took it over before serving.",
+            CloudLogger.get().debug("Template {} was at version {} here, the cluster has version {} (from {}): took it over before serving.",
                     unit.display(), mine == null ? "-" : (scan == null ? mine.version() + " (folder missing)" : mine.version()), candidate.version(),
                     candidate.node().equals(self) ? "the history of this node" : candidate.node());
             return 2;
@@ -1102,15 +1111,16 @@ public final class TemplateReplicator implements ClusterModule {
         // No reachable node can serve a newer version.
         if (scan != null) {
             UnitVersion now = new UnitVersion(maxVersion + 1, scan.manifest(), false);
-            CloudLogger.get().warn("No reachable node can serve version §b{} §rof §b{}§r: serving the local copy as version §b{}§r.",
+            CloudLogger.get().warn("The newest version of template §b{} §ris on no reachable node; using the copy of this node.", unit.display());
+            CloudLogger.get().debug("No reachable node can serve version {} of {}: serving the local copy as version {}.",
                     best.version(), unit.display(), now.version());
             adoptLocal(unit, now, previousManifest, "local copy (newer version unreachable)");
             return 1;
         }
         // Folder missing and no source: never a deletion. The head does not serve the unit until a node that has a
         // copy offers it again (full sync of that node).
-        CloudLogger.get().warn("§b{} §ris missing here and no reachable node can serve version §b{}§r. It is not deleted; a node that has it sends it later.",
-                unit.display(), best.version());
+        CloudLogger.get().warn("Template §b{} §ris missing here and no reachable node has it. It is not deleted; a node that has it sends it later.", unit.display());
+        CloudLogger.get().debug("{}: missing version {}.", unit.display(), best.version());
         headVersions.remove(unit);
         return 0;
     }
@@ -1118,7 +1128,7 @@ public final class TemplateReplicator implements ClusterModule {
     private void syncHistorySafe(String peer, SyncUnit unit) {
         try {
             int added = syncHistory(peer, unit);
-            if (added > 0) CloudLogger.get().info("Copied §b{} §rhistory entr{} of §b{} §rfrom §b{}§r.", added, added == 1 ? "y" : "ies", unit.display(), peer);
+            if (added > 0) CloudLogger.get().debug("Copied {} history entr{} of {} from {}.", added, added == 1 ? "y" : "ies", unit.display(), peer);
         } catch (Exception e) {
             CloudLogger.get().debug("Could not copy the history of {} from {}: {}", unit.display(), peer, e.getMessage());
         }
@@ -1141,7 +1151,7 @@ public final class TemplateReplicator implements ClusterModule {
             for (String path : manifest.entries().keySet()) safeRelative(path);
             return manifest;
         } catch (Exception e) {
-            CloudLogger.get().warn("Could not get version §b{} §rof §b{} §rfrom §b{}§8: §c{}", candidate.version(), unit.display(), candidate.node(), e.getMessage());
+            CloudLogger.get().debug("Could not get version {} of {} from {}: {}", candidate.version(), unit.display(), candidate.node(), e.getMessage());
             return null;
         }
     }
@@ -1153,7 +1163,7 @@ public final class TemplateReplicator implements ClusterModule {
             Manifest.Entry t = target.get(path);
             Manifest.Entry b = base.get(path);
             if (t != null && !t.directory() && (b == null || !t.sha().equals(b.sha())) && !t.sha().equals(local.get(path).sha())) {
-                CloudLogger.get().warn("§cConflict §rin §b{}§8/§b{}§r: changed on the cluster and on this node; the local change wins, the other version stays in the history.",
+                CloudLogger.get().warn("§cConflict §rin §b{}§8/§b{}§r: changed here and on another node. The change of this node is kept, the other one stays in the history.",
                         unit.display(), path);
             }
             merged.put(path, local.get(path));
@@ -1214,6 +1224,13 @@ public final class TemplateReplicator implements ClusterModule {
         history.add(unit, r);
     }
 
+    /** The one console line per node for a new version of a unit. */
+    private void logUpdated(SyncUnit unit, String origin) {
+        String what = unit.meta() ? "The template and group settings were" : "Template §b" + unit.display() + " §rwas";
+        if (origin == null || origin.isEmpty()) CloudLogger.get().info("{} updated.", what);
+        else CloudLogger.get().info("{} updated §8(§rchanged on §b{}§8)§r.", what, origin);
+    }
+
     private void broadcastVersion(SyncUnit unit, String origin) {
         UnitVersion v = headVersions.get(unit);
         if (v == null) return;
@@ -1229,7 +1246,8 @@ public final class TemplateReplicator implements ClusterModule {
             UnitVersion tomb = new UnitVersion(current.version() + 1, Manifest.EMPTY, true);
             record(unit, tomb, current.manifest(), node, "deleted", List.of());
             headVersions.put(unit, tomb);
-            CloudLogger.get().info("Template §b{} §rwas deleted §8(§rversion §b{}§8)§r, removing it on all nodes.", unit.display(), tomb.version());
+            CloudLogger.get().info("Template §b{} §rwas §cdeleted§r.", unit.display());
+            CloudLogger.get().debug("{} deleted on {} (version {}), removing it on all nodes.", unit.display(), node, tomb.version());
             broadcastVersion(unit, origin);
             return;
         }
@@ -1243,8 +1261,9 @@ public final class TemplateReplicator implements ClusterModule {
         String note = node.equals(cluster.nodeName()) ? takeNote(unit) : "";
         record(unit, now, previous, node, "changed on " + node + (note.isEmpty() ? "" : " (" + note + ")"), List.of());
         headVersions.put(unit, now);
-        CloudLogger.get().info("Template §b{} §ris now version §b{} §8(§rchanged on §b{}§r: §b{} §rchanged, §b{} §rremoved§8)§r.",
-                unit.display(), now.version(), node, files(Manifest.changed(previous, now.manifest())), files(Manifest.removed(previous, now.manifest())));
+        logUpdated(unit, node);
+        CloudLogger.get().debug("{} is now version {} ({} changed, {} removed).",
+                unit.display(), now.version(), files(Manifest.changed(previous, now.manifest())), files(Manifest.removed(previous, now.manifest())));
         broadcastVersion(unit, origin);
     }
 
@@ -1265,7 +1284,8 @@ public final class TemplateReplicator implements ClusterModule {
             UnitVersion tomb = new UnitVersion(Math.max(current.version(), push.getBaseVersion()) + 1, Manifest.EMPTY, true);
             record(unit, tomb, current.manifest(), from, "deleted on " + from, List.of());
             headVersions.put(unit, tomb);
-            CloudLogger.get().info("Template §b{} §rwas deleted on §b{} §8(§rversion §b{}§8)§r, removing it on all nodes.", unit.display(), from, tomb.version());
+            CloudLogger.get().info("Template §b{} §rwas §cdeleted §8(§ron §b{}§8)§r.", unit.display(), from);
+            CloudLogger.get().debug("{} deleted in version {}, removing it on all nodes.", unit.display(), tomb.version());
             broadcastVersion(unit, from);
             return;
         }
@@ -1313,7 +1333,8 @@ public final class TemplateReplicator implements ClusterModule {
                 history.addBlob(unit, e.sha(), file);
             }
         } catch (Exception e) {
-            CloudLogger.get().warn("Could not take over the changes of §b{} §rfrom §b{}§r: {}", unit.display(), from, e.getMessage());
+            CloudLogger.get().warn("Could not get the changes of template §b{} §rfrom §b{}§r; they are sent again later.", unit.display(), from);
+            CloudLogger.get().debug("Taking over the changes of {} from {} failed: {}", unit.display(), from, e.getMessage());
             sendVersion(from, unit);
             return;
         } finally {
@@ -1339,15 +1360,17 @@ public final class TemplateReplicator implements ClusterModule {
         String lastNode = null;
         for (String path : conflicts) {
             lastNode = lastChanger(unit, path);
-            CloudLogger.get().warn("§cConflict §rin §b{}§8/§b{}§r: changed on §b{} §rand on §b{} §rat the same time. The later change from §b{} §rwins, the other version stays in the history §8(§rversion §b{}§8)§r.",
-                    unit.display(), path, from, lastNode == null ? "another node" : lastNode, from, current == null ? 0 : current.version());
+            CloudLogger.get().warn("§cConflict §rin §b{}§8/§b{}§r: changed on §b{} §rand §b{} §rat the same time. The change from §b{} §ris kept, the other one stays in the history.",
+                    unit.display(), path, from, lastNode == null ? "another node" : lastNode, from);
+            CloudLogger.get().debug("Conflict in {}/{}: replaced version {}.", unit.display(), path, current == null ? 0 : current.version());
         }
         UnitVersion now = new UnitVersion(Math.max(current == null ? 0 : current.version(), push.getBaseVersion()) + 1, target, false);
         String note = push.getNote() == null || push.getNote().isEmpty() ? "" : " (" + push.getNote() + ")";
         record(unit, now, exists ? current.manifest() : null, from, (conflicts.isEmpty() ? "changed on " + from : "changed on " + from + " (conflict)") + note, conflicts);
         headVersions.put(unit, now);
-        CloudLogger.get().info("Template §b{} §ris now version §b{} §8(§rchanged on §b{}§r: §b{} §rchanged, §b{} §rremoved§8)§r.",
-                unit.display(), now.version(), from, files(Manifest.changed(exists ? current.manifest() : null, target)),
+        logUpdated(unit, from);
+        CloudLogger.get().debug("{} is now version {} ({} changed, {} removed).",
+                unit.display(), now.version(), files(Manifest.changed(exists ? current.manifest() : null, target)),
                 files(Manifest.removed(exists ? current.manifest() : null, target)));
         if (unit.meta()) MetaReloader.reload();
         broadcastVersion(unit, from);
@@ -1407,13 +1430,13 @@ public final class TemplateReplicator implements ClusterModule {
             Manifest target = record.manifest();
             for (Manifest.Entry e : target.entries().values()) {
                 if (!e.directory() && !history.hasBlob(unit, e.sha()) && !fetchBlobFromPeers(unit, e)) {
-                    CloudLogger.get().error("Cannot roll back §b{}§r: the content of §b{} §ris missing in the history of all reachable nodes.", unit.display(), e.path());
+                    CloudLogger.get().error("Cannot roll back §b{}§r: the file §b{} §rof that version is missing on all reachable nodes.", unit.display(), e.path());
                     return;
                 }
             }
             UnitScanner.Scan live = scanner.scan(unit);
             if (!applyToLive(unit, target, sha -> history.blob(unit, sha), live == null ? null : live.listing())) {
-                CloudLogger.get().error("§b{} §rchanged during the rollback, please try again.", unit.display());
+                CloudLogger.get().error("Template §b{} §rchanged during the rollback. Please try again.", unit.display());
                 return;
             }
             scanner.remember(unit, target);
@@ -1422,7 +1445,8 @@ public final class TemplateReplicator implements ClusterModule {
             headVersions.put(unit, now);
             if (unit.meta()) MetaReloader.reload();
         }
-        CloudLogger.get().success("Rolled back §b{} §rto version §b{} §8(§rnow version §b{}§8)§r, distributing it to all nodes.", unit.display(), version, next);
+        CloudLogger.get().success("Rolled back template §b{} §rto version §b{}§r.", unit.display(), version);
+        CloudLogger.get().debug("Rollback of {} is version {}, distributing it to all nodes.", unit.display(), next);
         broadcastVersion(unit, null);
     }
 
@@ -1439,7 +1463,7 @@ public final class TemplateReplicator implements ClusterModule {
                     Path file = staging.resolve(entry.sha());
                     fetch(peer.name(), unit, entry.path(), entry.sha(), file);
                     history.addBlob(unit, entry.sha(), file);
-                    CloudLogger.get().info("Fetched §b{} §rof §b{} §rfor the rollback from §b{}§r.", entry.path(), unit.display(), peer.name());
+                    CloudLogger.get().debug("Fetched {} of {} for the rollback from {}.", entry.path(), unit.display(), peer.name());
                     return true;
                 } catch (Exception e) {
                     CloudLogger.get().debug("{} of {} not available on {}: {}", entry.path(), unit.display(), peer.name(), e.getMessage());
@@ -1633,7 +1657,8 @@ public final class TemplateReplicator implements ClusterModule {
         UnitScanner.Scan scan = scanner.scan(unit);
         if (scan != null && scan.manifest().hash().equals(last.hash())) return false;
         if (!history.hasAllBlobs(unit, last.manifest())) {
-            CloudLogger.get().warn("Sync of §b{} §ris paused, but the files of version §b{} §rare not complete here: using the local copy.", unit.display(), last.version());
+            CloudLogger.get().warn("Sync of §b{} §ris paused, but the last synced version is not complete here: using the local files.", unit.display());
+            CloudLogger.get().debug("Blobs of version {} of {} are missing.", last.version(), unit.display());
             return false;
         }
         for (Manifest.Entry e : last.manifest().entries().values()) {
@@ -1646,7 +1671,8 @@ public final class TemplateReplicator implements ClusterModule {
             Files.createDirectories(dst.getParent());
             Files.copy(history.blob(unit, e.sha()), dst, StandardCopyOption.REPLACE_EXISTING);
         }
-        CloudLogger.get().info("Sync of §b{} §ris paused here: used the last distributed version §b{} §r(not the local changes).", unit.display(), last.version());
+        CloudLogger.get().info("Sync of §b{} §ris paused here: used the last synced version, not the local changes.", unit.display());
+        CloudLogger.get().debug("Used version {} of {}.", last.version(), unit.display());
         return true;
     }
 
@@ -1737,7 +1763,7 @@ public final class TemplateReplicator implements ClusterModule {
             UnitVersion have = applied.get(new SyncUnit(e.getKey()));
             if (have == null || !have.hash().equals(value.substring(colon + 1))) {
                 behind.add(e.getKey());
-                CloudLogger.get().info("The head expects version §b{} §rof §b{} §rfor §b{}§r, this node has §b{}§r: making sure it is synced first...",
+                CloudLogger.get().debug("The head expects version {} of {} for {}, this node has {}: making sure it is synced first...",
                         value.substring(0, colon), new SyncUnit(e.getKey()).display(), serverName, have == null ? "-" : have.version());
             }
         }
@@ -1753,7 +1779,7 @@ public final class TemplateReplicator implements ClusterModule {
                         boolean fetched = ensureVersion(unit, Long.parseLong(value.substring(0, colon)), value.substring(colon + 1), serverName);
                         if (!fetched && behind.contains(e.getKey())) {
                             UnitVersion v = applied.get(unit);
-                            CloudLogger.get().success("Template §b{} §ris synced §8(§rversion §b{}§8)§r, starting §b{}§r.", unit.display(), v == null ? "-" : v.version(), serverName);
+                            CloudLogger.get().debug("Template {} is synced (version {}), starting {}.", unit.display(), v == null ? "-" : v.version(), serverName);
                         }
                         synced |= fetched || behind.contains(e.getKey());
                     }
@@ -1778,8 +1804,8 @@ public final class TemplateReplicator implements ClusterModule {
             // version the head expects (see copyPausedSnapshot), otherwise refuse so the head starts it elsewhere.
             UnitVersion last = applied.get(unit);
             if (last != null && !last.deleted() && last.hash().equals(hash) && history.hasAllBlobs(unit, last.manifest())) {
-                CloudLogger.get().info("Sync of §b{} §ris paused here: starting §b{} §rwith the last distributed version §b{}§r, not the local changes.",
-                        unit.display(), serverName, last.version());
+                CloudLogger.get().info("Sync of §b{} §ris paused here: starting §b{} §rwith the last synced version, not the local changes.", unit.display(), serverName);
+                CloudLogger.get().debug("Starting {} with version {} of {}.", serverName, last.version(), unit.display());
                 return false;
             }
             throw new IllegalStateException("the sync of " + unit.display() + " is paused on " + cluster.nodeName() + " and it does not have version " + version);
@@ -1790,7 +1816,7 @@ public final class TemplateReplicator implements ClusterModule {
         if (synced && local != null && !local.equals(base.hash()) && !local.equals(pushedHashes.get(unit.id()))) {
             throw new IllegalStateException("the template " + unit.display() + " has local changes on " + cluster.nodeName() + " that are not replicated yet");
         }
-        CloudLogger.get().info("Template §b{} §ris at version §b{} §rhere, the head expects §b{}§r: syncing it before starting §b{}§r...",
+        CloudLogger.get().debug("Template {} is at version {} here, the head expects {}: syncing it before starting {}.",
                 unit.display(), base == null ? "-" : base.version(), version, serverName);
         pull(unit);
         UnitScanner.Scan after = scanner.scan(unit);
@@ -1801,7 +1827,7 @@ public final class TemplateReplicator implements ClusterModule {
         if (!hash.equals(now) && !newer) {
             throw new IllegalStateException("could not sync the template " + unit.display() + " to version " + version);
         }
-        CloudLogger.get().success("Template §b{} §rsynced to version §b{} §rbefore starting §b{}§r.", unit.display(), v == null ? version : v.version(), serverName);
+        CloudLogger.get().debug("Template {} synced to version {} before starting {}.", unit.display(), v == null ? version : v.version(), serverName);
         return true;
     }
 

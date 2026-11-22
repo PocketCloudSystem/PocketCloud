@@ -291,7 +291,7 @@ public final class LogStreamModule implements ClusterModule {
             }
 
             boolean isNew = tail.subscribers.put(from, System.currentTimeMillis()) == null;
-            if (isNew) CloudLogger.get().info("Streaming the log of §b{} §rto node §b{}§r.", server.name(), from);
+            if (isNew) CloudLogger.get().debug("Streaming the log of {} to node {}.", server.name(), from);
             cluster.respond(channel, request, new NodeLogSubscribeResultPacket(true, null, backlog));
         }));
     }
@@ -313,7 +313,7 @@ public final class LogStreamModule implements ClusterModule {
 
     private void removeSubscriber(Tail tail, String node, String reason) {
         if (tail.subscribers.remove(node) == null) return;
-        CloudLogger.get().info("Stopped streaming the log of §b{} §rto node §b{} §8(§r{}§8)§r.", tail.serverName, node, reason);
+        CloudLogger.get().debug("Stopped streaming the log of {} to node {} ({}).", tail.serverName, node, reason);
         if (tail.subscribers.isEmpty()) drop(tail);
     }
 
@@ -347,7 +347,7 @@ public final class LogStreamModule implements ClusterModule {
                 for (String node : tail.subscribers.keySet()) sendBatches(node, tail.serverName, lines, gone);
             }
             if (gone) {
-                CloudLogger.get().info("Stopped streaming the log of §b{}§r: the server stopped.", tail.serverName);
+                CloudLogger.get().debug("Stopped streaming the log of {}: the server stopped.", tail.serverName);
                 drop(tail);
             }
         }
