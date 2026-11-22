@@ -1,6 +1,9 @@
 package de.pocketcloud.bridge.platform.pnx.adapter;
 
+import de.pocketcloud.api.CloudAPI;
+import de.pocketcloud.api.component.player.ICloudPlayer;
 import de.pocketcloud.api.component.server.ICloudServer;
+import de.pocketcloud.network.packet.impl.PlayerTransferPacket;
 import de.pocketcloud.bridge.adapter.NativePlayerAdapter;
 import org.cloudburstmc.protocol.bedrock.packet.TransferPacket;
 import org.powernukkitx.Player;
@@ -48,8 +51,19 @@ public final class PowerNukkitXPlayerAdapter implements NativePlayerAdapter<Play
 
     @Override
     public void transfer(Player player, ICloudServer server) {
+        // Behind a cloud proxy: let the proxy switch the server internally (works for servers on every node and
+        // does not depend on WaterdogPE's prefer_fast_transfer or on the client resolving a server name).
+        boolean viaProxy = CloudAPI.instance().players().get(player.getName())
+                .flatMap(ICloudPlayer::currentProxy)
+                .isPresent();
+        if (viaProxy) {
+            PlayerTransferPacket.create(player.getName(), server.name()).sendPacket();
+            return;
+        }
+
+        // Joined directly (no cloud proxy): a real client transfer to the server's public address.
         TransferPacket packet = new TransferPacket();
-        packet.setServerAddress(server.name());
+        packet.setServerAddress(server.data().address());
         packet.setServerPort(server.data().port());
         packet.setReloadWorld(true);
         packet.setGatheringsConfiguration(null);
