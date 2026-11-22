@@ -161,6 +161,10 @@ public final class NodeSelector {
                 rejected.put(name, "not in the template's nodes");
                 continue;
             }
+            if (!local && de.pocketcloud.cloud.cluster.sync.TemplateReplicator.pausedBehind(peer.stats(), template)) {
+                rejected.put(name, "template sync paused there (outdated copy)");
+                continue;
+            }
             Collection<String> softwares = scheduling == null ? null : scheduling.softwaresOf(name);
             if (softwares != null && !softwares.contains(software)) {
                 rejected.put(name, "software " + software + " missing");

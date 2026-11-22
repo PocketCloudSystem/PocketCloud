@@ -1272,6 +1272,10 @@ public final class TemplateReplicator implements ClusterModule {
 
         List<List<Object>> changes = GSON.fromJson(Manifest.decompress(push.getChanges()), new TypeToken<List<List<Object>>>() {}.getType());
         List<List<Object>> removed = GSON.fromJson(Manifest.decompress(push.getRemoved()), new TypeToken<List<List<Object>>>() {}.getType());
+        if (push.getBaseVersion() > (current == null ? 0 : current.version())) {
+            // the node has newer versions than this head (it missed them): copy their history entries first
+            syncHistorySafe(from, unit);
+        }
         Manifest base = exists ? current.manifest() : Manifest.EMPTY;
         SortedMap<String, Manifest.Entry> merged = new TreeMap<>(base.entries());
         List<String> conflicts = new ArrayList<>();
@@ -1536,6 +1540,35 @@ public final class TemplateReplicator implements ClusterModule {
         }
         if (unit != null) markDirty(unit);
         lastFullSync = 0;
+    }
+
+    private static final String STAT_PAUSED_BEHIND = "templateSyncPausedBehind";
+
+    /** Heartbeat: units paused here whose copy is not the head's version (the head does not start servers of them here). */
+    @Override
+    public void heartbeatStats(Map<String, Object> stats) {
+        if (!running || isHead() || (!pausedAll && paused.isEmpty())) return;
+        List<String> behind = new ArrayList<>();
+        Set<String> ids = new TreeSet<>(lastHeadVersions.keySet());
+        ids.addAll(paused);
+        for (String id : ids) {
+            SyncUnit unit = new SyncUnit(id);
+            if (!paused(unit)) continue;
+            HeadTemplateListPacket.Item head = lastHeadVersions.get(id);
+            UnitVersion have = applied.get(unit);
+            if (head == null || have == null || !head.hash().equals(have.hash())) behind.add(id);
+        }
+        if (!behind.isEmpty()) stats.put(STAT_PAUSED_BEHIND, behind);
+    }
+
+    /**
+     * Head (node selection): whether a node reported that the sync of a unit of the template is paused there and its
+     * copy is not the current version, so a start there would be rejected.
+     */
+    public static boolean pausedBehind(Map<String, Object> peerStats, de.pocketcloud.api.component.template.ITemplate template) {
+        if (peerStats == null || !(peerStats.get(STAT_PAUSED_BEHIND) instanceof Collection<?> behind) || behind.isEmpty()) return false;
+        for (SyncUnit unit : unitsOf(template)) if (behind.contains(unit.id())) return true;
+        return false;
     }
 
     private Path pauseFile() {
