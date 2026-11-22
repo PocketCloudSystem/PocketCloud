@@ -62,9 +62,33 @@ public abstract class CloudProvider {
             default -> new CloudJsonProvider();
         };
 
-        current = PocketCloud.instance().cluster().redisConnection()
+        CloudProvider cached = PocketCloud.instance().cluster().redisConnection()
                 .<CloudProvider>map(redis -> new CloudRedisProvider(persistent, redis))
                 .orElse(persistent);
+        // Outermost: sends writes of non-head nodes to the head and tells all nodes about the head's writes.
+        current = new de.pocketcloud.cloud.cluster.data.ClusterDataProvider(cached);
+    }
+
+    /** The provider this one wraps, or null for a persistent provider (JSON, MySQL). */
+    public CloudProvider wrapped() {
+        return null;
+    }
+
+    /** The persistent provider (JSON or MySQL) below the cluster and Redis layers. */
+    public static CloudProvider persistent() {
+        CloudProvider provider = current();
+        while (provider.wrapped() != null) provider = provider.wrapped();
+        return provider;
+    }
+
+    /** The Redis cache layer, if Redis is enabled. */
+    public static java.util.Optional<CloudRedisProvider> redis() {
+        CloudProvider provider = current();
+        while (provider != null) {
+            if (provider instanceof CloudRedisProvider redis) return java.util.Optional.of(redis);
+            provider = provider.wrapped();
+        }
+        return java.util.Optional.empty();
     }
 
     public static CloudProvider current() {

@@ -25,7 +25,8 @@ final class MetaReloader {
     }
 
     static void reload() {
-        if (!(CloudProvider.current() instanceof CloudJsonProvider json)) return;
+        // With Redis enabled the JSON provider sits below the cluster and Redis layers.
+        if (!(CloudProvider.persistent() instanceof CloudJsonProvider json)) return;
         if (!PocketCloud.instance().serverGroups().isLoaded()) return;
         try {
             json.reloadTemplatesAndGroups();
@@ -33,16 +34,24 @@ final class MetaReloader {
             CloudLogger.get().exception("Failed to reload the replicated templates.json/groups.json", e);
             return;
         }
+        // The head mirrors the reloaded files into Redis (only the head writes Redis).
+        CloudProvider.redis().ifPresent(redis -> redis.refillTemplatesAndGroups());
 
         TemplateManager templates = PocketCloud.instance().templates();
         json.getTemplates().thenSuccess(loaded -> {
             for (Template fresh : loaded.values()) {
                 ITemplate existing = templates.get(fresh.name()).orElse(null);
                 if (existing == null) {
+                    if (de.pocketcloud.cloud.cluster.data.ClusterDataModule.announcedRecently(fresh.name())) continue;
                     templates.add(fresh);
                     fresh.syncOut();
                     CloudLogger.get().info("Template §b{} §rwas created on another node and is now available here.", fresh.name());
                 } else if (!Objects.equals(existing.write(), fresh.write())) {
+                    if (de.pocketcloud.cloud.cluster.data.ClusterDataModule.announcedRecently(fresh.name())) {
+                        // The head announced a change of this template just now; this file may be older than it.
+                        CloudLogger.get().debug("Keeping the settings of {} announced by the head (replicated file differs)", fresh.name());
+                        continue;
+                    }
                     existing.settings().applyFrom(fresh.settings());
                     if (existing instanceof Template t) t.syncOut();
                     CloudLogger.get().info("Settings of template §b{} §rwere updated from the cluster.", fresh.name());
@@ -50,6 +59,7 @@ final class MetaReloader {
             }
             for (ITemplate existing : templates.getAll()) {
                 if (loaded.containsKey(existing.name())) continue;
+                if (de.pocketcloud.cloud.cluster.data.ClusterDataModule.announcedRecently(existing.name())) continue;
                 if (!PocketCloud.instance().servers().query(ServerSearchQuery.create().ofTemplate(existing)).isEmpty()) continue;
                 templates.remove(existing);
                 if (existing instanceof Template t) t.markForRemoval().syncOut();

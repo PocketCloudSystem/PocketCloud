@@ -11,6 +11,9 @@ import de.pocketcloud.cloud.setup.SetupHelper;
 import de.pocketcloud.cloud.template.Template;
 import lombok.AllArgsConstructor;
 
+import de.pocketcloud.cloud.setup.ErrorHolder;
+
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -152,8 +155,55 @@ public final class TemplateEditSetup extends Setup {
                         .canSkipped(true)
                         .recommendation("0")
                         .defaultValue(String.valueOf(settings.priority()), settings.priority())
+                        .build(),
+
+                QuestionBuilder.builder("nodes", "Nodes the servers of this template may run on (comma separated, 'all' = every node" +
+                                (template.templateType().isProxy() ? "; proxies need explicit nodes in a cluster" : "") + ")")
+                        .parser((input, error) -> parseNodes(input, error))
+                        .canSkipped(true)
+                        .defaultValue(formatNodes(settings.nodes()), settings.nodes())
+                        .build(),
+
+                QuestionBuilder.builder("staticNode", "Node the static servers of this template live on ('none' = not set; only relevant if static = yes)")
+                        .parser((input, error) -> parseStaticNode(input, error))
+                        .canSkipped(true)
+                        .defaultValue(settings.hasStaticNode() ? settings.staticNode() : "none", settings.hasStaticNode() ? settings.staticNode() : "")
                         .build()
         );
+    }
+
+    private static String formatNodes(List<String> nodes) {
+        return nodes == null || nodes.isEmpty() ? "all" : String.join(",", nodes);
+    }
+
+    private static List<String> parseNodes(String input, ErrorHolder error) {
+        String raw = input.trim();
+        if (raw.equalsIgnoreCase("all") || raw.equals("-") || raw.equals("[]")) return List.of();
+        List<String> nodes = Arrays.stream(raw.replace("[", "").replace("]", "").split(","))
+                .map(String::trim).filter(n -> !n.isEmpty()).distinct().toList();
+        for (String node : nodes) {
+            if (!node.matches("[a-zA-Z0-9_\\-]+")) {
+                error.set("Invalid node name: " + node);
+                return null;
+            }
+            if (PocketCloud.instance().cluster().node(node).isEmpty()) {
+                CloudLogger.get().warn("The node §b{} §ris not a member of this cluster (yet).", node);
+            }
+        }
+        return nodes;
+    }
+
+    private static String parseStaticNode(String input, ErrorHolder error) {
+        String raw = input.trim();
+        if (raw.equalsIgnoreCase("none") || raw.equals("-")) return "";
+        if (!raw.matches("[a-zA-Z0-9_\\-]+")) {
+            error.set("Invalid node name: " + raw);
+            return null;
+        }
+        if (PocketCloud.instance().cluster().node(raw).isEmpty()) {
+            CloudLogger.get().warn("The node §b{} §ris not a member of this cluster (yet).", raw);
+        }
+        return raw;
     }
 
     @Override
@@ -176,6 +226,13 @@ public final class TemplateEditSetup extends Setup {
                 .shutdownTimeout((Integer) results.get("shutdownTimeout"))
                 .emptyServerGracePeriod((Integer) results.get("emptyServerGracePeriod"))
                 .priority((Integer) results.get("priority"))
+                .nodes(nodes(results.get("nodes")))
+                .staticNode((String) results.get("staticNode"))
         );
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<String> nodes(Object value) {
+        return value instanceof List<?> list ? (List<String>) list : null;
     }
 }

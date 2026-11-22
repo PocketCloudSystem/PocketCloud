@@ -11,6 +11,7 @@ import de.pocketcloud.api.search.TemplateSearchQuery;
 import de.pocketcloud.api.template.util.TemplateEditData;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.builder.TemplateBuilder;
+import de.pocketcloud.cloud.cluster.data.ClusterDataModule;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.event.impl.template.TemplateCreateEvent;
 import de.pocketcloud.cloud.event.impl.template.TemplateEditEvent;
@@ -83,6 +84,14 @@ public final class TemplateManager implements Tickable, Loadable, IWriteTemplate
     public void create(ITemplateBuilder builder) {
         Template template = (Template) builder.build();
         if (!checkName(template.name())) throw new IllegalArgumentException("Template name must only contain letters, numbers, underscores and hyphens");
+        if (ClusterDataModule.forwardTemplateCreate(template)) return;
+        createTemplate(template);
+    }
+
+    /** Creates the template on this node; in a cluster only called on the head. */
+    @ApiStatus.Internal
+    public void createTemplate(Template template) {
+        if (!checkName(template.name())) throw new IllegalArgumentException("Template name must only contain letters, numbers, underscores and hyphens");
         Benchmark.startTiming("template_creation");
         try {
             TemplateCreateEvent ev = new TemplateCreateEvent(template);
@@ -115,6 +124,7 @@ public final class TemplateManager implements Tickable, Loadable, IWriteTemplate
     @Override
     public void edit(ITemplate template, TemplateEditData editData) {
         Template temp = requireTemplate(template);
+        if (ClusterDataModule.forwardTemplateEdit(temp, editData)) return;
         Benchmark.startTiming("template_editing");
         TemplateEditEvent ev = new TemplateEditEvent(temp, editData);
         ev.call();
@@ -151,6 +161,7 @@ public final class TemplateManager implements Tickable, Loadable, IWriteTemplate
     @Override
     public void delete(ITemplate template) {
         Template temp = requireTemplate(template);
+        if (ClusterDataModule.forwardTemplateDelete(temp)) return;
         Benchmark.startTiming("template_removal");
         TemplateRemoveEvent ev = new TemplateRemoveEvent(temp);
         ev.call();

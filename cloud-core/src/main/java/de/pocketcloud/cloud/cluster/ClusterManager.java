@@ -74,7 +74,7 @@ public final class ClusterManager {
     @Getter
     private final ServerRecovery recovery = new ServerRecovery();
     private final List<ClusterModule> modules = List.of(new de.pocketcloud.cloud.cluster.sync.TemplateReplicator(), new BridgeClusterModule(),
-            new de.pocketcloud.cloud.cluster.scheduling.SchedulingModule(), recovery);
+            new de.pocketcloud.cloud.cluster.scheduling.SchedulingModule(), recovery, new de.pocketcloud.cloud.cluster.data.ClusterDataModule());
     private final NodeSelector selector = new NodeSelector(this);
 
     private LocalNodeHandle localNode;

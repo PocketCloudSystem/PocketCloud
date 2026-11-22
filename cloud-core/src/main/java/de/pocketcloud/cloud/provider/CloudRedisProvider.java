@@ -3,6 +3,7 @@ package de.pocketcloud.cloud.provider;
 import com.google.gson.reflect.TypeToken;
 import de.pocketcloud.api.component.group.IServerGroup;
 import de.pocketcloud.api.component.template.ITemplate;
+import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.cluster.redis.RedisConnection;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.template.Template;
@@ -18,10 +19,11 @@ import java.util.function.Supplier;
 /**
  * Write-through cache in front of the persistent provider (JSON or MySQL).
  * <p>
- * The persistent provider stays the source of truth: every write goes there first and is
+ * The persistent provider stays the source of truth: every write goes there first and is then
  * mirrored into Redis, so all nodes can read templates, groups, the whitelist and the
- * notification list from Redis. On startup the full data set is loaded from the persistent
- * provider and replaces the Redis copy. If Redis fails, reads fall back to the persistent provider.
+ * notification list from Redis. Only the head writes to Redis (other nodes forward their writes to the head,
+ * see {@link de.pocketcloud.cloud.cluster.data.ClusterDataProvider}). When a node becomes head it loads the full
+ * data set from the persistent provider into Redis. If Redis fails, reads fall back to the persistent provider.
  */
 public final class CloudRedisProvider extends CloudProvider {
 
@@ -38,31 +40,74 @@ public final class CloudRedisProvider extends CloudProvider {
     public CloudRedisProvider(CloudProvider delegate, RedisConnection redis) {
         this.delegate = delegate;
         this.redis = redis;
-        copyListsToRedis();
+        if (writesRedis()) copyListsToRedis();
     }
 
     public CloudProvider delegate() {
         return delegate;
     }
 
+    @Override
+    public CloudProvider wrapped() {
+        return delegate;
+    }
+
+    /**
+     * Only the head writes to Redis (spec: the head writes to the provider first and then to Redis).
+     * Other nodes forward their writes to the head; a single node is always head.
+     */
+    private static boolean writesRedis() {
+        return PocketCloud.instance().cluster().isHead();
+    }
+
+    /** Called when this node became head: Redis gets the full data set of the persistent provider. */
+    public void fillFromProvider() {
+        if (!writesRedis()) return;
+        copyListsToRedis();
+        refillTemplatesAndGroups();
+    }
+
+    /** Replaces the templates and groups in Redis with the ones of the persistent provider (head only). */
+    public void refillTemplatesAndGroups() {
+        if (!writesRedis()) return;
+        delegate.getTemplates().thenSuccess(templates -> replaceHash(TEMPLATES, documents(templates.values(), Template::name, Template::write)));
+        delegate.getServerGroups().thenSuccess(groups -> replaceHash(GROUPS, documents(groups.values(), ServerGroup::name, ServerGroup::write)));
+    }
+
+    private static <T> Map<String, Map<String, Object>> documents(Collection<T> values, Function<T, String> name, Function<T, Map<String, Object>> write) {
+        Map<String, Map<String, Object>> documents = new HashMap<>();
+        for (T value : values) documents.put(name.apply(value), write.apply(value));
+        return documents;
+    }
+
     // ---------------------------------------------------------------- templates
+    // Every write goes to the persistent provider first and then (head only) to Redis.
 
     @Override
     public Promise<Void> addTemplate(ITemplate template) {
-        cacheDocument(TEMPLATES, template.name(), template.write());
-        return delegate.addTemplate(template);
+        Map<String, Object> document = template.write();
+        return delegate.addTemplate(template).thenApply(v -> {
+            cacheDocument(TEMPLATES, template.name(), document);
+            return v;
+        });
     }
 
     @Override
     public Promise<Void> removeTemplate(ITemplate template) {
-        uncache(TEMPLATES, template.name());
-        return delegate.removeTemplate(template);
+        return delegate.removeTemplate(template).thenApply(v -> {
+            uncache(TEMPLATES, template.name());
+            return v;
+        });
     }
 
     @Override
     public Promise<Void> editTemplate(ITemplate template, Map<String, Object> newData) {
-        cacheDocument(TEMPLATES, template.name(), newData);
-        return delegate.editTemplate(template, newData);
+        // The MySQL provider encodes the settings inside newData, so Redis gets a copy taken before.
+        Map<String, Object> document = new HashMap<>(newData);
+        return delegate.editTemplate(template, newData).thenApply(v -> {
+            cacheDocument(TEMPLATES, template.name(), document);
+            return v;
+        });
     }
 
     @Override
@@ -78,7 +123,7 @@ public final class CloudRedisProvider extends CloudProvider {
     @Override
     public Promise<Map<String, Template>> getTemplates() {
         return delegate.getTemplates().thenApply(templates -> {
-            replaceHash(TEMPLATES, templates.values().stream().collect(HashMap::new, (m, t) -> m.put(t.name(), t.write()), HashMap::putAll));
+            if (writesRedis()) replaceHash(TEMPLATES, documents(templates.values(), Template::name, Template::write));
             return templates;
         });
     }
@@ -87,20 +132,28 @@ public final class CloudRedisProvider extends CloudProvider {
 
     @Override
     public Promise<Void> addServerGroup(IServerGroup serverGroup) {
-        cacheDocument(GROUPS, serverGroup.name(), serverGroup.write());
-        return delegate.addServerGroup(serverGroup);
+        Map<String, Object> document = serverGroup.write();
+        return delegate.addServerGroup(serverGroup).thenApply(v -> {
+            cacheDocument(GROUPS, serverGroup.name(), document);
+            return v;
+        });
     }
 
     @Override
     public Promise<Void> removeServerGroup(IServerGroup serverGroup) {
-        uncache(GROUPS, serverGroup.name());
-        return delegate.removeServerGroup(serverGroup);
+        return delegate.removeServerGroup(serverGroup).thenApply(v -> {
+            uncache(GROUPS, serverGroup.name());
+            return v;
+        });
     }
 
     @Override
     public Promise<Void> editServerGroup(IServerGroup serverGroup, Map<String, Object> newData) {
-        cacheDocument(GROUPS, serverGroup.name(), newData);
-        return delegate.editServerGroup(serverGroup, newData);
+        Map<String, Object> document = new HashMap<>(newData);
+        return delegate.editServerGroup(serverGroup, newData).thenApply(v -> {
+            cacheDocument(GROUPS, serverGroup.name(), document);
+            return v;
+        });
     }
 
     @Override
@@ -116,7 +169,7 @@ public final class CloudRedisProvider extends CloudProvider {
     @Override
     public Promise<Map<String, ServerGroup>> getServerGroups() {
         return delegate.getServerGroups().thenApply(groups -> {
-            replaceHash(GROUPS, groups.values().stream().collect(HashMap::new, (m, g) -> m.put(g.name(), g.write()), HashMap::putAll));
+            if (writesRedis()) replaceHash(GROUPS, documents(groups.values(), ServerGroup::name, ServerGroup::write));
             return groups;
         });
     }
@@ -125,14 +178,18 @@ public final class CloudRedisProvider extends CloudProvider {
 
     @Override
     public Promise<Void> enablePlayerNotifications(String player) {
-        setMember(NOTIFICATIONS, player, true);
-        return delegate.enablePlayerNotifications(player);
+        return delegate.enablePlayerNotifications(player).thenApply(v -> {
+            setMember(NOTIFICATIONS, player, true);
+            return v;
+        });
     }
 
     @Override
     public Promise<Void> disablePlayerNotifications(String player) {
-        setMember(NOTIFICATIONS, player, false);
-        return delegate.disablePlayerNotifications(player);
+        return delegate.disablePlayerNotifications(player).thenApply(v -> {
+            setMember(NOTIFICATIONS, player, false);
+            return v;
+        });
     }
 
     @Override
@@ -147,14 +204,18 @@ public final class CloudRedisProvider extends CloudProvider {
 
     @Override
     public Promise<Void> addToWhitelist(String player) {
-        setMember(WHITELIST, player, true);
-        return delegate.addToWhitelist(player);
+        return delegate.addToWhitelist(player).thenApply(v -> {
+            setMember(WHITELIST, player, true);
+            return v;
+        });
     }
 
     @Override
     public Promise<Void> removeFromWhitelist(String player) {
-        setMember(WHITELIST, player, false);
-        return delegate.removeFromWhitelist(player);
+        return delegate.removeFromWhitelist(player).thenApply(v -> {
+            setMember(WHITELIST, player, false);
+            return v;
+        });
     }
 
     @Override
@@ -168,6 +229,7 @@ public final class CloudRedisProvider extends CloudProvider {
     }
 
     // ---------------------------------------------------------------- helpers
+    // Writes are synchronous, so they are done before the head tells the other nodes about the change.
 
     private void copyListsToRedis() {
         delegate.getWhitelist().thenSuccess(list -> replaceSet(WHITELIST, list));
@@ -175,12 +237,21 @@ public final class CloudRedisProvider extends CloudProvider {
     }
 
     private void cacheDocument(String hash, String field, Map<String, Object> document) {
-        String json = FileUtils.GSON.toJson(document);
-        redis.async().hset(redis.key(hash), field, json).whenComplete((_, ex) -> logFailure(ex, "cache " + hash));
+        if (!writesRedis()) return;
+        try {
+            redis.sync().hset(redis.key(hash), field, FileUtils.GSON.toJson(document));
+        } catch (RuntimeException e) {
+            logFailure(e, "cache " + hash);
+        }
     }
 
     private void uncache(String hash, String field) {
-        redis.async().hdel(redis.key(hash), field).whenComplete((_, ex) -> logFailure(ex, "uncache " + hash));
+        if (!writesRedis()) return;
+        try {
+            redis.sync().hdel(redis.key(hash), field);
+        } catch (RuntimeException e) {
+            logFailure(e, "uncache " + hash);
+        }
     }
 
     private void replaceHash(String hash, Map<String, Map<String, Object>> documents) {
@@ -207,9 +278,14 @@ public final class CloudRedisProvider extends CloudProvider {
     }
 
     private void setMember(String set, String member, boolean present) {
-        String key = redis.key(set);
-        (present ? redis.async().sadd(key, member) : redis.async().srem(key, member))
-                .whenComplete((_, ex) -> logFailure(ex, "update " + set));
+        if (!writesRedis()) return;
+        try {
+            String key = redis.key(set);
+            if (present) redis.sync().sadd(key, member);
+            else redis.sync().srem(key, member);
+        } catch (RuntimeException e) {
+            logFailure(e, "update " + set);
+        }
     }
 
     private <T> Promise<Optional<T>> readCached(String hash, String field, Function<Map<String, Object>, T> reader, Supplier<Promise<Optional<T>>> fallback) {
@@ -253,6 +329,6 @@ public final class CloudRedisProvider extends CloudProvider {
     }
 
     private static void logFailure(Throwable ex, String action) {
-        if (ex != null) CloudLogger.get().debug("Redis provider cache could not " + action + ": " + ex.getMessage());
+        if (ex != null) CloudLogger.get().warn("Redis provider cache could not " + action + ": " + ex.getMessage());
     }
 }

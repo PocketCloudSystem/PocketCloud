@@ -569,6 +569,8 @@ public final class TemplateReplicator implements ClusterModule {
                     changes.stream().filter(r -> !String.valueOf(r.getFirst()).endsWith("/")).count(),
                     removed.stream().filter(r -> !String.valueOf(r.getFirst()).endsWith("/")).count(), unit.display(), head);
         }
+        // A templates.json/groups.json edited by hand on this node: the in-memory templates and groups follow it here too.
+        if (unit.meta() && scan != null) MetaReloader.reload();
     }
 
     /** Fetches the head's version of a unit and swaps it in. */

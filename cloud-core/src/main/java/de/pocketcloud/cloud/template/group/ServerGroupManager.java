@@ -8,6 +8,7 @@ import de.pocketcloud.api.provider.write.IWriteServerGroupProvider;
 import de.pocketcloud.api.search.ServerGroupSearchQuery;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.builder.ServerGroupBuilder;
+import de.pocketcloud.cloud.cluster.data.ClusterDataModule;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.event.impl.group.ServerGroupAddTemplateEvent;
 import de.pocketcloud.cloud.event.impl.group.ServerGroupCreateEvent;
@@ -52,6 +53,12 @@ public final class ServerGroupManager implements Loadable, IWriteServerGroupProv
     @Override
     public void create(IServerGroupBuilder builder) {
         ServerGroup serverGroup = (ServerGroup) builder.build();
+        if (ClusterDataModule.forwardGroupCreate(serverGroup)) return;
+        createGroup(serverGroup);
+    }
+
+    /** Creates the group on this node; in a cluster only called on the head. */
+    public void createGroup(ServerGroup serverGroup) {
         Benchmark.startTiming("server_group_creation");
         try {
             ServerGroupCreateEvent ev = new ServerGroupCreateEvent(serverGroup);
@@ -83,6 +90,7 @@ public final class ServerGroupManager implements Loadable, IWriteServerGroupProv
     @Override
     public void addTemplate(IServerGroup group, ITemplate template) {
         ServerGroup serverGroup = requireServerGroup(group);
+        if (ClusterDataModule.forwardGroupTemplate(serverGroup, template, true)) return;
         Benchmark.startTiming("server_group_add_template");
         ServerGroupAddTemplateEvent ev = new ServerGroupAddTemplateEvent(serverGroup, (Template) template);
         ev.call();
@@ -113,6 +121,7 @@ public final class ServerGroupManager implements Loadable, IWriteServerGroupProv
     public void removeTemplate(IServerGroup group, ITemplate template) {
         ServerGroup serverGroup = requireServerGroup(group);
         if (!checkName(template.name())) throw new IllegalArgumentException("ServerGroup name must only contain letters, numbers, underscores and hyphens");
+        if (ClusterDataModule.forwardGroupTemplate(serverGroup, template, false)) return;
         Benchmark.startTiming("server_group_remove_template");
         ServerGroupRemoveTemplateEvent ev = new ServerGroupRemoveTemplateEvent(serverGroup, (Template) template);
         ev.call();
@@ -147,6 +156,7 @@ public final class ServerGroupManager implements Loadable, IWriteServerGroupProv
     @Override
     public void delete(IServerGroup group) {
         ServerGroup serverGroup = requireServerGroup(group);
+        if (ClusterDataModule.forwardGroupDelete(serverGroup)) return;
         Benchmark.startTiming("server_group_removal");
         ServerGroupRemoveEvent ev = new ServerGroupRemoveEvent(serverGroup);
         ev.call();

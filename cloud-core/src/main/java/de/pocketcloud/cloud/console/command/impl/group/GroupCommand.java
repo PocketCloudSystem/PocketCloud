@@ -75,7 +75,8 @@ public final class GroupCommand extends Command {
 
     public boolean handleRemoveSub(CommandSender sender, CommandContext ctx) {
         ServerGroup group = ctx.arg("group", ServerGroup.class);
-        PocketCloud.instance().serverGroups().remove(group);
+        // delete(): provider, folder and the other nodes; remove() only drops the in-memory entry.
+        PocketCloud.instance().serverGroups().delete(group);
         return true;
     }
 
