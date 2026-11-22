@@ -7,20 +7,16 @@ port, makes sure it has the right template version, prepares and starts the serv
 `server start <template> [amount]` (or the HTTP API / a bridge request) on any other node is forwarded to the head:
 
 ```text
-Forwarded the start of 2x Lobby to head node-1.
+Asked the head node-1 to start 2x Lobby.
 ```
 
 On the head:
 
 ```text
-Starting Lobby-3 on node node-2...
+Starting Lobby-3 on node-2...
 ```
 
-and on the target node:
-
-```text
-Head node-1 starts Lobby-3 on this node.
-```
+and on the target node the usual `Starting Lobby-3 [...]...` and `The server Lobby-3 has connected to the cloud.`
 
 A head that has just been elected waits 5 s for the state of the other nodes before it schedules, so servers are
 not all started on the head.
@@ -34,15 +30,15 @@ brackets is the reason shown when a node is skipped):
 
 | Filter | Reason when skipped |
 |--------|---------------------|
-| Connected and `ALIVE` (heartbeat within 5 s) | `not connected`, `SUSPECT`, `DEAD` |
-| State `FOLLOWER` or `HEAD` | `state JOINING`, `state ISOLATED`, ... |
+| Connected and `ALIVE` (heartbeat within 5 s) | `not connected`, `not responding` |
+| State `FOLLOWER` or `HEAD` | `not ready (joining)`, `not ready (isolated)`, ... |
 | Not the node a start of this template just failed on (retry) | `failed to start it just now` |
 | Not in drain mode | `draining` |
 | Static templates: the node is the template's `staticNode` | `static servers live on <node>` |
 | The template's `nodes` is empty or contains the node | `not in the template's nodes` |
-| The node has the template's software (jar present; reported in its heartbeat) | `software <name> missing` |
-| Free memory budget ≥ template `maxMemory` (budget = `maxMemoryMb` of the node minus `maxMemory` of the servers on it; `maxMemoryMb: 0` = unlimited) | `memory budget X MB < Y MB` |
-| CPU load (from the heartbeat) below 85 % | `CPU 91 % >= 85 %` |
+| The node has the template's software (jar present; reported in its heartbeat) | `software <name> not installed` |
+| Free memory budget ≥ template `maxMemory` (budget = `maxMemoryMb` of the node minus `maxMemory` of the servers on it; `maxMemoryMb: 0` = unlimited) | `not enough memory (X MB free, Y MB needed)` |
+| CPU load (from the heartbeat) below 85 % | `CPU busy (91 %)` |
 
 Before the filters, two template rules apply in a cluster:
 
@@ -52,7 +48,7 @@ Before the filters, two template rules apply in a cluster:
 If no node fits, the head logs why (at most once a minute per template) and starts nothing:
 
 ```text
-No node can start a server of Lobby right now: node-1: memory budget 256 MB < 512 MB; node-2: draining; node-3: not connected
+No node can start a server of Lobby right now: node-1: not enough memory (256 MB free, 512 MB needed); node-2: draining; node-3: not connected
 ```
 
 The ID is given back and auto-scaling tries again on its next run.
@@ -79,19 +75,19 @@ If the chosen node cannot start the server (it rejects the request, the start fa
 time), the head gives the ID back and tries **once** on the next best node:
 
 ```text
-Node node-2 could not start Lobby-4: template version not synced within 7 s
-Retrying the start of a server of Lobby on node node-3 (failed on node-2)...
+node-2 could not start Lobby-4: the template could not be synced within 7 s
+Trying Lobby on node-3 instead (failed on node-2)...
 ```
 
 If there is no other node or the retry fails too:
 
 ```text
-Giving up the start of a server of Lobby: it failed on node-2 and no other node can take it.
-Giving up the start of a server of Lobby: the retry on node-3 failed too.
+Could not start a server of Lobby: it failed on node-2 and no other node can take it.
+Could not start a server of Lobby: it failed on node-3 too.
 ```
 
 A start the head gave up on is cancelled on the node, so a late start does not create an extra server
-(`Not starting Lobby-4: the head cancelled the start.`).
+(with debug logging: `Not starting Lobby-4: the head cancelled the start`).
 
 ## Drain mode
 
@@ -117,7 +113,7 @@ HTTP: `POST /v1/nodes/{name}/drain` (optionally `?stop=true` or `{"stop": true}`
 ## Stopping servers
 
 `server stop`, `server stopall`, `server dispatch` and `server save` work for servers on any node; the request goes
-to the node that runs the server (`Stopping Lobby-3 on node node-2...`). Stopped servers may be replaced by
+to the node that runs the server (`Stopping Lobby-3 on node-2...`). Stopped servers may be replaced by
 auto-scaling as usual.
 
 Stopping a node (`exit`) stops the servers of **that node** only. The other nodes see it leave immediately and the

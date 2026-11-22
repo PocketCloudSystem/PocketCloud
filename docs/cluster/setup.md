@@ -75,7 +75,7 @@ Upgrading from an older version? Read [Upgrading](upgrading.md) first: **the bri
 Start the cloud again. `node list` shows:
 
 ```text
-This node (node-1) runs alone and is always head. Use node add <name> <address> to create a cluster.
+This node (node-1) runs alone. Use node add <name> <address> [port] to create a cluster.
 ```
 
 ### 2. Prepare the templates
@@ -110,16 +110,19 @@ node add node-2 10.0.0.12
 Syntax: `node add <node> <address> [port]`, port defaults to `3657`. The address is the **`advertisedAddress` of
 the new node** and is written into its `node.yml` when it joins.
 
-The first `node add` creates the cluster CA (`Creating the cluster CA...`) and opens the cluster port. The output:
+The first `node add` creates the cluster CA (`Creating a new cluster...`) and opens the cluster port. The output:
 
 ```text
-Node node-2 added. Its join token was saved to /srv/pocketcloud/storage/internal/cluster/join-tokens/node-2.token (it contains a private key, keep it secret).
-Copy the file to the new node and start it once with: java -jar pocketcloud.jar --join <path to node-2.token>
-Delete the file afterwards.
-With 2 nodes the majority is 2: until node-2 has joined, there is no head and no new servers are started.
+Creating a new cluster...
+Cluster connection has been established on 0.0.0.0:3657 (node node-1).
+Node node-2 has been added.
+Join token: /srv/pocketcloud/storage/internal/cluster/join-tokens/node-2.token (contains a private key, keep it secret)
+Copy it to the new node, start that node once with java -jar pocketcloud.jar --join <path to node-2.token>, then delete the file.
+No new servers are started until node-2 has joined (with 2 nodes, both must be online).
 ```
 
-From now on `node-1` waits for `node-2` (`Lost the majority (1/2), stepping down as head.`). Running servers keep
+From now on `node-1` waits for `node-2`
+(`Only 1/2 nodes are reachable. This node is no longer the head until a majority is back.`). Running servers keep
 running. Continue with the next step right away.
 
 > The token contains the private key of the new node. It is never printed to the console or the log files, only
@@ -147,10 +150,10 @@ The node stores the certificates in `storage/internal/cluster/`, writes `name`, 
 `clusterPort` into its `node.yml` and logs:
 
 ```text
-Joined the cluster as node-2. Seeds: 10.0.0.11:3657
-Node node-1 (10.0.0.11:3657) is connected.
-Member list updated (2 node(s)).
-node-1 is now head (term 1).
+Joined the cluster as node-2.
+Cluster connection has been established on 0.0.0.0:3657 (node node-2).
+Node node-1 has connected.
+node-1 is now the head.
 ```
 
 Then it fetches all templates from the head (`Template Lobby updated to version 1 (12 file(s) fetched, 3400 KB).`)

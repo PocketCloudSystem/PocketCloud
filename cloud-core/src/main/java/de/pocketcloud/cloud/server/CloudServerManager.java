@@ -225,18 +225,18 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
         int id = node == null ? -1 : ServerUtils.reserveId(template);
         if (node == null || id == -1) {
             serverCounts.merge(template.name(), -1, Integer::sum);
-            CloudLogger.get().warn("§cGiving up §rthe start of a server of §b{}§r: it failed on §b{} §rand no other node can take it.", template.name(), failedNode);
+            CloudLogger.get().warn("§cCould not start §ra server of §b{}§r: it failed on §b{} §rand no other node can take it.", template.name(), failedNode);
             return;
         }
 
-        CloudLogger.get().info("Retrying the start of a server of §b{} §ron node §b{} §8(§rfailed on §b{}§8)§r...", template.name(), node.name(), failedNode);
+        CloudLogger.get().info("Trying §b{} §ron §b{} §rinstead §8(§rfailed on §b{}§8)§r...", template.name(), node.name(), failedNode);
         if (!node.local()) {
             startOnRemoteNode(template, id, node, true);
             latestServerStartTimes.put(template.name(), template.name() + "-" + id);
         } else if (queueLocalStart(template, id, node) == null) {
             ServerUtils.removeId(template, id);
             serverCounts.merge(template.name(), -1, Integer::sum);
-            CloudLogger.get().warn("§cGiving up §rthe start of a server of §b{}§r: no free port on §b{}§r.", template.name(), node.name());
+            CloudLogger.get().warn("§cCould not start §ra server of §b{}§r: no free port on §b{}§r.", template.name(), node.name());
         }
     }
 
@@ -250,18 +250,18 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
                 new CloudServerStorage(uuid));
         placeholder.nodeName(node.name());
         add(placeholder);
-        CloudLogger.get().info("§aStarting §b{} §ron node §b{}§r...", placeholder.name(), node.name());
+        CloudLogger.get().info("§aStarting §b{} §ron §b{}§r...", placeholder.name(), node.name());
 
         PocketCloud.instance().cluster().requestRemoteStart(node.name(), template.name(), id, uuid)
                 .failure(e -> {
-                    CloudLogger.get().warn("Node §b{} §rcould not start §b{}§8: §c{}", node.name(), placeholder.name(), e.getMessage());
+                    CloudLogger.get().warn("§b{} §rcould not start §b{}§8: §c{}", node.name(), placeholder.name(), e.getMessage());
                     // without an answer the node may still start it later: cancel it there
                     PocketCloud.instance().cluster().cancelRemoteStart(node.name(), placeholder.name());
                     if (servers.get(placeholder.name()) != placeholder) return;
                     placeholder.status(ServerStatus.OFFLINE);
                     remove(placeholder);
                     if (retry) {
-                        CloudLogger.get().warn("§cGiving up §rthe start of a server of §b{}§r: the retry on §b{} §rfailed too.", template.name(), node.name());
+                        CloudLogger.get().warn("§cCould not start §ra server of §b{}§r: it failed on §b{} §rtoo.", template.name(), node.name());
                     } else {
                         retryStart(template, node.name());
                     }
@@ -334,7 +334,7 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
 
         if (!existing.remote()) {
             if (existing.nodeName() == null || existing.nodeName().equals(incoming.nodeName())) return;
-            CloudLogger.get().warn("Node §b{} §rreports a server §b{} §rthat also exists on this node. Ignoring it.", incoming.nodeName(), incoming.name());
+            CloudLogger.get().warn("Node §b{} §rreports a server §b{} §rthat also runs on this node. Ignoring it.", incoming.nodeName(), incoming.name());
             return;
         }
 

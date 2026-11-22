@@ -171,7 +171,7 @@ public final class ClusterDataProvider extends CloudProvider {
         if (forward.isPresent()) {
             String operation = (present ? "+" : "-") + kind;
             return forward.get().forward(operation, player, null)
-                    .failure(ex -> CloudLogger.get().error("§cCould not change the {} for §b{} §con the head§r: {}", kind, player, ex.getMessage()))
+                    .failure(ex -> CloudLogger.get().error("§cCould not change the {} §rfor §b{}§8: §c{}", kind, player, ex.getMessage()))
                     .thenApply(_ -> null);
         }
 

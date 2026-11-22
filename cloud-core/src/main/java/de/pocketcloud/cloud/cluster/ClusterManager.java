@@ -118,7 +118,7 @@ public final class ClusterManager {
         NodeConfig config = nodeConfig();
         String certName = ClusterCertificates.commonName(certificates.nodeCertificate());
         if (!config.name().equals(certName)) {
-            CloudLogger.get().error("node.yml name §b{} §rdoes not match the node certificate §b{}§r. Cluster disabled.", config.name(), certName);
+            CloudLogger.get().error("The name §b{} §rin node.yml does not match the certificate of this node §8(§b{}§8)§r. Running as a single node.", config.name(), certName);
             clustered = false;
             election.forceSingleHead();
             return;
@@ -140,7 +140,8 @@ public final class ClusterManager {
             return;
         }
 
-        CloudLogger.get().info("Cluster port §b{}:{} §ropened §8(§rnode §b{}§r, §b{} §rmember(s)§8)§r.", config.clusterBindAddress(), config.clusterPort(), config.name(), members.size());
+        CloudLogger.get().info("Cluster connection has been established on §b{}:{} §8(§rnode §b{}§8)§r.", config.clusterBindAddress(), config.clusterPort(), config.name());
+        CloudLogger.get().debug("Cluster members: {}", members.size());
         scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread t = new Thread(r, "PocketCloud-Cluster");
             t.setDaemon(true);
@@ -215,7 +216,7 @@ public final class ClusterManager {
         if (!name.matches("[a-zA-Z0-9_\\-]{1,32}")) throw new IllegalArgumentException("Invalid node name.");
 
         if (!clustered) {
-            CloudLogger.get().info("Creating the cluster CA...");
+            CloudLogger.get().info("Creating a new cluster...");
             certificates.initialize(config.name(), PocketCloud.instance().config().cloudName());
             members.put(new ClusterMembers.Member(config.name(), config.advertisedAddress(), config.clusterPort()));
             clustered = true;
@@ -273,7 +274,8 @@ public final class ClusterManager {
             localNode = new LocalNodeHandle(config.name());
 
             Files.delete(file);
-            CloudLogger.get().success("Joined the cluster as §b{}§r. Seeds: §b{}", token.nodeName(), String.join("§8, §b", token.seeds()));
+            CloudLogger.get().success("Joined the cluster as §b{}§r.", token.nodeName());
+            CloudLogger.get().debug("Join seeds: {}", String.join(", ", token.seeds()));
             return true;
         } catch (Exception e) {
             CloudLogger.get().exception("Invalid join token", e);
@@ -377,7 +379,7 @@ public final class ClusterManager {
         String endpoint = channel.attr(ClusterNetwork.ENDPOINT).get();
         if (!response.isAccepted()) {
             if (throttle("rejected-by:" + endpoint)) {
-                CloudLogger.get().warn("Node at §b{} §rrejected the connection: {}", endpoint, response.getReason());
+                CloudLogger.get().warn("The node at §b{} §rrefused the connection§8: §c{}", endpoint, response.getReason());
             }
             channel.close();
             return;
@@ -385,7 +387,7 @@ public final class ClusterManager {
 
         NodeIdentity id = response.getIdentity();
         if (!id.name().equals(channel.attr(ClusterNetwork.CERT_NAME).get())) {
-            CloudLogger.get().warn("Node at §b{} §rclaims to be §b{}§r, but its certificate says otherwise. Closing.", endpoint, id.name());
+            CloudLogger.get().warn("The node at §b{} §rcalls itself §b{}§r, but its certificate has another name. Connection closed.", endpoint, id.name());
             channel.close();
             return;
         }
@@ -421,7 +423,7 @@ public final class ClusterManager {
             case NodeLeavePacket _ -> {
                 peer.lastSeen(0);
                 election.peerLeft(from);
-                CloudLogger.get().info("Node §b{} §rleft the cluster.", from);
+                CloudLogger.get().debug("Node {} is shutting down", from);
                 dropServersOfDeadNodes();
             }
             case HeadStartServerPacket start -> handleStartRequest(from, channel, start);
@@ -442,14 +444,14 @@ public final class ClusterManager {
         NodeIdentity id = hello.getIdentity();
         String certName = channel.attr(ClusterNetwork.CERT_NAME).get();
         String reason = null;
-        if (hello.getProtocolVersion() != PROTOCOL_VERSION) reason = "protocol version " + hello.getProtocolVersion() + " != " + PROTOCOL_VERSION;
+        if (hello.getProtocolVersion() != PROTOCOL_VERSION) reason = "different cloud version (protocol " + hello.getProtocolVersion() + ", expected " + PROTOCOL_VERSION + ")";
         else if (!id.name().equals(certName)) reason = "name does not match certificate";
         else if (id.name().equals(nodeName())) reason = "same name as this node";
         else if (!members.contains(id.name())) reason = "not a member of this cluster";
 
         if (reason != null) {
             if (throttle("reject:" + id.name())) {
-                CloudLogger.get().warn("Rejected node connection from §b{} §8(§b{}§8)§r: {}", ClusterNetwork.remote(channel), id.name(), reason);
+                CloudLogger.get().warn("Refused the connection of node §b{} §8(§b{}§8)§8: §c{}", id.name(), ClusterNetwork.remote(channel), reason);
             }
             respond(channel, hello, new NodeHelloResponsePacket(false, reason, null, null));
             channel.close();
@@ -486,7 +488,10 @@ public final class ClusterManager {
             peer.head(id.head());
             peer.lastSeen(System.currentTimeMillis());
             peer.serversDropped(false);
-            if (!wasAlive) CloudLogger.get().info("Node §b{} §8(§b{}:{}§8) §ris §aconnected§r.", id.name(), id.address(), id.port());
+            if (!wasAlive) {
+                CloudLogger.get().info("Node §b{} §rhas §aconnected§r.", id.name());
+                CloudLogger.get().debug("Node {} connected from {}:{} ({})", id.name(), id.address(), id.port(), outbound ? "outgoing" : "incoming");
+            }
         }
 
         recovery.beforeFullReport(id.name());
@@ -545,13 +550,14 @@ public final class ClusterManager {
         if (current.get().address().equals(address) && current.get().port() == port) return;
         if (address.equals("0.0.0.0") || address.equals("::")) {
             if (throttle("advertised:" + name)) {
-                CloudLogger.get().warn("Node §b{} §radvertises §b{}§r: other nodes cannot connect to that. Set §badvertisedAddress §rin its node.yml to an IP the other nodes can reach.", name, address);
+                CloudLogger.get().warn("Other nodes cannot reach node §b{} §rat §b{}§r. Set §badvertisedAddress §rin its node.yml to an IP the other nodes can reach.", name, address);
             }
             return;
         }
         try {
             members.put(new ClusterMembers.Member(name, address, port));
-            CloudLogger.get().info("Member address of §b{} §rupdated: §b{} §8-> §b{}:{}", name, current.get().endpoint(), address, port);
+            CloudLogger.get().info("The address of node §b{} §rhas changed to §b{}:{}§r.", name, address, port);
+            CloudLogger.get().debug("Member address of {}: {} -> {}:{}", name, current.get().endpoint(), address, port);
         } catch (Exception e) {
             CloudLogger.get().exception("Failed to store the member list", e);
         }
@@ -560,7 +566,7 @@ public final class ClusterManager {
     private void adoptMembers(Map<String, Object> data) {
         try {
             if (members.adoptIfNewer(data)) {
-                CloudLogger.get().info("Member list updated §8(§b{} §rnode(s)§8)§r.", members.size());
+                CloudLogger.get().debug("Member list updated ({} nodes)", members.size());
                 for (String name : List.copyOf(peers.keySet())) {
                     if (!members.contains(name)) forgetPeer(name);
                 }
@@ -687,7 +693,8 @@ public final class ClusterManager {
             if ("ok".equals(result)) return true;
             String[] parts = String.valueOf(result).split(":", 3);
             if (parts[0].equals("foreign")) {
-                CloudLogger.get().warn("Redis held head term §b{} §rof another cluster §8(§rid §b{}§8, §rthis cluster §b{}§8)§r with the same cloud name; replaced it with term §b{}§r.",
+                CloudLogger.get().warn("Replaced the head of another cluster with the same cloud name in §bRedis§r. If two clusters share this Redis, give each its own §bcloudName§r.");
+                CloudLogger.get().debug("Redis held head term {} of another cluster (id {}, this cluster {}); replaced it with term {}",
                         parts[1], parts.length > 2 && !parts[2].equals("false") ? parts[2] : "unknown", clusterId, term);
                 return true;
             }
@@ -696,16 +703,16 @@ public final class ClusterManager {
             boolean held = peers.values().stream().anyMatch(p -> p.alive(now) && p.term() >= stored);
             if (!held) {
                 if (throttle("redis-term-" + stored)) {
-                    CloudLogger.get().warn("Redis knows head term §b{}§r, but no member of this cluster reports it §8(§rthis node: §b{}§8)§r. Claiming term §b{} §rnext.",
+                    CloudLogger.get().debug("Redis knows head term {}, but no member of this cluster reports it (this node: {}). Claiming term {} next",
                             stored, term, stored + 1);
                 }
                 election.skipTo(stored);
             } else {
-                CloudLogger.get().warn("Redis already knows a newer head term than §b{}§r.", term);
+                CloudLogger.get().debug("Redis already knows a newer head term than {}", term);
             }
             return false;
         } catch (RuntimeException e) {
-            CloudLogger.get().error("Cannot become head while Redis is unreachable: {}", e.getMessage());
+            CloudLogger.get().error("This node cannot become the head while §bRedis §ris unreachable§8: §c{}", e.getMessage());
             return false;
         }
     }
@@ -773,13 +780,14 @@ public final class ClusterManager {
         try {
             redis = RedisConnection.open(config, PocketCloud.instance().config().cloudName());
             state = new RedisStateStore(redis);
-            CloudLogger.get().success("§aConnected §rto §bRedis§r. §8(§rnamespace §b{}§8)", redis.keyPrefix());
+            CloudLogger.get().success("§aConnected §rto §bRedis§r.");
+            CloudLogger.get().debug("Redis namespace: {}", redis.keyPrefix());
             cleanupStaleState();
         } catch (RuntimeException e) {
             redis = null;
             state = new LocalStateStore();
-            CloudLogger.get().error("§cCould not connect §rto §bRedis§r: {}", e.getMessage());
-            CloudLogger.get().warn("Falling back to the §blocal state§r. This only works with a single node.");
+            CloudLogger.get().error("§cCould not connect §rto §bRedis§8: §c{}", e.getMessage());
+            CloudLogger.get().warn("Running without Redis. This only works with a single node.");
         }
     }
 
@@ -818,7 +826,7 @@ public final class ClusterManager {
             }
         }
 
-        CloudLogger.get().info("Removed §b{} §rstale server(s) and §b{} §rplayer(s) of this node from the shared state.", staleServers.size(), players);
+        CloudLogger.get().debug("Removed {} stale server(s) and {} player(s) of this node from the shared state", staleServers.size(), players);
     }
 
     // ------------------------------------------------------------------ servers across nodes
@@ -851,19 +859,19 @@ public final class ClusterManager {
                 .whenComplete((_, error) -> {
                     if (error != null) {
                         Throwable cause = error instanceof java.util.concurrent.CompletionException && error.getCause() != null ? error.getCause() : error;
-                        String reason = cause instanceof java.util.concurrent.TimeoutException ? "template version not synced within " + START_SYNC_TIMEOUT_MS / 1000 + " s" : cause.getMessage();
-                        CloudLogger.get().warn("Cannot start §b{} §rfor head §b{}§8: §c{}", name, from, reason);
+                        String reason = cause instanceof java.util.concurrent.TimeoutException ? "the template could not be synced within " + START_SYNC_TIMEOUT_MS / 1000 + " s" : cause.getMessage();
+                        CloudLogger.get().warn("Could not start §b{}§8: §c{}", name, reason);
                         respond(channel, request, new NodeStartServerResultPacket(false, reason, 0));
                         return;
                     }
                     if (cancelledStarts.remove(name) != null) {
-                        CloudLogger.get().warn("Not starting §b{}§r: the head cancelled the start.", name);
+                        CloudLogger.get().debug("Not starting {}: the head cancelled the start", name);
                         respond(channel, request, new NodeStartServerResultPacket(false, "cancelled by the head", 0));
                         return;
                     }
                     try {
                         int port = PocketCloud.instance().servers().startLocal(template, request.getId(), UUID.fromString(request.getUuid()));
-                        CloudLogger.get().info("Head §b{} §rstarts §b{} §ron this node.", from, name);
+                        CloudLogger.get().debug("Head {} started {} on this node", from, name);
                         respond(channel, request, new NodeStartServerResultPacket(true, null, port));
                     } catch (Exception e) {
                         respond(channel, request, new NodeStartServerResultPacket(false, e.getMessage(), 0));
@@ -934,8 +942,11 @@ public final class ClusterManager {
             peer.serversDropped(true);
             for (ClusterModule module : modules) module.onPeerGone(peer.name());
             Collection<CloudServer> lost = PocketCloud.instance().servers().serversOfNode(peer.name());
-            if (lost.isEmpty()) continue;
-            CloudLogger.get().warn("Node §b{} §ris gone, its §b{} §rserver(s) are treated as offline: §b{}", peer.name(), lost.size(),
+            if (lost.isEmpty()) {
+                CloudLogger.get().info("Node §b{} §rhas §cdisconnected§r.", peer.name());
+                continue;
+            }
+            CloudLogger.get().warn("Node §b{} §rhas §cdisconnected§r. Its servers are offline§8: §b{}", peer.name(),
                     String.join("§8, §b", lost.stream().map(CloudServer::name).toList()));
             for (CloudServer server : lost) PocketCloud.instance().servers().removeRemoteServer(server.name());
         }
@@ -974,7 +985,7 @@ public final class ClusterManager {
         String head = election.head();
         Peer peer = head == null ? null : peers.get(head);
         if (peer == null || !peer.connected()) {
-            CloudLogger.get().warn("Cannot start §b{}§r: there is §cno head §rright now.", template);
+            CloudLogger.get().warn("Cannot start §b{}§r: the cluster has §cno head §rright now.", template);
             return Promise.resolved(List.of());
         }
 
@@ -983,7 +994,7 @@ public final class ClusterManager {
         request.then(response -> promise.resolve(response instanceof HeadForwardStartResultPacket r ? r.getServers() : List.of()))
                 .failure((_, ex, reason) -> promise.reject(ex != null ? ex : new IllegalStateException(String.valueOf(reason))));
         network.send(peer.channel(), request);
-        CloudLogger.get().info("Forwarded the start of §b{}x {} §rto head §b{}§r.", count, template, head);
+        CloudLogger.get().info("Asked the head §b{} §rto start §b{}x {}§r.", head, count, template);
         return promise;
     }
 
@@ -1000,7 +1011,7 @@ public final class ClusterManager {
             return;
         }
         network.send(peer.channel(), new NodeStopServerPacket(server, force));
-        CloudLogger.get().info("§cStopping §b{} §ron node §b{}§r...", server, node);
+        CloudLogger.get().info("§cStopping §b{} §ron §b{}§r...", server, node);
     }
 
     // ------------------------------------------------------------------ node handles

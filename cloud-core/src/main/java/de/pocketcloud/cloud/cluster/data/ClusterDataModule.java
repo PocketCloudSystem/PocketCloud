@@ -150,7 +150,7 @@ public final class ClusterDataModule implements ClusterModule {
             // This node became head: Redis gets the provider data (spec: the head loads everything from the provider).
             execute(() -> CloudProvider.redis().ifPresent(redis -> {
                 redis.fillFromProvider();
-                CloudLogger.get().info("Loaded the whitelist, notifications, templates and groups into §bRedis§r.");
+                CloudLogger.get().debug("Loaded the whitelist, notifications, templates and groups into Redis");
             }));
         }
         wasHead = head0;
@@ -189,10 +189,10 @@ public final class ClusterDataModule implements ClusterModule {
         Optional<ClusterDataModule> module = get().filter(m -> !m.isHead());
         if (module.isEmpty()) return false;
         String head = module.get().cluster.election().head();
-        CloudLogger.get().info("Forwarding {} to head §b{}§r...", what, head == null ? "?" : head);
+        CloudLogger.get().debug("Forwarding {} to head {}", what, head == null ? "?" : head);
         module.get().forward(operation, target, payload)
-                .thenSuccess(message -> CloudLogger.get().success("Head §b{} §rapplied {}{}", head, what, message.isEmpty() ? "." : "§8: §r" + message))
-                .failure(ex -> CloudLogger.get().error("§cCould not apply {} on the head§r: {}", what, ex.getMessage()));
+                .thenSuccess(message -> CloudLogger.get().debug("Head {} applied {}{}", head, what, message.isEmpty() ? "" : ": " + message))
+                .failure(ex -> CloudLogger.get().error("§cCould not apply §r{}§8: §c{}", what, ex.getMessage()));
         return true;
     }
 
@@ -264,7 +264,7 @@ public final class ClusterDataModule implements ClusterModule {
     private void handleWrite(String from, Channel channel, NodeDataWritePacket write) {
         String op = write.getOperation();
         String target = write.getTarget();
-        CloudLogger.get().info("Applying §b{} §8(§b{}§8) §rrequested on §b{}§r.", op, target, from);
+        CloudLogger.get().debug("Applying {} ({}) requested on {}", op, target, from);
         try {
             if (op.startsWith("+") || op.startsWith("-")) {
                 boolean present = op.startsWith("+");
@@ -299,7 +299,8 @@ public final class ClusterDataModule implements ClusterModule {
             }
             cluster.respond(channel, write, new HeadDataWriteResultPacket(true, ""));
         } catch (RuntimeException e) {
-            CloudLogger.get().warn("Could not apply §b{} §8(§b{}§8) §rfrom §b{}§r: {}", op, target, from, e.getMessage());
+            CloudLogger.get().warn("Could not apply a change from §b{}§8: §c{}", from, e.getMessage());
+            CloudLogger.get().debug("Failed change: {} ({})", op, target);
             cluster.respond(channel, write, new HeadDataWriteResultPacket(false, String.valueOf(e.getMessage())));
         }
     }
@@ -327,8 +328,8 @@ public final class ClusterDataModule implements ClusterModule {
             case KIND_WHITELIST, KIND_NOTIFICATIONS -> {
                 boolean present = Boolean.parseBoolean(document);
                 if (applyPlayerList(kind, key, present)) {
-                    CloudLogger.get().info("{} §b{} §r{} §8(§rchanged on head §b{}§8)§r.", kind.equals(KIND_WHITELIST) ? "Whitelist§8:" : "Notifications§8:",
-                            key, present ? "§aadded" : "§cremoved", head);
+                    if (kind.equals(KIND_WHITELIST)) CloudLogger.get().info("§b{} §rwas {} §rthe whitelist.", key, present ? "§aadded to" : "§cremoved from");
+                    else CloudLogger.get().info("Notifications were {} §rfor §b{}§r.", present ? "§aenabled" : "§cdisabled", key);
                 }
             }
             case KIND_TEMPLATE -> applyTemplate(key, document.isEmpty() ? null : document(document), true);
@@ -373,7 +374,7 @@ public final class ClusterDataModule implements ClusterModule {
             if (existing == null) return;
             templates.remove(existing);
             if (existing instanceof Template t) t.markForRemoval().syncOut();
-            CloudLogger.get().info("Template §b{} §rwas §cremoved §ron the head.", name);
+            CloudLogger.get().info("Template §b{} §rwas §cremoved§r.", name);
             CloudAPI.instance().events().call(new TemplateDeletedEvent(existing));
             return;
         }
@@ -382,13 +383,13 @@ public final class ClusterDataModule implements ClusterModule {
         if (existing == null) {
             templates.add(fresh);
             fresh.syncOut();
-            CloudLogger.get().info("Template §b{} §rwas §acreated §ron the head and is now available here.", name);
+            CloudLogger.get().info("Template §b{} §rwas §acreated§r.", name);
             CloudAPI.instance().events().call(new TemplateCreatedEvent(fresh));
         } else if (!Objects.equals(existing.write(), fresh.write())) {
             var before = Template.read(existing.write()).settings();
             existing.settings().applyFrom(fresh.settings());
             if (existing instanceof Template t) t.syncOut();
-            CloudLogger.get().info("Settings of template §b{} §rwere §eupdated §ron the head.", name);
+            CloudLogger.get().info("Template §b{} §rwas §eedited§r.", name);
             CloudAPI.instance().events().call(new TemplateEditedEvent(existing, TemplateEditData.between(before, existing.settings())));
         }
     }
@@ -400,7 +401,7 @@ public final class ClusterDataModule implements ClusterModule {
             if (existing == null) return;
             groups.remove(existing);
             if (existing instanceof ServerGroup g) g.markForRemoval().syncOut();
-            if (log) CloudLogger.get().info("Server group §b{} §rwas §cremoved §ron the head.", name);
+            if (log) CloudLogger.get().info("Server group §b{} §rwas §cremoved§r.", name);
             CloudAPI.instance().events().call(new ServerGroupDeletedEvent(existing));
             return;
         }
@@ -410,10 +411,11 @@ public final class ClusterDataModule implements ClusterModule {
         groups.add(fresh);
         fresh.syncOut();
         if (existing == null) {
-            if (log) CloudLogger.get().info("Server group §b{} §rwas §acreated §ron the head.", name);
+            if (log) CloudLogger.get().info("Server group §b{} §rwas §acreated§r.", name);
             CloudAPI.instance().events().call(new ServerGroupCreatedEvent(fresh));
         } else {
-            if (log) CloudLogger.get().info("Server group §b{} §rwas §eupdated §ron the head §8(§rtemplates§8: §b{}§8)§r.", name, String.join(", ", fresh.templates()));
+            if (log) CloudLogger.get().info("Server group §b{} §rwas §eedited§r.", name);
+            CloudLogger.get().debug("Templates of group {}: {}", name, String.join(", ", fresh.templates()));
             CloudAPI.instance().events().call(new ServerGroupUpdatedEvent(fresh, existing.templates(), fresh.templates()));
         }
     }
@@ -494,7 +496,7 @@ public final class ClusterDataModule implements ClusterModule {
             }
         }
 
-        if (changes > 0) CloudLogger.get().info("Caught up with head §b{}§r: §b{} §rchange(s) to the whitelist, notifications or templates.", head, changes);
+        if (changes > 0) CloudLogger.get().debug("Caught up with head {}: {} change(s) to the whitelist, notifications or templates", head, changes);
         else CloudLogger.get().debug("Data snapshot from head {}: up to date", head);
     }
 

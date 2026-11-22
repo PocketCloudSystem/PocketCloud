@@ -56,16 +56,14 @@ public final class NodeSelector {
 
         if (template.templateType().isProxy() && template.settings().nodes().isEmpty()) {
             if (cluster.throttle("proxy-without-nodes:" + template.name())) {
-                CloudLogger.get().warn("The proxy template §b{} §rhas no §bnodes §rset and is §cdisabled §rin the cluster. " +
-                        "Use §btemplate nodes {} <node,...> §rto choose the nodes for its proxies.", template.name(), template.name());
+                CloudLogger.get().warn("Proxies of §b{} §rcannot start until you choose their nodes with §btemplate nodes {} <node,...>§r.", template.name(), template.name());
             }
             return null;
         }
 
         if (template.settings().staticServers() && !template.settings().hasStaticNode()) {
             if (cluster.throttle("static-without-node:" + template.name())) {
-                CloudLogger.get().warn("The static template §b{} §rhas no §bstaticNode §rset and is §cdisabled §rin the cluster. " +
-                        "Use §btemplate staticnode {} <node> §rto choose the node its static servers live on.", template.name(), template.name());
+                CloudLogger.get().warn("Static servers of §b{} §rcannot start until you choose their node with §btemplate staticnode {} <node>§r.", template.name(), template.name());
             }
             return null;
         }
@@ -136,13 +134,13 @@ public final class NodeSelector {
             } else {
                 String health = peer.health(now);
                 if (!"ALIVE".equals(health)) {
-                    rejected.put(name, health);
+                    rejected.put(name, "not responding");
                     continue;
                 }
                 state = peer.state();
             }
             if (!NodeState.FOLLOWER.name().equals(state) && !NodeState.HEAD.name().equals(state)) {
-                rejected.put(name, "state " + state);
+                rejected.put(name, "not ready (" + state.toLowerCase(Locale.ROOT) + ")");
                 continue;
             }
             if (exclude.contains(name)) {
@@ -162,12 +160,12 @@ public final class NodeSelector {
                 continue;
             }
             if (!local && de.pocketcloud.cloud.cluster.sync.TemplateReplicator.pausedBehind(peer.stats(), template)) {
-                rejected.put(name, "template sync paused there (outdated copy)");
+                rejected.put(name, "template sync paused there");
                 continue;
             }
             Collection<String> softwares = scheduling == null ? null : scheduling.softwaresOf(name);
             if (softwares != null && !softwares.contains(software)) {
-                rejected.put(name, "software " + software + " missing");
+                rejected.put(name, "software " + software + " not installed");
                 continue;
             }
 
@@ -186,11 +184,11 @@ public final class NodeSelector {
             }
             long free = free(max, servers);
             if (free < needed) {
-                rejected.put(name, "memory budget " + Math.max(0, free) + " MB < " + needed + " MB");
+                rejected.put(name, "not enough memory (" + Math.max(0, free) + " MB free, " + needed + " MB needed)");
                 continue;
             }
             if (cpu >= CPU_LIMIT) {
-                rejected.put(name, String.format(Locale.ROOT, "CPU %.0f %% >= %.0f %%", cpu, CPU_LIMIT));
+                rejected.put(name, String.format(Locale.ROOT, "CPU busy (%.0f %%)", cpu));
                 continue;
             }
             result.add(new Candidate(name, free, servers.size(), cpu));

@@ -329,6 +329,8 @@ public final class CloudRedisProvider extends CloudProvider {
     }
 
     private static void logFailure(Throwable ex, String action) {
-        if (ex != null) CloudLogger.get().warn("Redis provider cache could not " + action + ": " + ex.getMessage());
+        if (ex == null) return;
+        CloudLogger.get().warn("Could not use the §bRedis §rcache§8: §c{}", ex.getMessage());
+        CloudLogger.get().debug("Redis cache action: {}", action);
     }
 }

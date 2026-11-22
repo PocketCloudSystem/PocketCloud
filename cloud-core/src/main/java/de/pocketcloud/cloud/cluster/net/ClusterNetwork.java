@@ -173,7 +173,8 @@ public final class ClusterNetwork {
                 if (!event.isSuccess()) {
                     String host = ctx.channel().remoteAddress() instanceof InetSocketAddress a ? a.getHostString() : String.valueOf(ctx.channel().remoteAddress());
                     if (manager.throttle("tls:" + host)) {
-                        CloudLogger.get().warn("TLS handshake with node connection from §b{} §cfailed§r: {}", host, event.cause().getMessage());
+                        CloudLogger.get().warn("Could not connect securely with §b{}§r. Is its certificate from this cluster and still valid?", host);
+                        CloudLogger.get().debug("TLS handshake with {} failed: {}", host, event.cause().getMessage());
                     }
                     ctx.close();
                     return;

@@ -54,13 +54,11 @@ public final class TemplateManager implements Tickable, Loadable, IWriteTemplate
                         }
 
                         if (PocketCloud.instance().cluster().clustered() && template.templateType().isProxy() && template.settings().nodes().isEmpty()) {
-                            CloudLogger.get().warn("The proxy template §b{} §rhas no §bnodes §rset and is §cdisabled §rin the cluster. " +
-                                    "Use §btemplate nodes {} <node,...> §rto choose the nodes for its proxies.", template.name(), template.name());
+                            CloudLogger.get().warn("Proxies of §b{} §rcannot start until you choose their nodes with §btemplate nodes {} <node,...>§r.", template.name(), template.name());
                         }
 
                         if (PocketCloud.instance().cluster().clustered() && template.settings().staticServers() && !template.settings().hasStaticNode()) {
-                            CloudLogger.get().warn("The static template §b{} §rhas no §bstaticNode §rset and is §cdisabled §rin the cluster. " +
-                                    "Use §btemplate staticnode {} <node> §rto choose the node its static servers live on.", template.name(), template.name());
+                            CloudLogger.get().warn("Static servers of §b{} §rcannot start until you choose their node with §btemplate staticnode {} <node>§r.", template.name(), template.name());
                         }
 
                         if (template.settings().maxMemory() <= 0 && template.serverSoftware().download().realStartCommand().contains("{MAX_MEMORY}")) {

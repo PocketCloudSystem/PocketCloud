@@ -133,7 +133,7 @@ public final class ClusterHttpForwarder {
             NodeHttpForwardResultPacket result;
             try {
                 result = execute(packet);
-                CloudLogger.get().info("Handled HTTP §b{} {} §rforwarded by node §b{} §8(§b{}§8)§r.", packet.getMethod(), packet.getUri(), from, result.getStatus());
+                CloudLogger.get().debug("Handled HTTP {} {} forwarded by node {} ({})", packet.getMethod(), packet.getUri(), from, result.getStatus());
             } catch (Exception e) {
                 CloudLogger.get().exception("Failed to handle the HTTP request forwarded by node {}", e, from);
                 result = new NodeHttpForwardResultPacket(500, Map.of("Content-Type", "application/json"),

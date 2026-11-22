@@ -83,14 +83,14 @@ public final class NodeCommand extends Command implements TabComplete {
         sender.info("Node certificate§8: §b{} §8| §rserial§8: §b{}", own.getSubjectX500Principal().getName(), ClusterCertificates.serialOf(own));
         sender.info("  valid§8: §b{} §8until §b{} §8(§r{}§8)", CertificateModule.formatDate(own.getNotBefore().getTime()), CertificateModule.formatDate(own.getNotAfter().getTime()),
                 expiry(own.getNotAfter().getTime(), now));
-        sender.info("Cluster CA§8: §b{} §8| §rserial§8: §b{} §8| §rca.key on this node§8: {}", ca.getSubjectX500Principal().getName(), ClusterCertificates.serialOf(ca),
+        sender.info("Cluster CA§8: §b{} §8| §rserial§8: §b{} §8| §rCA key on this node§8: {}", ca.getSubjectX500Principal().getName(), ClusterCertificates.serialOf(ca),
                 certificates.hasCaKey() ? "§aYes" : "§7No");
         sender.info("  valid§8: §b{} §8until §b{} §8(§r{}§8)", CertificateModule.formatDate(ca.getNotBefore().getTime()), CertificateModule.formatDate(ca.getNotAfter().getTime()),
                 expiry(ca.getNotAfter().getTime(), now));
         for (Peer peer : cluster.peers()) {
             CertificateModule.CertStatus status = module.statusOf(peer.name());
             X509Certificate presented = peer.connected() ? ClusterNetwork.peerCertificate(peer.channel()) : null;
-            sender.info("§b{} §8| §rserial§8: §b{} §8| §rexpires§8: §b{} §8({}§8) §8| §rca.key§8: {} §8| §rconnection uses serial§8: §b{}", peer.name(),
+            sender.info("§b{} §8| §rserial§8: §b{} §8| §rexpires§8: §b{} §8({}§8) §8| §rCA key§8: {} §8| §rserial in use§8: §b{}", peer.name(),
                     status == null ? "?" : status.serial(), status == null ? "?" : CertificateModule.formatDate(status.notAfter()),
                     status == null ? "§7unknown" : expiry(status.notAfter(), now), status != null && status.caKey() ? "§aYes" : "§7No",
                     presented == null ? "§7-" : ClusterCertificates.serialOf(presented));
@@ -140,7 +140,7 @@ public final class NodeCommand extends Command implements TabComplete {
         ClusterManager cluster = PocketCloud.instance().cluster();
         HeadElection election = cluster.election();
         if (!cluster.clustered()) {
-            sender.info("This node (§b{}§r) runs §balone §rand is always head. Use §bnode add <name> <address> §rto create a cluster.", cluster.nodeName());
+            sender.info("This node §8(§b{}§8) §rruns §balone§r. Use §bnode add <name> <address> [port] §rto create a cluster.", cluster.nodeName());
             return true;
         }
 
@@ -233,12 +233,12 @@ public final class NodeCommand extends Command implements TabComplete {
             String token = PocketCloud.instance().cluster().addNode(name, address, port);
             // The token contains the node's private key: never print it (the console output also goes to the log files).
             java.nio.file.Path file = ClusterManager.writeJoinTokenFile(name, token);
-            sender.success("Node §b{} §radded. Its join token was saved to §b{}§r (it contains a private key, keep it secret).", name, file);
-            sender.info("Copy the file to the new node and start it once with: §bjava -jar pocketcloud.jar --join <path to {}>", file.getFileName());
-            sender.info("Delete the file afterwards.");
+            sender.success("Node §b{} §rhas been §aadded§r.", name);
+            sender.info("Join token§8: §b{} §8(§rcontains a private key, keep it secret§8)", file);
+            sender.info("Copy it to the new node, start that node once with §bjava -jar pocketcloud.jar --join <path to {}>§r, then delete the file.", file.getFileName());
             int members = PocketCloud.instance().cluster().members().size();
             if (members == 2) {
-                sender.warn("With 2 nodes the majority is 2: until §b{} §rhas joined, there is no head and no new servers are started.", name);
+                sender.warn("No new servers are started until §b{} §rhas joined §8(§rwith 2 nodes, both must be online§8)§r.", name);
             }
         } catch (Exception e) {
             sender.error("Could not add node §b{}§r: {}", name, e.getMessage());
@@ -249,7 +249,7 @@ public final class NodeCommand extends Command implements TabComplete {
     private boolean handleRemove(CommandSender sender, CommandContext ctx) {
         String name = ctx.argString("node");
         try {
-            if (PocketCloud.instance().cluster().removeNode(name)) sender.success("Node §b{} §rremoved. It can no longer connect.", name);
+            if (PocketCloud.instance().cluster().removeNode(name)) sender.success("Node §b{} §rhas been §cremoved§r. It can no longer connect.", name);
             else sender.error("The node §b{} §rdoes not exist.", name);
         } catch (Exception e) {
             sender.error("Could not remove node §b{}§r: {}", name, e.getMessage());

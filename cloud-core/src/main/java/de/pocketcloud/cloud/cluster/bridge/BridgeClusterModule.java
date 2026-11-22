@@ -129,7 +129,7 @@ public final class BridgeClusterModule implements ClusterModule {
     @Override
     public void onPeerGone(String name) {
         int removed = PocketCloud.instance().players().removePlayersOfNode(name);
-        if (removed > 0) CloudLogger.get().info("Removed §b{} §rplayer(s) of the proxies of node §b{}§r.", removed, name);
+        if (removed > 0) CloudLogger.get().debug("Removed {} player(s) of the proxies of node {}", removed, name);
     }
 
     // ------------------------------------------------------------------ bridge packet relay
@@ -162,7 +162,8 @@ public final class BridgeClusterModule implements ClusterModule {
 
         Packet packet = PocketCloud.instance().packets().get(relay.getPacketName());
         if (!(packet instanceof ClientboundPacket clientbound)) {
-            CloudLogger.get().warn("Node §b{} §rrelayed an unknown bridge packet §b{}§r.", from, relay.getPacketName());
+            CloudLogger.get().warn("Node §b{} §rsent a message this node does not know. Do all nodes run the same version?", from);
+            CloudLogger.get().debug("Unknown relayed bridge packet {} from {}", relay.getPacketName(), from);
             return;
         }
 
@@ -236,7 +237,7 @@ public final class BridgeClusterModule implements ClusterModule {
         try {
             switch (request.getAction()) {
                 case COMMAND -> {
-                    CloudLogger.get().info("Node §b{} §rexecutes §b{} §ron §b{}§r.", from, request.getArgument(), server.name());
+                    CloudLogger.get().info("Executing §b{} §ron §b{} §8(§rfrom §b{}§8)§r.", request.getArgument(), server.name(), from);
                     server.dispatch(request.getArgument())
                             .thenSuccess(result -> cluster.respond(channel, request, NodeServerActionResultPacket.ok(null, result.write())))
                             .failure(e -> cluster.respond(channel, request, NodeServerActionResultPacket.failed(String.valueOf(e.getMessage()))));

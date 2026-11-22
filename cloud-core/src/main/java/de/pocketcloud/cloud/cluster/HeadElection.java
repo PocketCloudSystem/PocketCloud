@@ -91,7 +91,7 @@ public final class HeadElection {
 
         if (state == NodeState.HEAD) {
             if (alive.size() < quorum) {
-                CloudLogger.get().warn("§cLost the majority §8(§b{}§8/§b{}§8)§r, stepping down as head.", alive.size(), quorum);
+                CloudLogger.get().warn("Only §b{}§8/§b{} §rnodes are reachable. This node is §cno longer the head §runtil a majority is back.", alive.size(), cluster.members().size());
                 state = NodeState.ISOLATED;
                 head = null;
             }
@@ -117,7 +117,7 @@ public final class HeadElection {
 
         if (alive.size() < quorum) {
             if (state != NodeState.ISOLATED) {
-                CloudLogger.get().warn("Only §b{}§8/§b{} §rnodes reachable, no majority. This node is §cisolated§r.", alive.size(), cluster.members().size());
+                CloudLogger.get().warn("Only §b{}§8/§b{} §rnodes are reachable. No new servers are started until a majority is back.", alive.size(), cluster.members().size());
             }
             state = NodeState.ISOLATED;
             head = null;
@@ -138,7 +138,7 @@ public final class HeadElection {
         votes.add(cluster.nodeName());
         state = NodeState.CANDIDATE;
         claimDeadline = now + CLAIM_TIMEOUT_MS;
-        CloudLogger.get().info("Claiming §bhead §rfor term §b{}§r...", claimTerm);
+        CloudLogger.get().debug("Claiming head for term {}", claimTerm);
 
         if (votes.size() >= quorum) {
             becomeHead(claimTerm);
@@ -177,7 +177,8 @@ public final class HeadElection {
         state = NodeState.HEAD;
         headSince = System.currentTimeMillis();
         saveTerm();
-        CloudLogger.get().success("This node is now §bhead §8(§rterm §b{}§8)§r.", term);
+        CloudLogger.get().success("§b{} §8(§rthis node§8) §ris now the §bhead§r.", head);
+        CloudLogger.get().debug("Head term: {}", term);
         cluster.broadcast(() -> new HeadAnnouncePacket(newTerm));
         cluster.onHeadChanged(head);
     }
@@ -208,7 +209,8 @@ public final class HeadElection {
         boolean changed = !from.equals(head);
         adoptTerm(announcedTerm, from);
         if (changed) {
-            CloudLogger.get().info("§b{} §ris now head §8(§rterm §b{}§8)§r.", from, announcedTerm);
+            CloudLogger.get().info("§b{} §ris now the §bhead§r.", from);
+            CloudLogger.get().debug("Head term: {}", announcedTerm);
             cluster.onHeadChanged(from);
         }
     }
@@ -234,7 +236,7 @@ public final class HeadElection {
         }
 
         if (state == NodeState.HEAD && newHead != null && !newHead.equals(cluster.nodeName())) {
-            CloudLogger.get().warn("Node §b{} §ris head with a newer term, stepping down.", newHead);
+            CloudLogger.get().warn("§b{} §ris the head now. This node is §cno longer the head§r.", newHead);
         }
 
         if (newHead != null) {
@@ -261,7 +263,7 @@ public final class HeadElection {
 
     public synchronized void peerLeft(String name) {
         if (name.equals(head) && state != NodeState.HEAD) {
-            CloudLogger.get().warn("Head §b{} §rleft the cluster.", name);
+            CloudLogger.get().debug("Head {} is shutting down", name);
             head = null;
         }
     }

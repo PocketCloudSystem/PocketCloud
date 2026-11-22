@@ -41,7 +41,7 @@ Forwarded requests time out after 8 s. Errors produced by forwarding:
 | `504` | `Node <name> did not answer: ...` |
 | `502` | `Unexpected answer from node <name>.` |
 
-The receiving node logs `Handled HTTP POST /v1/servers/start forwarded by node node-2 (200).`
+With debug logging the receiving node logs `Handled HTTP POST /v1/servers/start forwarded by node node-2 (200)`.
 
 ## Server routes
 

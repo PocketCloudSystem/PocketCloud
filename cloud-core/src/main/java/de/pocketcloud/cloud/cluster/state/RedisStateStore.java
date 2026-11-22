@@ -132,7 +132,7 @@ public final class RedisStateStore implements ClusterStateStore {
     private void markUnreachable(Throwable ex) {
         if (reachable) {
             reachable = false;
-            CloudLogger.get().error("§cLost connection §rto §bRedis§r: {}. Using the local state until it is back.", ex.getMessage());
+            CloudLogger.get().error("§cLost the connection §rto §bRedis§8: §c{}§r. Trying to reconnect...", ex.getMessage());
         }
     }
 

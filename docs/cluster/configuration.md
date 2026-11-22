@@ -9,7 +9,7 @@ Settings of this node. Created on the first start; `--join` fills in `name`, `se
 
 | Key | Default | Description |
 |-----|---------|-------------|
-| `name` | `node-1` | Unique name of the node in the cluster. Letters, digits, `-` and `_`, at most 32 characters. Must match the name in the node certificate, otherwise: `node.yml name X does not match the node certificate Y. Cluster disabled.` |
+| `name` | `node-1` | Unique name of the node in the cluster. Letters, digits, `-` and `_`, at most 32 characters. Must match the name in the node certificate, otherwise: `The name X in node.yml does not match the certificate of this node (Y). Running as a single node.` |
 | `advertisedAddress` | `127.0.0.1` | Address other nodes use to reach this node: the cluster port **and** its game servers. Never `0.0.0.0`. If you change it (or `clusterPort`) later, restart the node: the head corrects its entry in the member list and spreads it (`Member address of node-2 updated: ...`). See [Setup → Addresses](setup.md#addresses). |
 | `clusterBindAddress` | `0.0.0.0` | Address the cluster port binds to. |
 | `clusterPort` | `3657` | Port for node-to-node connections (TLS). |
@@ -65,14 +65,14 @@ port, and a cluster runs without Redis. If you enable it:
   The term is stored with the cluster id (serial of the cluster CA); a term of another cluster with the same
   `cloudName` is replaced, and a newer term of this cluster that no member reports is skipped (see
   [Troubleshooting](troubleshooting.md#redis)). **While Redis is unreachable no node can become head**
-  (`Cannot become head while Redis is unreachable: ...`);
+  (`This node cannot become the head while Redis is unreachable: ...`);
 - the provider (json/mysql) stays the persistent store; Redis caches templates, groups, whitelist and notifications
   in front of it;
 - on start a node removes the servers and players it left in Redis after a crash
-  (`Removed N stale server(s) and M player(s) of this node from the shared state.`).
+  (with debug logging: `Removed N stale server(s) and M player(s) of this node from the shared state`).
 
 If Redis cannot be reached at startup the node logs `Could not connect to Redis: ...` and
-`Falling back to the local state. This only works with a single node.`
+`Running without Redis. This only works with a single node.`
 
 ### Other keys that matter in a cluster
 
@@ -125,8 +125,8 @@ or with `PATCH /v1/templates/{name}` and a body like `{"nodes": ["node-1", "node
 `template info <template>` shows both. On load the cloud warns about templates that are disabled because of them:
 
 ```text
-The proxy template Proxy has no nodes set and is disabled in the cluster. Use template nodes Proxy <node,...> to choose the nodes for its proxies.
-The static template SkyBlock has no staticNode set and is disabled in the cluster. Use template staticnode SkyBlock <node> to choose the node its static servers live on.
+Proxies of Proxy cannot start until you choose their nodes with template nodes Proxy <node,...>.
+Static servers of SkyBlock cannot start until you choose their node with template staticnode SkyBlock <node>.
 ```
 
 ## Files in storage/internal
