@@ -166,7 +166,7 @@ public final class ServerRecovery implements ClusterModule {
         for (Map.Entry<String, String> decision : List.copyOf(decisions.entrySet())) {
             decisions.remove(decision.getKey());
             LocalServerRecord record = candidates.get(decision.getKey());
-            if (record != null) apply(record, decision.getValue(), "head");
+            if (record != null) apply(record, decision.getValue(), "decided by the head");
         }
 
         if (!candidates.isEmpty()) {
@@ -200,7 +200,7 @@ public final class ServerRecovery implements ClusterModule {
         if (candidates.remove(record.uuid) == null) return;
         dirty = true;
         if (KILL.equals(decision)) {
-            CloudLogger.get().warn("Server §b{} §rof the last run was §cwritten off §8(§r{}§8)§r, killing it §8(§rpid {}§8)§r.", record.name, by, record.pid);
+            CloudLogger.get().warn("Server §b{} §rof the last run was §cwritten off §ror replaced §8(§r{}§8)§r, killing it §8(§rpid {}§8)§r.", record.name, by, record.pid);
             cleanup(record, true);
             return;
         }
@@ -284,7 +284,7 @@ public final class ServerRecovery implements ClusterModule {
                 String decision = decide(from, record);
                 result.put(record.uuid, decision);
                 if (KILL.equals(decision)) protectedServers.remove(from + "/" + record.name);
-                CloudLogger.get().info("Node §b{} §rstill runs §b{} §rfrom before its restart: {}", from, record.name,
+                if (cluster.throttle("report:" + from + "/" + record.uuid)) CloudLogger.get().info("Node §b{} §rstill runs §b{} §rfrom before its restart: {}", from, record.name,
                         ADOPT.equals(decision) ? "§aadopt" : "§ckill §r(written off or replaced)");
             }
         }
@@ -376,14 +376,14 @@ public final class ServerRecovery implements ClusterModule {
     private void handleKill(String from, HeadKillServerPacket packet) {
         LocalServerRecord candidate = candidates.remove(packet.getUuid());
         if (candidate != null) {
-            CloudLogger.get().warn("Head §b{}§r: §b{} §ris {}, killing it.", from, candidate.name, packet.getReason());
+            CloudLogger.get().warn("Head §b{} §rorders to kill §b{}§r: {}.", from, candidate.name, packet.getReason());
             cleanup(candidate, true);
             dirty = true;
             return;
         }
         PocketCloud.instance().servers().get(packet.getServerName()).ifPresent(server -> {
             if (!(server instanceof CloudServer cs) || cs.remote() || !cs.uuid().toString().equals(packet.getUuid())) return;
-            CloudLogger.get().warn("Head §b{}§r: §b{} §ris {}, stopping this duplicate.", from, cs.name(), packet.getReason());
+            CloudLogger.get().warn("Head §b{} §rorders to stop the duplicate §b{}§r: {}.", from, cs.name(), packet.getReason());
             cs.stop(true);
         });
     }
