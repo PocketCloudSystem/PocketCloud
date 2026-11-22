@@ -30,6 +30,8 @@ public final class ServerConsoleMonitorScreen extends Screen {
     private static final Pattern CSI_SEQUENCE = Pattern.compile("\u001B\\[[0-?]*[ -/]*[@-~]");
     private static final Pattern SGR_PARAMS = Pattern.compile("^\u001B\\[([0-9;]*)m$");
 
+    private static final String LEAVE = ".leave";
+
     private ILogger logger;
     private volatile ServerLogStream stream;
 
@@ -179,6 +181,8 @@ public final class ServerConsoleMonitorScreen extends Screen {
                             serverName
                     );
                 }
+            } else if (stream.awaitingEnd()) {
+                // A server of another node: its node still sends the last lines.
             } else {
                 printInfoMessage(
                         "§8[§c!§8] §rThe server §b{} §rhas been stopped. Press §bCTRL + C §rto §ccancel §ror continue waiting.",
@@ -209,7 +213,7 @@ public final class ServerConsoleMonitorScreen extends Screen {
 
         logger = CloudLogger.tmp();
 
-        showStatus("§rCurrently streaming §b" + serverName);
+        showStatus("§rCurrently streaming §b" + serverName + " §8(§bCTRL + C §ror §b" + LEAVE + " §rto leave§8)");
 
         ServerConsoleOutputHandler outputHandler = new ServerConsoleOutputHandler();
         OutputManager.set(outputHandler);
@@ -222,6 +226,11 @@ public final class ServerConsoleMonitorScreen extends Screen {
     @Override
     public void handleInput(String input) {
         if (input.trim().isEmpty()) return;
+        // Leaves the screen like CTRL + C, for consoles without signals (e.g. stdin from a pipe).
+        if (input.trim().equalsIgnoreCase(LEAVE)) {
+            PocketCloud.instance().screens().reset();
+            return;
+        }
         CloudServer server = (CloudServer) PocketCloud.instance().servers().get(serverName).orElse(null);
         if (server != null) {
             server.dispatch(input);
