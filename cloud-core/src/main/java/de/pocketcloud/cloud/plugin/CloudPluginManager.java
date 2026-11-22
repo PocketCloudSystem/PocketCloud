@@ -1,5 +1,6 @@
 package de.pocketcloud.cloud.plugin;
 
+import de.pocketcloud.cloud.util.PocketCloudPaths;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.event.impl.plugin.PluginDisableEvent;
@@ -28,7 +29,7 @@ public final class CloudPluginManager implements Tickable, Loadable {
 
     private final Map<String, CloudPlugin> plugins = new ConcurrentHashMap<>();
     private final JarCloudPluginLoader pluginLoader = new JarCloudPluginLoader();
-    private final Path pluginsFolder = Paths.get("storage/plugins");
+    private final Path pluginsFolder = PocketCloudPaths.storage().plugins().asPath();
 
     public void load() {
         CloudLogger.get().info("Loading plugins...");

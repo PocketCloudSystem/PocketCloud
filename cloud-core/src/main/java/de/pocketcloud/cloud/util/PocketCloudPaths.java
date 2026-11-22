@@ -31,25 +31,40 @@ public final class PocketCloudPaths {
 
     public static final String GROUPS = "groups";
 
+    /** Created at startup. software, inGame, libraries and plugins are created after config.yml is loaded ({@code paths}). */
     public static final List<String> ALL_DIRECTORIES = List.of(
             STORAGE,
             STORAGE_CONFIGS,
             STORAGE_TIMINGS,
             STORAGE_BACKUPS,
             STORAGE_INTERNAL,
-            STORAGE_INGAME,
             STORAGE_CRASHES,
             STORAGE_CRASHES_SERVER,
             STORAGE_CRASHES_CLOUD,
-            STORAGE_LIBRARIES,
-            STORAGE_PLUGINS,
-            STORAGE_SOFTWARE,
             STORAGE_STATIC_SERVERS,
             TMP,
             TEMPLATES,
             TEMPLATES_GLOBAL,
             GROUPS
     );
+
+    private static volatile String softwarePath = STORAGE_SOFTWARE;
+    private static volatile String inGamePath = STORAGE_INGAME;
+    private static volatile String librariesPath = STORAGE_LIBRARIES;
+    private static volatile String pluginsPath = STORAGE_PLUGINS;
+
+    /** Applies the custom folder locations of {@code paths} in config.yml (once, at startup). */
+    public static void configure(String software, String inGame, String libraries, String plugins) {
+        softwarePath = software;
+        inGamePath = inGame;
+        librariesPath = libraries;
+        pluginsPath = plugins;
+    }
+
+    /** The folders that can be moved with {@code paths} in config.yml, as currently configured. */
+    public static List<Path> configurableDirectories() {
+        return List.of(Path.of(softwarePath), Path.of(inGamePath), Path.of(librariesPath), Path.of(pluginsPath));
+    }
 
     public static Node storage() {
         return new Node("storage");
@@ -97,7 +112,7 @@ public final class PocketCloudPaths {
         }
 
         public Node inGame() {
-            return with("inGame");
+            return isStorageRoot() ? new Node(inGamePath) : with("inGame");
         }
 
         public Node staticServers() {
@@ -117,19 +132,23 @@ public final class PocketCloudPaths {
         }
 
         public Node libraries() {
-            return with("libraries");
+            return isStorageRoot() ? new Node(librariesPath) : with("libraries");
         }
 
         public Node plugins() {
-            return with("plugins");
+            return isStorageRoot() ? new Node(pluginsPath) : with("plugins");
         }
 
         public Node software() {
-            return with("software");
+            return isStorageRoot() ? new Node(softwarePath) : with("software");
         }
 
         public Node global() {
             return with("global");
+        }
+
+        private boolean isStorageRoot() {
+            return parts.size() == 1 && parts.getFirst().equals(STORAGE);
         }
 
         public Node with(String name) {

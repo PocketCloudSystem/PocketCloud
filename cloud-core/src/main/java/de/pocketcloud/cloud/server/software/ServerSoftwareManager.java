@@ -1,5 +1,6 @@
 package de.pocketcloud.cloud.server.software;
 
+import de.pocketcloud.cloud.util.PocketCloudPaths;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializer;
@@ -151,7 +152,7 @@ public final class ServerSoftwareManager implements IWriteSoftwareProvider, Load
 
     @Override
     public void preload() {
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(Path.of("storage/software/"), "*.json")) {
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(PocketCloudPaths.storage().software().asPath(), "*.json")) {
             for (Path file : stream) {
                 if (Files.isRegularFile(file)) {
                     ServerSoftware software = null;

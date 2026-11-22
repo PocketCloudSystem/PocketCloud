@@ -21,6 +21,29 @@ as head (single-node mode).
 
 ## config.yml
 
+### paths
+
+```yaml
+paths:
+  software: storage/software/
+  inGame: storage/inGame/
+  libraries: storage/libraries/
+  plugins: storage/plugins/
+```
+
+| Key | Default | Description |
+|-----|---------|-------------|
+| `paths.software` | `storage/software/` | Server software (jars, binaries, default configs, bridge). |
+| `paths.inGame` | `storage/inGame/` | In-game files (languages, `whitelist.json`, `notificationList.json`). |
+| `paths.libraries` | `storage/libraries/` | Libraries (`libraries.json` and the extracted libraries). |
+| `paths.plugins` | `storage/plugins/` | Cloud plugins and their data folders. |
+
+Relative paths start in the cloud folder, absolute paths (e.g. `/srv/pocketcloud/software/`) can point anywhere.
+Missing folders are created at startup. Changes need a restart; existing files are not moved, so move the folder
+yourself before you change the path. The paths are per node: in a cluster every node reads its own `config.yml`.
+Several nodes on one machine can share the software folder; do not share `inGame` between nodes with the `json`
+provider, because each node writes its own whitelist and notification list there.
+
 ### cluster
 
 ```yaml

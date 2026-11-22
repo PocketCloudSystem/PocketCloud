@@ -5,6 +5,7 @@ import de.pocketcloud.cloud.config.sub.ClusterConfiguration;
 import de.pocketcloud.cloud.config.sub.HttpServerConfiguration;
 import de.pocketcloud.cloud.config.sub.MySqlConfiguration;
 import de.pocketcloud.cloud.config.sub.NetworkConfiguration;
+import de.pocketcloud.cloud.config.sub.PathsConfiguration;
 import de.pocketcloud.cloud.config.sub.RedisConfiguration;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import eu.okaeri.configs.OkaeriConfig;
@@ -42,6 +43,9 @@ public final class MainConfig extends OkaeriConfig implements ICloudConfig {
     @Comment({"Whether the cloud should check your server properties/config for updates on startup."})
     private boolean checkProperties = true;
 
+    @Comment({"Custom locations of storage folders. Relative paths start in the cloud folder, absolute paths can point anywhere.", "Changes need a restart."})
+    private PathsConfiguration paths = new PathsConfiguration();
+
     @Comment({"The network configuration for the cloud."})
     private NetworkConfiguration network = new NetworkConfiguration();
 
@@ -64,6 +68,7 @@ public final class MainConfig extends OkaeriConfig implements ICloudConfig {
             CloudLogger.get().warn("Invalid provider given in config, reset to default... §8(§bjson§8)");
         }
 
+        paths.validate();
         network.validate();
         httpServer.validate();
         mysqlSettings.validate();

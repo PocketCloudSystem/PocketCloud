@@ -187,6 +187,8 @@ public final class PocketCloud implements CloudAPI {
 
         services.register(Loader.class, new Loader());
         services.register(MainConfig.class, loadYmlConfig(MainConfig.class, PocketCloudPaths.storage().configs().with("config.yml").asPath()));
+        PocketCloudPaths.configure(config().paths().software(), config().paths().inGame(), config().paths().libraries(), config().paths().plugins());
+        FileUtils.createDirs(PocketCloudPaths.configurableDirectories().toArray(Path[]::new));
         services.register(LogSettingsConfig.class, loadYmlConfig(LogSettingsConfig.class, PocketCloudPaths.storage().configs().with("log_settings.yml").asPath()));
         services.register(ServerSettingsConfig.class, loadYmlConfig(ServerSettingsConfig.class, PocketCloudPaths.storage().configs().with("server_settings.yml").asPath()));
         services.register(NodeConfig.class, loadYmlConfig(NodeConfig.class, PocketCloudPaths.storage().configs().with("node.yml").asPath()));

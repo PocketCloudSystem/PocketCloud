@@ -1,5 +1,6 @@
 package de.pocketcloud.cloud.plugin.loader;
 
+import de.pocketcloud.cloud.util.PocketCloudPaths;
 import de.pocketcloud.cloud.plugin.CloudPlugin;
 import de.pocketcloud.cloud.plugin.CloudPluginClassLoader;
 import de.pocketcloud.cloud.plugin.CloudPluginDescription;
@@ -59,7 +60,7 @@ public final class JarCloudPluginLoader {
                 if (!CloudPlugin.class.isAssignableFrom(mainClass))
                     throw new PluginLoadFailedException("Main class does not extend CloudPlugin");
 
-                Path dataFolder = Paths.get("storage/plugins/", description.name());
+                Path dataFolder = PocketCloudPaths.storage().plugins().with(description.name()).asPath();
                 if (!Files.exists(dataFolder))
                     Files.createDirectories(dataFolder);
 
