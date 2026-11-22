@@ -123,6 +123,7 @@ public final class TemplateReplicator implements ClusterModule {
         this.jsonMeta = !"mysql".equalsIgnoreCase(PocketCloud.instance().config().provider());
         headVersions.load();
         applied.load();
+        keepServedVersions(); // versions this node served as head before a restart count as taken over
         loadPause();
         FileUtils.removeDirectory(directory.resolve("tmp"));
         FileUtils.removeDirectory(directory.resolve("staging"));
@@ -1093,7 +1094,8 @@ public final class TemplateReplicator implements ClusterModule {
             }
             headVersions.put(unit, taken);
             CloudLogger.get().info("Template §b{} §rwas at version §b{} §rhere, the cluster has version §b{} §8(§rfrom §b{}§8)§r: took it over before serving.",
-                    unit.display(), mine == null ? "-" : (scan == null ? mine.version() + " (folder missing)" : mine.version()), candidate.version(), candidate.node());
+                    unit.display(), mine == null ? "-" : (scan == null ? mine.version() + " (folder missing)" : mine.version()), candidate.version(),
+                    candidate.node().equals(self) ? "the history of this node" : candidate.node());
             return 2;
         }
 

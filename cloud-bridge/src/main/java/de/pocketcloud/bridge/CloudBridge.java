@@ -94,6 +94,7 @@ public final class CloudBridge implements CloudAPI {
 
         ServerHandshakeRequestPacket.create(
                 environmentConfig().localServerName(),
+                environmentConfig().localServerUuid(),
                 ProcessHandle.current().pid(),
                 platformPlugin.maxPlayers()
         ).sendRequest().then(res -> {
@@ -160,6 +161,7 @@ public final class CloudBridge implements CloudAPI {
 
         ServerHandshakeRequestPacket.create(
                 environmentConfig().localServerName(),
+                environmentConfig().localServerUuid(),
                 ProcessHandle.current().pid(),
                 platformPlugin().maxPlayers()
         ).sendRequest(5000).then(res -> {

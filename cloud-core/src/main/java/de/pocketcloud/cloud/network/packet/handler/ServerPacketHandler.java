@@ -45,6 +45,15 @@ public final class ServerPacketHandler implements PacketListener {
             packet.sendResponse(new ServerHandshakeResponsePacket(VerificationStatus.DENIED), sender);
             return;
         }
+        String uuid = packet.getServerUuid();
+        if (uuid != null && !uuid.isEmpty() && !uuid.equalsIgnoreCase(server.uuid().toString())) {
+            // A stale process of an older server with the same name (e.g. an orphan that is being killed while its
+            // replacement starts): it must not take over the new server's slot. The real server is not touched.
+            CloudLogger.get().warn("Denied server handshake request from §b{} §8(§b{}§8)§r: uuid §b{} §rdoes not match the expected server §b{}§r (stale process).",
+                    packet.getServerName(), sender.address(), uuid, server.uuid());
+            packet.sendResponse(new ServerHandshakeResponsePacket(VerificationStatus.DENIED), sender);
+            return;
+        }
         PocketCloud.instance().servers().handleHandshakeReceived(server.name());
         if (PocketCloud.instance().clients().getServer(sender).isEmpty() &&
                 !PocketCloud.instance().clients().isRegistered(server)) {
