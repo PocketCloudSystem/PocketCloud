@@ -153,3 +153,10 @@ range) is not reachable from the proxy's node, or the server registered with a w
 
 **Servers shut down when their node restarts:** the servers run an old bridge (see [Upgrading](upgrading.md#3-update-the-bridge-required)),
 or the restart took longer than `bridgeReconnectTimeout`.
+
+**`Unable to connect to downstream <server>` with `Signaling connection failed: ... could not be reached`** (proxy log,
+server on another machine): the proxy reaches the server's node by its public address, but the port is blocked.
+`connect timed out` means the packets are dropped (cloud firewall, e.g. Oracle Cloud security list or NSG);
+`connection refused` means they arrive but are rejected (local iptables, e.g. Oracle's default `REJECT` rule, or the
+port lies outside the opened range). Open the server port range for **TCP and UDP** from the proxy nodes in both
+places, and check with `ss -tulpn | grep <port>` that the server listens on `0.0.0.0`.

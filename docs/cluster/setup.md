@@ -17,7 +17,7 @@
 | Port | Protocol | Between | Purpose |
 |------|----------|---------|---------|
 | `3657` (`node.yml` → `clusterPort`) | TCP, TLS | all nodes, both directions | Node-to-node connections (mutual TLS). Every node connects to every other node. |
-| Server port range (`server_settings.yml` → `serverPortRanges.server`, default `40000`-`65535`) | UDP | all nodes, both directions | Proxies on one node connect to game servers on another node. |
+| Server port range (`server_settings.yml` → `serverPortRanges.server`, default `40000`-`65535`) | UDP **and TCP** | all nodes, both directions | Proxies on one node connect to game servers on another node. WaterdogPE uses NetherNet: HTTP signaling over TCP on the server port, then UDP. Narrow the range (e.g. `40000`-`40100`) so only a few ports must be opened. |
 | Proxy port range (`serverPortRanges.proxy`, default `19132`-`20000`) | UDP | players → proxy nodes | Player connections, only on the nodes that run proxies. |
 | `3656` (`config.yml` → `network.port`) | TCP | local only | Bridge connections. Keep `network.address: 127.0.0.1`: bridges always talk to the node on their own machine. |
 | `8080` (`config.yml` → `httpServer.port`) | TCP | clients → node | HTTP API, only if enabled. Every node can answer. |
