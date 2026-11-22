@@ -6,14 +6,19 @@ import de.pocketcloud.cloud.cluster.ClusterMembers;
 import de.pocketcloud.cloud.cluster.HeadElection;
 import de.pocketcloud.cloud.cluster.NodeSelector;
 import de.pocketcloud.cloud.cluster.Peer;
+import de.pocketcloud.cloud.cluster.net.ClusterNetwork;
 import de.pocketcloud.cloud.cluster.scheduling.SchedulingModule;
+import de.pocketcloud.cloud.cluster.security.CertificateModule;
+import de.pocketcloud.cloud.cluster.security.ClusterCertificates;
 import de.pocketcloud.cloud.console.command.flag.CommandFlag;
 import de.pocketcloud.cloud.console.command.Command;
 import de.pocketcloud.cloud.console.command.TabComplete;
 import de.pocketcloud.cloud.console.command.ctx.CommandContext;
 import de.pocketcloud.cloud.console.command.desc.CommandDescription;
 import de.pocketcloud.cloud.console.command.parameter.def.IntegerParameter;
+import de.pocketcloud.cloud.console.command.parameter.def.StringEnumParameter;
 import de.pocketcloud.cloud.console.command.parameter.def.StringParameter;
+import java.security.cert.X509Certificate;
 import de.pocketcloud.cloud.console.command.sender.CommandSender;
 import de.pocketcloud.cloud.console.command.sub.SubCommand;
 
@@ -41,6 +46,59 @@ public final class NodeCommand extends Command implements TabComplete {
                         .addFlag(CommandFlag.longFlag("stop"))));
         registerSubCommand(SubCommand.lambda("undrain", (sender, ctx) -> handleDrain(sender, ctx, false), true, sub ->
                 sub.addParameter(new StringParameter("node", false))));
+        registerSubCommand(SubCommand.lambda("cert", this::handleCert, true, sub ->
+                sub.addParameter(new StringEnumParameter("action", false, "info", "renew"))
+                        .addParameter(new StringParameter("node", true))));
+    }
+
+    /**
+     * {@code node cert info}: certificate of this node, the cluster CA and what the other nodes reported.
+     * {@code node cert renew [node]}: issues a new certificate (needs ca.key on this node), see {@link CertificateModule}.
+     */
+    private boolean handleCert(CommandSender sender, CommandContext ctx) {
+        ClusterManager cluster = PocketCloud.instance().cluster();
+        CertificateModule module = CertificateModule.get().orElse(null);
+        if (module == null) {
+            sender.error("Node certificates only exist in a cluster.");
+            return true;
+        }
+
+        if ("renew".equals(ctx.argString("action"))) {
+            String node = ctx.hasArg("node") ? ctx.argString("node") : cluster.nodeName();
+            sender.info("Renewing the certificate of §b{}§r...", node);
+            module.renew(node, "node cert renew on " + cluster.nodeName()).whenComplete((message, error) -> {
+                if (error == null) sender.success(message);
+                else sender.error("Could not renew the certificate of §b{}§r: {}", node,
+                        (error instanceof java.util.concurrent.CompletionException && error.getCause() != null ? error.getCause() : error).getMessage());
+            });
+            return true;
+        }
+
+        long now = System.currentTimeMillis();
+        ClusterCertificates certificates = cluster.certificates();
+        X509Certificate own = certificates.nodeCertificate();
+        X509Certificate ca = certificates.caCertificate();
+        sender.info("Node certificate§8: §b{} §8| §rserial§8: §b{}", own.getSubjectX500Principal().getName(), ClusterCertificates.serialOf(own));
+        sender.info("  valid§8: §b{} §8until §b{} §8(§r{}§8)", CertificateModule.formatDate(own.getNotBefore().getTime()), CertificateModule.formatDate(own.getNotAfter().getTime()),
+                expiry(own.getNotAfter().getTime(), now));
+        sender.info("Cluster CA§8: §b{} §8| §rserial§8: §b{} §8| §rca.key on this node§8: {}", ca.getSubjectX500Principal().getName(), ClusterCertificates.serialOf(ca),
+                certificates.hasCaKey() ? "§aYes" : "§7No");
+        sender.info("  valid§8: §b{} §8until §b{} §8(§r{}§8)", CertificateModule.formatDate(ca.getNotBefore().getTime()), CertificateModule.formatDate(ca.getNotAfter().getTime()),
+                expiry(ca.getNotAfter().getTime(), now));
+        for (Peer peer : cluster.peers()) {
+            CertificateModule.CertStatus status = module.statusOf(peer.name());
+            X509Certificate presented = peer.connected() ? ClusterNetwork.peerCertificate(peer.channel()) : null;
+            sender.info("§b{} §8| §rserial§8: §b{} §8| §rexpires§8: §b{} §8({}§8) §8| §rca.key§8: {} §8| §rconnection uses serial§8: §b{}", peer.name(),
+                    status == null ? "?" : status.serial(), status == null ? "?" : CertificateModule.formatDate(status.notAfter()),
+                    status == null ? "§7unknown" : expiry(status.notAfter(), now), status != null && status.caKey() ? "§aYes" : "§7No",
+                    presented == null ? "§7-" : ClusterCertificates.serialOf(presented));
+        }
+        return true;
+    }
+
+    private static String expiry(long notAfter, long now) {
+        String left = CertificateModule.remaining(notAfter, now);
+        return (notAfter - now <= java.time.Duration.ofDays(30).toMillis() ? "§e" : "§a") + left + " left";
     }
 
     /**
@@ -203,6 +261,10 @@ public final class NodeCommand extends Command implements TabComplete {
     @Override
     public Collection<String> onTabComplete(List<String> args) {
         if (args.size() == 2 && List.of("info", "remove", "drain", "undrain").contains(args.getFirst())) {
+            return PocketCloud.instance().cluster().members().all().stream().map(ClusterMembers.Member::name).toList();
+        }
+        if (args.size() == 2 && args.getFirst().equals("cert")) return List.of("info", "renew");
+        if (args.size() == 3 && args.getFirst().equals("cert") && args.get(1).equals("renew")) {
             return PocketCloud.instance().cluster().members().all().stream().map(ClusterMembers.Member::name).toList();
         }
         return List.of();

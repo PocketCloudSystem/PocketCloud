@@ -27,6 +27,7 @@ import io.netty.handler.ssl.SslHandshakeCompletionEvent;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.util.AttributeKey;
 
+import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import java.net.InetSocketAddress;
 import java.security.cert.Certificate;
@@ -49,8 +50,8 @@ public final class ClusterNetwork {
     private final ClusterManager manager;
     private final ClusterPacketRegistry registry = new ClusterPacketRegistry();
     private final RequestManager requests = new RequestManager();
-    private final SslContext serverContext;
-    private final SslContext clientContext;
+    private volatile SslContext serverContext;
+    private volatile SslContext clientContext;
     private final String codecToken;
     private final EventLoopGroup bossGroup;
     private final EventLoopGroup workerGroup;
@@ -88,6 +89,17 @@ public final class ClusterNetwork {
         IoHandlerFactory factory = Epoll.isAvailable() ? EpollIoHandler.newFactory() : NioIoHandler.newFactory();
         this.bossGroup = new MultiThreadIoEventLoopGroup(1, factory);
         this.workerGroup = new MultiThreadIoEventLoopGroup(2, factory);
+    }
+
+    /**
+     * Rebuilds the TLS contexts from the (renewed) certificates. Only new connections use them,
+     * open connections keep their session.
+     */
+    public void reloadTls(ClusterCertificates certificates) throws SSLException {
+        SslContext server = certificates.serverContext();
+        SslContext client = certificates.clientContext();
+        this.serverContext = server;
+        this.clientContext = client;
     }
 
     public void start(String bindAddress, int port) throws InterruptedException {
@@ -217,6 +229,19 @@ public final class ClusterNetwork {
             } catch (SSLPeerUnverifiedException e) {
                 return null;
             }
+        }
+    }
+
+    /** The certificate the other side presented on this connection, or null. */
+    public static X509Certificate peerCertificate(Channel channel) {
+        if (channel == null) return null;
+        SslHandler ssl = channel.pipeline().get(SslHandler.class);
+        if (ssl == null) return null;
+        try {
+            Certificate[] chain = ssl.engine().getSession().getPeerCertificates();
+            return chain.length > 0 && chain[0] instanceof X509Certificate cert ? cert : null;
+        } catch (SSLPeerUnverifiedException e) {
+            return null;
         }
     }
 

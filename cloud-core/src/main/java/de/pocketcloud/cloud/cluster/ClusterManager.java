@@ -74,7 +74,8 @@ public final class ClusterManager {
     @Getter
     private final ServerRecovery recovery = new ServerRecovery();
     private final List<ClusterModule> modules = List.of(new de.pocketcloud.cloud.cluster.sync.TemplateReplicator(), new BridgeClusterModule(),
-            new de.pocketcloud.cloud.cluster.scheduling.SchedulingModule(), recovery, new de.pocketcloud.cloud.cluster.data.ClusterDataModule());
+            new de.pocketcloud.cloud.cluster.scheduling.SchedulingModule(), recovery, new de.pocketcloud.cloud.cluster.data.ClusterDataModule(),
+            new de.pocketcloud.cloud.cluster.logs.LogStreamModule(), new de.pocketcloud.cloud.cluster.security.CertificateModule());
     private final NodeSelector selector = new NodeSelector(this);
 
     private LocalNodeHandle localNode;
@@ -521,6 +522,11 @@ public final class ClusterManager {
             PocketCloud.instance().servers().serversOfNode(name).forEach(s -> PocketCloud.instance().servers().removeRemoteServer(s.name()));
             for (ClusterModule module : modules) module.onPeerGone(name);
         }
+    }
+
+    /** New connections use the current (e.g. renewed) node certificate; open connections keep running. */
+    public void reloadTls() throws Exception {
+        if (network != null) network.reloadTls(certificates);
     }
 
     public List<ClusterModule> modules() {
