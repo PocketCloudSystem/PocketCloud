@@ -253,6 +253,7 @@ public final class CloudServer extends BaseCloudServer implements Tickable, Sync
                     "server-uuid", uuid.toString(),
                     "cloud-language", PocketCloud.instance().config().language(),
                     "server-timeout", template().settings().startupTimeout(),
+                    "network-reconnect-timeout", de.pocketcloud.cloud.cluster.recovery.ServerRecovery.reconnectTimeoutSeconds(),
                     "cloud-path", System.getProperty("user.dir"),
                     "network-address", PocketCloud.instance().config().network().address(),
                     "network-port", PocketCloud.instance().config().network().port(),

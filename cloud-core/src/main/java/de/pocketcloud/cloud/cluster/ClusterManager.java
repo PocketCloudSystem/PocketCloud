@@ -8,6 +8,7 @@ import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.cluster.bridge.BridgeClusterModule;
 import de.pocketcloud.cloud.cluster.net.ClusterNetwork;
 import de.pocketcloud.cloud.cluster.net.packet.*;
+import de.pocketcloud.cloud.cluster.recovery.ServerRecovery;
 import de.pocketcloud.cloud.cluster.redis.RedisConnection;
 import de.pocketcloud.cloud.cluster.security.ClusterCertificates;
 import de.pocketcloud.cloud.cluster.security.JoinToken;
@@ -58,7 +59,8 @@ public final class ClusterManager {
     private volatile ClusterStateStore state = new LocalStateStore();
     private volatile RedisConnection redis;
 
-    private static final long SCHEDULE_SETTLE_MS = 3_000;
+    /** A new head waits this long for the nodes' state reports before it schedules (spec: 5 s). */
+    private static final long SCHEDULE_SETTLE_MS = 5_000;
 
     private final Path directory = PocketCloudPaths.storage().internal().with("cluster").asPath();
     @Getter
@@ -69,8 +71,10 @@ public final class ClusterManager {
     private final Set<String> dialing = ConcurrentHashMap.newKeySet();
 
     /** Features on top of the node protocol. Add new modules here. */
+    @Getter
+    private final ServerRecovery recovery = new ServerRecovery();
     private final List<ClusterModule> modules = List.of(new de.pocketcloud.cloud.cluster.sync.TemplateReplicator(), new BridgeClusterModule(),
-            new de.pocketcloud.cloud.cluster.scheduling.SchedulingModule());
+            new de.pocketcloud.cloud.cluster.scheduling.SchedulingModule(), recovery);
     private final NodeSelector selector = new NodeSelector(this);
 
     private LocalNodeHandle localNode;
@@ -91,6 +95,7 @@ public final class ClusterManager {
 
         connectRedis();
         processJoinToken();
+        recovery.load();
 
         try {
             members.load();
@@ -177,6 +182,7 @@ public final class ClusterManager {
             }
         }
         if (scheduler != null) scheduler.shutdownNow();
+        recovery.close();
         if (network != null) {
             for (Peer peer : peers.values()) {
                 if (peer.connected()) peer.channel().writeAndFlush(new NodeLeavePacket()).awaitUninterruptibly(500);
@@ -434,6 +440,7 @@ public final class ClusterManager {
             if (!wasAlive) CloudLogger.get().info("Node §b{} §8(§b{}:{}§8) §ris §aconnected§r.", id.name(), id.address(), id.port());
         }
 
+        recovery.beforeFullReport(id.name());
         network.send(channel, fullReport());
         for (ClusterModule module : modules) module.onPeerConnected(id.name());
 
@@ -744,17 +751,20 @@ public final class ClusterManager {
                 CloudServer server = CloudServer.fromCluster(document);
                 if (server.nodeName() == null || server.nodeName().equals(nodeName())) continue;
                 reported.add(server.name());
-                servers.applyRemoteServer(server);
+                if (recovery.acceptRemote(from, server)) servers.applyRemoteServer(server);
             } catch (Exception e) {
                 CloudLogger.get().exception("Invalid server state from node {}", e, from);
             }
         }
 
-        for (String removed : packet.getRemoved()) servers.removeRemoteServer(removed);
+        for (String removed : packet.getRemoved()) {
+            if (recovery.acceptRemoval(from, removed)) servers.removeRemoteServer(removed);
+        }
 
         if (packet.isFullReport()) {
             for (CloudServer known : servers.serversOfNode(from)) {
-                if (!reported.contains(known.name()) && !known.status().isStarting() && known.status() != de.pocketcloud.api.server.ServerStatus.PENDING) {
+                if (!reported.contains(known.name()) && !known.status().isStarting() && known.status() != de.pocketcloud.api.server.ServerStatus.PENDING
+                        && !recovery.isProtected(from, known.name())) {
                     servers.removeRemoteServer(known.name());
                 }
             }
@@ -775,6 +785,7 @@ public final class ClusterManager {
 
     /** Called by the owning node whenever one of its servers changes. */
     public void broadcastServerState(CloudServer server, boolean removed) {
+        recovery.markDirty();
         if (!clustered || network == null) return;
         Map<String, Object> document = removed ? null : server.writeForCluster();
         broadcast(() -> removed

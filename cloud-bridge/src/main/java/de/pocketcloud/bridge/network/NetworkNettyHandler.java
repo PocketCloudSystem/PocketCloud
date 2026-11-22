@@ -39,8 +39,8 @@ public class NetworkNettyHandler extends SimpleChannelInboundHandler<CloudPacket
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         super.channelInactive(ctx);
-        CloudBridge.instance().logger().warn("Connection to the cloud was lost, shutting down...");
-        CloudBridge.instance().shutdown();
+        if (ctx.channel() != CloudBridge.instance().network().getChannel()) return; // an old connection
+        CloudBridge.instance().connectionLost();
     }
 
     @Override

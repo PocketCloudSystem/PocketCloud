@@ -29,7 +29,7 @@ public final class NetworkNettyClient {
 
     private final Set<CompletableFuture<Void>> pendingWrites = ConcurrentHashMap.newKeySet();
 
-    private Channel channel;
+    private volatile Channel channel;
 
     public NetworkNettyClient(SocketAddress address) {
         this.address = address;
@@ -47,7 +47,22 @@ public final class NetworkNettyClient {
         CloudBridge.instance().logger().info("§bNetwork connection §rhas been §aestablished §rtowards §b{}§r.", address.toString());
     }
 
+    public boolean connected() {
+        Channel c = channel;
+        return c != null && c.isActive();
+    }
+
+    /** Closes the current connection without shutting down the event loop (a reconnect follows). */
+    public void disconnect() {
+        Channel c = channel;
+        if (c != null) c.close();
+    }
+
     public CompletableFuture<Void> sendPacket(CloudboundPacket packet) {
+        Channel channel = this.channel;
+        if (channel == null || !channel.isActive()) {
+            return CompletableFuture.failedFuture(new IllegalStateException("Not connected to the cloud"));
+        }
         CompletableFuture<Void> future = new CompletableFuture<>();
         pendingWrites.add(future);
 

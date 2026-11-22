@@ -79,6 +79,14 @@ public final class ServerUtils {
         return true;
     }
 
+    /** Marks a port as used (a server process adopted after a restart already listens on it). */
+    public static void claimPort(int port) {
+        synchronized (LOCK) {
+            usedPorts.add(port);
+            usedPorts.add(port + 1);
+        }
+    }
+
     public static void removePort(int port) {
         synchronized (LOCK) {
             usedPorts.remove(port);

@@ -25,6 +25,10 @@ public final class ServerSettingsConfig extends OkaeriConfig implements ICloudCo
     @Comment({"Addresses used by the servers and proxies started by the cloud."})
     private ServerAddressesConfiguration addresses = new ServerAddressesConfiguration();
 
+    @Comment({"Seconds a server keeps trying to reconnect to its cloud node after losing the connection",
+            "(e.g. a restart of the cloud) before it shuts down. Servers of the last run are adopted on restart."})
+    private int bridgeReconnectTimeout = 60;
+
     @Override
     public void validate() {
         if (ServerStartMethods.get(startMethod.toLowerCase()).isEmpty()) {

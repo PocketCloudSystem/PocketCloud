@@ -31,6 +31,10 @@ public final class LocalServerConfig implements IEnvironmentConfig {
     @Setter
     private SocketAddress localNetworkAddress = null;
 
+    /** Seconds to keep reconnecting to the cloud node after the connection was lost. */
+    @Setter
+    private int reconnectTimeout = 60;
+
     public LocalServerConfig(SocketAddress cloudNetworkAddress, String networkAuthKey, boolean networkEncryption, int networkPacketSizeLimit, String localServerName, UUID localServerUuid, String localTemplateName, int localServerTimeout, Path cloudPath, String language) {
         this.cloudNetworkAddress = cloudNetworkAddress;
         this.networkAuthKey = networkAuthKey;
@@ -45,7 +49,7 @@ public final class LocalServerConfig implements IEnvironmentConfig {
     }
 
     public static LocalServerConfig fromMap(Map<String, Object> map) {
-        return new LocalServerConfig(
+        LocalServerConfig config = new LocalServerConfig(
                 new InetSocketAddress(map.get("network-address").toString(), Integer.parseInt(map.get("network-port").toString())),
                 map.get("network-auth-key").toString(),
                 Boolean.parseBoolean(map.get("network-encryption").toString()),
@@ -57,5 +61,13 @@ public final class LocalServerConfig implements IEnvironmentConfig {
                 Path.of(map.get("cloud-path").toString()),
                 map.get("cloud-language").toString()
         );
+        Object reconnect = map.get("network-reconnect-timeout");
+        if (reconnect != null) {
+            try {
+                config.reconnectTimeout(Integer.parseInt(reconnect.toString().trim()));
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        return config;
     }
 }

@@ -299,6 +299,19 @@ public final class CloudServerManager implements Tickable, IWriteServerProvider 
     }
 
     /**
+     * Takes over a server process of the last run of this node (see {@code ServerRecovery}).
+     *
+     * @return false if a server with that name exists
+     */
+    public boolean adopt(CloudServer server) {
+        if (servers.putIfAbsent(server.name(), server) != null) return false;
+        ServerUtils.addId(server.template(), server.id());
+        serverCounts.merge(server.templateName(), 1, Integer::sum);
+        latestServerStartTimes.put(server.templateName(), server.name());
+        return true;
+    }
+
+    /**
      * Applies the state of a server running on another node.
      */
     public void applyRemoteServer(CloudServer incoming) {

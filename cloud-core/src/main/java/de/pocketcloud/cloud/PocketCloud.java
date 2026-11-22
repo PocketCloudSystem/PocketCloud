@@ -111,7 +111,7 @@ public final class PocketCloud implements CloudAPI {
         }
 
         System.out.println("Cleaning tmp/ folder...");
-        FileUtils.removeDirectory(PocketCloudPaths.tmp().asPath());
+        de.pocketcloud.cloud.cluster.recovery.ServerRecovery.cleanTmpFolder();
 
         System.out.println("Checking for previous used versions...");
 
@@ -276,6 +276,7 @@ public final class PocketCloud implements CloudAPI {
         clearAndFlushStartNotifications();
 
         loader().loadAll();
+        cluster().recovery().ready();
 
         if (softwares().getAll().isEmpty()) {
             CloudLogger.get().warn("No software found, therefore no server can be started.");

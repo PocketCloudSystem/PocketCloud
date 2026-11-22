@@ -43,7 +43,14 @@ public final class CloudBridge implements CloudAPI {
 
     private VerificationStatus status = VerificationStatus.PENDING;
     private final ServiceRegistry registry = new ServiceRegistry();
-    private boolean shutdown = false;
+    private volatile boolean shutdown = false;
+    private volatile boolean reconnecting = false;
+    private volatile long reconnectDeadline = 0;
+    private final java.util.concurrent.ScheduledExecutorService reconnectExecutor = java.util.concurrent.Executors.newSingleThreadScheduledExecutor(r -> {
+        Thread t = new Thread(r, "PocketCloud-Reconnect");
+        t.setDaemon(true);
+        return t;
+    });
 
     public CloudBridge(IPlatformPlugin platformPlugin, ILogger logger, IEnvironmentConfig config, NativePlayerAdapter<?> nativePlayerAdapter) {
         instance = this;
@@ -115,11 +122,78 @@ public final class CloudBridge implements CloudAPI {
         platformPlugin().startTask(new UpdatePerformanceStatsTask(), 0, 10);
     }
 
+    /**
+     * The connection to the cloud node is gone (e.g. the node restarts). Instead of shutting down at once,
+     * try to reconnect every 2 seconds and verify again as the same server. Shuts down when the reconnect
+     * timeout ({@code network-reconnect-timeout}, default 60 s) passes.
+     */
+    public synchronized void connectionLost() {
+        if (shutdown || reconnecting) return;
+        if (status != VerificationStatus.VERIFIED) {
+            logger().warn("Connection to the cloud was lost before the server was verified, shutting down...");
+            shutdownOnMainThread();
+            return;
+        }
+        reconnecting = true;
+        int timeout = environmentConfig() instanceof de.pocketcloud.bridge.config.LocalServerConfig c ? c.reconnectTimeout() : 60;
+        reconnectDeadline = System.currentTimeMillis() + timeout * 1000L;
+        logger().warn("Connection to the cloud was lost, trying to reconnect for " + timeout + " seconds...");
+        reconnectExecutor.schedule(this::reconnectAttempt, 2, java.util.concurrent.TimeUnit.SECONDS);
+    }
+
+    private void reconnectAttempt() {
+        if (shutdown) return;
+        if (System.currentTimeMillis() > reconnectDeadline) {
+            logger().warn("Could not reconnect to the cloud in time, shutting down...");
+            reconnecting = false;
+            shutdownOnMainThread();
+            return;
+        }
+
+        try {
+            network().disconnect();
+            network().start();
+        } catch (Throwable t) {
+            scheduleNextAttempt();
+            return;
+        }
+
+        ServerHandshakeRequestPacket.create(
+                environmentConfig().localServerName(),
+                ProcessHandle.current().pid(),
+                platformPlugin().maxPlayers()
+        ).sendRequest(5000).then(res -> {
+            if (res.getVerificationStatus() == VerificationStatus.VERIFIED) {
+                reconnecting = false;
+                LocalCache.get(RandomCache.class).add(RandomCache.KEY_LAST_KEEP_ALIVE, System.currentTimeMillis());
+                logger().info("Reconnected to the cloud and verified again.");
+                constructKeepAlive().sendPacket();
+            } else {
+                logger().info("Cloud answered the reconnect with " + res.getVerificationStatus().name() + ", retrying...");
+                scheduleNextAttempt();
+            }
+        }, ServerHandshakeResponsePacket.class).failure((req, t, r) -> scheduleNextAttempt());
+    }
+
+    private void scheduleNextAttempt() {
+        if (shutdown) return;
+        reconnectExecutor.schedule(this::reconnectAttempt, 2, java.util.concurrent.TimeUnit.SECONDS);
+    }
+
+    public boolean stopping() {
+        return shutdown;
+    }
+
+    private void shutdownOnMainThread() {
+        platformPlugin().startTask(this::shutdown, 1, 0);
+    }
+
     public void shutdown() {
         if (shutdown) return;
         shutdown = true;
+        reconnectExecutor.shutdownNow();
         logger().warn("Plugin has been disabled, shutting down...");
-        DisconnectPacket.create(ServerDisconnectReason.SERVER_SHUTDOWN).sendPacket();
+        if (network().connected()) DisconnectPacket.create(ServerDisconnectReason.SERVER_SHUTDOWN).sendPacket();
         network().close();
 
         platformPlugin().shutdownServer();

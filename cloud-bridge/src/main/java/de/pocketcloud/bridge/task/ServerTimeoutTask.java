@@ -10,10 +10,12 @@ public final class ServerTimeoutTask implements Runnable {
 
     @Override
     public void run() {
+        if (CloudBridge.instance().reconnecting() || CloudBridge.instance().stopping()) return;
         long lastKeepAlive = LocalCache.get(RandomCache.class).get(RandomCache.KEY_LAST_KEEP_ALIVE, Long.class).orElseThrow(() -> new IllegalStateException("Started task too early"));
         if ((lastKeepAlive + timeout) <= System.currentTimeMillis()) {
-            CloudBridge.instance().logger().warn("Server timed out, shutting down...");
-            CloudBridge.instance().shutdown();
+            CloudBridge.instance().logger().warn("No keep alive from the cloud, reconnecting...");
+            CloudBridge.instance().connectionLost();
+            CloudBridge.instance().network().disconnect();
         }
     }
 }

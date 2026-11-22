@@ -40,7 +40,11 @@ public final class ServerPacketHandler implements PacketListener {
     @PacketHandler({ServerHandshakeRequestPacket.class})
     public void handle(ServerHandshakeRequestPacket packet, ServerClient sender) {
         var server = (CloudServer) PocketCloud.instance().servers().get(packet.getServerName()).orElse(null);
-        if (server == null) return;
+        if (server == null || server.remote()) {
+            // Unknown here (e.g. a reconnecting server that is not adopted yet): answer at once, the bridge retries.
+            packet.sendResponse(new ServerHandshakeResponsePacket(VerificationStatus.DENIED), sender);
+            return;
+        }
         PocketCloud.instance().servers().handleHandshakeReceived(server.name());
         if (PocketCloud.instance().clients().getServer(sender).isEmpty() &&
                 !PocketCloud.instance().clients().isRegistered(server)) {
@@ -60,6 +64,7 @@ public final class ServerPacketHandler implements PacketListener {
             server.data().maxPlayers(packet.getMaxPlayers());
             server.data().processId(packet.getProcessId());
             server.verifiedTime(Instant.now());
+            server.lastKeepAlive(Instant.now());
             server.verificationStatus(VerificationStatus.VERIFIED);
             server.addToProxies();
             server.sync();
