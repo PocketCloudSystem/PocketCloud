@@ -1,0 +1,144 @@
+# Configuration reference
+
+All files are in `storage/configs/` of each node. Restart the node after changing them.
+
+## node.yml
+
+Settings of this node. Created on the first start; `--join` fills in `name`, `seeds`, `advertisedAddress` and
+`clusterPort`.
+
+| Key | Default | Description |
+|-----|---------|-------------|
+| `name` | `node-1` | Unique name of the node in the cluster. Letters, digits, `-` and `_`, at most 32 characters. Must match the name in the node certificate, otherwise: `node.yml name X does not match the node certificate Y. Cluster disabled.` |
+| `advertisedAddress` | `127.0.0.1` | Address other nodes use to reach this node: the cluster port **and** its game servers. See [Setup → Addresses](setup.md#addresses). |
+| `clusterBindAddress` | `0.0.0.0` | Address the cluster port binds to. |
+| `clusterPort` | `3657` | Port for node-to-node connections (TLS). |
+| `maxMemoryMb` | `0` | Memory in MB this node may use for servers. `0` = no limit. The head only places a server on a node whose budget minus the `maxMemory` of the servers already running there is at least the template's `maxMemory`. |
+| `seeds` | `[]` | Nodes to contact when joining (`host:port`). Filled automatically by `--join`. A node with no seeds and no member list creates the member list itself. |
+
+Without cluster certificates in `storage/internal/cluster/` the node ignores everything but `name` and runs alone
+as head (single-node mode).
+
+## config.yml
+
+### cluster
+
+```yaml
+cluster:
+  strategy: least-memory
+```
+
+| Key | Default | Values |
+|-----|---------|--------|
+| `cluster.strategy` | `least-memory` | How the head picks the node for a new server (only used with more than one node). `least-memory`: the node with the most free memory budget (even distribution). `fill`: the node with the smallest free budget that is still enough (keeps machines free). `round-robin`: the next node in turn (by name). Invalid values are reset to `least-memory`. Only the head's setting is used, so keep it the same on all nodes. |
+
+### redis
+
+```yaml
+redis:
+  enabled: false
+  address: 127.0.0.1
+  port: 6379
+  username: ''
+  password: ''
+  database: 0
+  ssl: false
+  timeout: 3000
+```
+
+| Key | Default | Description |
+|-----|---------|-------------|
+| `enabled` | `false` | Use Redis for the shared cluster state and as a cache in front of the provider. |
+| `address`, `port` | `127.0.0.1`, `6379` | Redis server. |
+| `username`, `password` | empty | Leave empty when ACLs / no password are used. |
+| `database` | `0` | Database index. |
+| `ssl` | `false` | TLS to Redis. |
+| `timeout` | `3000` | Command timeout in ms (values below 100 are reset to 3000). |
+
+<a id="redis"></a>
+**Is Redis required?** No. Nodes exchange servers, players, templates and drain state directly over the cluster
+port, and a cluster runs without Redis. (The comment in the generated `config.yml` still says it is required as
+soon as more than one node is used; that is outdated.) If you enable it:
+
+- **all nodes must use the same Redis and the same `cloudName`**: keys are prefixed with `pc:<cloudName>:`
+  (`pc:<cloudName>:term`, `:head`, `:servers`, `:players`, `:ids:<template>`, `:node:<name>:servers`);
+- a new head writes its term to Redis with a check that no newer term is stored there (fencing). **While Redis is
+  unreachable no node can become head** (`Cannot become head while Redis is unreachable: ...`);
+- the provider (json/mysql) stays the persistent store; Redis caches templates, groups, whitelist and notifications
+  in front of it;
+- on start a node removes the servers and players it left in Redis after a crash
+  (`Removed N stale server(s) and M player(s) of this node from the shared state.`).
+
+If Redis cannot be reached at startup the node logs `Could not connect to Redis: ...` and
+`Falling back to the local state. This only works with a single node.`
+
+### Other keys that matter in a cluster
+
+| Key | Notes |
+|-----|-------|
+| `cloudName` | Used as the Redis namespace and in the name of the cluster CA. Use the same value on all nodes. |
+| `provider` | `json`: `templates/templates.json` and `groups/groups.json` are replicated between nodes. `mysql`: all nodes use the same database. Use the same provider on all nodes. |
+| `network.address`, `network.port` | Bridge port. Keep `127.0.0.1`; bridges only talk to the node on their machine. |
+| `httpServer.*` | Each node runs its own HTTP server with its own `auth-key`. Use the same key on all nodes if clients may talk to any node. |
+
+## server_settings.yml
+
+```yaml
+addresses:
+  public-address: 127.0.0.1
+  server-bind-address: 127.0.0.1
+  proxy-bind-address: 0.0.0.0
+bridgeReconnectTimeout: 60
+```
+
+| Key | Default | Description |
+|-----|---------|-------------|
+| `addresses.public-address` | `127.0.0.1` | Address sent to proxies when a server of this node is registered. In a cluster a loopback value is replaced by the node's `advertisedAddress`. |
+| `addresses.server-bind-address` | `127.0.0.1` | Address sub-servers (PowerNukkitX) bind to. In a cluster a loopback value is widened to `0.0.0.0` if the node's `advertisedAddress` is not loopback (logged once). Set the machine's private IP to listen on one interface only. |
+| `addresses.proxy-bind-address` | `0.0.0.0` | Address proxies (WaterdogPE) bind to. |
+| `bridgeReconnectTimeout` | `60` | Seconds a server keeps trying to reconnect to its node after losing the connection (e.g. a node restart) before it shuts down. Used at least 10 s. Also controls how long a restarted node waits for the head's decision about servers of its last run (this value + 30 s). Passed to the bridge as `network-reconnect-timeout` when a server starts. |
+
+`serverPortRanges` is unchanged, but remember that the server range must be reachable (UDP) between the nodes.
+
+## Template settings
+
+Two settings were added to every template (with the `json` provider in `templates/templates.json` → `settings`;
+existing templates get them on the next start):
+
+| Key | Default | Description |
+|-----|---------|-------------|
+| `nodes` | `[]` | Nodes servers of this template may run on. Empty = all nodes. **Required for proxy templates** in a cluster; a proxy template without `nodes` is disabled. |
+| `staticNode` | `""` | The node the static servers of this template live on. **Required when `staticServers` is true** in a cluster; otherwise the template is disabled. Static servers never start on another node, and their folders are not replicated. The static node must also be allowed by `nodes`. |
+
+Both are ignored on a single node. Set them with:
+
+```text
+template nodes <template>                       # show
+template nodes <template> <node,node,...|all>   # set ("all", "-" or "[]" clears)
+template staticnode <template>                  # show
+template staticnode <template> <node|none>      # set ("none" or "-" clears)
+```
+
+or with `PATCH /v1/templates/{name}` and a body like `{"nodes": ["node-1", "node-2"], "staticNode": ""}`.
+`template info <template>` shows both. On load the cloud warns about templates that are disabled because of them:
+
+```text
+The proxy template Proxy has no nodes set and is disabled in the cluster. Use template nodes Proxy <node,...> to choose the nodes for its proxies.
+The static template SkyBlock has no staticNode set and is disabled in the cluster. Use template staticnode SkyBlock <node> to choose the node its static servers live on.
+```
+
+## Files in storage/internal
+
+| Path | Content |
+|------|---------|
+| `storage/internal/auth-token` | Bridge auth token of this node. Persistent, so servers can reconnect after a node restart. |
+| `storage/internal/cluster/ca.crt` | Cluster CA certificate (all nodes). |
+| `storage/internal/cluster/ca.key` | Cluster CA private key. **Only on the node that created the cluster.** Needed for `node add`. |
+| `storage/internal/cluster/node.crt`, `node.key` | Certificate and key of this node. |
+| `storage/internal/cluster/members.json` | Member list (with version). |
+| `storage/internal/cluster/term.json` | Highest known head term and the term this node last voted in. |
+| `storage/internal/cluster/drain.json` | Nodes in drain mode. |
+| `storage/internal/cluster/local-servers.json` | Servers this node runs (name, uuid, template, id, port, pid, ...), used to adopt them after a restart. Also used in single-node mode. |
+| `storage/internal/cluster/template-sync/` | Template versions known to this node (`applied.json`) and, on a head, the versions it serves (`head.json`); temp folders. |
+| `storage/internal/cluster/template-history/` | Template history (last 10 versions per template), written by the head. |
+| `storage/internal/cluster/join-token` | Exists only between `--join` and the next start. |

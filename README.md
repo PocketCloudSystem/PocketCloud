@@ -36,6 +36,8 @@ Full documentation is available in the Wiki:
 
 👉 https://github.com/PocketCloudSystem/PocketCloud/wiki
 
+Running PocketCloud on several machines (cluster): see [docs/cluster](docs/cluster/README.md).
+
 ---
 
 ## 💬 Community
