@@ -56,18 +56,27 @@ public final class LocalTemplateStorage implements TemplateStorage {
     }
 
     @Override
-    public void copyGlobalTo(TemplateType type, Path target) {
+    public void copyGlobalTo(TemplateType type, Path target) throws IOException {
+        if (pausedSnapshot("templates/global/" + type.name().toLowerCase(), target, Set.of())) return;
         TemplateLocks.read(globalPath(type), () -> FileUtils.copyDirectory(globalPath(type), target, Set.of()));
     }
 
     @Override
-    public void copyGroupTo(String group, Path target) {
+    public void copyGroupTo(String group, Path target) throws IOException {
+        if (pausedSnapshot("groups/" + group, target, Set.of())) return;
         TemplateLocks.read(groupPath(group), () -> FileUtils.copyDirectory(groupPath(group), target, Set.of()));
     }
 
     @Override
-    public void copyTemplateTo(String template, Path target, Set<String> excludes) {
+    public void copyTemplateTo(String template, Path target, Set<String> excludes) throws IOException {
+        if (pausedSnapshot("templates/" + template, target, excludes)) return;
         TemplateLocks.read(localTemplatePath(template), () -> FileUtils.copyDirectory(localTemplatePath(template), target, excludes));
+    }
+
+    /** While the template sync of the folder is paused on this node, servers get the last distributed version. */
+    private static boolean pausedSnapshot(String unit, Path target, Set<String> excludes) throws IOException {
+        var replicator = de.pocketcloud.cloud.cluster.sync.TemplateReplicator.get();
+        return replicator.isPresent() && replicator.get().copyPausedSnapshot(new de.pocketcloud.cloud.cluster.sync.SyncUnit(unit), target, excludes);
     }
 
     @Override

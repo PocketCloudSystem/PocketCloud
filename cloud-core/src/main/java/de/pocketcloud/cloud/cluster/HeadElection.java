@@ -246,6 +246,13 @@ public final class HeadElection {
         }
     }
 
+    /** A stale newer term (stored in Redis, held by no member) is skipped: the next claim uses {@code staleTerm + 1}. */
+    synchronized void skipTo(long staleTerm) {
+        if (staleTerm <= votedTerm) return;
+        votedTerm = staleTerm;
+        saveTerm();
+    }
+
     /** Single-node mode: always head. */
     public synchronized void forceSingleHead() {
         state = NodeState.HEAD;

@@ -80,6 +80,10 @@ public final class TemplateReplicator implements ClusterModule {
     private TemplateWatcher watcher;
     private boolean jsonMeta;
     private volatile String knownHead;
+    /** The head before {@link #knownHead}; its answer wins ties when a new head collects the versions. */
+    private volatile String previousHead;
+    /** unit:version pairs whose history was already requested (followers keep a copy of the history). */
+    private final Set<String> historySynced = ConcurrentHashMap.newKeySet();
     private volatile boolean headReady;
     private volatile long lastFullSync;
     private volatile boolean running;
@@ -108,7 +112,9 @@ public final class TemplateReplicator implements ClusterModule {
                 NodeTemplateManifestRequestPacket.class, HeadTemplateManifestPacket.class,
                 NodeTemplateChunkRequestPacket.class, NodeTemplateChunkPacket.class,
                 NodeTemplatePushPacket.class, HeadTemplatePushAckPacket.class,
-                NodeTemplateAdminPacket.class, HeadTemplateAdminResultPacket.class);
+                NodeTemplateAdminPacket.class, HeadTemplateAdminResultPacket.class,
+                HeadTemplateStateRequestPacket.class, NodeTemplateStatePacket.class,
+                NodeTemplateHistoryRequestPacket.class, NodeTemplateHistoryPacket.class);
     }
 
     @Override
@@ -117,6 +123,7 @@ public final class TemplateReplicator implements ClusterModule {
         this.jsonMeta = !"mysql".equalsIgnoreCase(PocketCloud.instance().config().provider());
         headVersions.load();
         applied.load();
+        loadPause();
         FileUtils.removeDirectory(directory.resolve("tmp"));
         FileUtils.removeDirectory(directory.resolve("staging"));
 
@@ -178,6 +185,8 @@ public final class TemplateReplicator implements ClusterModule {
         long now = System.currentTimeMillis();
         String head = cluster.election().head();
         if (!Objects.equals(head, knownHead)) {
+            if (knownHead != null) previousHead = knownHead;
+            if (cluster.nodeName().equals(knownHead) && !cluster.nodeName().equals(head)) keepServedVersions();
             knownHead = head;
             headReady = false;
             lastFullSync = 0;
@@ -316,11 +325,19 @@ public final class TemplateReplicator implements ClusterModule {
                 if (!from.equals(cluster.election().head()) || !validUnit(version.getUnit())) return true;
                 submit(() -> onVersion(version));
             }
-            case NodeTemplateManifestRequestPacket request -> serveExecutor.execute(() -> cluster.respond(channel, request, manifestPacket(request.getUnit())));
+            case NodeTemplateManifestRequestPacket request -> serveExecutor.execute(() -> cluster.respond(channel, request,
+                    request.isPeerCopy() ? ownManifestPacket(request.getUnit()) : manifestPacket(request.getUnit())));
+            case HeadTemplateStateRequestPacket request -> serveExecutor.execute(() -> cluster.respond(channel, request, new NodeTemplateStatePacket(stateItems())));
+            case NodeTemplateHistoryRequestPacket request -> serveExecutor.execute(() -> cluster.respond(channel, request, historyPacket(request)));
             case NodeTemplateChunkRequestPacket request -> serveExecutor.execute(() -> cluster.respond(channel, request, chunk(request)));
             case NodeTemplatePushPacket push -> {
                 if (!isHead() || !headReady || !validUnit(push.getUnit())) {
                     cluster.respond(channel, push, new HeadTemplatePushAckPacket(false, "not ready"));
+                    return true;
+                }
+                if (paused(new SyncUnit(push.getUnit()))) {
+                    // the head's own copy is being edited: changes of other nodes wait until the sync is resumed here
+                    cluster.respond(channel, push, new HeadTemplatePushAckPacket(false, "the sync of this unit is paused on the head"));
                     return true;
                 }
                 cluster.respond(channel, push, new HeadTemplatePushAckPacket(true, null));
@@ -362,12 +379,72 @@ public final class TemplateReplicator implements ClusterModule {
         return new HeadTemplateManifestPacket(true, v.version(), v.deleted(), v.manifest().encode());
     }
 
+    /** The newest version this node knows of a unit: what it took over from a head, or what it served as head. */
+    private UnitVersion newestOwn(SyncUnit unit) {
+        UnitVersion h = headVersions.get(unit);
+        UnitVersion a = applied.get(unit);
+        if (h == null) return a;
+        if (a == null) return h;
+        return h.version() > a.version() ? h : a;
+    }
+
+    /** Whether this node can serve the files of a version: its folder matches, or all files are history blobs. */
+    private boolean contentAvailable(SyncUnit unit, Manifest manifest) {
+        try {
+            UnitScanner.Scan scan = scanner.scan(unit);
+            if (scan != null && scan.manifest().hash().equals(manifest.hash())) return true;
+        } catch (IOException ignored) {
+        }
+        return history.hasAllBlobs(unit, manifest);
+    }
+
+    /** Answer to a new head: the newest version this node knows of every unit. */
+    private List<NodeTemplateStatePacket.Item> stateItems() {
+        List<NodeTemplateStatePacket.Item> items = new ArrayList<>();
+        Set<String> ids = new TreeSet<>(headVersions.all().keySet());
+        ids.addAll(applied.all().keySet());
+        for (String id : ids) {
+            if (!validUnit(id) || (!jsonMeta && id.equals(SyncUnit.META_ID))) continue;
+            SyncUnit unit = new SyncUnit(id);
+            UnitVersion v = newestOwn(unit);
+            if (v == null) continue;
+            UnitVersion a = applied.get(unit);
+            boolean fromHead = a == null || v.version() > a.version();
+            items.add(new NodeTemplateStatePacket.Item(id, v.version(), v.hash(), v.deleted() || contentAvailable(unit, v.manifest()), fromHead));
+        }
+        return items;
+    }
+
+    /** Answer to a new head that wants to fetch this node's copy of a unit. */
+    private HeadTemplateManifestPacket ownManifestPacket(String id) {
+        if (!validUnit(id)) return new HeadTemplateManifestPacket(false, 0, false, null);
+        UnitVersion v = newestOwn(new SyncUnit(id));
+        if (v == null) return new HeadTemplateManifestPacket(false, 0, false, null);
+        return new HeadTemplateManifestPacket(true, v.version(), v.deleted(), v.manifest().encode());
+    }
+
+    private static final int MAX_HISTORY_PACKET = 900_000;
+
+    /** History records newer than the requested version, as many of the newest as fit into one packet. */
+    private NodeTemplateHistoryPacket historyPacket(NodeTemplateHistoryRequestPacket request) {
+        if (!validUnit(request.getUnit())) return new NodeTemplateHistoryPacket("");
+        List<TemplateHistory.Record> records = new ArrayList<>(history.records(new SyncUnit(request.getUnit())));
+        records.removeIf(r -> r.version <= request.getAfterVersion());
+        while (!records.isEmpty()) {
+            String data = Manifest.compress(GSON.toJson(records));
+            if (data.length() <= MAX_HISTORY_PACKET) return new NodeTemplateHistoryPacket(data);
+            records.removeFirst();
+        }
+        return new NodeTemplateHistoryPacket("");
+    }
+
     private NodeTemplateChunkPacket chunk(NodeTemplateChunkRequestPacket request) {
         try {
             if (!validUnit(request.getUnit())) throw new IllegalArgumentException("invalid unit");
             SyncUnit unit = new SyncUnit(request.getUnit());
             Path file = null;
-            if (isHead() && request.getSha() != null && request.getSha().matches("[0-9a-f]{64}") && history.hasBlob(unit, request.getSha())) {
+            // every node keeps history blobs (the head for all kept versions, followers for the versions they applied)
+            if (request.getSha() != null && request.getSha().matches("[0-9a-f]{64}") && history.hasBlob(unit, request.getSha())) {
                 file = history.blob(unit, request.getSha());
             }
             if (file == null) {
@@ -437,8 +514,17 @@ public final class TemplateReplicator implements ClusterModule {
             reconcile(new SyncUnit(item.unit()), item.version(), item.hash());
         }
         for (SyncUnit unit : localUnits()) {
+            if (known.contains(unit.id()) || paused(unit) || pushPending.containsKey(unit.id()) || dirty.containsKey(unit.id())) continue;
+            UnitVersion base = applied.get(unit);
+            UnitScanner.Scan scan = base == null || base.deleted() ? null : scanner.scan(unit);
+            if (scan != null && scan.manifest().hash().equals(base.hash())) {
+                // a version the head does not serve (e.g. a new head that could not get it): offer it again
+                CloudLogger.get().info("Head §b{} §rdoes not serve §b{}§r: offering this node's copy §8(§rversion §b{}§8)§r.", head, unit.display(), base.version());
+                push(unit, scan, new UnitVersion(base.version(), Manifest.EMPTY, false));
+                continue;
+            }
             // units the head does not know (created here while disconnected): send them via the normal path
-            if (!known.contains(unit.id()) && !paused(unit) && !pushPending.containsKey(unit.id())) markDirty(unit);
+            markDirty(unit);
         }
     }
 
@@ -457,6 +543,13 @@ public final class TemplateReplicator implements ClusterModule {
         UnitVersion base = applied.get(unit);
         boolean synced = base != null && !base.deleted();
 
+        if (base != null && version < base.version() && !hash.equals(base.hash()) && (scan != null || base.deleted())) {
+            // The head serves an older version than this node took over (e.g. a new head that could not reach this
+            // node when it collected the versions): never let it overwrite the newer copy, send it instead.
+            keepNewer(unit, base, scan, version);
+            return;
+        }
+
         if (DELETED.equals(hash)) {
             if (scan != null) {
                 deleteLocal(unit);
@@ -468,6 +561,7 @@ public final class TemplateReplicator implements ClusterModule {
         if (scan != null && scan.manifest().hash().equals(hash)) {
             pushedHashes.remove(unit.id());
             if (base == null || base.version() != version || !base.hash().equals(hash)) applied.put(unit, new UnitVersion(version, scan.manifest(), false));
+            afterApplied(unit, version, scan.manifest());
             return;
         }
         String pushed = pushedHashes.get(unit.id());
@@ -481,6 +575,57 @@ public final class TemplateReplicator implements ClusterModule {
             CloudLogger.get().warn("The local copy of §b{} §rdiffers from the cluster version; replacing it with version §b{}§r.", unit.display(), version);
         }
         pull(unit);
+    }
+
+    /** Sends this node's newer copy to a head that serves an older version (merged onto the head's version). */
+    private void keepNewer(SyncUnit unit, UnitVersion base, UnitScanner.Scan scan, long headVersion) throws Exception {
+        String head = knownHead;
+        if (head == null || head.equals(cluster.nodeName())) return;
+        if (cluster.throttle("template-newer:" + unit.id() + ":" + headVersion)) {
+            CloudLogger.get().warn("Head §b{} §rserves version §b{} §rof §b{}§r, but this node has the newer version §b{}§r: keeping it and sending it to the head.",
+                    head, headVersion, unit.display(), base.version());
+        }
+        if (scan == null) {
+            push(unit, null, base);
+            return;
+        }
+        HeadTemplateManifestPacket response = request(head, new NodeTemplateManifestRequestPacket(unit.id()), HeadTemplateManifestPacket.class);
+        Manifest headManifest = response.isFound() && !response.isDeleted() ? Manifest.decode(response.getManifest()) : Manifest.EMPTY;
+        // delta against the head's version (no false conflicts), numbered after this node's newer version
+        push(unit, scan, new UnitVersion(Math.max(base.version(), response.getVersion()), headManifest, false));
+    }
+
+    /**
+     * Follower: a version of the head is now in the local folder. Keeps its files as history blobs (the copy used
+     * while the sync is paused, and a source for a later head) and copies the head's history records once.
+     */
+    private void afterApplied(SyncUnit unit, long version, Manifest manifest) {
+        String head = knownHead;
+        if (head == null || head.equals(cluster.nodeName()) || !historySynced.add(unit.id() + ":" + version)) return;
+        try {
+            syncHistory(head, unit);
+            if (!history.ensureBlobs(unit, manifest, path -> livePath(unit, path))) historySynced.remove(unit.id() + ":" + version);
+        } catch (Exception e) {
+            historySynced.remove(unit.id() + ":" + version);
+            CloudLogger.get().debug("Could not copy the history of {} from {}: {}", unit.display(), head, e.getMessage());
+        }
+    }
+
+    /** Copies the history records of a unit that a node has and this node does not. */
+    private int syncHistory(String peer, SyncUnit unit) throws Exception {
+        List<TemplateHistory.Record> own = history.records(unit);
+        long after = own.isEmpty() ? 0 : own.getLast().version;
+        NodeTemplateHistoryPacket response = request(peer, new NodeTemplateHistoryRequestPacket(unit.id(), after), NodeTemplateHistoryPacket.class);
+        if (response.getRecords().isEmpty()) return 0;
+        List<TemplateHistory.Record> records = GSON.fromJson(Manifest.decompress(response.getRecords()), new TypeToken<List<TemplateHistory.Record>>() {}.getType());
+        int added = 0;
+        for (TemplateHistory.Record r : records) {
+            if (r.version <= after || r.manifest == null) continue;
+            history.add(unit, r);
+            after = r.version;
+            added++;
+        }
+        return added;
     }
 
     /** Local change detected by the watcher (after debounce + stability check). */
@@ -587,19 +732,25 @@ public final class TemplateReplicator implements ClusterModule {
         for (String path : target.entries().keySet()) safeRelative(path);
 
         UnitScanner.Scan scan = scanner.scan(unit);
+        UnitVersion have = applied.get(unit);
+        if (have != null && response.getVersion() < have.version() && !have.hash().equals(target.hash()) && (scan != null || have.deleted())) {
+            keepNewer(unit, have, scan, response.getVersion());
+            return;
+        }
         Map<String, String> local = scan == null ? Map.of() : scan.manifest().pathsBySha();
         Path staging = directory.resolve("staging").resolve(unit.key() + "-" + System.nanoTime());
         Map<String, Path> fetched = new HashMap<>();
         long bytes = 0;
         try {
             for (Manifest.Entry e : target.entries().values()) {
-                if (e.directory() || local.containsKey(e.sha()) || fetched.containsKey(e.sha())) continue;
+                if (e.directory() || local.containsKey(e.sha()) || fetched.containsKey(e.sha()) || history.hasBlob(unit, e.sha())) continue;
                 Path file = staging.resolve(e.sha());
                 fetch(head, unit, e.path(), e.sha(), file);
                 fetched.put(e.sha(), file);
                 bytes += e.size();
             }
-            boolean ok = applyToLive(unit, target, sha -> fetched.containsKey(sha) ? fetched.get(sha) : livePath(unit, local.get(sha)),
+            boolean ok = applyToLive(unit, target, sha -> fetched.containsKey(sha) ? fetched.get(sha)
+                            : local.containsKey(sha) ? livePath(unit, local.get(sha)) : history.blob(unit, sha),
                     scan == null ? null : scan.listing());
             if (!ok) {
                 CloudLogger.get().debug("{} changed locally while updating; retrying later", unit.display());
@@ -615,6 +766,7 @@ public final class TemplateReplicator implements ClusterModule {
         CloudLogger.get().info("Template §b{} §rupdated to version §b{} §8(§b{} §rfile(s) fetched, §b{} KB§8)§r.",
                 unit.display(), response.getVersion(), fetched.size(), (bytes + 1023) / 1024);
         if (unit.meta()) MetaReloader.reload();
+        afterApplied(unit, response.getVersion(), target);
     }
 
     // ------------------------------------------------------------------ applying
@@ -754,52 +906,296 @@ public final class TemplateReplicator implements ClusterModule {
 
     // ------------------------------------------------------------------ head side
 
-    /** This node became head: determine the valid version of every unit from the local copy. */
+    /** One node's answer about a unit while a new head collects the versions. */
+    private record Report(String node, NodeTemplateStatePacket.Item item) {
+        long version() {
+            return item.version();
+        }
+
+        String hash() {
+            return item.hash();
+        }
+
+        boolean deleted() {
+            return DELETED.equals(item.hash());
+        }
+    }
+
+    private static final long STATE_TIMEOUT_MS = 8_000;
+
+    /**
+     * This node became head. Its own disk copy is not trusted: it asks every reachable node which version of every
+     * unit it has, takes the newest version per unit (ties: the answer of the previous head, then its own) and
+     * fetches its content first if this node is behind. Local changes on this node that were not sent yet are merged
+     * onto that version. A missing local folder is never turned into a deletion unless the newest version is one.
+     */
     private void initHead() throws Exception {
         if (!isHead()) return;
-        Set<String> ids = new TreeSet<>();
+        String self = cluster.nodeName();
+        Map<String, List<Report>> reports = new HashMap<>();
+        for (NodeTemplateStatePacket.Item item : stateItems()) reports.computeIfAbsent(item.unit(), _ -> new ArrayList<>()).add(new Report(self, item));
+
+        Map<String, CompletableFuture<ResponsePacket>> pending = new LinkedHashMap<>();
+        for (Peer peer : cluster.peers()) {
+            if (!peer.connected()) continue;
+            CompletableFuture<ResponsePacket> future = new CompletableFuture<>();
+            HeadTemplateStateRequestPacket request = new HeadTemplateStateRequestPacket();
+            request.then(future::complete).failure((_, ex, reason) ->
+                    future.completeExceptionally(ex != null ? ex : new IllegalStateException(String.valueOf(reason))));
+            if (cluster.send(peer.name(), request)) pending.put(peer.name(), future);
+        }
+        long deadline = System.currentTimeMillis() + STATE_TIMEOUT_MS;
+        List<String> answered = new ArrayList<>();
+        for (Map.Entry<String, CompletableFuture<ResponsePacket>> e : pending.entrySet()) {
+            try {
+                ResponsePacket response = e.getValue().get(Math.max(1, deadline - System.currentTimeMillis()), TimeUnit.MILLISECONDS);
+                if (!(response instanceof NodeTemplateStatePacket state)) continue;
+                for (NodeTemplateStatePacket.Item item : state.getItems()) {
+                    if (!validUnit(item.unit())) continue;
+                    reports.computeIfAbsent(item.unit(), _ -> new ArrayList<>()).add(new Report(e.getKey(), item));
+                }
+                answered.add(e.getKey());
+            } catch (Exception ex) {
+                CloudLogger.get().warn("Node §b{} §rdid not report its template versions §8(§r{}§8)§r; it is compared again when it syncs.", e.getKey(), ex.getMessage());
+            }
+        }
+        if (!isHead()) return;
+        CloudLogger.get().info("Template replication: collected the template versions of §b{} §rnode(s) §8(§r{}§8)§r.", answered.size() + 1,
+                String.join(", ", answered.isEmpty() ? List.of(self) : concat(self, answered)));
+
+        Set<String> ids = new TreeSet<>(reports.keySet());
         for (SyncUnit unit : localUnits()) ids.add(unit.id());
-        ids.addAll(headVersions.all().keySet());
-        ids.addAll(applied.all().keySet());
         int changed = 0;
+        int fetched = 0;
         for (String id : ids) {
             if (!validUnit(id) || (!jsonMeta && id.equals(SyncUnit.META_ID))) continue;
+            if (!isHead()) return;
             SyncUnit unit = new SyncUnit(id);
-            UnitVersion prev = headVersions.get(unit);
-            UnitVersion app = applied.get(unit);
-            long base = Math.max(prev == null ? 0 : prev.version(), app == null ? 0 : app.version());
-            UnitScanner.Scan scan = scanner.scan(unit);
-            if (scan == null) {
-                boolean known = (prev != null && !prev.deleted()) || (app != null && !app.deleted());
-                if (known) {
-                    UnitVersion tomb = new UnitVersion(base + 1, Manifest.EMPTY, true);
-                    record(unit, tomb, prev == null ? (app == null ? null : app.manifest()) : prev.manifest(), cluster.nodeName(), "deleted", List.of());
-                    headVersions.put(unit, tomb);
-                    changed++;
-                } else if (prev == null && app != null) {
-                    headVersions.put(unit, app);
+            try {
+                switch (initUnit(unit, reports.getOrDefault(id, List.of()))) {
+                    case 1 -> changed++;
+                    case 2 -> fetched++;
+                    default -> {
+                    }
                 }
-                continue;
+            } catch (Exception e) {
+                CloudLogger.get().exception("Could not determine the cluster version of {}", e, unit.display());
             }
-            String hash = scan.manifest().hash();
-            boolean same = (prev != null && prev.hash().equals(hash)) || (app != null && app.hash().equals(hash));
-            if (!history.ensureBlobs(unit, scan.manifest(), path -> livePath(unit, path))) {
-                markDirty(unit);
-            }
-            long version = same ? Math.max(base, 1) : base + 1;
-            UnitVersion now = new UnitVersion(version, scan.manifest(), false);
-            boolean hasHistory = history.record(unit, version).isPresent();
-            if (!same || !hasHistory) {
-                record(unit, now, prev == null ? (app == null ? null : app.manifest()) : prev.manifest(), cluster.nodeName(),
-                        same ? "baseline" : (prev == null && app == null ? "initial version" : "changed while offline"), List.of());
-                if (!same) changed++;
-            }
-            headVersions.put(unit, now);
         }
         headReady = true;
-        CloudLogger.get().info("Template replication: this node is §6head §rand serves §b{} §runit(s) §8(§b{} §rnew version(s)§8)§r.",
-                headVersions.all().size(), changed);
+        CloudLogger.get().info("Template replication: this node is §6head §rand serves §b{} §runit(s) §8(§b{} §rnew version(s), §b{} §rtaken over from other nodes§8)§r.",
+                headVersions.all().size(), changed, fetched);
         for (Map.Entry<String, UnitVersion> e : headVersions.all().entrySet()) broadcastVersion(new SyncUnit(e.getKey()), null);
+    }
+
+    private static List<String> concat(String first, List<String> rest) {
+        List<String> list = new ArrayList<>();
+        list.add(first);
+        list.addAll(rest);
+        return list;
+    }
+
+    /** @return 0 unchanged, 1 new version, 2 newer version taken over from another node */
+    private int initUnit(SyncUnit unit, List<Report> reports) throws Exception {
+        String self = cluster.nodeName();
+        String previous = previousHead;
+        UnitScanner.Scan scan = scanner.scan(unit);
+        String localHash = scan == null ? null : scan.manifest().hash();
+        UnitVersion mine = newestOwn(unit);
+        long maxVersion = mine == null ? 0 : mine.version();
+        for (Report r : reports) maxVersion = Math.max(maxVersion, r.version());
+        // edits in this node's folder that no head has seen yet
+        boolean localChanges = scan != null && mine != null && (mine.deleted() || !mine.hash().equals(localHash));
+
+        // newest first; same version: the previous head's answer, then this node's, then the most common content
+        Map<String, Long> votes = new HashMap<>();
+        for (Report r : reports) votes.merge(r.version() + ":" + r.hash(), 1L, Long::sum);
+        List<Report> ordered = new ArrayList<>(reports);
+        ordered.sort(Comparator.<Report>comparingLong(Report::version).reversed()
+                .thenComparing(r -> !(r.node().equals(previous) || r.item().head()))
+                .thenComparing(r -> !r.node().equals(self))
+                .thenComparing(r -> -votes.get(r.version() + ":" + r.hash())));
+        Report best = ordered.isEmpty() ? null : ordered.getFirst();
+        UnitVersion prevServed = headVersions.get(unit);
+        Manifest previousManifest = mine == null || mine.deleted() ? null : mine.manifest();
+
+        if (best == null) {
+            if (scan == null) return 0;
+            UnitVersion now = new UnitVersion(Math.max(1, maxVersion + 1), scan.manifest(), false);
+            adoptLocal(unit, now, previousManifest, "initial version");
+            return 1;
+        }
+
+        if (best.deleted()) {
+            if (scan == null || (!localChanges && mine != null)) {
+                if (scan != null) {
+                    deleteLocal(unit);
+                    CloudLogger.get().info("Template §b{} §rwas deleted on the cluster §8(§rversion §b{}§8)§r, removed the copy here.", unit.display(), best.version());
+                }
+                UnitVersion tomb = new UnitVersion(best.version(), Manifest.EMPTY, true);
+                if (history.record(unit, tomb.version()).isEmpty()) record(unit, tomb, previousManifest, best.node(), "deleted", List.of());
+                headVersions.put(unit, tomb);
+                return prevServed != null && prevServed.version() == tomb.version() && prevServed.deleted() ? 0 : 2;
+            }
+            if (mine == null) {
+                // a stale folder this node never took over: the cluster's deletion wins
+                CloudLogger.get().warn("The local folder of §b{} §ris unknown to the cluster, which deleted it in version §b{}§r: removing it.", unit.display(), best.version());
+                deleteLocal(unit);
+                headVersions.put(unit, new UnitVersion(best.version(), Manifest.EMPTY, true));
+                return 2;
+            }
+            UnitVersion now = new UnitVersion(maxVersion + 1, scan.manifest(), false);
+            CloudLogger.get().warn("§b{} §rwas deleted on the cluster §8(§rversion §b{}§8)§r, but it was changed here afterwards: keeping it as version §b{}§r.",
+                    unit.display(), best.version(), now.version());
+            adoptLocal(unit, now, null, "recreated on " + self);
+            return 1;
+        }
+
+        if (best.hash().equals(localHash)) {
+            UnitVersion now = new UnitVersion(best.version(), scan.manifest(), false);
+            history.ensureBlobs(unit, now.manifest(), path -> livePath(unit, path));
+            if (history.record(unit, now.version()).isEmpty()) {
+                if (!best.node().equals(self)) syncHistorySafe(best.node(), unit);
+                if (history.record(unit, now.version()).isEmpty()) record(unit, now, previousManifest, best.node(), "baseline", List.of());
+            }
+            headVersions.put(unit, now);
+            return 0;
+        }
+
+        // This node is behind (or its folder is missing): take over the newest version whose content is reachable.
+        for (Report candidate : ordered) {
+            if (candidate.deleted()) break; // an older content version after a deletion would resurrect it
+            if (!candidate.item().available()) continue;
+            Manifest target = candidateManifest(unit, candidate, mine);
+            if (target == null || !target.hash().equals(candidate.hash())) continue;
+
+            Manifest result = target;
+            boolean merged = false;
+            if (localChanges) {
+                result = mergeLocal(unit, target, mine.deleted() ? Manifest.EMPTY : mine.manifest(), scan.manifest());
+                merged = !result.hash().equals(target.hash());
+            }
+            if (!materialize(unit, result, candidate.node(), scan)) {
+                CloudLogger.get().warn("§b{} §rchanged here while taking over version §b{}§r; trying the next source.", unit.display(), candidate.version());
+                scan = scanner.scan(unit);
+                continue;
+            }
+            if (!candidate.node().equals(self)) syncHistorySafe(candidate.node(), unit);
+            UnitVersion taken = new UnitVersion(candidate.version(), target, false);
+            if (history.record(unit, taken.version()).isEmpty()) record(unit, taken, previousManifest, candidate.node(), "taken over from " + candidate.node(), List.of());
+            if (merged) {
+                UnitVersion now = new UnitVersion(maxVersion + 1, result, false);
+                record(unit, now, target, self, "changed on " + self + " (merged onto version " + candidate.version() + ")", List.of());
+                headVersions.put(unit, now);
+                CloudLogger.get().warn("Template §b{} §rwas behind here §8(§rversion §b{}§r, cluster §b{}§8)§r and had local changes: merged them onto version §b{}§r, now version §b{}§r.",
+                        unit.display(), mine.version(), candidate.version(), candidate.version(), now.version());
+                return 1;
+            }
+            headVersions.put(unit, taken);
+            CloudLogger.get().info("Template §b{} §rwas at version §b{} §rhere, the cluster has version §b{} §8(§rfrom §b{}§8)§r: took it over before serving.",
+                    unit.display(), mine == null ? "-" : (scan == null ? mine.version() + " (folder missing)" : mine.version()), candidate.version(), candidate.node());
+            return 2;
+        }
+
+        // No reachable node can serve a newer version.
+        if (scan != null) {
+            UnitVersion now = new UnitVersion(maxVersion + 1, scan.manifest(), false);
+            CloudLogger.get().warn("No reachable node can serve version §b{} §rof §b{}§r: serving the local copy as version §b{}§r.",
+                    best.version(), unit.display(), now.version());
+            adoptLocal(unit, now, previousManifest, "local copy (newer version unreachable)");
+            return 1;
+        }
+        // Folder missing and no source: never a deletion. The head does not serve the unit until a node that has a
+        // copy offers it again (full sync of that node).
+        CloudLogger.get().warn("§b{} §ris missing here and no reachable node can serve version §b{}§r. It is not deleted; a node that has it sends it later.",
+                unit.display(), best.version());
+        headVersions.remove(unit);
+        return 0;
+    }
+
+    private void syncHistorySafe(String peer, SyncUnit unit) {
+        try {
+            int added = syncHistory(peer, unit);
+            if (added > 0) CloudLogger.get().info("Copied §b{} §rhistory entr{} of §b{} §rfrom §b{}§r.", added, added == 1 ? "y" : "ies", unit.display(), peer);
+        } catch (Exception e) {
+            CloudLogger.get().debug("Could not copy the history of {} from {}: {}", unit.display(), peer, e.getMessage());
+        }
+    }
+
+    /** Head: takes its own folder as a new version. */
+    private void adoptLocal(SyncUnit unit, UnitVersion now, Manifest previous, String note) throws IOException {
+        if (!history.ensureBlobs(unit, now.manifest(), path -> livePath(unit, path))) markDirty(unit);
+        record(unit, now, previous, cluster.nodeName(), note, List.of());
+        headVersions.put(unit, now);
+    }
+
+    /** The manifest of a version a node reported (this node: from its own stores). */
+    private Manifest candidateManifest(SyncUnit unit, Report candidate, UnitVersion mine) {
+        if (candidate.node().equals(cluster.nodeName())) return mine != null && mine.hash().equals(candidate.hash()) ? mine.manifest() : null;
+        try {
+            HeadTemplateManifestPacket response = request(candidate.node(), new NodeTemplateManifestRequestPacket(unit.id(), true), HeadTemplateManifestPacket.class);
+            if (!response.isFound() || response.isDeleted()) return null;
+            Manifest manifest = Manifest.decode(response.getManifest());
+            for (String path : manifest.entries().keySet()) safeRelative(path);
+            return manifest;
+        } catch (Exception e) {
+            CloudLogger.get().warn("Could not get version §b{} §rof §b{} §rfrom §b{}§8: §c{}", candidate.version(), unit.display(), candidate.node(), e.getMessage());
+            return null;
+        }
+    }
+
+    /** Applies the changes between {@code base} and {@code local} onto {@code target} (local changes win). */
+    private static Manifest mergeLocal(SyncUnit unit, Manifest target, Manifest base, Manifest local) {
+        SortedMap<String, Manifest.Entry> merged = new TreeMap<>(target.entries());
+        for (String path : Manifest.changed(base, local)) {
+            Manifest.Entry t = target.get(path);
+            Manifest.Entry b = base.get(path);
+            if (t != null && !t.directory() && (b == null || !t.sha().equals(b.sha())) && !t.sha().equals(local.get(path).sha())) {
+                CloudLogger.get().warn("§cConflict §rin §b{}§8/§b{}§r: changed on the cluster and on this node; the local change wins, the other version stays in the history.",
+                        unit.display(), path);
+            }
+            merged.put(path, local.get(path));
+        }
+        for (String path : Manifest.removed(base, local)) merged.remove(path);
+        addParentDirs(merged);
+        return new Manifest(merged);
+    }
+
+    /**
+     * Brings the local folder to {@code target}: files come from the folder itself, the history blobs, or are fetched
+     * from {@code source} (kept as blobs). Returns false if the folder changed meanwhile.
+     */
+    private boolean materialize(SyncUnit unit, Manifest target, String source, UnitScanner.Scan scan) throws Exception {
+        Map<String, String> local = scan == null ? Map.of() : scan.manifest().pathsBySha();
+        if (scan != null && scan.manifest().hash().equals(target.hash())) return true;
+        Path staging = directory.resolve("staging").resolve("head-" + unit.key() + "-" + System.nanoTime());
+        try {
+            for (Manifest.Entry e : target.entries().values()) {
+                if (e.directory() || local.containsKey(e.sha()) || history.hasBlob(unit, e.sha())) continue;
+                if (source.equals(cluster.nodeName())) throw new IOException("content of " + e.path() + " is missing");
+                Path file = staging.resolve(e.sha());
+                fetch(source, unit, e.path(), e.sha(), file);
+                history.addBlob(unit, e.sha(), file);
+            }
+        } finally {
+            FileUtils.removeDirectory(staging);
+        }
+        boolean ok = applyToLive(unit, target, sha -> local.containsKey(sha) ? livePath(unit, local.get(sha)) : history.blob(unit, sha),
+                scan == null ? null : scan.listing());
+        if (!ok) return false;
+        scanner.remember(unit, target);
+        history.ensureBlobs(unit, target, path -> livePath(unit, path));
+        if (unit.meta()) MetaReloader.reload();
+        return true;
+    }
+
+    /** This node stopped being head: what it served counts as taken over, so it is not sent back as a change. */
+    private void keepServedVersions() {
+        for (Map.Entry<String, UnitVersion> e : headVersions.all().entrySet()) {
+            SyncUnit unit = new SyncUnit(e.getKey());
+            UnitVersion a = applied.get(unit);
+            if (a == null || a.version() < e.getValue().version()) applied.put(unit, e.getValue());
+        }
     }
 
     private void record(SyncUnit unit, UnitVersion version, Manifest previous, String node, String note, List<String> conflicts) throws IOException {
@@ -864,7 +1260,7 @@ public final class TemplateReplicator implements ClusterModule {
                 return;
             }
             deleteLocal(unit);
-            UnitVersion tomb = new UnitVersion(current.version() + 1, Manifest.EMPTY, true);
+            UnitVersion tomb = new UnitVersion(Math.max(current.version(), push.getBaseVersion()) + 1, Manifest.EMPTY, true);
             record(unit, tomb, current.manifest(), from, "deleted on " + from, List.of());
             headVersions.put(unit, tomb);
             CloudLogger.get().info("Template §b{} §rwas deleted on §b{} §8(§rversion §b{}§8)§r, removing it on all nodes.", unit.display(), from, tomb.version());
@@ -940,7 +1336,7 @@ public final class TemplateReplicator implements ClusterModule {
             CloudLogger.get().warn("§cConflict §rin §b{}§8/§b{}§r: changed on §b{} §rand on §b{} §rat the same time. The later change from §b{} §rwins, the other version stays in the history §8(§rversion §b{}§8)§r.",
                     unit.display(), path, from, lastNode == null ? "another node" : lastNode, from, current == null ? 0 : current.version());
         }
-        UnitVersion now = new UnitVersion(current == null ? 1 : current.version() + 1, target, false);
+        UnitVersion now = new UnitVersion(Math.max(current == null ? 0 : current.version(), push.getBaseVersion()) + 1, target, false);
         String note = push.getNote() == null || push.getNote().isEmpty() ? "" : " (" + push.getNote() + ")";
         record(unit, now, exists ? current.manifest() : null, from, (conflicts.isEmpty() ? "changed on " + from : "changed on " + from + " (conflict)") + note, conflicts);
         headVersions.put(unit, now);
@@ -1004,8 +1400,8 @@ public final class TemplateReplicator implements ClusterModule {
         } else {
             Manifest target = record.manifest();
             for (Manifest.Entry e : target.entries().values()) {
-                if (!e.directory() && !history.hasBlob(unit, e.sha())) {
-                    CloudLogger.get().error("Cannot roll back §b{}§r: the content of §b{} §ris missing in the history.", unit.display(), e.path());
+                if (!e.directory() && !history.hasBlob(unit, e.sha()) && !fetchBlobFromPeers(unit, e)) {
+                    CloudLogger.get().error("Cannot roll back §b{}§r: the content of §b{} §ris missing in the history of all reachable nodes.", unit.display(), e.path());
                     return;
                 }
             }
@@ -1022,6 +1418,31 @@ public final class TemplateReplicator implements ClusterModule {
         }
         CloudLogger.get().success("Rolled back §b{} §rto version §b{} §8(§rnow version §b{}§8)§r, distributing it to all nodes.", unit.display(), version, next);
         broadcastVersion(unit, null);
+    }
+
+    /**
+     * A blob this head does not have (a version recorded while another node was head, or one this node never
+     * applied): fetch it from any node that still has it in its history or folder.
+     */
+    private boolean fetchBlobFromPeers(SyncUnit unit, Manifest.Entry entry) {
+        Path staging = directory.resolve("staging").resolve("blob-" + unit.key() + "-" + System.nanoTime());
+        try {
+            for (Peer peer : cluster.peers()) {
+                if (!peer.connected()) continue;
+                try {
+                    Path file = staging.resolve(entry.sha());
+                    fetch(peer.name(), unit, entry.path(), entry.sha(), file);
+                    history.addBlob(unit, entry.sha(), file);
+                    CloudLogger.get().info("Fetched §b{} §rof §b{} §rfor the rollback from §b{}§r.", entry.path(), unit.display(), peer.name());
+                    return true;
+                } catch (Exception e) {
+                    CloudLogger.get().debug("{} of {} not available on {}: {}", entry.path(), unit.display(), peer.name(), e.getMessage());
+                }
+            }
+            return false;
+        } finally {
+            FileUtils.removeDirectory(staging);
+        }
     }
 
     // ------------------------------------------------------------------ console
@@ -1086,6 +1507,17 @@ public final class TemplateReplicator implements ClusterModule {
     public void pause(SyncUnit unit) {
         if (unit == null) pausedAll = true;
         else paused.add(unit.id());
+        savePause();
+        // keep the last distributed version as blobs: servers starting here while paused are built from it
+        submit(() -> {
+            for (SyncUnit u : unit == null ? localUnits() : List.of(unit)) {
+                UnitVersion last = lastDistributed(u);
+                UnitScanner.Scan scan = scanner.scan(u);
+                if (last != null && !last.deleted() && scan != null && scan.manifest().hash().equals(last.hash())) {
+                    history.ensureBlobs(u, last.manifest(), path -> livePath(u, path));
+                }
+            }
+        });
     }
 
     public void resume(SyncUnit unit) {
@@ -1095,12 +1527,99 @@ public final class TemplateReplicator implements ClusterModule {
         } else {
             paused.remove(unit.id());
         }
+        savePause();
         // changes made while paused are picked up by a fresh scan; the head's versions by a full sync
         for (SyncUnit u : localUnits()) {
             if (unit == null || u.equals(unit)) markDirty(u);
         }
         if (unit != null) markDirty(unit);
         lastFullSync = 0;
+    }
+
+    private Path pauseFile() {
+        return directory.resolve("paused.json");
+    }
+
+    private static final class PauseState {
+        boolean all;
+        List<String> units = new ArrayList<>();
+    }
+
+    private void loadPause() {
+        Path file = pauseFile();
+        if (!Files.isRegularFile(file)) return;
+        try {
+            PauseState state = GSON.fromJson(Files.readString(file), PauseState.class);
+            if (state == null) return;
+            pausedAll = state.all;
+            if (state.units != null) state.units.stream().filter(TemplateReplicator::validUnit).forEach(paused::add);
+            if (pausedAll || !paused.isEmpty()) {
+                CloudLogger.get().warn("Template sync is still §cpaused §ron this node for§8: §b{}§r. Use §btemplate sync resume §rwhen done.",
+                        pausedAll ? "all templates" : String.join("§8, §b", paused.stream().map(id -> new SyncUnit(id).display()).sorted().toList()));
+            }
+        } catch (Exception e) {
+            CloudLogger.get().exception("Failed to read {}", e, file);
+        }
+    }
+
+    private synchronized void savePause() {
+        PauseState state = new PauseState();
+        state.all = pausedAll;
+        state.units = new ArrayList<>(new TreeSet<>(paused));
+        try {
+            Files.createDirectories(directory);
+            if (!state.all && state.units.isEmpty()) {
+                Files.deleteIfExists(pauseFile());
+                return;
+            }
+            Path tmp = directory.resolve("paused.json.tmp");
+            Files.writeString(tmp, GSON.toJson(state));
+            Files.move(tmp, pauseFile(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+        } catch (IOException e) {
+            CloudLogger.get().exception("Failed to save the template sync pause state", e);
+        }
+    }
+
+    /** The version of a unit that was last distributed to (head) or taken over by (follower) this node. */
+    private UnitVersion lastDistributed(SyncUnit unit) {
+        return isHead() ? headVersions.get(unit) : applied.get(unit);
+    }
+
+    /**
+     * Server preparation on this node while the sync of a unit is paused: if the folder differs from the last
+     * distributed version (half-finished edits), the server is built from that version (history blobs) instead.
+     *
+     * @return true if the files were copied from the last distributed version; false to copy the folder as usual
+     */
+    public boolean copyPausedSnapshot(SyncUnit unit, Path target, Set<String> excludes) throws IOException {
+        if (!running || !paused(unit)) return false;
+        UnitVersion last = lastDistributed(unit);
+        if (last == null || last.deleted()) return false;
+        UnitScanner.Scan scan = scanner.scan(unit);
+        if (scan != null && scan.manifest().hash().equals(last.hash())) return false;
+        if (!history.hasAllBlobs(unit, last.manifest())) {
+            CloudLogger.get().warn("Sync of §b{} §ris paused, but the files of version §b{} §rare not complete here: using the local copy.", unit.display(), last.version());
+            return false;
+        }
+        for (Manifest.Entry e : last.manifest().entries().values()) {
+            if (excluded(e.path(), excludes)) continue;
+            Path dst = target.resolve(e.path());
+            if (e.directory()) {
+                Files.createDirectories(dst);
+                continue;
+            }
+            Files.createDirectories(dst.getParent());
+            Files.copy(history.blob(unit, e.sha()), dst, StandardCopyOption.REPLACE_EXISTING);
+        }
+        CloudLogger.get().info("Sync of §b{} §ris paused here: used the last distributed version §b{} §r(not the local changes).", unit.display(), last.version());
+        return true;
+    }
+
+    private static boolean excluded(String path, Set<String> excludes) {
+        for (String ex : excludes) {
+            if (path.equals(ex) || (ex.endsWith("/") && path.startsWith(ex))) return true;
+        }
+        return false;
     }
 
     // ------------------------------------------------------------------ versions for server starts
@@ -1216,13 +1735,20 @@ public final class TemplateReplicator implements ClusterModule {
 
     /** Runs on the sync thread. Returns true if the unit was fetched. */
     private boolean ensureVersion(SyncUnit unit, long version, String hash, String serverName) throws Exception {
-        if (paused(unit)) {
-            CloudLogger.get().warn("Sync of §b{} §ris paused: starting §b{} §rwith the local copy.", unit.display(), serverName);
-            return false;
-        }
         UnitScanner.Scan scan = scanner.scan(unit);
         String local = scan == null ? null : scan.manifest().hash();
         if (hash.equals(local)) return false;
+        if (paused(unit)) {
+            // Never start from half-finished edits: use the last distributed version if this node has exactly the
+            // version the head expects (see copyPausedSnapshot), otherwise refuse so the head starts it elsewhere.
+            UnitVersion last = applied.get(unit);
+            if (last != null && !last.deleted() && last.hash().equals(hash) && history.hasAllBlobs(unit, last.manifest())) {
+                CloudLogger.get().info("Sync of §b{} §ris paused here: starting §b{} §rwith the last distributed version §b{}§r, not the local changes.",
+                        unit.display(), serverName, last.version());
+                return false;
+            }
+            throw new IllegalStateException("the sync of " + unit.display() + " is paused on " + cluster.nodeName() + " and it does not have version " + version);
+        }
 
         UnitVersion base = applied.get(unit);
         boolean synced = base != null && !base.deleted();

@@ -14,8 +14,8 @@ import lombok.experimental.Accessors;
 @Accessors(fluent = true)
 public final class RedisConfiguration extends OkaeriConfig implements ICloudConfig {
 
-    @Comment({"Whether Redis is used for the shared cluster state and as cache in front of the provider.",
-            "Required as soon as more than one node is used. Single-machine setups can leave it disabled."})
+    @Comment({"Whether Redis is used as cache in front of the provider and as optional shared state of a cluster",
+            "(head fencing, server snapshot for faster recovery). Optional: a cluster works without Redis."})
     private boolean enabled = false;
 
     @Comment({"Redis server address"})

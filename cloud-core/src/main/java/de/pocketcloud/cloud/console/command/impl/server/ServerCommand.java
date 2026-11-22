@@ -156,8 +156,14 @@ public final class ServerCommand extends Command {
         sender.info("CPU Usage§8: §b{}", FormatUtils.usagePercentage(server.data().cpuUsage(), true));
         sender.info("Used Software§8: §b{}", server.template().serverSoftware().name());
         sender.info("Process Id§8: §b{}", Objects.requireNonNullElse(server.data().processId(), "§cUnknown"));
-        sender.info("Path§8: §b{}", server.path().toAbsolutePath().toString());
-        sender.info("Channel§8: §b{}", server.client().isPresent() ? server.client().get().address().toString() : "No channel yet");
+        var node = server.node();
+        if (server.remote()) {
+            sender.info("Node§8: §b{} §8(§r{}§8, §ron another node§8)", node == null ? server.nodeName() : node.name(), node == null ? "?" : node.address());
+        } else {
+            if (node != null && PocketCloud.instance().cluster().clustered()) sender.info("Node§8: §b{} §8(§rthis node§8)", node.name());
+            sender.info("Path§8: §b{}", server.path().toAbsolutePath().toString());
+            sender.info("Channel§8: §b{}", server.client().isPresent() ? server.client().get().address().toString() : "No channel yet");
+        }
         return true;
     }
 

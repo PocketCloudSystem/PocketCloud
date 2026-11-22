@@ -593,25 +593,53 @@ public final class ClusterManager {
     }
 
     /**
-     * Writes term and head to Redis, but only if no newer term is stored there.
+     * Writes term and head to Redis, but only if no newer term of this cluster is stored there.
+     * <p>
+     * The stored term carries the cluster id (serial of the cluster CA). A term written by another cluster with the
+     * same {@code cloudName} (e.g. a cluster that was set up again) is ignored and overwritten. A newer term of this
+     * cluster that no reachable member has (all report lower terms, e.g. the term files were lost) is skipped: the
+     * next claim uses the stored term + 1.
      *
-     * @return false if Redis knows a newer term (this node must not become head)
+     * @return false if Redis knows a newer term (this node must not become head now)
      */
     boolean fenceHead(long term) {
         RedisConnection connection = redis;
         if (connection == null) return true;
+        String clusterId = ClusterCertificates.serialOf(certificates.caCertificate());
         try {
-            Long ok = connection.sync().eval(
+            String result = connection.sync().eval(
                     "local cur = tonumber(redis.call('GET', KEYS[1]) or '0') " +
+                            "local owner = redis.call('HGET', KEYS[2], 'cluster') " +
+                            "if cur > 0 and owner ~= ARGV[4] then " +
+                            "redis.call('SET', KEYS[1], ARGV[1]) " +
+                            "redis.call('HSET', KEYS[2], 'name', ARGV[2], 'term', ARGV[1], 'since', ARGV[3], 'cluster', ARGV[4]) " +
+                            "return 'foreign:' .. cur .. ':' .. tostring(owner) end " +
                             "if tonumber(ARGV[1]) > cur then " +
                             "redis.call('SET', KEYS[1], ARGV[1]) " +
-                            "redis.call('HSET', KEYS[2], 'name', ARGV[2], 'term', ARGV[1], 'since', ARGV[3]) " +
-                            "return 1 end return 0",
-                    io.lettuce.core.ScriptOutputType.INTEGER,
+                            "redis.call('HSET', KEYS[2], 'name', ARGV[2], 'term', ARGV[1], 'since', ARGV[3], 'cluster', ARGV[4]) " +
+                            "return 'ok' end return 'newer:' .. cur",
+                    io.lettuce.core.ScriptOutputType.VALUE,
                     new String[]{connection.key("term"), connection.key("head")},
-                    String.valueOf(term), nodeName(), String.valueOf(System.currentTimeMillis()));
-            if (ok != null && ok == 1L) return true;
-            CloudLogger.get().warn("Redis already knows a newer head term than §b{}§r.", term);
+                    String.valueOf(term), nodeName(), String.valueOf(System.currentTimeMillis()), clusterId);
+            if ("ok".equals(result)) return true;
+            String[] parts = String.valueOf(result).split(":", 3);
+            if (parts[0].equals("foreign")) {
+                CloudLogger.get().warn("Redis held head term §b{} §rof another cluster §8(§rid §b{}§8, §rthis cluster §b{}§8)§r with the same cloud name; replaced it with term §b{}§r.",
+                        parts[1], parts.length > 2 && !parts[2].equals("false") ? parts[2] : "unknown", clusterId, term);
+                return true;
+            }
+            long stored = parts.length > 1 ? Long.parseLong(parts[1]) : 0;
+            long now = System.currentTimeMillis();
+            boolean held = peers.values().stream().anyMatch(p -> p.alive(now) && p.term() >= stored);
+            if (!held) {
+                if (throttle("redis-term-" + stored)) {
+                    CloudLogger.get().warn("Redis knows head term §b{}§r, but no member of this cluster reports it §8(§rthis node: §b{}§8)§r. Claiming term §b{} §rnext.",
+                            stored, term, stored + 1);
+                }
+                election.skipTo(stored);
+            } else {
+                CloudLogger.get().warn("Redis already knows a newer head term than §b{}§r.", term);
+            }
             return false;
         } catch (RuntimeException e) {
             CloudLogger.get().error("Cannot become head while Redis is unreachable: {}", e.getMessage());

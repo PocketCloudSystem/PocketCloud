@@ -10,7 +10,9 @@ import java.util.*;
 import java.util.stream.Stream;
 
 /**
- * Head only: the last {@value #KEEP} versions of every unit, in {@code template-history/<unit>/}.
+ * The last {@value #KEEP} versions of every unit, in {@code template-history/<unit>/}. The head records them;
+ * followers copy the records from the head after taking over a version and keep the blobs of the versions they
+ * applied, so the history survives a head change.
  * <p>
  * {@code versions.json} holds the version records (time, node, changed files, full manifest).
  * {@code blobs/<sha256>} holds the file contents, stored once per content hash. Every file of every kept
@@ -54,6 +56,14 @@ public final class TemplateHistory {
 
     public boolean hasBlob(SyncUnit unit, String sha) {
         return Files.isRegularFile(blob(unit, sha));
+    }
+
+    /** Whether every file of the manifest is stored as blob. */
+    public boolean hasAllBlobs(SyncUnit unit, Manifest manifest) {
+        for (Manifest.Entry e : manifest.entries().values()) {
+            if (!e.directory() && !hasBlob(unit, e.sha())) return false;
+        }
+        return true;
     }
 
     /**
