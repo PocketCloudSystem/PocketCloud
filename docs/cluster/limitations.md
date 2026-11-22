@@ -12,16 +12,18 @@
   nodes keep working, but adding nodes requires a new CA. Back up `ca.key`.
 - **No certificate revocation list.** `node remove` revokes by membership only; re-adding a removed name accepts its
   old certificate again (see [Security](security.md#removing-a-node)).
-- **Template history lives on the head that recorded it** and does not move to a new head.
-- **Template sync pause is local** to the node where it was run and is lost on restart; servers starting on that
-  node use the unfinished local copy.
-- **The new head's template copies are the reference.** After a head change the new head serves the versions it
-  has on disk; changes that had not reached it before the old head failed are lost from the cluster version (they
-  stay in the old head's history).
+- **Template history is copied lazily.** Followers copy the history entries when they take over a version and keep
+  the files of the versions they applied. A version made while a node was offline is missing in that node's history
+  until a node that has it pushes or serves it; a rollback to a version whose files no reachable node has fails.
+- **Template sync pause is local** to the node where it was run (it survives restarts). While a template is paused
+  on a node with an outdated copy, the head does not start servers of it there.
+- **A new head can only take over versions from reachable nodes.** It collects the versions of all nodes it can
+  reach when it becomes head; a node that was unreachable then and has a newer version sends it when it reconnects
+  (it becomes a new version). If no reachable node can serve a template, the head does not serve it until one does.
 - **Template and group definitions with MySQL:** the files are not replicated (all nodes use the database), and
   other nodes do not reload changed template settings while running; restart them after changing definitions.
 - **Whitelist and notifications** are stored per node by the `json` provider (see below).
-- **`server screen` and `server info` for servers on other nodes** are limited (see below).
+- **`server screen` for servers on other nodes** is limited (see [Commands](commands.md#server-in-a-cluster)).
 - **Redis itself is not highly available** (use Redis Sentinel or a managed Redis if you depend on it).
 - **No node events** (`NodeJoinedEvent` etc.) for plugins yet; poll `CloudAPI.nodes()`.
 - **Software and bridge jars are not replicated**; every node downloads them itself.

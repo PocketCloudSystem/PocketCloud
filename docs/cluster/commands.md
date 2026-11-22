@@ -38,9 +38,9 @@ node-3 | 10.0.0.13:3657 | DEAD | state: FOLLOWER | cpu: 5% | last seen: 47s ago
 | `template nodes <template> <node,node,...>` | Sets them. `all`, `-` or `[]` clears the list (all nodes). Warns about names that are not members (yet). Required for proxy templates. |
 | `template staticnode <template>` | Shows the node the template's static servers live on. |
 | `template staticnode <template> <node>` | Sets it; `none` or `-` clears it. Required for static templates in a cluster. Warns if the node is not in the template's `nodes`. |
-| `template history <template>` | The last versions of a replicated folder on the head: version, time, node, note, changed/removed files, conflicts. |
+| `template history <template>` | The last versions of a replicated folder (from the head's history, which also contains the versions recorded by former heads): version, time, node, note, changed/removed files, conflicts. |
 | `template rollback <template> <version>` | Restores a version from the history as a new version and distributes it. |
-| `template sync pause [template]` | Pauses the replication of one template (or all) **on this node** until `resume` or a restart. |
+| `template sync pause [template]` | Pauses the replication of one template (or all) **on this node** until `resume` (kept across restarts). |
 | `template sync resume [template]` | Resumes it and sends what changed meanwhile. |
 | `template sync status` | Version, hash, file count and sync state of every replicated folder on this node. |
 
@@ -61,7 +61,7 @@ node (see [Templates](templates.md#where-templates-are-edited-from-the-console))
 | `server dispatch <server> <command>` | Executed by the node that runs the server; the answer comes back. |
 | `server save <server>` | Executed by the node that runs the server. |
 | `server list [filter]` | Shows a `Node` column. |
-| `server info <server>` | Works for all servers. For a server on another node, `Path` and `Channel` refer to this node and are not meaningful. |
+| `server info <server>` | Works for all servers and shows the `Node`. For a server on another node it shows the node and its address instead of `Path` and `Channel`. |
 | `server screen <server>` | Live output of servers on **this** node. Remote servers: see [Coming soon](limitations.md#coming-soon). |
 
 ## exit

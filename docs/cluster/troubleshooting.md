@@ -102,22 +102,34 @@ A node cannot be renamed; add it under the new name instead.
 ```text
 Cannot become head while Redis is unreachable: ...
 Redis already knows a newer head term than 3.
+Redis held head term 100 of another cluster (id deadbeef, this cluster 3ef2...) with the same cloud name; replaced it with term 10.
+Redis knows head term 500, but no member of this cluster reports it (this node: 11). Claiming term 501 next.
 ```
 
 With `redis.enabled: true` a node only becomes head after storing its term in Redis, and only if Redis does not
-already contain a higher one.
+already contain a higher term of the same cluster. The term is stored together with the cluster id (serial number
+of the cluster CA certificate).
 
 - Unreachable: fix the connection; meanwhile there is no head.
-- Newer term: Redis contains the term of an **older** cluster with the same `cloudName` (for example after
-  `storage/internal/cluster/` was deleted on all nodes). Delete the keys `pc:<cloudName>:term` and
-  `pc:<cloudName>:head` in Redis, or use another `cloudName`.
+- Term of another cluster (an earlier cluster with the same `cloudName`, e.g. after `storage/internal/cluster/` was
+  deleted on all nodes, or a term written by a version without the cluster id): it is replaced at once with a
+  warning.
+- Newer term of this cluster that no reachable member reports (e.g. the term files were lost): the candidate skips
+  it and claims the stored term + 1 about 2 s later.
+- `Redis already knows a newer head term than N.` alone means a member really holds that term (a head is active);
+  the node follows it.
 
 ## Template sync
 
 | Message | Meaning / fix |
 |---------|---------------|
 | `Cannot start Lobby-4 for head node-1: template version not synced within 7 s` | The node could not fetch the template in time (big change, slow link). The head retries on another node. If it repeats, check `template sync status` on that node. |
-| `... the template Lobby has local changes on node-2 that are not replicated yet` | Files were changed on that node and not sent yet (or the sync is paused there). Wait a few seconds or `template sync resume`. |
+| `... the template Lobby has local changes on node-2 that are not replicated yet` | Files were changed on that node and not sent yet. Wait a few seconds. |
+| `... the sync of Lobby is paused on node-2 and it does not have version N` | The sync is paused there and that node's copy is not the current version: the head starts the server elsewhere. Afterwards the head skips that node for the template (`template sync paused there (outdated copy)` in `No node can start a server ...`) until `template sync resume`. |
+| `Head node-3 serves version 6 of Lobby, but this node has the newer version 7: keeping it and sending it to the head.` | The head could not reach this node when it collected the versions. The node does not let the older version overwrite its copy; it sends it and the head makes it a new version. |
+| `No reachable node can serve version N of Lobby: serving the local copy as version M.` | The new head is behind, and the node(s) that have the newer version are not reachable. Check `template history Lobby` afterwards; the newer version is merged when such a node reconnects. |
+| `Lobby is missing here and no reachable node can serve version N. It is not deleted; ...` | The new head has no copy and no reachable node has one. The template is not deleted; a node that has it offers it again on its next full sync. |
+| `Denied server handshake request from Lobby-1 (...): uuid ... does not match the expected server ... (stale process).` | A process of an older server with the same name (e.g. an orphan that is being stopped) tried to register. It is refused and shuts down; the real server is not affected. |
 | `Conflict in Lobby/<file>: changed on X and on Y at the same time. ...` | The same file was changed on two nodes. The later change won; get the other one back with `template history` / `template rollback`. |
 | `The local copy of Lobby differs from the cluster version; replacing it with version N.` | A node that never synced this template had a different copy; the cluster version wins. |
 | `Template replication only runs while this node is part of a cluster.` | `history`, `rollback`, `sync` need a cluster. |

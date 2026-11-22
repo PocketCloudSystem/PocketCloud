@@ -63,8 +63,15 @@ On the other nodes: `node-2 is now head (term 4).` If the old head shut down cle
 election right away (`Head node-1 left the cluster.`).
 
 The new head waits 5 s before scheduling so it knows which servers run where, then handles the servers of the old
-head like a node failure. Template replication continues with the new head
-(`Template replication: this node is head and serves 5 unit(s) (0 new version(s)).`).
+head like a node failure. Template replication continues with the new head. Before it serves templates it asks
+all reachable nodes for their versions and takes over newer ones (see
+[Templates](templates.md#head-changes)):
+
+```text
+Template replication: collected the template versions of 3 node(s) (node-2, node-1, node-3).
+Template Lobby was at version 2 here, the cluster has version 3 (from node-3): took it over before serving.
+Template replication: this node is head and serves 4 unit(s) (0 new version(s), 1 taken over from other nodes).
+```
 
 When the old head comes back it sees the higher term and follows
 (`Node node-2 is head with a newer term, stepping down.` if it still thought it was head).

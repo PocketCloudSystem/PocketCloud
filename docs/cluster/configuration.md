@@ -57,13 +57,15 @@ redis:
 
 <a id="redis"></a>
 **Is Redis required?** No. Nodes exchange servers, players, templates and drain state directly over the cluster
-port, and a cluster runs without Redis. (The comment in the generated `config.yml` still says it is required as
-soon as more than one node is used; that is outdated.) If you enable it:
+port, and a cluster runs without Redis. If you enable it:
 
 - **all nodes must use the same Redis and the same `cloudName`**: keys are prefixed with `pc:<cloudName>:`
   (`pc:<cloudName>:term`, `:head`, `:servers`, `:players`, `:ids:<template>`, `:node:<name>:servers`);
-- a new head writes its term to Redis with a check that no newer term is stored there (fencing). **While Redis is
-  unreachable no node can become head** (`Cannot become head while Redis is unreachable: ...`);
+- a new head writes its term to Redis with a check that no newer term of **this cluster** is stored there (fencing).
+  The term is stored with the cluster id (serial of the cluster CA); a term of another cluster with the same
+  `cloudName` is replaced, and a newer term of this cluster that no member reports is skipped (see
+  [Troubleshooting](troubleshooting.md#redis)). **While Redis is unreachable no node can become head**
+  (`Cannot become head while Redis is unreachable: ...`);
 - the provider (json/mysql) stays the persistent store; Redis caches templates, groups, whitelist and notifications
   in front of it;
 - on start a node removes the servers and players it left in Redis after a crash
@@ -140,5 +142,6 @@ The static template SkyBlock has no staticNode set and is disabled in the cluste
 | `storage/internal/cluster/drain.json` | Nodes in drain mode. |
 | `storage/internal/cluster/local-servers.json` | Servers this node runs (name, uuid, template, id, port, pid, ...), used to adopt them after a restart. Also used in single-node mode. |
 | `storage/internal/cluster/template-sync/` | Template versions known to this node (`applied.json`) and, on a head, the versions it serves (`head.json`); temp folders. |
-| `storage/internal/cluster/template-history/` | Template history (last 10 versions per template), written by the head. |
+| `storage/internal/cluster/template-history/` | Template history (last 10 versions per template): recorded by the head, copied by the followers together with the files of the versions they applied. |
+| `storage/internal/cluster/template-sync/paused.json` | Templates whose sync is paused on this node (`template sync pause`). |
 | `storage/internal/cluster/join-token` | Exists only between `--join` and the next start. |
