@@ -1,8 +1,7 @@
 package de.pocketcloud.api.component.server;
 
-import de.pocketcloud.api.cluster.INode;
-
 import de.pocketcloud.api.CloudAPI;
+import de.pocketcloud.api.cluster.INode;
 import de.pocketcloud.api.component.player.ICloudPlayer;
 import de.pocketcloud.api.component.template.ITemplate;
 import de.pocketcloud.api.server.ServerStatus;

@@ -28,7 +28,10 @@ import de.pocketcloud.shared.event.template.TemplateEditedEvent;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 public final class TemplateManager implements Tickable, Loadable, IWriteTemplateProvider {

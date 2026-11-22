@@ -4,14 +4,9 @@ import de.pocketcloud.api.logging.ILogger;
 import de.pocketcloud.api.template.util.TemplateEditData;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.log.CloudLogger;
-import de.pocketcloud.cloud.setup.Question;
-import de.pocketcloud.cloud.setup.QuestionBuilder;
-import de.pocketcloud.cloud.setup.Setup;
-import de.pocketcloud.cloud.setup.SetupHelper;
+import de.pocketcloud.cloud.setup.*;
 import de.pocketcloud.cloud.template.Template;
 import lombok.AllArgsConstructor;
-
-import de.pocketcloud.cloud.setup.ErrorHolder;
 
 import java.util.Arrays;
 import java.util.List;

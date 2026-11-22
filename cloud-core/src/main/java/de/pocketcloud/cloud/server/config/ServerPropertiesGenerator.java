@@ -10,7 +10,6 @@ import de.pocketcloud.cloud.server.config.impl.PowerNukkitXNightlyConfig;
 import de.pocketcloud.cloud.server.config.impl.WaterdogConfig;
 import de.pocketcloud.cloud.template.Template;
 import de.pocketcloud.cloud.template.util.TemplateTypeHelper;
-import de.pocketcloud.cloud.util.PocketCloudPaths;
 import de.pocketcloud.common.lifecycle.Loadable;
 import de.pocketcloud.common.util.FileUtils;
 import de.pocketcloud.shared.component.software.ServerSoftware;
@@ -22,7 +21,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 
 public final class ServerPropertiesGenerator implements Loadable {
 

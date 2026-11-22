@@ -1,7 +1,7 @@
 package de.pocketcloud.cloud.cluster.scheduling;
 
-import de.pocketcloud.api.network.packet.Packet;
 import de.pocketcloud.api.component.software.IServerSoftware;
+import de.pocketcloud.api.network.packet.Packet;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.cluster.ClusterManager;
 import de.pocketcloud.cloud.cluster.ClusterModule;

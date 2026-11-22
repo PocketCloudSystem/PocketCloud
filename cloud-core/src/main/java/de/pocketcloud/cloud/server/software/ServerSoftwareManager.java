@@ -1,6 +1,5 @@
 package de.pocketcloud.cloud.server.software;
 
-import de.pocketcloud.cloud.util.PocketCloudPaths;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializer;
@@ -10,6 +9,7 @@ import de.pocketcloud.api.provider.write.IWriteSoftwareProvider;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.template.util.TemplateTypeHelper;
+import de.pocketcloud.cloud.util.PocketCloudPaths;
 import de.pocketcloud.common.lifecycle.Loadable;
 import de.pocketcloud.common.util.FileUtils;
 import de.pocketcloud.shared.component.software.*;

@@ -1,16 +1,16 @@
 package de.pocketcloud.shared.component;
 
+import de.pocketcloud.api.CloudAPI;
+import de.pocketcloud.api.cluster.INode;
 import de.pocketcloud.api.component.server.ICloudServer;
 import de.pocketcloud.api.server.ServerStatus;
 import de.pocketcloud.api.server.VerificationStatus;
 import de.pocketcloud.common.serialization.annotation.MapCreator;
 import de.pocketcloud.common.serialization.annotation.MapKey;
+import de.pocketcloud.shared.cluster.BaseNode;
 import de.pocketcloud.shared.component.data.CloudServerData;
 import de.pocketcloud.shared.component.storage.BaseCloudServerStorage;
 import de.pocketcloud.shared.converter.InstantConverter;
-import de.pocketcloud.api.CloudAPI;
-import de.pocketcloud.api.cluster.INode;
-import de.pocketcloud.shared.cluster.BaseNode;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;

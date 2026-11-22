@@ -1,10 +1,10 @@
 package de.pocketcloud.cloud.plugin.loader;
 
-import de.pocketcloud.cloud.util.PocketCloudPaths;
 import de.pocketcloud.cloud.plugin.CloudPlugin;
 import de.pocketcloud.cloud.plugin.CloudPluginClassLoader;
 import de.pocketcloud.cloud.plugin.CloudPluginDescription;
 import de.pocketcloud.cloud.plugin.exception.PluginLoadFailedException;
+import de.pocketcloud.cloud.util.PocketCloudPaths;
 import de.pocketcloud.common.util.FileUtils;
 
 import java.io.File;
@@ -13,7 +13,6 @@ import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Objects;
 import java.util.jar.JarEntry;

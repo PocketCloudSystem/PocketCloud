@@ -1,6 +1,5 @@
 package de.pocketcloud.cloud.plugin;
 
-import de.pocketcloud.cloud.util.PocketCloudPaths;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.cloud.event.impl.plugin.PluginDisableEvent;
@@ -8,6 +7,7 @@ import de.pocketcloud.cloud.event.impl.plugin.PluginEnableEvent;
 import de.pocketcloud.cloud.event.impl.plugin.PluginLoadEvent;
 import de.pocketcloud.cloud.plugin.exception.PluginLoadFailedException;
 import de.pocketcloud.cloud.plugin.loader.JarCloudPluginLoader;
+import de.pocketcloud.cloud.util.PocketCloudPaths;
 import de.pocketcloud.common.lifecycle.Loadable;
 import de.pocketcloud.common.lifecycle.Tickable;
 import lombok.Getter;
@@ -16,7 +16,6 @@ import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

@@ -1,12 +1,7 @@
 package de.pocketcloud.cloud.config;
 
 import de.pocketcloud.api.config.ICloudConfig;
-import de.pocketcloud.cloud.config.sub.ClusterConfiguration;
-import de.pocketcloud.cloud.config.sub.HttpServerConfiguration;
-import de.pocketcloud.cloud.config.sub.MySqlConfiguration;
-import de.pocketcloud.cloud.config.sub.NetworkConfiguration;
-import de.pocketcloud.cloud.config.sub.PathsConfiguration;
-import de.pocketcloud.cloud.config.sub.RedisConfiguration;
+import de.pocketcloud.cloud.config.sub.*;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import eu.okaeri.configs.OkaeriConfig;
 import eu.okaeri.configs.annotation.Comment;

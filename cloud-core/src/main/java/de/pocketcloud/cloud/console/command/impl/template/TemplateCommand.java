@@ -3,6 +3,7 @@ package de.pocketcloud.cloud.console.command.impl.template;
 import de.pocketcloud.api.component.template.ITemplate;
 import de.pocketcloud.api.search.TemplateSearchQuery;
 import de.pocketcloud.api.template.TemplateType;
+import de.pocketcloud.api.template.util.TemplateEditData;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.cluster.sync.SyncUnit;
 import de.pocketcloud.cloud.cluster.sync.TemplateReplicator;
@@ -21,13 +22,7 @@ import de.pocketcloud.cloud.template.group.ServerGroup;
 import de.pocketcloud.cloud.template.util.TemplateHelper;
 import de.pocketcloud.shared.component.software.ServerSoftware;
 
-import de.pocketcloud.api.template.util.TemplateEditData;
-
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @CommandDescription(name = "template", description = "Manage the templates", aliases = {"temp"})
 public final class TemplateCommand extends Command implements TabComplete {

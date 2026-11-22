@@ -1,12 +1,11 @@
 package de.pocketcloud.cloud.cluster;
 
+import com.google.gson.reflect.TypeToken;
 import de.pocketcloud.cloud.cluster.net.packet.HeadAnnouncePacket;
 import de.pocketcloud.cloud.cluster.net.packet.HeadClaimPacket;
 import de.pocketcloud.cloud.cluster.net.packet.HeadVotePacket;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import de.pocketcloud.common.util.FileUtils;
-import com.google.gson.reflect.TypeToken;
-import io.netty.channel.Channel;
 
 import java.io.IOException;
 import java.nio.file.Files;

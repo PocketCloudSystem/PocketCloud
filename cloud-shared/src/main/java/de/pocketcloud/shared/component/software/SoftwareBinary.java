@@ -3,7 +3,6 @@ package de.pocketcloud.shared.component.software;
 import de.pocketcloud.api.component.software.ISoftwareBinary;
 import de.pocketcloud.common.serialization.annotation.MapCreator;
 import de.pocketcloud.common.serialization.annotation.MapKey;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
