@@ -15,9 +15,9 @@ The cluster port (`3657`) only speaks TLS, and **both sides** present a certific
 Rejected connections are logged (at most once a minute per node/host):
 
 ```text
-TLS handshake with node connection from 203.0.113.7 failed: ...
-Rejected node connection from 10.0.0.14:51234 (node-4): not a member of this cluster
-Node at 10.0.0.14:3657 rejected the connection: name does not match certificate
+Could not connect securely with 203.0.113.7. Is its certificate from this cluster and still valid?
+Refused the connection of node node-4 (10.0.0.14:51234): not a member of this cluster
+The node at 10.0.0.14:3657 refused the connection: name does not match certificate
 ```
 
 Possible reasons in the rejection: `protocol version X != 1`, `name does not match certificate`,
@@ -77,7 +77,7 @@ node remove node-4
 
 removes the node from the member list. The change spreads to all nodes within a second, and the removed node is
 disconnected and rejected from then on (`not a member of this cluster`). Every node treats it like a failed node:
-its servers and players are written off (`Node node-4 is gone, its 1 server(s) are treated as offline: ...`) and the
+its servers and players are written off (`Node node-4 has disconnected. Its servers are offline: ...`) and the
 head starts replacements. This is the revocation mechanism: only
 members may connect.
 
@@ -97,10 +97,14 @@ Removing a node lowers the number of members and therefore the majority. A node 
 
 ## Certificate lifetime
 
-Node certificates are valid for **825 days**, the CA for 10 years. There is no automatic renewal yet; a node with
-an expired certificate can no longer connect. Until the renewal commands are available (see
-[Coming soon](limitations.md#coming-soon)), renew a node's certificate by running `node add <same name> <address>`
-on the CA node and starting that node once with the new token.
+Node certificates are valid for **825 days**, the CA for 10 years. A node warns on the console 30 days before its
+certificate expires (90 days for the CA). If the head holds `ca.key`, it renews certificates automatically within
+those 30 days (`Renewed the certificate of node node-2.`); otherwise it warns and names the nodes that can renew.
+You can also renew by hand with `node cert renew [node]` and check the validity with `node cert info`
+(see [Commands](commands.md)). The private key never leaves the renewed node.
+
+A node with an **expired** certificate can no longer connect and cannot be renewed this way: run
+`node add <same name> <address>` on the CA node and start that node once with the new token.
 
 ## HTTP API
 

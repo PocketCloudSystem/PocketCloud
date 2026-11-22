@@ -22,23 +22,8 @@
   (it becomes a new version). If no reachable node can serve a template, the head does not serve it until one does.
 - **Template and group definitions with MySQL:** the files are not replicated (all nodes use the database), and
   other nodes do not reload changed template settings while running; restart them after changing definitions.
-- **Whitelist and notifications** are stored per node by the `json` provider (see below).
 - **`server screen` for servers on other nodes** is limited (see [Commands](commands.md#server-in-a-cluster)).
 - **Redis itself is not highly available** (use Redis Sentinel or a managed Redis if you depend on it).
 - **No node events** (`NodeJoinedEvent` etc.) for plugins yet; poll `CloudAPI.nodes()`.
 - **Software and bridge jars are not replicated**; every node downloads them itself.
 - **`template push`** (manual push of a template to all nodes) does not exist; the automatic sync replaces it.
-
-## Coming soon
-
-> **Work in progress.** The following features are being added and are **not** part of this version yet. This
-> section will be replaced by documentation once they are merged.
-
-- **Live logs of remote servers in `server screen`**: streaming the output of a server on another node to the
-  console of the node you are on.
-- **Certificate renewal commands**: `node cert info|renew` to show the validity of the node certificates and renew
-  them without a full re-join.
-- **Persisted written-off list**: the servers a node wrote off after a node failure are kept across restarts
-  (today: in memory for 30 minutes), so duplicates are also caught after a restart of the head.
-- **Cluster-wide whitelist and notification writes**: changes to the whitelist and the notification list made on
-  one node are applied on all nodes.

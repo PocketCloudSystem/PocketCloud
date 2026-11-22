@@ -217,7 +217,7 @@ node (stored in `storage/internal/cluster/template-sync/paused.json`; on start t
 
 - if a newer version was distributed meanwhile, the node does not have it: it refuses starts of that template
   (`the sync of Lobby is paused on node-2 and it does not have version 5`) and reports this in its heartbeat, so the
-  head starts the servers on other nodes (`template sync paused there (outdated copy)` in the node selection);
+  head starts the servers on other nodes (`template sync paused there` in the node selection);
 - if the sync is paused **on the head**, changes from other nodes to that unit wait until it is resumed there;
 - other nodes keep the last distributed version and start their servers with it.
 

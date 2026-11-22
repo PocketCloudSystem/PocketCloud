@@ -133,12 +133,12 @@ of the cluster CA certificate).
 | `Could not start Lobby-4: the template could not be synced within 7 s` | The node could not fetch the template in time (big change, slow link). The head retries on another node. If it repeats, check `template sync status` on that node. |
 | `... the template Lobby has local changes on node-2 that are not replicated yet` | Files were changed on that node and not sent yet. Wait a few seconds. |
 | `... the sync of Lobby is paused on node-2 and it does not have version N` | The sync is paused there and that node's copy is not the current version: the head starts the server elsewhere. Afterwards the head skips that node for the template (`template sync paused there` in `No node can start a server ...`) until `template sync resume`. |
-| `Head node-3 serves version 6 of Lobby, but this node has the newer version 7: keeping it and sending it to the head.` | The head could not reach this node when it collected the versions. The node does not let the older version overwrite its copy; it sends it and the head makes it a new version. |
-| `No reachable node can serve version N of Lobby: serving the local copy as version M.` | The new head is behind, and the node(s) that have the newer version are not reachable. Check `template history Lobby` afterwards; the newer version is merged when such a node reconnects. |
-| `Lobby is missing here and no reachable node can serve version N. It is not deleted; ...` | The new head has no copy and no reachable node has one. The template is not deleted; a node that has it offers it again on its next full sync. |
+| `This node has a newer copy of template Lobby than the head; keeping it and sending it to the cluster.` | The head could not reach this node when it collected the versions. The node does not let the older version overwrite its copy; it sends it and the head makes it a new version. |
+| `The newest version of template Lobby is on no reachable node; using the copy of this node.` | The new head is behind, and the node(s) that have the newer version are not reachable. Check `template history Lobby` afterwards; the newer version is merged when such a node reconnects. |
+| `Template Lobby is missing here and no reachable node has it. It is not deleted; a node that has it sends it later.` | The new head has no copy and no reachable node has one. The template is not deleted; a node that has it offers it again on its next full sync. |
 | `Denied server handshake request from Lobby-1 (...): it is an old process of that server.` | A process of an older server with the same name (e.g. an orphan that is being stopped) tried to register. It is refused and shuts down; the real server is not affected. |
-| `Conflict in Lobby/<file>: changed on X and on Y at the same time. ...` | The same file was changed on two nodes. The later change won; get the other one back with `template history` / `template rollback`. |
-| `The local copy of Lobby differs from the cluster version; replacing it with version N.` | A node that never synced this template had a different copy; the cluster version wins. |
+| `Conflict in Lobby/<file>: changed on X and Y at the same time. The change from X is kept, the other one stays in the history.` | The same file was changed on two nodes. The later change won; get the other one back with `template history` / `template rollback`. |
+| `The local copy of template Lobby differs from the cluster and is replaced by the cluster version.` | A node that never synced this template had a different copy; the cluster version wins. |
 | `Template replication only runs while this node is part of a cluster.` | `history`, `rollback`, `sync` need a cluster. |
 
 `template sync status` shows `outdated (head vN)` for templates a follower has not taken over yet.
@@ -149,8 +149,8 @@ of the cluster CA certificate).
 |---------|---------------|
 | `Could not start a server of Lobby: it failed on node-2 and no other node can take it.` | The start failed and no other node fits. The line before (`node-2 could not start Lobby-4: ...`) has the reason. |
 | `Cannot stop Lobby-3: node node-2 is not connected.` | The owning node is unreachable. Its servers are treated as offline after 10 s anyway. |
-| `Node node-3 reports Lobby-3, but that name belongs to a server on node node-1. Ignoring it.` | A duplicate after a failure; the head stops it. Expected after a partition. |
-| `No head decided about Lobby-1 in time, stopping it.` | After a restart the node had no head for `bridgeReconnectTimeout` + 30 s, so it stopped its old servers. |
+| `Node node-3 reports a server Lobby-3, but that name belongs to a server on node-1. Ignoring it.` | A duplicate after a failure; the head stops it. Expected after a partition. |
+| `Stopping Lobby-1 from the last run: no head confirmed it in time.` | After a restart the node had no head for `bridgeReconnectTimeout` + 30 s, so it stopped its old servers. |
 | `The bind address 127.0.0.1 is not reachable from other nodes, servers bind to 0.0.0.0 instead. ...` | See [Setup → Addresses](setup.md#addresses). |
 
 **Players cannot join a server on another node** (the proxy times out): the game server port (UDP, server port

@@ -18,6 +18,8 @@ Aliases: `nodes`, `cluster`. All subcommands work on every node.
 | `node info <node>` | Address, drain mode, software the node can run, state, connection direction, term, version, uptime, number of servers, memory used by the cloud process, CPU against the 85 % limit. |
 | `node add <node> <address> [port]` | Adds a member and saves its join token to `storage/internal/cluster/join-tokens/<node>.token` (the path is printed, the token itself never). `address` and `port` (default `3657`) become the `advertisedAddress` and `clusterPort` of the new node. The first `node add` on a single node creates the cluster. Only possible on the node that holds `ca.key`. Running it again for an existing name issues a new certificate and token. |
 | `node join <token file or token>` | Joins a cluster from a running single node, without `--join` and without a restart. Stops the servers of this node first (the cluster's head decides afterwards what runs where). |
+| `node cert info` | Validity and serial of the certificates of all nodes, and which nodes hold `ca.key`. |
+| `node cert renew [node]` | Renews the certificate of a node (default: this node) without a re-join. Only on a node that holds `ca.key`; the private key never leaves the target node. |
 | `node remove <node>` | Removes a member; it is disconnected and can no longer connect. Not possible for the node you run it on. See [Security](security.md#removing-a-node). |
 | `node drain <node> [--stop]` | The node gets no new servers. With `--stop` its non-static servers are also stopped (and replaced on other nodes). Processed by the head. |
 | `node undrain <node>` | Ends drain mode. |
@@ -63,7 +65,7 @@ node (see [Templates](templates.md#where-templates-are-edited-from-the-console))
 | `server save <server>` | Executed by the node that runs the server. |
 | `server list [filter]` | Shows a `Node` column. |
 | `server info <server>` | Works for all servers and shows the `Node`. For a server on another node it shows the node and its address instead of `Path` and `Channel`. |
-| `server screen <server>` | Live output of servers on **this** node. Remote servers: see [Coming soon](limitations.md#coming-soon). |
+| `server screen <server>` | Live output of a server, also of servers on other nodes (streamed from their node). Leave it with `.leave`. |
 
 ## exit
 

@@ -22,14 +22,13 @@ shuts down cleanly (`exit`) tells the others, so it is `DEAD` immediately.
 On every other node:
 
 ```text
-Node node-3 is gone, its 2 server(s) are treated as offline: Lobby-3, Lobby-4
-Removed 5 player(s) of the proxies of node node-3.
+Node node-3 has disconnected. Its servers are offline: Lobby-3, Lobby-4
 ```
 
-The head then starts replacements where `minServerCount` requires them (`Starting Lobby-5 on node node-1...`).
+The head then starts replacements where `minServerCount` requires them (`Starting Lobby-5 on node-1...`).
 Every node remembers the servers it wrote off (for 30 minutes).
 
-When `node-3` comes back (`Node node-3 (10.0.0.13:3657) is connected.`):
+When `node-3` comes back (`Node node-3 has connected.`):
 
 - If only the **network** was gone, the node process kept its servers. Its first report contains them; the head
   stops the ones it wrote off:
@@ -55,12 +54,11 @@ The followers see the head as `DEAD` after 10 s. The oldest reachable node claim
 with a majority of votes:
 
 ```text
-Claiming head for term 4...
-This node is now head (term 4).
+node-2 (this node) is now the head.
 ```
 
-On the other nodes: `node-2 is now head (term 4).` If the old head shut down cleanly, the followers start the
-election right away (`Head node-1 left the cluster.`).
+On the other nodes: `node-2 is now the head.` If the old head shut down cleanly, the followers start the
+election right away (`Node node-1 has disconnected.`).
 
 The new head waits 5 s before scheduling so it knows which servers run where, then handles the servers of the old
 head like a node failure. Template replication continues with the new head. Before it serves templates it asks
@@ -74,7 +72,7 @@ Template replication: serving 4 unit(s) as head (0 new version(s), 1 taken over 
 ```
 
 When the old head comes back it sees the higher term and follows
-(`Node node-2 is head with a newer term, stepping down.` if it still thought it was head).
+(`node-2 is the head now. This node is no longer the head.` if it still thought it was head).
 
 ## Network partition
 
@@ -84,13 +82,13 @@ Example: 3 nodes, `node-3` loses the connection to `node-1` and `node-2`.
 - `node-3` sees 1 of 3 and becomes isolated:
 
   ```text
-  Only 1/3 nodes reachable, no majority. This node is isolated.
+  Only 1/3 nodes are reachable. No new servers are started until a majority is back.
   ```
 
-  If `node-3` was head: `Lost the majority (1/2), stepping down as head.` (numbers: reachable/majority).
+  If `node-3` was head: `Only 1/3 nodes are reachable. This node is no longer the head until a majority is back.` (numbers: reachable/members).
 
   An isolated node does not start or stop servers for the cluster and does not run auto-scaling. Its running
-  servers keep running. `server start` there fails with `Cannot start Lobby: there is no head right now.`
+  servers keep running. `server start` there fails with `Cannot start Lobby: the cluster has no head right now.`
 
 There can never be two heads: two majorities always share at least one node, and a node votes only once per term.
 
@@ -136,8 +134,8 @@ Servers of the last run that have exited meanwhile are cleaned up (with debug lo
 |---------|---------|------------|
 | `node list` shows a node `DEAD` | No heartbeat for 10 s | Check the machine and the cluster port. Nothing else is needed: its servers are replaced. |
 | `node list` header shows `head: none` | No majority | Bring enough nodes back. Running servers keep running. |
-| `Lost the majority ...` / `... This node is isolated.` | This node does not see a majority | Check the network between this node and the others. |
-| `Node X is gone, its N server(s) are treated as offline` | Normal reaction to a failed node | - |
+| `Only X/Y nodes are reachable. ...` | This node does not see a majority | Check the network between this node and the others. |
+| `Node X has disconnected. Its servers are offline: ...` | Normal reaction to a failed node | - |
 | `Stopping X on node Y: it was replaced while Y was gone.` | Duplicate after a returning node | - (expected) |
 | `No node can start a server of X right now: ...` | No node fits the scheduling rules | See [Troubleshooting](troubleshooting.md#no-node-can-start-a-server-of-x-right-now). |
 

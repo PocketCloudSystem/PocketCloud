@@ -156,7 +156,7 @@ Node node-1 has connected.
 node-1 is now the head.
 ```
 
-Then it fetches all templates from the head (`Template Lobby updated to version 1 (12 file(s) fetched, 3400 KB).`)
+Then it fetches all templates from the head (`Template Lobby was updated.`)
 and, with the `json` provider, the template and group definitions
 (`Template Lobby was created on another node and is now available here.`).
 

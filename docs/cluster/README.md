@@ -24,7 +24,7 @@ A single machine without a cluster keeps working exactly as before: it is one no
 | [Plugin API](plugin-api.md) | `INode`, `CloudAPI.nodes()`, `ICloudServer.node()`, `ServerSearchQuery.onNode` |
 | [Upgrading](upgrading.md) | From a single-node setup to a cluster (bridge update!) |
 | [Troubleshooting](troubleshooting.md) | Common log messages and what to do |
-| [Known limitations](limitations.md) | What the cluster does not do (yet), and [what is coming](limitations.md#coming-soon) |
+| [Known limitations](limitations.md) | What the cluster does not do (yet) |
 
 ## Quick start
 

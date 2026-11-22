@@ -222,10 +222,20 @@ public final class HeadElection {
             return;
         }
 
+        // A node becomes head only through its own claim. A peer that still names this node as head (e.g. after
+        // this node stepped down for lack of a majority) must not make it head again.
+        if (peerHead.equals(cluster.nodeName()) && state != NodeState.HEAD) {
+            if (peerTerm > term) adoptTerm(peerTerm, null);
+            return;
+        }
+
         if (peerTerm > term || (peerTerm == term && head == null && state != NodeState.CANDIDATE)) {
             boolean changed = !peerHead.equals(head);
             adoptTerm(peerTerm, peerHead);
-            if (changed && !peerHead.equals(cluster.nodeName())) cluster.onHeadChanged(peerHead);
+            if (changed && !peerHead.equals(cluster.nodeName())) {
+                CloudLogger.get().info("§b{} §ris now the §bhead§r.", peerHead);
+                cluster.onHeadChanged(peerHead);
+            }
         }
     }
 
