@@ -519,9 +519,41 @@ public final class ClusterManager {
         String head = election.head();
         long term = election.term();
         String nodeState = election.state().name();
+        if (election.isHead()) syncMemberAddresses();
         Map<String, Object> memberData = members.write();
         for (Peer peer : peers.values()) {
             if (peer.connected()) network.send(peer.channel(), new NodeHeartbeatPacket(term, head, nodeState, stats, memberData));
+        }
+    }
+
+    /**
+     * Head only: the advertisedAddress/clusterPort in each node's own node.yml is the truth for its entry in the
+     * member list. Entries set by an earlier {@code node add} with another address are corrected and spread to all.
+     */
+    private void syncMemberAddresses() {
+        NodeConfig config = nodeConfig();
+        updateMemberAddress(nodeName(), config.advertisedAddress(), config.clusterPort());
+        for (Peer peer : peers.values()) {
+            NodeIdentity id = peer.identity();
+            if (peer.connected() && id != null) updateMemberAddress(id.name(), id.address(), id.port());
+        }
+    }
+
+    private void updateMemberAddress(String name, String address, int port) {
+        Optional<ClusterMembers.Member> current = members.get(name);
+        if (current.isEmpty() || address == null || address.isBlank()) return;
+        if (current.get().address().equals(address) && current.get().port() == port) return;
+        if (address.equals("0.0.0.0") || address.equals("::")) {
+            if (throttle("advertised:" + name)) {
+                CloudLogger.get().warn("Node §b{} §radvertises §b{}§r: other nodes cannot connect to that. Set §badvertisedAddress §rin its node.yml to an IP the other nodes can reach.", name, address);
+            }
+            return;
+        }
+        try {
+            members.put(new ClusterMembers.Member(name, address, port));
+            CloudLogger.get().info("Member address of §b{} §rupdated: §b{} §8-> §b{}:{}", name, current.get().endpoint(), address, port);
+        } catch (Exception e) {
+            CloudLogger.get().exception("Failed to store the member list", e);
         }
     }
 

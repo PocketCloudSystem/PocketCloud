@@ -10,7 +10,7 @@ Settings of this node. Created on the first start; `--join` fills in `name`, `se
 | Key | Default | Description |
 |-----|---------|-------------|
 | `name` | `node-1` | Unique name of the node in the cluster. Letters, digits, `-` and `_`, at most 32 characters. Must match the name in the node certificate, otherwise: `node.yml name X does not match the node certificate Y. Cluster disabled.` |
-| `advertisedAddress` | `127.0.0.1` | Address other nodes use to reach this node: the cluster port **and** its game servers. See [Setup → Addresses](setup.md#addresses). |
+| `advertisedAddress` | `127.0.0.1` | Address other nodes use to reach this node: the cluster port **and** its game servers. Never `0.0.0.0`. If you change it (or `clusterPort`) later, restart the node: the head corrects its entry in the member list and spreads it (`Member address of node-2 updated: ...`). See [Setup → Addresses](setup.md#addresses). |
 | `clusterBindAddress` | `0.0.0.0` | Address the cluster port binds to. |
 | `clusterPort` | `3657` | Port for node-to-node connections (TLS). |
 | `maxMemoryMb` | `0` | Memory in MB this node may use for servers. `0` = no limit. The head only places a server on a node whose budget minus the `maxMemory` of the servers already running there is at least the template's `maxMemory`. |
