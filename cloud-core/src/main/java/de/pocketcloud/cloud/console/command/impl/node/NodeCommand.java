@@ -161,8 +161,11 @@ public final class NodeCommand extends Command implements TabComplete {
         int port = ctx.args().containsKey("port") ? ctx.argInt("port") : 3657;
         try {
             String token = PocketCloud.instance().cluster().addNode(name, address, port);
-            sender.success("Node §b{} §radded. Start it once with this token (it contains a private key, keep it secret):", name);
-            sender.info("java -jar pocketcloud.jar --join {}", token);
+            // The token contains the node's private key: never print it (the console output also goes to the log files).
+            java.nio.file.Path file = ClusterManager.writeJoinTokenFile(name, token);
+            sender.success("Node §b{} §radded. Its join token was saved to §b{}§r (it contains a private key, keep it secret).", name, file);
+            sender.info("Copy the file to the new node and start it once with: §bjava -jar pocketcloud.jar --join <path to {}>", file.getFileName());
+            sender.info("Delete the file afterwards.");
             int members = PocketCloud.instance().cluster().members().size();
             if (members == 2) {
                 sender.warn("With 2 nodes the majority is 2: until §b{} §rhas joined, there is no head and no new servers are started.", name);

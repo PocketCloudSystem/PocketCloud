@@ -12,7 +12,6 @@
   nodes keep working, but adding nodes requires a new CA. Back up `ca.key`.
 - **No certificate revocation list.** `node remove` revokes by membership only; re-adding a removed name accepts its
   old certificate again (see [Security](security.md#removing-a-node)).
-- **Join tokens appear in the console log** of the node that ran `node add`.
 - **Template history lives on the head that recorded it** and does not move to a new head.
 - **Template sync pause is local** to the node where it was run and is lost on restart; servers starting on that
   node use the unfinished local copy.

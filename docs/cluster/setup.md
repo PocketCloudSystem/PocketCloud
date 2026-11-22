@@ -113,23 +113,25 @@ the new node** and is written into its `node.yml` when it joins.
 The first `node add` creates the cluster CA (`Creating the cluster CA...`) and opens the cluster port. The output:
 
 ```text
-Node node-2 added. Start it once with this token (it contains a private key, keep it secret):
-java -jar pocketcloud.jar --join pcjoin1.eyJuYW1lIjoibm9kZS0yIi....@10.0.0.12:3657
+Node node-2 added. Its join token was saved to /srv/pocketcloud/storage/internal/cluster/join-tokens/node-2.token (it contains a private key, keep it secret).
+Copy the file to the new node and start it once with: java -jar pocketcloud.jar --join <path to node-2.token>
+Delete the file afterwards.
 With 2 nodes the majority is 2: until node-2 has joined, there is no head and no new servers are started.
 ```
 
 From now on `node-1` waits for `node-2` (`Lost the majority (1/2), stepping down as head.`). Running servers keep
 running. Continue with the next step right away.
 
-> The token contains the private key of the new node. Do not paste it into chats or tickets. It is also written to
-> the console log (`storage/logs/`), see [Security](security.md#join-tokens).
+> The token contains the private key of the new node. It is never printed to the console or the log files, only
+> written to the token file (readable by the owner only). See [Security](security.md#join-tokens).
 
 ### 4. Join with the second node
 
-On machine 2, put `pocketcloud.jar` into an empty folder and start it **once** with the token:
+Copy `node-2.token` to machine 2 (e.g. with `scp`), put `pocketcloud.jar` into an empty folder and start it
+**once** with the token file (the token text itself is accepted as well):
 
 ```bash
-java -jar pocketcloud.jar --join 'pcjoin1.eyJuYW1lIjoibm9kZS0yIi....@10.0.0.12:3657'
+java -jar pocketcloud.jar --join /path/to/node-2.token
 ```
 
 The node stores the certificates in `storage/internal/cluster/`, writes `name`, `seeds`, `advertisedAddress` and

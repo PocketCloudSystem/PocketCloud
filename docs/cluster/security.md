@@ -58,9 +58,11 @@ A token looks like `pcjoin1.<base64url>@<address>:<port>`. It contains:
 
 Treat a token like a password:
 
-- Transfer it over a secure channel and use it once (`java -jar pocketcloud.jar --join <token>`).
-- **It is also printed to the console log** of the node that ran `node add` (`storage/logs/`). Delete or protect
-  those log files, or rotate them, if other people can read them.
+- `node add` writes it to `storage/internal/cluster/join-tokens/<node>.token` (permissions `rw-------`) and never
+  prints it. Transfer the file over a secure channel, use it once (`java -jar pocketcloud.jar --join <file>`) and
+  delete it on both machines afterwards.
+- Versions before this change printed the token to the console log. Delete old `storage/logs/` files that contain
+  `pcjoin1.` if other people can read them.
 - A token cannot be revoked by itself. If it leaked before it was used, run `node remove <name>` and add the node
   again (see the limitation below).
 
@@ -74,7 +76,9 @@ node remove node-4
 ```
 
 removes the node from the member list. The change spreads to all nodes within a second, and the removed node is
-disconnected and rejected from then on (`not a member of this cluster`). This is the revocation mechanism: only
+disconnected and rejected from then on (`not a member of this cluster`). Every node treats it like a failed node:
+its servers and players are written off (`Node node-4 is gone, its 1 server(s) are treated as offline: ...`) and the
+head starts replacements. This is the revocation mechanism: only
 members may connect.
 
 Recommended order:

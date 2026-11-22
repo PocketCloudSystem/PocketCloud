@@ -34,7 +34,7 @@ node add node-2 10.0.0.12
 node add node-3 10.0.0.13      # after node-2 has joined
 
 # machine 2 and 3 (empty folder with pocketcloud.jar)
-java -jar pocketcloud.jar --join <token printed by node add>
+java -jar pocketcloud.jar --join <token file written by node add>
 
 # any node
 node list

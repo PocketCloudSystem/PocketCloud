@@ -239,8 +239,7 @@ public final class ClusterManager {
     public synchronized boolean removeNode(String name) throws Exception {
         if (name.equals(nodeName())) throw new IllegalArgumentException("A node cannot remove itself.");
         boolean removed = members.remove(name);
-        Peer peer = peers.remove(name);
-        if (peer != null && peer.connected()) peer.channel().close();
+        forgetPeer(name);
         return removed;
     }
 
@@ -279,7 +278,25 @@ public final class ClusterManager {
         }
     }
 
+    /** Writes a join token to storage/internal/cluster/join-tokens/<node>.token, readable only by the owner. */
+    public static Path writeJoinTokenFile(String node, String token) throws java.io.IOException {
+        Path dir = PocketCloudPaths.storage().internal().with("cluster").asPath().resolve("join-tokens");
+        Files.createDirectories(dir);
+        Path file = dir.resolve(node + ".token").toAbsolutePath();
+        Files.writeString(file, token);
+        try {
+            Files.setPosixFilePermissions(file, java.nio.file.attribute.PosixFilePermissions.fromString("rw-------"));
+        } catch (UnsupportedOperationException ignored) {
+        }
+        return file;
+    }
+
     public static void storeJoinToken(String token) throws Exception {
+        // --join accepts the token itself or the path of a token file written by `node add`.
+        if (!token.startsWith("pcjoin")) {
+            Path file = Path.of(token);
+            if (Files.isRegularFile(file)) token = Files.readString(file).trim();
+        }
         Path dir = PocketCloudPaths.storage().internal().with("cluster").asPath();
         Files.createDirectories(dir);
         Files.writeString(dir.resolve("join-token"), token);
@@ -481,14 +498,28 @@ public final class ClusterManager {
             if (members.adoptIfNewer(data)) {
                 CloudLogger.get().info("Member list updated §8(§b{} §rnode(s)§8)§r.", members.size());
                 for (String name : List.copyOf(peers.keySet())) {
-                    if (!members.contains(name)) {
-                        Peer removed = peers.remove(name);
-                        if (removed != null && removed.connected()) removed.channel().close();
-                    }
+                    if (!members.contains(name)) forgetPeer(name);
                 }
             }
         } catch (Exception e) {
             CloudLogger.get().exception("Failed to store the member list", e);
+        }
+    }
+
+    /**
+     * A node is no longer a member: treat it like a dead node first (its servers and players are written off
+     * and replaced), then drop the connection.
+     */
+    private void forgetPeer(String name) {
+        Peer peer = peers.get(name);
+        if (peer != null) {
+            peer.lastSeen(0);
+            dropServersOfDeadNodes();
+            peers.remove(name);
+            if (peer.connected()) peer.channel().close();
+        } else {
+            PocketCloud.instance().servers().serversOfNode(name).forEach(s -> PocketCloud.instance().servers().removeRemoteServer(s.name()));
+            for (ClusterModule module : modules) module.onPeerGone(name);
         }
     }
 
