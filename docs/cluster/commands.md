@@ -65,6 +65,22 @@ node (see [Templates](templates.md#where-templates-are-edited-from-the-console))
 
 Automatic backups: see [Configuration](configuration.md#backups).
 
+## schedule
+
+Runs console commands at cron times. In a cluster every node keeps a copy (changes go through the head), and only
+the head runs them, so a command runs once for the whole cluster; after a head change the new head takes over.
+
+| Command | Description |
+|---------|-------------|
+| `schedule add "<cron>" "<command>"` | Runs `<command>` at the cron time, e.g. `schedule add "0 4 * * *" "template restart Lobby"`. Both parts in quotes. Prints the id of the new schedule. |
+| `schedule list` | All scheduled commands with id, time and command. |
+| `schedule remove <id>` | Removes a scheduled command. |
+
+The time has the 5 cron fields `minute hour day-of-month month day-of-week` in the node's local time zone, with
+`*`, lists (`1,15`), ranges (`1-5`) and steps (`*/15`); day of week 0-7, 0 and 7 are Sunday. Commands that ask for
+confirmation need their `-y` flag (e.g. `server stopall -y`), otherwise the console's next input answers the question.
+In the minute of a head change a command can be missed. The schedules are stored in `storage/internal/schedules.json`.
+
 ## server in a cluster
 
 | Command | Behaviour in a cluster |

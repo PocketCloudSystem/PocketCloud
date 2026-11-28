@@ -7,6 +7,7 @@ import de.pocketcloud.api.component.template.ITemplate;
 import de.pocketcloud.api.network.packet.Packet;
 import de.pocketcloud.api.template.util.TemplateEditData;
 import de.pocketcloud.cloud.PocketCloud;
+import de.pocketcloud.cloud.scheduler.CommandScheduler;
 import de.pocketcloud.cloud.cache.NotificationListCache;
 import de.pocketcloud.cloud.cache.WhitelistCache;
 import de.pocketcloud.cloud.cluster.ClusterManager;
@@ -59,6 +60,7 @@ public final class ClusterDataModule implements ClusterModule {
     static final String KIND_NOTIFICATIONS = "notifications";
     static final String KIND_TEMPLATE = "template";
     static final String KIND_GROUP = "group";
+    static final String KIND_SCHEDULES = "schedules";
 
     private static final String OP_TEMPLATE_CREATE = "template.create";
     private static final String OP_TEMPLATE_EDIT = "template.edit";
@@ -67,11 +69,14 @@ public final class ClusterDataModule implements ClusterModule {
     private static final String OP_GROUP_ADD_TEMPLATE = "group.addTemplate";
     private static final String OP_GROUP_REMOVE_TEMPLATE = "group.removeTemplate";
     private static final String OP_GROUP_DELETE = "group.delete";
+    private static final String OP_SCHEDULE_ADD = "schedule.add";
+    private static final String OP_SCHEDULE_REMOVE = "schedule.remove";
 
     /** A replicated templates.json does not undo a change the head announced this recently (it may be older). */
     private static final long ANNOUNCED_WINS_MS = 20_000;
 
     private static final Type DOCUMENT = new TypeToken<Map<String, Object>>() {}.getType();
+    private static final Type SCHEDULES = new TypeToken<List<CommandScheduler.Schedule>>() {}.getType();
     private static final Type SNAPSHOT = new TypeToken<Map<String, Object>>() {}.getType();
 
     private ClusterManager cluster;
@@ -295,6 +300,10 @@ public final class ClusterDataModule implements ClusterModule {
                 case OP_GROUP_ADD_TEMPLATE -> groups.addTemplate(group(target), template(write.getPayload()));
                 case OP_GROUP_REMOVE_TEMPLATE -> groups.removeTemplate(group(target), template(write.getPayload()));
                 case OP_GROUP_DELETE -> groups.delete(group(target));
+                case OP_SCHEDULE_ADD -> CommandScheduler.addLocal(FileUtils.GSON.fromJson(write.getPayload(), CommandScheduler.Schedule.class));
+                case OP_SCHEDULE_REMOVE -> {
+                    if (!CommandScheduler.removeLocal(target)) throw new IllegalArgumentException("There is no scheduled command " + target + " on the head.");
+                }
                 default -> throw new IllegalArgumentException("unknown operation " + op);
             }
             cluster.respond(channel, write, new HeadDataWriteResultPacket(true, ""));
@@ -334,6 +343,7 @@ public final class ClusterDataModule implements ClusterModule {
             }
             case KIND_TEMPLATE -> applyTemplate(key, document.isEmpty() ? null : document(document), true);
             case KIND_GROUP -> applyGroup(key, document.isEmpty() ? null : document(document), true);
+            case KIND_SCHEDULES -> CommandScheduler.replaceAll(FileUtils.GSON.fromJson(document, SCHEDULES));
             default -> CloudLogger.get().debug("Unknown data change {}", kind);
         }
     }
@@ -430,6 +440,7 @@ public final class ClusterDataModule implements ClusterModule {
         Map<String, Object> snapshot = new HashMap<>();
         snapshot.put(KIND_WHITELIST, present(LocalCache.get(WhitelistCache.class).getAll()));
         snapshot.put(KIND_NOTIFICATIONS, present(LocalCache.get(NotificationListCache.class).getAll()));
+        snapshot.put(KIND_SCHEDULES, CommandScheduler.all());
         if (!replicatedMeta()) {
             Map<String, Object> templates = new HashMap<>();
             for (ITemplate t : PocketCloud.instance().templates().getAll()) templates.put(t.name(), t.write());
@@ -471,6 +482,14 @@ public final class ClusterDataModule implements ClusterModule {
             Set<String> local = new HashSet<>(present(cache.getAll()));
             for (String player : wanted) if (!local.contains(player) && applyPlayerList(kind, player, true)) changes++;
             for (String player : local) if (!wanted.contains(player) && applyPlayerList(kind, player, false)) changes++;
+        }
+
+        if (snapshot.get(KIND_SCHEDULES) instanceof List<?> list) {
+            List<CommandScheduler.Schedule> schedules = FileUtils.GSON.fromJson(FileUtils.GSON.toJson(list), SCHEDULES);
+            if (!schedules.equals(CommandScheduler.all())) {
+                CommandScheduler.replaceAll(schedules);
+                changes++;
+            }
         }
 
         if (snapshot.get("templates") instanceof Map<?, ?> templates) {
@@ -521,6 +540,19 @@ public final class ClusterDataModule implements ClusterModule {
     public static boolean forwardGroupTemplate(IServerGroup group, ITemplate template, boolean add) {
         return forwardToHead(add ? OP_GROUP_ADD_TEMPLATE : OP_GROUP_REMOVE_TEMPLATE, group.name(), template.name(),
                 (add ? "adding §b" : "removing §b") + template.name() + (add ? " §rto" : " §rfrom") + " group §b" + group.name() + "§r");
+    }
+
+    public static boolean forwardScheduleAdd(CommandScheduler.Schedule schedule) {
+        return forwardToHead(OP_SCHEDULE_ADD, schedule.id(), schedule, "the scheduled command §b" + schedule.id() + "§r");
+    }
+
+    public static boolean forwardScheduleRemove(String id) {
+        return forwardToHead(OP_SCHEDULE_REMOVE, id, null, "the removal of the scheduled command §b" + id + "§r");
+    }
+
+    /** Head: sends the whole list of scheduled commands to the other nodes (no-op outside a cluster). */
+    public static void announceSchedules(List<CommandScheduler.Schedule> schedules) {
+        get().filter(ClusterDataModule::isHead).ifPresent(m -> m.announce(KIND_SCHEDULES, "", schedules));
     }
 
     public static boolean forwardGroupDelete(IServerGroup group) {

@@ -294,6 +294,7 @@ public final class PocketCloud implements CloudAPI {
         startTime = Instant.now();
         new CloudReadyEvent(startTime).call();
         de.pocketcloud.cloud.backup.BackupService.startSchedule();
+        de.pocketcloud.cloud.scheduler.CommandScheduler.start();
 
         ticker().tick();
     }
@@ -409,6 +410,7 @@ public final class PocketCloud implements CloudAPI {
         httpServer().close();
         loader().unloadAll();
         de.pocketcloud.cloud.backup.BackupService.stopSchedule();
+        de.pocketcloud.cloud.scheduler.CommandScheduler.stop();
         cluster().close();
 
         if (config().writeTimingsOnShutdown()) {

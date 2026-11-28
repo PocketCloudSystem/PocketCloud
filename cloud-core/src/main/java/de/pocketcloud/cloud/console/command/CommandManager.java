@@ -75,6 +75,11 @@ public final class CommandManager implements Loadable, Tickable {
             return;
         }
 
+        execute(sender, line);
+    }
+
+    /** Runs a command line; unlike {@link #call} it never answers a pending confirmation (used by scheduled commands). */
+    public void execute(CommandSender sender, String line) {
         if (line.isBlank()) return;
         List<String> args = ArrayUtils.parseQuoteAware(line);
         String name = args.removeFirst();
