@@ -74,15 +74,7 @@ public final class CloudConsole extends Thread implements Tickable {
         this.interrupt();
 
         synchronized (readerLock) {
-            try {
-                if (reader != null) {
-                    reader.getBuffer().clear();
-                    reader.callWidget(LineReader.REDRAW_LINE);
-                    reader.callWidget(LineReader.REDISPLAY);
-                    reader.getTerminal().close();
-                }
-            } catch (Exception _) {}
-
+            // erase the prompt the reader drew below the last log line; redrawing it here would leave "root@cloud »" behind
             try {
                 if (terminal != null) {
                     terminal.puts(InfoCmp.Capability.carriage_return);

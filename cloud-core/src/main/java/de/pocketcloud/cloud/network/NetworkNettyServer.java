@@ -8,6 +8,7 @@ import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.MultiThreadIoEventLoopGroup;
+import java.util.concurrent.TimeUnit;
 import io.netty.channel.epoll.Epoll;
 import io.netty.channel.epoll.EpollIoHandler;
 import io.netty.channel.epoll.EpollServerSocketChannel;
@@ -107,8 +108,9 @@ public class NetworkNettyServer {
 
     public void close() {
         this.channels.close().awaitUninterruptibly();
-        this.bossGroup.shutdownGracefully();
-        this.workerGroup.shutdownGracefully();
+        // no quiet period: the default (2s) delayed every exit of the cloud
+        this.bossGroup.shutdownGracefully(0, 1, TimeUnit.SECONDS);
+        this.workerGroup.shutdownGracefully(0, 1, TimeUnit.SECONDS);
     }
 
     public void addChannel(Channel channel) {
