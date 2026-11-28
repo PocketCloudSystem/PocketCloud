@@ -83,6 +83,7 @@ public final class TemplateReplicator implements ClusterModule {
     private TemplateWatcher watcher;
     /** Template files in S3 ({@code cluster.templateStorage: s3}), null: only the cluster connection. */
     private S3BlobStore s3;
+    private volatile boolean s3DownloadWarned;
     private boolean jsonMeta;
     private volatile String knownHead;
     /** The head before {@link #knownHead}; its answer wins ties when a new head collects the versions. */
@@ -129,7 +130,14 @@ public final class TemplateReplicator implements ClusterModule {
         var clusterConfig = PocketCloud.instance().config().cluster();
         this.s3 = S3BlobStore.fromConfig(clusterConfig.templateStorage(), clusterConfig.s3(),
                 PocketCloudPaths.storage().internal().with("cluster").with("s3.properties").asPath());
-        if (s3 != null) CloudLogger.get().info("Template files are synced through S3 §8(§b{}§8)§r.", s3.describe());
+        if (s3 != null) {
+            CloudLogger.get().info("Template files are synced through S3 §8(§b{}§8)§r.", s3.describe());
+            S3BlobStore store = s3;
+            Thread.ofVirtual().name("template-s3-check").start(() -> {
+                String problem = store.check();
+                if (problem != null) CloudLogger.get().warn("S3 does not work, template files go through the cluster connection instead§8: §c{}", problem);
+            });
+        }
         headVersions.load();
         applied.load();
         keepServedVersions(); // versions this node served as head before a restart count as taken over
@@ -498,7 +506,9 @@ public final class TemplateReplicator implements ClusterModule {
                 if (s3.download(sha, target)) return;
                 CloudLogger.get().debug("{} of {} is not in S3 yet, fetching it from {}", path, unit.display(), peer);
             } catch (Exception e) {
-                CloudLogger.get().debug("S3 download of {} of {} failed, fetching it from {}: {}", path, unit.display(), peer, e.getMessage());
+                if (!s3DownloadWarned) CloudLogger.get().warn("S3 download failed, fetching template files from {} instead§8: §c{}", peer, e.getMessage());
+                else CloudLogger.get().debug("S3 download of {} of {} failed, fetching it from {}: {}", path, unit.display(), peer, e.getMessage());
+                s3DownloadWarned = true; // once per start, the rest goes to debug
             }
         }
         Files.createDirectories(target.getParent());

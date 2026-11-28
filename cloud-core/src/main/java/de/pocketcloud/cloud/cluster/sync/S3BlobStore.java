@@ -91,6 +91,22 @@ public final class S3BlobStore {
         return endpoint + "/" + bucket + "/" + prefix;
     }
 
+    /** Tests bucket and credentials with a HEAD request; null if they work, else the reason. */
+    public String check() {
+        try {
+            int status = send("HEAD", "blobs/0000000000000000000000000000000000000000000000000000000000000000", null, null, HttpResponse.BodyHandlers.discarding()).statusCode();
+            return switch (status) {
+                case 200, 404 -> null;
+                case 403 -> "access denied (403): check accessKey/secretKey and the token's permissions for the bucket";
+                case 301, 400 -> "bad request (" + status + "): check endpoint and region";
+                default -> "HTTP " + status;
+            };
+        } catch (Exception e) {
+            if (e instanceof InterruptedException) Thread.currentThread().interrupt();
+            return e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
+        }
+    }
+
     /** Uploads the file unless the bucket already has it. {@code sha} must be the file's SHA-256. */
     void upload(String sha, Path file) throws IOException, InterruptedException {
         if (known.contains(sha)) return;
