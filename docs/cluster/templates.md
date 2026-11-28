@@ -75,6 +75,35 @@ Settings of template Lobby were updated from the cluster.
 Template Lobby was removed on another node.
 ```
 
+## S3 storage
+
+By default the head sends the files to every node itself. With `cluster.templateStorage: s3` (see
+[Configuration](configuration.md#cluster)) the files go through an S3 bucket instead (AWS S3, MinIO,
+Cloudflare R2 or any other S3-compatible service):
+
+- Before the head announces a new version, it uploads its new files to the bucket, each file once under its
+  SHA-256 (`<prefix>blobs/<sha256>`). The other nodes download them from the bucket, so the head uploads a
+  change once instead of sending it to every node.
+- Versions, file lists, conflicts, pause and rollback still go through the cluster connection. Changes made on a
+  follower still reach the head over the cluster connection.
+- When a node becomes head it also uploads the current versions that are not in the bucket yet (in the background).
+- If the bucket cannot be reached or a file is missing there, the nodes get the file from the head as before. The
+  head then logs `Could not upload template Lobby to S3, the nodes get it from this node instead: ...`.
+
+Credentials go into `storage/internal/cluster/s3.properties` on every node (not into `config.yml`, which is often
+shared), or into the environment variables `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`:
+
+```properties
+accessKey=AKIA...
+secretKey=...
+```
+
+The key needs `s3:GetObject` and `s3:PutObject` on the prefix; with `s3:ListBucket` a missing file is reported as
+missing instead of "access denied" (both fall back to the head). On startup each node logs
+`Template files are synced through S3 (https://.../pocketcloud/templates/).` The bucket is never cleaned up:
+files of old versions stay there; delete the prefix by hand to clean it up.
+Files larger than 5 GB cannot be uploaded (one upload per file).
+
 ## Starting a server with an outdated copy
 
 When the head starts a server on a node, it sends the versions it expects for the template, its global template and

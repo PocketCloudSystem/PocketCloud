@@ -49,11 +49,22 @@ provider, because each node writes its own whitelist and notification list there
 ```yaml
 cluster:
   strategy: least-memory
+  templateStorage: packets
+  s3:
+    endpoint: https://s3.eu-central-1.amazonaws.com
+    region: eu-central-1
+    bucket: pocketcloud
+    prefix: templates/
 ```
 
 | Key | Default | Values |
 |-----|---------|--------|
 | `cluster.strategy` | `least-memory` | How the head picks the node for a new server (only used with more than one node). `least-memory`: the node with the most free memory budget (even distribution). `fill`: the node with the smallest free budget that is still enough (keeps machines free). `round-robin`: the next node in turn (by name). Invalid values are reset to `least-memory`. Only the head's setting is used, so keep it the same on all nodes. |
+| `cluster.templateStorage` | `packets` | Where the nodes get template files from. `packets`: from the head over the cluster connection. `s3`: from an S3 bucket, see [Templates → S3 storage](templates.md#s3-storage). |
+| `cluster.s3.endpoint` | `https://s3.eu-central-1.amazonaws.com` | URL of the S3 service, e.g. `http://10.0.0.5:9000` (MinIO) or `https://<account>.r2.cloudflarestorage.com` (Cloudflare R2). |
+| `cluster.s3.region` | `eu-central-1` | Region of the bucket. MinIO: `us-east-1`, R2: `auto`. |
+| `cluster.s3.bucket` | `pocketcloud` | The bucket. It must exist. |
+| `cluster.s3.prefix` | `templates/` | Folder inside the bucket. Use the same bucket and prefix on all nodes. |
 
 ### redis
 

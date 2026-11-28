@@ -80,6 +80,8 @@ public final class TemplateReplicator implements ClusterModule {
     private ExecutorService syncExecutor;
     private ExecutorService serveExecutor;
     private TemplateWatcher watcher;
+    /** Template files in S3 ({@code cluster.templateStorage: s3}), null: only the cluster connection. */
+    private S3BlobStore s3;
     private boolean jsonMeta;
     private volatile String knownHead;
     /** The head before {@link #knownHead}; its answer wins ties when a new head collects the versions. */
@@ -123,6 +125,10 @@ public final class TemplateReplicator implements ClusterModule {
     public void start(ClusterManager cluster) {
         this.cluster = cluster;
         this.jsonMeta = !"mysql".equalsIgnoreCase(PocketCloud.instance().config().provider());
+        var clusterConfig = PocketCloud.instance().config().cluster();
+        this.s3 = S3BlobStore.fromConfig(clusterConfig.templateStorage(), clusterConfig.s3(),
+                PocketCloudPaths.storage().internal().with("cluster").with("s3.properties").asPath());
+        if (s3 != null) CloudLogger.get().info("Template files are synced through S3 §8(§b{}§8)§r.", s3.describe());
         headVersions.load();
         applied.load();
         keepServedVersions(); // versions this node served as head before a restart count as taken over
@@ -482,6 +488,18 @@ public final class TemplateReplicator implements ClusterModule {
 
     /** Downloads a file with known hash from a node into {@code target} and verifies it. */
     private void fetch(String peer, SyncUnit unit, String path, String sha, Path target) throws Exception {
+        fetch(peer, unit, path, sha, target, true);
+    }
+
+    private void fetch(String peer, SyncUnit unit, String path, String sha, Path target, boolean tryS3) throws Exception {
+        if (s3 != null && tryS3) {
+            try {
+                if (s3.download(sha, target)) return;
+                CloudLogger.get().debug("{} of {} is not in S3 yet, fetching it from {}", path, unit.display(), peer);
+            } catch (Exception e) {
+                CloudLogger.get().debug("S3 download of {} of {} failed, fetching it from {}: {}", path, unit.display(), peer, e.getMessage());
+            }
+        }
         Files.createDirectories(target.getParent());
         try (OutputStream out = Files.newOutputStream(target)) {
             long offset = 0;
@@ -993,6 +1011,13 @@ public final class TemplateReplicator implements ClusterModule {
         CloudLogger.get().debug("Template replication: serving {} unit(s) as head ({} new version(s), {} taken over from other nodes).",
                 headVersions.all().size(), changed, fetched);
         for (Map.Entry<String, UnitVersion> e : headVersions.all().entrySet()) broadcastVersion(new SyncUnit(e.getKey()), null);
+        if (s3 != null) {
+            // versions from before S3 was enabled (or uploads that failed): fill the bucket in the background
+            Map<String, UnitVersion> current = Map.copyOf(headVersions.all());
+            Thread.ofVirtual().name("template-s3-upload").start(() -> current.forEach((id, v) -> {
+                if (!v.deleted()) uploadToS3(new SyncUnit(id), v.manifest());
+            }));
+        }
     }
 
     private static List<String> concat(String first, List<String> rest) {
@@ -1222,6 +1247,22 @@ public final class TemplateReplicator implements ClusterModule {
         r.conflicts = new ArrayList<>(conflicts);
         r.manifest = version.manifest().toList();
         history.add(unit, r);
+        uploadToS3(unit, version.manifest());
+    }
+
+    /** Head: puts the files of a new version into S3 before it is announced, so the nodes can get them there. */
+    private void uploadToS3(SyncUnit unit, Manifest manifest) {
+        if (s3 == null) return;
+        for (Manifest.Entry e : manifest.entries().values()) {
+            if (e.directory() || !history.hasBlob(unit, e.sha())) continue; // missing blobs: the nodes fetch them from a node
+            try {
+                s3.upload(e.sha(), history.blob(unit, e.sha()));
+            } catch (Exception ex) {
+                if (ex instanceof InterruptedException) Thread.currentThread().interrupt();
+                CloudLogger.get().warn("Could not upload template §b{} §rto S3, the nodes get it from this node instead§8: §c{}", unit.display(), ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage());
+                return;
+            }
+        }
     }
 
     /** The one console line per node for a new version of a unit. */
@@ -1329,7 +1370,7 @@ public final class TemplateReplicator implements ClusterModule {
             for (Manifest.Entry e : incoming) {
                 if (history.hasBlob(unit, e.sha())) continue;
                 Path file = staging.resolve(e.sha());
-                fetch(from, unit, e.path(), e.sha(), file);
+                fetch(from, unit, e.path(), e.sha(), file, false); // pushed files are new, not in S3 yet
                 history.addBlob(unit, e.sha(), file);
             }
         } catch (Exception e) {
