@@ -30,6 +30,7 @@ was forwarded.
 | `POST /v1/servers/start` | the head |
 | Any non-reading method (`POST`, `PUT`, `PATCH`, `DELETE`) on `/v1/templates...`, `/v1/groups...`, `/v1/maintenance...` | the head |
 | `POST /v1/nodes/{name}/drain`, `POST /v1/nodes/{name}/undrain` | the head |
+| `GET /v1/templates/{name}/history` | the head |
 | Everything else (all `GET`/`HEAD`/`OPTIONS`/`QUERY` requests, players, plugins, notifications, `stopAll`, ...) | the node the client talks to |
 
 Forwarded requests time out after 8 s. Errors produced by forwarding:
@@ -149,6 +150,60 @@ Ends drain mode. Same responses as `drain`.
 
 `POST /v1/templates` and `PATCH /v1/templates/{name}` accept the template settings `nodes` (list of node names) and
 `staticNode` (string), see [Configuration](configuration.md#template-settings).
+
+`POST /v1/templates` also takes a short form without a `settings` object: `name`, `templateType` (`SERVER`/`PROXY`),
+`serverSoftware`, plus any flat setting of `PATCH`. Missing settings get their defaults. Invalid values answer `400`.
+
+```json
+{"name": "Lobby", "templateType": "SERVER", "serverSoftware": "powernukkitx-latest", "minServerCount": 2}
+```
+
+### `GET /v1/templates/{name}/history`
+
+The file versions of a template, newest first (see [Templates & replication](templates.md)). Answered by the head.
+`409` without a cluster.
+
+```json
+{"currentVersion": 12, "records": [
+  {"version": 12, "time": 1795869278000, "node": "node-1", "note": "rollback to version 10", "deleted": false,
+   "changed": ["junk.txt"], "removed": [], "conflicts": []}
+]}
+```
+
+### `POST /v1/templates/{name}/rollback`
+
+Body `{"version": 10}`. Like `template rollback`: the head distributes that version as a new version. `404` if the
+version does not exist.
+
+### `POST /v1/templates/{name}/restart`
+
+Rolling restart like `template restart`. `409` if one is already running for the template.
+
+## Schedules
+
+Scheduled console commands, like the `schedule` command. Replicated in a cluster; the head runs them.
+
+| Request | Body / answer |
+|---------|---------------|
+| `GET /v1/schedules` | `[{"id": "3395e1", "cron": "0 4 * * *", "command": "template restart Lobby"}]` |
+| `POST /v1/schedules` | `{"cron": "0 4 * * *", "command": "template restart Lobby"}`; `400` for an invalid cron time |
+| `DELETE /v1/schedules/{id}` | `404` if there is no such schedule |
+
+## Backups
+
+The backups of the node that answers, like the `backup` command. The zip files cannot be downloaded over HTTP because
+they contain secrets.
+
+| Request | Body / answer |
+|---------|---------------|
+| `GET /v1/backups` | `[{"name": "backup-2026-11-28_12-34-27.zip", "time": 1795869267381, "size": 3012072}]`, newest first |
+| `POST /v1/backups` | Creates a backup and answers when it is done: `{"message": ..., "name": ...}` |
+| `POST /v1/backups/{name}/restore` | Restores; answers with `before`, the backup of the previous state |
+
+## Web panel routes
+
+`/panel/` serves the [web panel](../web-panel.md). `/panel-api/...` (login, logout, session, live console as
+Server-Sent Events, software list) is meant for the panel only and may change without notice.
 
 ## Metrics (Prometheus)
 

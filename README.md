@@ -15,6 +15,7 @@ centralized system.
 * 🧠 **Centralized Control** - Manage the entire network from one cloud node
 * 🔐 **Secure Communication** - Encrypted communication between nodes and services
 * 📊 **Monitoring System** - Track service status, player counts, and performance
+* 🖥 **Web Panel** - Manage servers, templates, players and nodes from the browser ([docs](docs/web-panel.md))
 * 🧩 **Plugin Friendly** - OOP-based plugin support
 
 ---

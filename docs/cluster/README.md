@@ -20,7 +20,8 @@ A single machine without a cluster keeps working exactly as before: it is one no
 | [Failures & recovery](failures.md) | Node down, head down, network partition, adopting servers after a restart |
 | [Security](security.md) | mTLS, the cluster CA, join tokens, removing nodes, certificates |
 | [Commands](commands.md) | `node ...`, the cluster-related `template ...` subcommands, `server` in a cluster |
-| [HTTP API](http-api.md) | Node routes, request forwarding, `X-PocketCloud-Node` |
+| [HTTP API](http-api.md) | Node routes, request forwarding, `X-PocketCloud-Node`, history, schedules, backups |
+| [Web panel](../web-panel.md) | The browser interface on `/cloud/panel/` |
 | [Plugin API](plugin-api.md) | `INode`, `CloudAPI.nodes()`, `ICloudServer.node()`, `ServerSearchQuery.onNode` |
 | [Upgrading](upgrading.md) | From a single-node setup to a cluster (bridge update!) |
 | [Troubleshooting](troubleshooting.md) | Common log messages and what to do |
