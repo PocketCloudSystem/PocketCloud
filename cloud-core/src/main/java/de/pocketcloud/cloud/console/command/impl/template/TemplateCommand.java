@@ -1,6 +1,7 @@
 package de.pocketcloud.cloud.console.command.impl.template;
 
 import de.pocketcloud.api.component.template.ITemplate;
+import de.pocketcloud.cloud.server.RollingRestart;
 import de.pocketcloud.api.search.TemplateSearchQuery;
 import de.pocketcloud.api.template.TemplateType;
 import de.pocketcloud.api.template.util.TemplateEditData;
@@ -60,6 +61,10 @@ public final class TemplateCommand extends Command implements TabComplete {
                     new SoftwareParameter("software", true)));
         }));
 
+        registerSubCommand(SubCommand.lambda("restart", this::handleRestartSub, true, subCommand -> {
+            subCommand.addParameter(new TemplateParameter("template", false));
+        }));
+
         registerSubCommand(SubCommand.lambda("history", this::handleHistorySub, true, subCommand -> {
             subCommand.addParameter(new StringParameter("template", false));
         }));
@@ -79,6 +84,12 @@ public final class TemplateCommand extends Command implements TabComplete {
         Optional<TemplateReplicator> replicator = TemplateReplicator.get();
         if (replicator.isEmpty()) sender.error("Template replication only runs while this node is part of a cluster.");
         return replicator;
+    }
+
+    public boolean handleRestartSub(CommandSender sender, CommandContext ctx) {
+        ITemplate template = ctx.arg("template", ITemplate.class);
+        if (!RollingRestart.start(template, sender::info)) sender.error("The servers of §b{} §rare already being restarted.", template.name());
+        return true;
     }
 
     public boolean handleHistorySub(CommandSender sender, CommandContext ctx) {

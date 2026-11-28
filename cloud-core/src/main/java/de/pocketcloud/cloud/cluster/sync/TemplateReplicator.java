@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import de.pocketcloud.api.network.packet.Packet;
 import de.pocketcloud.cloud.PocketCloud;
+import de.pocketcloud.cloud.server.RollingRestart;
 import de.pocketcloud.cloud.cluster.ClusterManager;
 import de.pocketcloud.cloud.cluster.ClusterModule;
 import de.pocketcloud.cloud.cluster.Peer;
@@ -1303,6 +1304,7 @@ public final class TemplateReplicator implements ClusterModule {
         record(unit, now, previous, node, "changed on " + node + (note.isEmpty() ? "" : " (" + note + ")"), List.of());
         headVersions.put(unit, now);
         logUpdated(unit, node);
+        if (!unit.meta()) RollingRestart.onTemplateUpdated(unit.display());
         CloudLogger.get().debug("{} is now version {} ({} changed, {} removed).",
                 unit.display(), now.version(), files(Manifest.changed(previous, now.manifest())), files(Manifest.removed(previous, now.manifest())));
         broadcastVersion(unit, origin);
@@ -1410,6 +1412,7 @@ public final class TemplateReplicator implements ClusterModule {
         record(unit, now, exists ? current.manifest() : null, from, (conflicts.isEmpty() ? "changed on " + from : "changed on " + from + " (conflict)") + note, conflicts);
         headVersions.put(unit, now);
         logUpdated(unit, from);
+        if (!unit.meta()) RollingRestart.onTemplateUpdated(unit.display());
         CloudLogger.get().debug("{} is now version {} ({} changed, {} removed).",
                 unit.display(), now.version(), files(Manifest.changed(exists ? current.manifest() : null, target)),
                 files(Manifest.removed(exists ? current.manifest() : null, target)));

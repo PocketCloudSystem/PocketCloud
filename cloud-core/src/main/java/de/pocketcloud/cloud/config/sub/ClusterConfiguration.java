@@ -32,6 +32,10 @@ public final class ClusterConfiguration extends OkaeriConfig implements ICloudCo
             "or the environment variables AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY."})
     private String templateStorage = "packets";
 
+    @Comment({"Templates whose servers are restarted one after another when the template was changed",
+            "(like 'template restart <template>'), e.g. [Lobby, BedWars]. Only the head does it."})
+    private List<String> restartOnUpdate = List.of();
+
     @Comment({"S3 settings, only used with templateStorage: s3"})
     private S3Configuration s3 = new S3Configuration();
 
@@ -47,6 +51,7 @@ public final class ClusterConfiguration extends OkaeriConfig implements ICloudCo
             templateStorage = "packets";
         }
         templateStorage = templateStorage.toLowerCase();
+        if (restartOnUpdate == null) restartOnUpdate = List.of();
         s3.validate();
     }
 }

@@ -104,6 +104,23 @@ missing instead of "access denied" (both fall back to the head). On startup each
 files of old versions stay there; delete the prefix by hand to clean it up.
 Files larger than 5 GB cannot be uploaded (one upload per file).
 
+## Restarting servers after a change
+
+A change reaches servers that start afterwards; running servers keep their copy. To bring them up to date without
+fewer servers or kicked players, run `template restart Lobby` (see [Commands](commands.md)) or list the template in
+`cluster.restartOnUpdate` to do it automatically after every change:
+
+```text
+Restarting 3 server(s) of Lobby one after another...
+Restarted Lobby-1.
+Restarted Lobby-2.
+Restarted Lobby-3.
+All servers of Lobby were restarted.
+```
+
+If a step takes longer than 3 minutes (e.g. no node can start a server: `No node can start a server of Lobby right
+now: ...`), the restart stops with `Rolling restart of Lobby stopped: ...`; the servers not restarted yet keep running.
+
 ## Starting a server with an outdated copy
 
 When the head starts a server on a node, it sends the versions it expects for the template, its global template and

@@ -41,6 +41,7 @@ node-3 | 10.0.0.13:3657 | DEAD | state: FOLLOWER | cpu: 5% | last seen: 47s ago
 | `template nodes <template> <node,node,...>` | Sets them. `all`, `-` or `[]` clears the list (all nodes). Warns about names that are not members (yet). Required for proxy templates. |
 | `template staticnode <template>` | Shows the node the template's static servers live on. |
 | `template staticnode <template> <node>` | Sets it; `none` or `-` clears it. Required for static templates in a cluster. Warns if the node is not in the template's `nodes`. |
+| `template restart <template>` | Rolling restart: restarts the servers of the template one after another on all nodes. For each server a new one is started first (it gets the current template version), and the old one stops as soon as the new one is online. Players of the stopped server are sent to a lobby by the proxy. If `maxServerCount` is reached or the template has static servers, the old server stops first and the next step waits for its replacement. Works on every node. |
 | `template history <template>` | The last versions of a replicated folder (from the head's history, which also contains the versions recorded by former heads): version, time, node, note, changed/removed files, conflicts. |
 | `template rollback <template> <version>` | Restores a version from the history as a new version and distributes it. |
 | `template sync pause [template]` | Pauses the replication of one template (or all) **on this node** until `resume` (kept across restarts). |
