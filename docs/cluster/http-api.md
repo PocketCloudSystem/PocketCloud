@@ -149,3 +149,38 @@ Ends drain mode. Same responses as `drain`.
 
 `POST /v1/templates` and `PATCH /v1/templates/{name}` accept the template settings `nodes` (list of node names) and
 `staticNode` (string), see [Configuration](configuration.md#template-settings).
+
+## Metrics (Prometheus)
+
+### `GET /metrics`
+
+Metrics in the Prometheus text format, under the route prefix like every route (default
+`http://<node>:8080/cloud/metrics`). It needs the same `Authorization: Bearer <auth-key>` as the API. Any node
+answers for the whole cluster; values of other nodes come from their heartbeats and are a few seconds old.
+
+| Metric | Labels | Meaning |
+|--------|--------|---------|
+| `pocketcloud_node_up` | `node` | 1 if the node is reachable, 0 if not. |
+| `pocketcloud_node_head` | `node` | 1 for the head. |
+| `pocketcloud_node_cpu_percent` | `node` | CPU usage of the node's machine. |
+| `pocketcloud_node_memory_used_megabytes` | `node` | Heap used by the cloud process. |
+| `pocketcloud_node_memory_max_megabytes` | `node` | `maxMemoryMb` of the node for its servers (0 = no limit). |
+| `pocketcloud_node_servers` | `node` | Servers running on the node. |
+| `pocketcloud_servers` | `template`, `status` | Servers of the cluster. |
+| `pocketcloud_players` | `template` | Online players by the template of their server. |
+| `pocketcloud_players_total` | | Online players of the cluster. |
+
+CPU and memory are missing for a node that is down. Example `prometheus.yml`:
+
+```yaml
+scrape_configs:
+  - job_name: pocketcloud
+    metrics_path: /cloud/metrics
+    authorization:
+      credentials: <auth-key from config.yml>
+    static_configs:
+      - targets: ["node-1:8080", "node-2:8080"]
+```
+
+Scraping more than one node keeps the metrics available when a node fails; the values are the same, so use
+`max by (node)` / `max by (template)` (or `max without (instance)`) in queries.

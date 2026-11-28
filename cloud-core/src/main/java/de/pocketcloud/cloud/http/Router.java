@@ -10,6 +10,7 @@ import de.pocketcloud.cloud.http.handler.RouteHandler;
 import de.pocketcloud.cloud.http.io.HttpRequest;
 import de.pocketcloud.cloud.http.io.HttpResponse;
 import de.pocketcloud.cloud.http.route.HealthRoute;
+import de.pocketcloud.cloud.http.route.MetricsRoute;
 import de.pocketcloud.cloud.http.route.v1.GeneralRoutes;
 import de.pocketcloud.cloud.http.route.v1.group.GroupRoutes;
 import de.pocketcloud.cloud.http.route.v1.maintenance.MaintenanceRoutes;
@@ -63,6 +64,7 @@ public final class Router implements IRouter {
         this.routePrefix = normalizePrefix(routePrefix);
 
         registerCloudController(new HealthRoute());
+        registerCloudController(new MetricsRoute());
         registerCloudController(new GeneralRoutes());
         registerCloudController(new GroupRoutes());
         registerCloudController(new MaintenanceRoutes());
