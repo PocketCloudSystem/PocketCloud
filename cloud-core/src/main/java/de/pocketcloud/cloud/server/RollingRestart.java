@@ -6,6 +6,9 @@ import de.pocketcloud.api.search.ServerSearchQuery;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -27,6 +30,7 @@ public final class RollingRestart {
 
     private static final long STEP_TIMEOUT_MS = 180_000;
     private static final long REPLACEMENT_WAIT_MS = 10_000;
+    private static final long REACHABLE_WAIT_MS = 60_000;
 
     private static final Set<String> running = ConcurrentHashMap.newKeySet();
     /** Templates that were updated again during their restart: restarted once more afterwards. */
@@ -82,6 +86,7 @@ public final class RollingRestart {
                         .filter(s -> !known.contains(s.uuid()) && s.status().isOnline(true))
                         .map(ICloudServer::uuid).findFirst(), "a new server of " + template.name() + " to start");
                 known.add(fresh);
+                waitReachable(template, fresh);
                 servers.stop(server.get(), false);
                 waitFor(() -> find(template, uuid).isEmpty() ? Optional.of(name) : Optional.empty(), name + " to stop");
             } else {
@@ -98,6 +103,28 @@ public final class RollingRestart {
             log.accept("Restarted §b" + name + "§r.");
         }
         log.accept("All servers of §b" + template.name() + " §rwere §arestarted§r.");
+    }
+
+    /**
+     * NetherNet servers report ONLINE a moment before their signaling (TCP on the server port) accepts connections;
+     * players moved there earlier get "connection refused". Waits for the port, at most {@link #REACHABLE_WAIT_MS}.
+     */
+    private static void waitReachable(ITemplate template, UUID uuid) throws InterruptedException {
+        String transport = template.serverSoftware().config().transport();
+        if (!"nethernet".equalsIgnoreCase(transport)) return;
+        Optional<ICloudServer> server = find(template, uuid);
+        if (server.isEmpty()) return;
+        InetSocketAddress address = new InetSocketAddress(server.get().data().address(), server.get().data().port());
+        long deadline = System.currentTimeMillis() + REACHABLE_WAIT_MS;
+        while (System.currentTimeMillis() < deadline) {
+            try (Socket socket = new Socket()) {
+                socket.connect(address, 1000);
+                return;
+            } catch (IOException e) {
+                Thread.sleep(500);
+            }
+        }
+        CloudLogger.get().debug("{} is ONLINE but {} does not accept connections yet, continuing", server.get().name(), address);
     }
 
     private static Collection<ICloudServer> servers(ITemplate template) {
