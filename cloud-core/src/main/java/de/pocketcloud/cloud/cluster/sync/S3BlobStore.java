@@ -50,7 +50,10 @@ public final class S3BlobStore {
     private final Set<String> known = ConcurrentHashMap.newKeySet();
 
     S3BlobStore(String endpoint, String region, String bucket, String prefix, String accessKey, String secretKey) {
-        this.endpoint = endpoint.endsWith("/") ? endpoint.substring(0, endpoint.length() - 1) : endpoint;
+        String base = endpoint.endsWith("/") ? endpoint.substring(0, endpoint.length() - 1) : endpoint;
+        // the bucket's own URL (e.g. copied from the R2 bucket page) instead of the service URL
+        if (base.endsWith("/" + bucket)) base = base.substring(0, base.length() - bucket.length() - 1);
+        this.endpoint = base;
         this.region = region;
         this.bucket = bucket;
         this.prefix = prefix;
@@ -136,7 +139,7 @@ public final class S3BlobStore {
                 .timeout(Duration.ofMinutes(10))
                 .header("x-amz-content-sha256", payloadHash)
                 .header("x-amz-date", AMZ_DATE.format(now))
-                .header("Authorization", authorization(method, uri, path, payloadHash, now))
+                .header("Authorization", authorization(method, uri, uri.getRawPath(), payloadHash, now))
                 .method(method, body == null ? HttpRequest.BodyPublishers.noBody() : HttpRequest.BodyPublishers.ofFile(body));
         return http.send(request.build(), handler);
     }
