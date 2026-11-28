@@ -187,6 +187,54 @@ public final class HttpResponse {
         }
     }
 
+    /**
+     * Starts a Server-Sent Events response (text/event-stream) that stays open; send events with
+     * {@link EventStream#send}. The connection is not reused for other requests.
+     */
+    public EventStream eventStream() {
+        if (sent) throw new IllegalStateException("Response was already sent");
+        sent = true;
+        DefaultHttpResponse response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, status);
+        response.headers().set(HttpHeaderNames.CONTENT_TYPE, "text/event-stream; charset=UTF-8");
+        response.headers().set(HttpHeaderNames.CACHE_CONTROL, "no-cache");
+        response.headers().set("X-Accel-Buffering", "no"); // nginx: do not buffer the stream
+        HttpUtil.setTransferEncodingChunked(response, true);
+        headers.forEach((k, v) -> response.headers().set(k, v));
+        ctx.writeAndFlush(response);
+        return new EventStream(ctx);
+    }
+
+    public static final class EventStream {
+
+        private final ChannelHandlerContext ctx;
+
+        private EventStream(ChannelHandlerContext ctx) {
+            this.ctx = ctx;
+        }
+
+        public boolean open() {
+            return ctx.channel().isActive();
+        }
+
+        /** @param data may contain line breaks */
+        public void send(String event, String data) {
+            StringBuilder out = new StringBuilder();
+            if (event != null) out.append("event: ").append(event).append('\n');
+            for (String line : data.split("\n", -1)) out.append("data: ").append(line).append('\n');
+            out.append('\n');
+            ctx.writeAndFlush(new DefaultHttpContent(Unpooled.copiedBuffer(out, CharsetUtil.UTF_8)));
+        }
+
+        /** Keeps proxies and the browser from closing an idle stream. */
+        public void ping() {
+            ctx.writeAndFlush(new DefaultHttpContent(Unpooled.copiedBuffer(": ping\n\n", CharsetUtil.UTF_8)));
+        }
+
+        public void close() {
+            if (ctx.channel().isActive()) ctx.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT).addListener(ChannelFutureListener.CLOSE);
+        }
+    }
+
     private void write(String contentType, ByteBuf content) {
         if (sent) throw new IllegalStateException("Response was already sent");
         sent = true;

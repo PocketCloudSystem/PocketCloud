@@ -2,6 +2,7 @@ package de.pocketcloud.cloud.http.auth;
 
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.http.io.HttpRequest;
+import de.pocketcloud.cloud.http.panel.PanelSessions;
 import de.pocketcloud.common.util.StringUtils;
 
 public final class DefaultAuthentication implements IAuthentication {
@@ -10,6 +11,6 @@ public final class DefaultAuthentication implements IAuthentication {
     public boolean authenticated(HttpRequest request) {
         return request.bearerToken()
                 .map(token -> StringUtils.secureEquals(token, PocketCloud.instance().httpServer().authToken()))
-                .orElse(false);
+                .orElseGet(() -> PanelSessions.authenticated(request));
     }
 }

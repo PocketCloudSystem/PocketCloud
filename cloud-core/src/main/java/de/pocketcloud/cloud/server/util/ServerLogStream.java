@@ -52,6 +52,21 @@ public final class ServerLogStream {
         }
     }
 
+    /** Local servers: start at the last {@code bytes} of the log file instead of its beginning (at a line start). */
+    public void skipToTail(long bytes) {
+        if (fileHandle == null) return;
+        try {
+            long start = Math.max(0, fileHandle.length() - bytes);
+            fileHandle.seek(start);
+            if (start > 0) while (true) {
+                int b = fileHandle.read();
+                if (b == -1 || b == '\n') break;
+            }
+        } catch (IOException ignored) {
+            // read from where we are
+        }
+    }
+
     public String readNewLine() {
         if (!startedStream) return null;
         if (remote) {

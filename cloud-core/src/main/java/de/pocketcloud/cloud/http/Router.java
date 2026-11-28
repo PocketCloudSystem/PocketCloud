@@ -10,6 +10,8 @@ import de.pocketcloud.cloud.http.handler.RouteHandler;
 import de.pocketcloud.cloud.http.io.HttpRequest;
 import de.pocketcloud.cloud.http.io.HttpResponse;
 import de.pocketcloud.cloud.http.route.HealthRoute;
+import de.pocketcloud.cloud.http.panel.PanelFiles;
+import de.pocketcloud.cloud.http.panel.PanelRoutes;
 import de.pocketcloud.cloud.http.route.MetricsRoute;
 import de.pocketcloud.cloud.http.route.v1.GeneralRoutes;
 import de.pocketcloud.cloud.http.route.v1.group.GroupRoutes;
@@ -65,6 +67,7 @@ public final class Router implements IRouter {
 
         registerCloudController(new HealthRoute());
         registerCloudController(new MetricsRoute());
+        registerCloudController(new PanelRoutes());
         registerCloudController(new GeneralRoutes());
         registerCloudController(new GroupRoutes());
         registerCloudController(new MaintenanceRoutes());
@@ -246,7 +249,12 @@ public final class Router implements IRouter {
             }
         }
 
+        if (method.equals("GET") && PanelFiles.serve(routePrefix, path, res)) return;
         res.status(404).text("404 Not Found");
+    }
+
+    public String routePrefix() {
+        return routePrefix;
     }
 
     private void applyVersionHeaders(HttpResponse res, int version) {

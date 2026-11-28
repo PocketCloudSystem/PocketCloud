@@ -1,4 +1,5 @@
 .idea/
 target/
 target-minimal/
-server-configs/
+server-configs/node_modules/
+dist/

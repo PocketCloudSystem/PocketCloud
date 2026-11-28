@@ -1,0 +1,16 @@
+{
+  "name": "pocketcloud-panel",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "preact": "^10.25.4"
+  },
+  "devDependencies": {
+    "vite": "^6.0.7"
+  }
+}
