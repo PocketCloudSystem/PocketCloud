@@ -1,9 +1,10 @@
 import { useState } from 'preact/hooks';
 import { api } from '../api.js';
-import { Badge, ErrorNote } from '../components/ui.jsx';
+import { Badge, ErrorNote, Loading } from '../components/ui.jsx';
 import { navigate } from '../router.js';
 import { act, usePoll } from '../util.js';
 import { t } from '../i18n.js';
+import { Plus } from 'lucide-preact';
 
 function CreateForm({ onDone }) {
   const softwares = usePoll(() => api('/panel-api/softwares'), 60000);
@@ -26,7 +27,7 @@ function CreateForm({ onDone }) {
       <select value={chosen?.name} onChange={(e) => setSoftware(e.currentTarget.value)} aria-label={t('Software')}>
         {list.map((s) => <option value={s.name}>{s.name} ({s.templateType.toLowerCase()})</option>)}
       </select>
-      <button class="primary" disabled={!name || !chosen}>{t('Create')}</button>
+      <button class="primary" disabled={!name || !chosen}><Plus size={15} />{t('Create')}</button>
       <button type="button" class="ghost" onClick={onDone}>{t('Cancel')}</button>
     </form>
   );
@@ -41,10 +42,11 @@ export function Templates() {
     <section class="stack">
       <div class="row">
         <h1 class="grow">{t('Templates')}</h1>
-        {!creating && <button class="primary" onClick={() => setCreating(true)}>{t('New template')}</button>}
+        {!creating && <button class="primary" onClick={() => setCreating(true)}><Plus size={15} />{t('New template')}</button>}
       </div>
       {creating && <CreateForm onDone={() => setCreating(false)} />}
       <ErrorNote error={templates.error} />
+      <Loading poll={templates} />
       <div class="card table-wrap">
         <table>
           <thead><tr><th>{t('Name')}</th><th>{t('Servers')}</th><th>{t('Players')}</th><th>{t('Software')}</th><th /></tr></thead>

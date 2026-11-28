@@ -8,6 +8,7 @@
     "build": "vite build"
   },
   "dependencies": {
+    "lucide-preact": "1.83.0",
     "preact": "^10.25.4"
   },
   "devDependencies": {

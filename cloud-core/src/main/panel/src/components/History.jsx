@@ -2,6 +2,7 @@ import { api } from '../api.js';
 import { ConfirmButton, ErrorNote } from './ui.jsx';
 import { act, usePoll } from '../util.js';
 import { t } from '../i18n.js';
+import { Undo2 } from 'lucide-preact';
 
 const files = (list, sign) => list.slice(0, 4).map((f) => `${sign}${f}`).join(', ') + (list.length > 4 ? ` +${list.length - 4}` : '');
 
@@ -36,7 +37,7 @@ export function History({ name }) {
                     {r.version !== h.currentVersion && (
                       <ConfirmButton confirmText={t('Roll back to v{n}?', { n: r.version })}
                                      onConfirm={() => act(api(path + '/rollback', { method: 'POST', body: { version: r.version } })).then(() => setTimeout(history.reload, 1500))}>
-                        {t('Roll back')}
+                        <Undo2 size={15} />{t('Roll back')}
                       </ConfirmButton>
                     )}
                   </td>

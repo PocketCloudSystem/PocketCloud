@@ -1,5 +1,5 @@
 import { api } from '../api.js';
-import { Badge, ErrorNote } from '../components/ui.jsx';
+import { Badge, ErrorNote, Loading } from '../components/ui.jsx';
 import { act, usePoll } from '../util.js';
 import { t } from '../i18n.js';
 
@@ -13,6 +13,7 @@ export function Plugins({ session }) {
       <h1>{t('Plugins')}</h1>
       <p class="muted">{session.clustered ? t('Cloud plugins of {node} (each node loads its own), from', { node: session.node }) : t('Cloud plugins, from')} <code>plugins/</code>.</p>
       <ErrorNote error={plugins.error} />
+      <Loading poll={plugins} />
       <div class="card table-wrap">
         <table>
           <thead><tr><th>{t('Name')}</th><th>{t('Version')}</th><th>{t('Authors')}</th><th>{t('Status')}</th><th /></tr></thead>

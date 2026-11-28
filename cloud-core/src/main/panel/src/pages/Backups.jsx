@@ -1,6 +1,6 @@
 import { useState } from 'preact/hooks';
 import { api } from '../api.js';
-import { ConfirmButton, ErrorNote } from '../components/ui.jsx';
+import { ConfirmButton, ErrorNote, Loading } from '../components/ui.jsx';
 import { act, bytes, usePoll } from '../util.js';
 import { t } from '../i18n.js';
 
@@ -27,6 +27,7 @@ export function Backups({ session }) {
           : t('Templates, groups and configs. A restore replaces templates and groups and saves the current state as a backup first.')}
       </p>
       <ErrorNote error={backups.error} />
+      <Loading poll={backups} />
       <div class="card table-wrap">
         <table>
           <thead><tr><th>{t('Backup')}</th><th>{t('Created')}</th><th>{t('Size')}</th><th /></tr></thead>

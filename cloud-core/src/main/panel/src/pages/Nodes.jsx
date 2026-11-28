@@ -1,7 +1,8 @@
 import { api } from '../api.js';
-import { Badge, ConfirmButton, ErrorNote, Meter } from '../components/ui.jsx';
+import { Badge, ConfirmButton, ErrorNote, Loading, Meter } from '../components/ui.jsx';
 import { act, duration, pct, usePoll } from '../util.js';
 import { t } from '../i18n.js';
+import { LogIn, LogOut } from 'lucide-preact';
 
 export function Nodes() {
   const nodes = usePoll(() => api('/v1/nodes'), 3000);
@@ -16,6 +17,7 @@ export function Nodes() {
         {d && <span class="muted">{t('head')}: <strong>{d.head || t('none')}</strong> · term {d.term}</span>}
       </div>
       <ErrorNote error={nodes.error} />
+      <Loading poll={nodes} />
       {d && !d.clustered && <p class="muted">{t('This cloud runs without a cluster.')}</p>}
       <div class="grid two">
         {d?.nodes.map((n) => (
@@ -41,8 +43,8 @@ export function Nodes() {
             </div>
             <div class="row">
               {n.drain
-                ? <button onClick={() => drain(n, false)}>{t('Undrain')}</button>
-                : <ConfirmButton disabled={n.health !== 'ALIVE'} confirmText={t('Move servers away?')} onConfirm={() => drain(n, true)}>{t('Drain')}</ConfirmButton>}
+                ? <button onClick={() => drain(n, false)}><LogIn size={15} />{t('Undrain')}</button>
+                : <ConfirmButton disabled={n.health !== 'ALIVE'} confirmText={t('Move servers away?')} onConfirm={() => drain(n, true)}><LogOut size={15} />{t('Drain')}</ConfirmButton>}
             </div>
           </div>
         ))}

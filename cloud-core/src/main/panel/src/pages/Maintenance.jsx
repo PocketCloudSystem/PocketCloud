@@ -3,6 +3,7 @@ import { api } from '../api.js';
 import { ErrorNote } from '../components/ui.jsx';
 import { act, usePoll } from '../util.js';
 import { t } from '../i18n.js';
+import { Plus } from 'lucide-preact';
 
 export function Maintenance() {
   const list = usePoll(() => api('/v1/maintenance'), 10000);
@@ -25,7 +26,7 @@ export function Maintenance() {
       </p>
       <form class="card row wrap" onSubmit={add}>
         <input class="grow" placeholder={t('Player name')} value={player} onInput={(e) => setPlayer(e.currentTarget.value)} aria-label={t('Player name')} required />
-        <button class="primary" disabled={!player.trim()}>{t('Add')}</button>
+        <button class="primary" disabled={!player.trim()}><Plus size={15} />{t('Add')}</button>
       </form>
       <ErrorNote error={list.error} />
       <div class="card">

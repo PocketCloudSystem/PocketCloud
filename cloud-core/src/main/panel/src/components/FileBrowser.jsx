@@ -3,6 +3,7 @@ import { api, base, fileText } from '../api.js';
 import { ConfirmButton, ErrorNote } from './ui.jsx';
 import { act, bytes } from '../util.js';
 import { t } from '../i18n.js';
+import { Download, FileText, Folder, FolderPlus, RefreshCw, Save, Trash2, Upload, X } from 'lucide-preact';
 
 const EDITABLE_BYTES = 1024 * 1024;
 const TEXT = /\.(ya?ml|json|properties|txt|log|md|toml|cfg|conf|ini|xml|sh|bat|js|lang|csv|html|css|php|lua)$/i;
@@ -62,9 +63,9 @@ export function FileBrowser({ api: endpoint, title = t('Files'), writable = fals
     <div class="card stack-sm files">
       <div class="row wrap">
         <h3 class="grow">{title}</h3>
-        {writable && <button type="button" onClick={mkdir}>{t('New folder')}</button>}
-        {writable && <label class="button">{t('Upload')}<input type="file" multiple hidden onChange={upload} /></label>}
-        <button type="button" class="ghost" onClick={() => load()}>{t('Refresh')}</button>
+        {writable && <button type="button" onClick={mkdir}><FolderPlus size={15} />{t('New folder')}</button>}
+        {writable && <label class="button"><Upload size={15} />{t('Upload')}<input type="file" multiple hidden onChange={upload} /></label>}
+        <button type="button" class="ghost" onClick={() => load()}><RefreshCw size={15} />{t('Refresh')}</button>
       </div>
       <nav class="row wrap small crumbs" aria-label={t('Folder')}>
         <a href="javascript:void 0" onClick={() => setDir('')}>/</a>
@@ -81,9 +82,9 @@ export function FileBrowser({ api: endpoint, title = t('Files'), writable = fals
         <div class="stack-sm">
           <div class="row wrap">
             <code class="grow">{open.path}</code>
-            {writable && <button class="primary" disabled={open.text === open.original} onClick={save}>{t('Save')}</button>}
-            <a class="button ghost" href={base + url(open.path)} download>{t('Download')}</a>
-            <button class="ghost" onClick={() => setOpen(null)}>{t('Close')}</button>
+            {writable && <button class="primary" disabled={open.text === open.original} onClick={save}><Save size={15} />{t('Save')}</button>}
+            <a class="button ghost" href={base + url(open.path)} download><Download size={15} />{t('Download')}</a>
+            <button class="ghost" onClick={() => setOpen(null)}><X size={15} />{t('Close')}</button>
           </div>
           <textarea class="editor" spellcheck={false} readOnly={!writable} value={open.text}
                     onInput={(e) => setOpen({ ...open, text: e.currentTarget.value })}
@@ -99,14 +100,14 @@ export function FileBrowser({ api: endpoint, title = t('Files'), writable = fals
                 <tr key={e.name}>
                   <td>
                     <a href="javascript:void 0" onClick={() => (e.dir ? setDir(join(dir, e.name)) : view(e))}>
-                      {e.dir ? '📁 ' : ''}{e.name}
+                      {e.dir ? <Folder size={15} class="file-icon dir" /> : <FileText size={15} class="file-icon" />}{e.name}
                     </a>
                   </td>
                   <td class="muted">{e.dir ? '' : bytes(e.size)}</td>
                   <td class="muted">{new Date(e.modified).toLocaleString()}</td>
                   <td class="actions">
-                    {!e.dir && <a class="muted small" href={base + url(join(dir, e.name))} download>{t('Download')}</a>}
-                    {writable && <ConfirmButton class="ghost small" confirmText={t('Delete?')} onConfirm={() => remove(e.name)}>{t('Delete')}</ConfirmButton>}
+                    {!e.dir && <a class="muted small" href={base + url(join(dir, e.name))} download><Download size={15} />{t('Download')}</a>}
+                    {writable && <ConfirmButton class="ghost small" confirmText={t('Delete?')} onConfirm={() => remove(e.name)}><Trash2 size={15} />{t('Delete')}</ConfirmButton>}
                   </td>
                 </tr>
               ))}

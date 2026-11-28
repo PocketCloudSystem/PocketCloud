@@ -20,7 +20,7 @@ function App() {
     return () => removeEventListener('pc-logout', logout);
   }, []);
 
-  if (session === undefined) return <div class="center muted">{t('Loading…')}</div>;
+  if (session === undefined) return <div class="center boot"><img src="./logo.png" alt="" width="64" height="64" /><span class="muted">{t('Loading…')}</span></div>;
   if (session === null) return <Login onLogin={setSession} />;
 
   const [, section = '', ...rest] = route.split('/');

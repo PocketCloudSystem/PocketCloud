@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'preact/hooks';
 import { api } from '../api.js';
-import { Badge, ConfirmButton, ErrorNote } from '../components/ui.jsx';
+import { Badge, ConfirmButton, ErrorNote, Loading } from '../components/ui.jsx';
 import { History } from '../components/History.jsx';
 import { FileBrowser } from '../components/FileBrowser.jsx';
 import { navigate } from '../router.js';
 import { act, usePoll } from '../util.js';
 import { t } from '../i18n.js';
+import { Play, RotateCw, Save, Trash2 } from 'lucide-preact';
 
 const FLAGS = [
   ['maintenance', 'Maintenance', 'Only players with the bypass can join.'],
@@ -85,7 +86,7 @@ function Settings({ name, settings, nodes, onSaved }) {
         </div>
       )}
       <div class="row">
-        <button class="primary" disabled={!Object.keys(changed).length}>{t('Save changes')}</button>
+        <button class="primary" disabled={!Object.keys(changed).length}><Save size={15} />{t('Save changes')}</button>
         {Object.keys(changed).length > 0 && <button type="button" class="ghost" onClick={() => setDraft(settings)}>{t('Reset')}</button>}
       </div>
     </form>
@@ -112,12 +113,13 @@ export function Template({ name, session }) {
         <a href="#/templates" class="muted">{t('Templates')}</a><span class="muted">/</span>
         <h1 class="grow">{name}</h1>
         {tpl && <span class="muted small">{tpl.templateType.toLowerCase()} · {tpl.serverSoftware}</span>}
-        <button disabled={!tpl} onClick={start}>{t('Start server')}</button>
+        <button disabled={!tpl} onClick={start}><Play size={15} />{t('Start server')}</button>
         <ConfirmButton disabled={!tpl || !own.length} confirmText={t('Restart all, one by one?')}
-                       onConfirm={() => act(api(path + '/restart', { method: 'POST', body: {} }))}>{t('Rolling restart')}</ConfirmButton>
-        <ConfirmButton class="danger" disabled={!tpl} confirmText={t('Delete template?')} onConfirm={remove}>{t('Delete')}</ConfirmButton>
+                       onConfirm={() => act(api(path + '/restart', { method: 'POST', body: {} }))}><RotateCw size={15} />{t('Rolling restart')}</ConfirmButton>
+        <ConfirmButton class="danger" disabled={!tpl} confirmText={t('Delete template?')} onConfirm={remove}><Trash2 size={15} />{t('Delete')}</ConfirmButton>
       </div>
       <ErrorNote error={info.error} />
+      <Loading poll={info} />
       {tpl && (
         <div class="card">
           <h3>{t('Servers')} <span class="muted small">{own.length} / {tpl.settings.maxServerCount} · {t('{n} players', { n: tpl.playerCount })}</span></h3>

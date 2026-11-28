@@ -8,7 +8,7 @@ nothing extra to install.
 1. In `storage/configs/http.yml` set `enabled: true` and pick `address` and `port`.
 2. Restart the cloud (or `reload`).
 3. Open `http://<address>:<port>/cloud/panel/` (`/cloud` is the `routePrefix` of `http.yml`).
-4. Sign in with the `auth-key` from `http.yml` (leave the name empty), or as a panel user.
+4. Create a user in the cloud console with `user create <name> admin` and sign in with the printed password.
 
 In a cluster every node with HTTP enabled serves the panel. Each node shows the whole cluster; actions are forwarded
 to the head or the node that runs a server, like the [HTTP API](cluster/http-api.md#forwarding-rules).
@@ -37,32 +37,43 @@ after a restart. CPU and memory are those of that node's cloud process; players 
 The buttons at the top switch between light and dark (default: the system setting) and between German and
 English (default: the browser language). Both choices are kept in the browser. Messages from the server stay English.
 
-## Users and permissions
+## Users and roles
 
-The auth-key login has every right. Under *Users* it can add panel users with a name, a password (at least 8
-characters, stored as a PBKDF2 hash in `storage/internal/panel/users.json`) and permissions. Every user may look at
-everything; changes need a permission:
+The panel only accepts panel users (the auth-key still works for the REST API as bearer token). Manage them in the
+cloud console:
 
-| Permission | Allows |
-|------------|--------|
-| `servers` | Start, stop, save servers, server commands |
-| `templates` | Templates and their files, groups, maintenance |
-| `players` | Messages, transfer, kick |
-| `console` | Commands in the cloud console (these can do anything) |
-| `admin` | Everything, including users, nodes, backups, schedules and plugins |
+| Command | |
+|---------|--|
+| `user create <name> <role>` | Creates the user and prints a random password once (it also lands in the log file) |
+| `user role <name> <role>` | Changes the role; the user is signed out |
+| `user password <name>` | Prints a new random password; the user is signed out |
+| `user remove <name>` | Deletes the user |
+| `user list` | Users and roles |
 
-Missing permissions answer `403`. Saving or deleting a user signs that user out. Users are stored on each node
-separately: copy `users.json` to a node if people should sign in there too. The REST API with the auth-key is not
-affected.
+Admins can do the same on the *Users* page. Everyone changes their own password with the key next to their name.
+Passwords have at least 8 characters and are stored as PBKDF2 hashes in `storage/internal/panel/users.json`.
+
+Every user may look at everything; the role decides what they may change:
+
+| Role | May change |
+|------|------------|
+| `admin` | Everything, including users, nodes, backups, schedules, plugins and the cloud console |
+| `developer` | Servers, templates and their files, groups, maintenance |
+| `moderator` | Servers, players |
+| `supporter` | Players (message, transfer, kick) |
+| `viewer` | Nothing |
+
+Missing rights answer `403`. Users are stored on each node separately: copy `users.json` to a node if people should
+sign in there too.
 
 ## Security
 
-- The `auth-key` is only sent once at login. The browser then holds a session cookie (`HttpOnly`, `SameSite=Strict`,
+- The password is only sent once at login. The browser then holds a session cookie (`HttpOnly`, `SameSite=Strict`,
   12 hours, `Secure` when TLS is on). Sessions live in memory: a restart signs everyone out.
 - Requests that change something also need the header `X-PocketCloud-Panel`, which other websites cannot set
   (CSRF protection).
-- 5 wrong keys per minute and address are allowed, then login answers `429`.
-- Without TLS the key and the cookie travel in plain text. Outside a trusted network enable TLS in `http.yml` or put
+- 5 wrong logins per minute and address are allowed, then login answers `429`.
+- Without TLS the password and the cookie travel in plain text. Outside a trusted network enable TLS in `http.yml` or put
   a reverse proxy with HTTPS in front.
 
 ## Building

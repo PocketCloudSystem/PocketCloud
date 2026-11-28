@@ -1,8 +1,9 @@
 import { useState } from 'preact/hooks';
 import { api } from '../api.js';
-import { ConfirmButton, ErrorNote } from '../components/ui.jsx';
+import { ConfirmButton, ErrorNote, Loading } from '../components/ui.jsx';
 import { act, usePoll } from '../util.js';
 import { t } from '../i18n.js';
+import { Plus, Trash2 } from 'lucide-preact';
 
 const EXAMPLES = [
   ['0 4 * * *', 'every day at 04:00'],
@@ -40,11 +41,12 @@ export function Schedules() {
           </label>
         </div>
         <div class="row wrap">
-          <button class="primary">{t('Add schedule')}</button>
+          <button class="primary"><Plus size={15} />{t('Add schedule')}</button>
           {EXAMPLES.map(([c, label]) => <button type="button" class="ghost small" onClick={() => setCron(c)}><code>{c}</code> {label}</button>)}
         </div>
       </form>
       <ErrorNote error={schedules.error} />
+      <Loading poll={schedules} />
       <div class="card table-wrap">
         <table>
           <thead><tr><th>{t('Id')}</th><th>{t('Cron')}</th><th>{t('Command')}</th><th /></tr></thead>
@@ -57,7 +59,7 @@ export function Schedules() {
                 <td>
                   <ConfirmButton class="danger" confirmText={t('Remove?')}
                                  onConfirm={() => act(api('/v1/schedules/' + encodeURIComponent(s.id), { method: 'DELETE' })).then(schedules.reload)}>
-                    {t('Remove')}
+                    <Trash2 size={15} />{t('Remove')}
                   </ConfirmButton>
                 </td>
               </tr>

@@ -1,8 +1,9 @@
 import { useState } from 'preact/hooks';
 import { api } from '../api.js';
-import { ErrorNote } from '../components/ui.jsx';
+import { ErrorNote, Loading } from '../components/ui.jsx';
 import { act, usePoll } from '../util.js';
 import { t } from '../i18n.js';
+import { ArrowLeftRight, Ban, MessageSquare } from 'lucide-preact';
 
 const TEXT_TYPES = ['message', 'popup', 'tip', 'title', 'action_bar', 'toast'];
 
@@ -26,9 +27,9 @@ function PlayerActions({ player, servers, onDone }) {
   if (!mode) {
     return (
       <div class="row">
-        <button onClick={() => setMode('text')}>{t('Message')}</button>
-        <button onClick={() => setMode('transfer')}>{t('Transfer')}</button>
-        <button class="danger" onClick={() => setMode('kick')}>{t('Kick')}</button>
+        <button onClick={() => setMode('text')}><MessageSquare size={15} />{t('Message')}</button>
+        <button onClick={() => setMode('transfer')}><ArrowLeftRight size={15} />{t('Transfer')}</button>
+        <button class="danger" onClick={() => setMode('kick')}><Ban size={15} />{t('Kick')}</button>
       </div>
     );
   }
@@ -69,6 +70,7 @@ export function Players() {
         <input type="search" placeholder={t('Filter by name or server')} value={filter} onInput={(e) => setFilter(e.currentTarget.value)} class="search" aria-label={t('Filter')} />
       </div>
       <ErrorNote error={players.error} />
+      <Loading poll={players} />
       <div class="card table-wrap">
         <table>
           <thead><tr><th>{t('Name')}</th><th>{t('Server')}</th><th>{t('Proxy')}</th><th /></tr></thead>

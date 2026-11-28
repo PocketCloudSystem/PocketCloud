@@ -3,6 +3,7 @@ import { Badge, ErrorNote, Meter, Stat } from '../components/ui.jsx';
 import { Chart } from '../components/Chart.jsx';
 import { bytes, duration, pct, usePoll } from '../util.js';
 import { t } from '../i18n.js';
+import { Clock, Cpu, Layers, Network, Server, Users } from 'lucide-preact';
 
 export function Overview({ session }) {
   const stats = usePoll(() => api('/v1/stats'), 5000);
@@ -19,10 +20,10 @@ export function Overview({ session }) {
       <h1>{t('Overview')}</h1>
       <ErrorNote error={stats.error} />
       <div class="grid stats">
-        <Stat label={t('Players')} value={s?.player_count ?? '–'} />
-        <Stat label={t('Servers')} value={s ? list.length || s.server_count : '–'} sub={servers.data ? t('{n} online', { n: online }) : null} />
-        <Stat label={t('Templates')} value={s?.template_count ?? '–'} />
-        <Stat label={t('Uptime')} value={duration(s?.uptime_ms)} sub={s ? `v${s.version}${s.beta ? ' beta' : ''}` : null} />
+        <Stat icon={Users} label={t('Players')} value={s?.player_count ?? '–'} />
+        <Stat icon={Server} label={t('Servers')} value={s ? list.length || s.server_count : '–'} sub={servers.data ? t('{n} online', { n: online }) : null} />
+        <Stat icon={Layers} label={t('Templates')} value={s?.template_count ?? '–'} />
+        <Stat icon={Clock} label={t('Uptime')} value={duration(s?.uptime_ms)} sub={s ? `v${s.version}${s.beta ? ' beta' : ''}` : null} />
       </div>
 
       <div class="grid charts">
@@ -33,7 +34,7 @@ export function Overview({ session }) {
       </div>
 
       <div class="card">
-        <h3>{t('This cloud process')}{session.clustered ? ` (${session.node})` : ''}</h3>
+        <h3><Cpu size={16} class="h-icon" />{t('This cloud process')}{session.clustered ? ` (${session.node})` : ''}</h3>
         <div class="kv">
           <span>{t('CPU')}</span><span>{pct(s?.cpu_usage)}</span>
           <span>{t('Memory')}</span>
@@ -48,7 +49,7 @@ export function Overview({ session }) {
 
       {session.clustered && nodes.data && (
         <div class="card">
-          <h3>{t('Nodes')} <span class="muted small">{t('head')}: {nodes.data.head || t('none')}</span></h3>
+          <h3><Network size={16} class="h-icon" />{t('Nodes')} <span class="muted small">{t('head')}: {nodes.data.head || t('none')}</span></h3>
           <div class="table-wrap">
             <table>
               <thead><tr><th>{t('Node')}</th><th>{t('State')}</th><th>{t('Servers')}</th><th>{t('CPU')}</th><th>{t('Memory')}</th></tr></thead>

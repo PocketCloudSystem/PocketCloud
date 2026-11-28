@@ -13,7 +13,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Logins of the web panel: the browser sends the auth-key or a user's password once and gets a random session id as HttpOnly cookie,
+ * Logins of the web panel: the browser sends a user's password once and gets a random session id as HttpOnly cookie,
  * so the key itself is never stored in the browser. Sessions live in memory of this node (a restart logs out).
  */
 public final class PanelSessions {

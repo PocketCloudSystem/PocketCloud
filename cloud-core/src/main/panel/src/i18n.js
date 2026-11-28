@@ -19,8 +19,7 @@ const DE = {
   'Delete': 'Löschen', 'Delete group?': 'Gruppe löschen?', 'Delete template?': 'Template löschen?', 'Delete?': 'Löschen?',
   'Deleted.': 'Gelöscht.', 'Disable': 'Deaktivieren', 'Done.': 'Erledigt.', 'Download': 'Download', 'Drain': 'Drain',
   'Edit': 'Bearbeiten', 'Edit {name}': '{name} bearbeiten', 'Enable': 'Aktivieren',
-  'Everyone who can sign in may look at everything. Changes need the permissions below. Users are stored on this node only.':
-    'Jeder, der sich anmelden kann, darf alles ansehen. Änderungen brauchen die Rechte unten. Benutzer werden nur auf dieser Node gespeichert.',
+  
   'File history': 'Datei-Historie', 'Files': 'Dateien', 'Filter': 'Filter', 'Filter by name or node': 'Nach Name oder Node filtern',
   'Filter by name or server': 'Nach Name oder Server filtern', 'Folder': 'Ordner', 'Folder name': 'Ordnername',
   'Force stop': 'Hart stoppen', 'Groups': 'Gruppen',
@@ -37,7 +36,7 @@ const DE = {
   'No servers match the filter.': 'Kein Server passt zum Filter.', 'No servers running.': 'Keine Server gestartet.',
   'No template is in maintenance right now.': 'Gerade ist kein Template in Wartung.', 'No templates yet.': 'Noch keine Templates.',
   'No templates.': 'Keine Templates.',
-  'No users yet. Until then, sign in with the auth-key.': 'Noch keine Benutzer. Bis dahin meldest du dich mit dem auth-key an.',
+  
   'No versions yet.': 'Noch keine Versionen.', 'Nobody is on the list.': 'Niemand steht auf der Liste.',
   'Nobody is online.': 'Niemand ist online.', 'Node': 'Node', 'Nodes': 'Nodes', 'Nodes (none = all)': 'Nodes (keine = alle)',
   'Not found': 'Nicht gefunden', 'Overview': 'Übersicht', 'Password': 'Passwort', 'Peak': 'Spitze', 'Permissions': 'Rechte',
@@ -50,8 +49,7 @@ const DE = {
   'Save': 'Speichern', 'Save changes': 'Änderungen speichern', 'Save user': 'Benutzer speichern', 'Saved.': 'Gespeichert.',
   'Schedules': 'Zeitpläne', 'Send': 'Senden', 'Server': 'Server', 'Server files (read only)': 'Server-Dateien (nur lesen)',
   'Servers': 'Server', 'Settings': 'Einstellungen', 'Sign in': 'Anmelden',
-  'Sign in as a panel user, or leave the name empty and use the auth-key from':
-    'Melde dich als Panel-Benutzer an, oder lass den Namen leer und nimm den auth-key aus',
+  
   'Sign out': 'Abmelden', 'Signing in…': 'Melde an…', 'Size': 'Größe', 'Software': 'Software', 'Start': 'Starten',
   'Start server': 'Server starten', 'Start servers': 'Server starten', 'State': 'Zustand', 'Static node': 'Feste Node',
   'Status': 'Status', 'Stop': 'Stoppen', 'Stop all': 'Alle stoppen', 'Stop all servers?': 'Alle Server stoppen?',
@@ -66,7 +64,7 @@ const DE = {
   'This folder is empty.': 'Dieser Ordner ist leer.', 'This server is not running anymore.': 'Dieser Server läuft nicht mehr.',
   'Time': 'Zeit', 'Traffic': 'Traffic', 'Transfer': 'Transferieren', 'Type': 'Art', 'Undrain': 'Undrain', 'Upload': 'Hochladen',
   'Uptime': 'Laufzeit', 'Users': 'Benutzer', 'Version': 'Version', 'conflicts': 'Konflikte', 'current version': 'aktuelle Version',
-  'deleted': 'gelöscht', 'disabled': 'deaktiviert', 'drain': 'drain', 'empty for the auth-key': 'leer für den auth-key',
+  'deleted': 'gelöscht', 'disabled': 'deaktiviert', 'drain': 'drain', 
   'enabled': 'aktiv', 'head': 'Head', 'limit': 'Limit', 'lobby': 'Lobby', 'maintenance': 'Wartung', 'no limit': 'kein Limit',
   'node': 'Node', 'none': 'keiner', 'not set': 'nicht gesetzt', 'now': 'jetzt', 'read only': 'nur lesen',
   'this node': 'diese Node', '{n} online': '{n} online', '{n} players': '{n} Spieler',
@@ -84,12 +82,18 @@ const DE = {
   'Min servers': 'Min. Server', 'Max servers': 'Max. Server', 'Max players': 'Max. Spieler', 'Memory (MB)': 'Speicher (MB)',
   'Start new server at (0–1)': 'Neuen Server starten ab (0–1)', 'Startup timeout (s)': 'Start-Timeout (s)',
   'Shutdown timeout (s)': 'Stopp-Timeout (s)', 'Empty grace period (s)': 'Wartezeit wenn leer (s)', 'Priority': 'Priorität',
-  // permissions
-  'start, stop, save, server commands': 'starten, stoppen, speichern, Server-Befehle',
-  'templates, their files, groups, maintenance': 'Templates, ihre Dateien, Gruppen, Wartung',
-  'message, transfer, kick': 'Nachricht, Transfer, Kick',
-  'cloud console commands (can do anything)': 'Befehle in der Cloud-Konsole (kann alles)',
-  'everything, incl. users, nodes, backups, schedules, plugins': 'alles, auch Benutzer, Nodes, Backups, Zeitpläne, Plugins',
+  // users, roles, login
+  'Password changed.': 'Passwort geändert.', 'Change password': 'Passwort ändern', 'Current password': 'Aktuelles Passwort',
+  'New password': 'Neues Passwort', 'Light mode': 'Heller Modus', 'Dark mode': 'Dunkler Modus', 'Role': 'Rolle',
+  'Sign in with your panel user.': 'Melde dich mit deinem Panel-Benutzer an.',
+  'No user yet? Create one in the cloud console:': 'Noch kein Benutzer? Leg einen in der Cloud-Konsole an:',
+  'Everyone who can sign in may look at everything; the role decides what they may change. In the cloud console:':
+    'Jeder, der sich anmelden kann, darf alles ansehen; die Rolle bestimmt, was er ändern darf. In der Cloud-Konsole:',
+  'Users are stored on this node only.': 'Benutzer werden nur auf dieser Node gespeichert.', 'No users yet.': 'Noch keine Benutzer.',
+  'everything, incl. users, nodes, backups, schedules, plugins and the cloud console': 'alles, auch Benutzer, Nodes, Backups, Zeitpläne, Plugins und die Cloud-Konsole',
+  'servers and templates (incl. files, groups, maintenance)': 'Server und Templates (auch Dateien, Gruppen, Wartung)',
+  'servers and players': 'Server und Spieler',
+  'players: message, transfer, kick': 'Spieler: Nachricht, Transfer, Kick',
 };
 
 const read = (key) => { try { return localStorage.getItem(key); } catch { return null; } };

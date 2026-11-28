@@ -1,8 +1,9 @@
 import { useState } from 'preact/hooks';
 import { api } from '../api.js';
-import { Badge, ConfirmButton, ErrorNote } from '../components/ui.jsx';
+import { Badge, ConfirmButton, ErrorNote, Loading } from '../components/ui.jsx';
 import { act, usePoll } from '../util.js';
 import { t } from '../i18n.js';
+import { Play, Square } from 'lucide-preact';
 
 function StartForm({ onStarted }) {
   const templates = usePoll(() => api('/v1/templates'), 15000);
@@ -27,7 +28,7 @@ function StartForm({ onStarted }) {
         {names.map((n) => <option value={n}>{n}</option>)}
       </select>
       <input type="number" min="1" max="50" value={count} onInput={(e) => setCount(e.currentTarget.value)} aria-label={t('Count')} class="narrow" />
-      <button class="primary" disabled={busy || !chosen}>{t('Start')}</button>
+      <button class="primary" disabled={busy || !chosen}><Play size={15} />{t('Start')}</button>
     </form>
   );
 }
@@ -44,10 +45,11 @@ export function Servers() {
       <div class="row wrap">
         <h1 class="grow">{t('Servers')}</h1>
         <input type="search" placeholder={t('Filter by name or node')} value={filter} onInput={(e) => setFilter(e.currentTarget.value)} class="search" aria-label={t('Filter')} />
-        <ConfirmButton class="danger" confirmText={t('Stop all servers?')} onConfirm={() => act(api('/v1/servers/stopAll', { method: 'POST', body: {} })).then(servers.reload)}>{t('Stop all')}</ConfirmButton>
+        <ConfirmButton class="danger" confirmText={t('Stop all servers?')} onConfirm={() => act(api('/v1/servers/stopAll', { method: 'POST', body: {} })).then(servers.reload)}><Square size={15} />{t('Stop all')}</ConfirmButton>
       </div>
       <StartForm onStarted={servers.reload} />
       <ErrorNote error={servers.error} />
+      <Loading poll={servers} />
       <div class="card table-wrap">
         <table>
           <thead><tr><th>{t('Name')}</th><th>{t('Status')}</th><th>{t('Players')}</th><th>{t('Node')}</th></tr></thead>

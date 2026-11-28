@@ -1,8 +1,9 @@
 import { useState } from 'preact/hooks';
 import { api } from '../api.js';
-import { ConfirmButton, ErrorNote } from '../components/ui.jsx';
+import { ConfirmButton, ErrorNote, Loading } from '../components/ui.jsx';
 import { act, usePoll } from '../util.js';
 import { t } from '../i18n.js';
+import { Plus, Trash2 } from 'lucide-preact';
 
 function GroupCard({ group, templates, onChange }) {
   const [adding, setAdding] = useState('');
@@ -14,7 +15,7 @@ function GroupCard({ group, templates, onChange }) {
     <div class="card stack-sm">
       <div class="row">
         <h3 class="grow">{group.name} <span class="muted small">{t('{n} players', { n: group.playerCount })}</span></h3>
-        <ConfirmButton class="danger" confirmText={t('Delete group?')} onConfirm={() => act(api(path, { method: 'DELETE' })).then(onChange)}>{t('Delete')}</ConfirmButton>
+        <ConfirmButton class="danger" confirmText={t('Delete group?')} onConfirm={() => act(api(path, { method: 'DELETE' })).then(onChange)}><Trash2 size={15} />{t('Delete')}</ConfirmButton>
       </div>
       <div class="chips">
         {group.templates.map((t) => (
@@ -30,7 +31,7 @@ function GroupCard({ group, templates, onChange }) {
           <select class="grow" value={adding || free[0]} onChange={(e) => setAdding(e.currentTarget.value)} aria-label={t('Template')}>
             {free.map((t) => <option value={t}>{t}</option>)}
           </select>
-          <button>{t('Add template')}</button>
+          <button><Plus size={15} />{t('Add template')}</button>
         </form>
       )}
     </div>
@@ -57,9 +58,10 @@ export function Groups() {
         <strong>{t('New group')}</strong>
         <input class="grow" placeholder={t('Name')} value={name} onInput={(e) => setName(e.currentTarget.value)}
                pattern="[A-Za-z0-9_-]+" title={t('Letters, numbers, _ and -')} aria-label={t('Name')} required />
-        <button class="primary" disabled={!name}>{t('Create')}</button>
+        <button class="primary" disabled={!name}><Plus size={15} />{t('Create')}</button>
       </form>
       <ErrorNote error={groups.error} />
+      <Loading poll={groups} />
       {groups.data && !list.length && <p class="muted">{t('No groups yet.')}</p>}
       <div class="grid two">
         {list.map((g) => <GroupCard key={g.name} group={g} templates={templateNames} onChange={groups.reload} />)}

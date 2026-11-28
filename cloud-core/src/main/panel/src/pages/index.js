@@ -1,4 +1,5 @@
 import { h } from 'preact';
+import { Archive, Boxes, Bug, Clock, Layers, LayoutDashboard, Network, Puzzle, Server as ServerIcon, Terminal, UserCog, Users as UsersIcon, Wrench } from 'lucide-preact';
 import { Overview } from './Overview.jsx';
 import { Servers } from './Servers.jsx';
 import { Server } from './Server.jsx';
@@ -22,19 +23,19 @@ const listOrDetail = (List, Detail) => ({ params, session }) =>
 
 // '' is the overview; the order here is the order in the sidebar
 export const pages = {
-  '': { label: 'Overview', component: Overview },
-  console: { label: 'Console', component: CloudConsole },
-  servers: { label: 'Servers', component: listOrDetail(Servers, Server) },
-  templates: { label: 'Templates', component: listOrDetail(Templates, Template) },
-  groups: { label: 'Groups', component: Groups },
-  players: { label: 'Players', component: Players },
-  maintenance: { label: 'Maintenance', component: Maintenance },
-  nodes: { label: 'Nodes', component: Nodes },
-  schedules: { label: 'Schedules', component: Schedules },
-  backups: { label: 'Backups', component: Backups },
-  plugins: { label: 'Plugins', component: Plugins },
-  crashes: { label: 'Crashes', component: Crashes },
-  users: { label: 'Users', component: Users, admin: true },
+  '': { icon: LayoutDashboard, label: 'Overview', component: Overview },
+  console: { icon: Terminal, label: 'Console', component: CloudConsole },
+  servers: { icon: ServerIcon, label: 'Servers', component: listOrDetail(Servers, Server) },
+  templates: { icon: Layers, label: 'Templates', component: listOrDetail(Templates, Template) },
+  groups: { icon: Boxes, label: 'Groups', component: Groups },
+  players: { icon: UsersIcon, label: 'Players', component: Players },
+  maintenance: { icon: Wrench, label: 'Maintenance', component: Maintenance },
+  nodes: { icon: Network, label: 'Nodes', component: Nodes },
+  schedules: { icon: Clock, label: 'Schedules', component: Schedules },
+  backups: { icon: Archive, label: 'Backups', component: Backups },
+  plugins: { icon: Puzzle, label: 'Plugins', component: Plugins },
+  crashes: { icon: Bug, label: 'Crashes', component: Crashes },
+  users: { icon: UserCog, label: 'Users', component: Users, admin: true },
 };
 
 export const NotFound = () => h('section', null, h('h1', null, t('Not found')), h('a', { href: '#/' }, t('Back to the overview')));

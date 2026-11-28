@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { events } from '../api.js';
 import { toast } from '../util.js';
 import { t } from '../i18n.js';
+import { Send } from 'lucide-preact';
 
 const MAX_LINES = 2000;
 const COLORS = {
@@ -109,7 +110,7 @@ export function Console({ stream, run, title = t('Console'), placeholder = t('Co
         <span class="muted">&gt;</span>
         <input value={command} onInput={(e) => setCommand(e.currentTarget.value)} onKeyDown={onKey}
                placeholder={placeholder} aria-label={t('Command')} disabled={state === 'ended'} />
-        <button disabled={!command.trim() || state === 'ended'}>{t('Send')}</button>
+        <button disabled={!command.trim() || state === 'ended'}><Send size={15} />{t('Send')}</button>
       </form>
     </div>
   );

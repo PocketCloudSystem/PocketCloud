@@ -2,9 +2,10 @@ import { useEffect, useState } from 'preact/hooks';
 import { useToasts } from '../util.js';
 import { t } from '../i18n.js';
 
-export function Stat({ label, value, sub }) {
+export function Stat({ label, value, sub, icon: Icon }) {
   return (
     <div class="card stat">
+      {Icon && <span class="stat-icon"><Icon size={20} /></span>}
       <span class="muted small">{label}</span>
       <strong>{value}</strong>
       {sub && <span class="muted small">{sub}</span>}
@@ -25,7 +26,7 @@ export function Meter({ value, max, label }) {
 const STATUS = { ONLINE: 'ok', HEAD: 'ok', FOLLOWER: 'ok', ALIVE: 'ok', STARTING: 'warn', PENDING: 'warn', JOINING: 'warn', SUSPECT: 'warn', STOPPING: 'warn', OFFLINE: 'bad', DEAD: 'bad', ISOLATED: 'bad' };
 
 export const Badge = ({ status, children }) => (
-  <span class={'badge ' + (STATUS[status] || '')}>{children || status?.toLowerCase()}</span>
+  <span class={'badge ' + (STATUS[status] || '') + (STATUS[status] === 'ok' ? ' live' : '')}>{children || status?.toLowerCase()}</span>
 );
 
 /** Button that asks for a second click instead of a browser dialog. */
@@ -52,5 +53,12 @@ export function Toasts() {
     </div>
   );
 }
+
+/** Shimmer placeholder while a poll has neither data nor an error yet. */
+export const Loading = ({ poll, rows = 3 }) => (poll.data === undefined && !poll.error ? (
+  <div class="card skeleton" aria-busy="true" aria-label={t('Loading…')}>
+    {Array.from({ length: rows }, (_, i) => <div key={i} class="skeleton-line" style={{ width: `${90 - i * 15}%` }} />)}
+  </div>
+) : null);
 
 export const ErrorNote = ({ error }) => error ? <p class="error">{t('Could not load:')} {error.message}</p> : null;

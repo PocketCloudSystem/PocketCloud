@@ -18,8 +18,9 @@ import java.util.*;
 import java.util.regex.Pattern;
 
 /**
- * Panel users with permissions, stored with PBKDF2 password hashes in {@code storage/internal/panel/users.json}.
- * The auth-key login stays and counts as {@link #KEY_USER} with every permission.
+ * Panel users with a role, stored with PBKDF2 password hashes in {@code storage/internal/panel/users.json}.
+ * Users are managed with the {@code user} console command or on the panel's Users page. The panel has no auth-key
+ * login; {@link #KEY_USER} only stands for REST clients that send the auth-key as bearer token.
  * <p>
  * shortcut: users are stored per node (like sessions); copy users.json to the other nodes, or sync it through the
  * cluster if people log in on more than one node.
@@ -29,6 +30,16 @@ public final class PanelUsers {
     public static final String KEY_USER = "auth-key";
     /** Every write needs one of these; reading is allowed for every user. "admin" includes all others. */
     public static final List<String> PERMISSIONS = List.of("servers", "templates", "players", "console", "admin");
+    /** role → permissions, in the order shown to people */
+    public static final Map<String, Set<String>> ROLES = new LinkedHashMap<>();
+
+    static {
+        ROLES.put("admin", Set.of("admin"));
+        ROLES.put("developer", Set.of("servers", "templates"));
+        ROLES.put("moderator", Set.of("servers", "players"));
+        ROLES.put("supporter", Set.of("players"));
+        ROLES.put("viewer", Set.of());
+    }
 
     private static final Pattern NAME = Pattern.compile("^[A-Za-z0-9_.-]{2,32}$");
     private static final int ITERATIONS = 210_000;
@@ -36,9 +47,13 @@ public final class PanelUsers {
     private static final SecureRandom RANDOM = new SecureRandom();
     private static final Path FILE = PocketCloudPaths.storage().internal().with("panel").with("users.json").asPath();
 
-    public record User(String name, String salt, String hash, Set<String> permissions) {
+    public record User(String name, String salt, String hash, String role) {
+        public Set<String> permissions() {
+            return ROLES.getOrDefault(role, Set.of());
+        }
+
         public boolean may(String permission) {
-            return permissions.contains("admin") || permissions.contains(permission);
+            return permissions().contains("admin") || permissions().contains(permission);
         }
     }
 
@@ -48,7 +63,7 @@ public final class PanelUsers {
     }
 
     public static synchronized Optional<User> get(String name) {
-        if (KEY_USER.equals(name)) return Optional.of(new User(KEY_USER, "", "", Set.of("admin")));
+        if (KEY_USER.equals(name)) return Optional.of(new User(KEY_USER, "", "", "admin"));
         return Optional.ofNullable(load().get(name.toLowerCase(Locale.ROOT)));
     }
 
@@ -65,11 +80,10 @@ public final class PanelUsers {
         return ok ? Optional.of(user) : Optional.empty();
     }
 
-    /** Creates or updates a user; a null password keeps the old one. */
-    public static synchronized User save(String name, String password, Collection<String> permissions) {
+    /** Creates or updates a user; a null password keeps the old one, a null role too. */
+    public static synchronized User save(String name, String password, String role) {
         if (name == null || !NAME.matcher(name).matches() || name.equalsIgnoreCase(KEY_USER))
             throw new HttpException(400, "Names have 2-32 letters, digits, _ . or - (and cannot be auth-key).");
-        for (String p : permissions) if (!PERMISSIONS.contains(p)) throw new HttpException(400, "Unknown permission: " + p);
         User old = load().get(name.toLowerCase(Locale.ROOT));
         String salt, hash;
         if (password == null || password.isEmpty()) {
@@ -83,10 +97,19 @@ public final class PanelUsers {
             salt = HexFormat.of().formatHex(bytes);
             hash = HexFormat.of().formatHex(hash(password, bytes));
         }
-        User user = new User(old != null ? old.name() : name, salt, hash, new TreeSet<>(permissions));
+        if (role == null) role = old != null ? old.role() : null;
+        if (role == null || !ROLES.containsKey(role)) throw new HttpException(400, "Unknown role, use one of " + String.join(", ", ROLES.keySet()) + ".");
+        User user = new User(old != null ? old.name() : name, salt, hash, role);
         users.put(name.toLowerCase(Locale.ROOT), user);
         write();
         return user;
+    }
+
+    /** A random password for the console command (people change it in the panel afterwards). */
+    public static String randomPassword() {
+        byte[] bytes = new byte[12];
+        RANDOM.nextBytes(bytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 
     public static synchronized boolean remove(String name) {
@@ -129,13 +152,14 @@ public final class PanelUsers {
         }
     }
 
-    /** Permission a write request needs, from its path (prefix and API version stripped). */
+    /** Permission a write request needs (null: none), from its path (prefix and API version stripped). */
     static String required(String path) {
         String p = path.replaceFirst("^.*?/(v\\d+|panel-api)/", "/");
         if (p.startsWith("/servers")) return "servers";
         if (p.startsWith("/templates") || p.startsWith("/groups") || p.startsWith("/maintenance")) return "templates";
         if (p.startsWith("/players")) return "players";
         if (p.equals("/console")) return "console";
+        if (p.equals("/password")) return null; // everyone changes their own password
         return "admin";
     }
 }

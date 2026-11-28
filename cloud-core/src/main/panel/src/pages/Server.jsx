@@ -5,6 +5,7 @@ import { Badge, ConfirmButton, ErrorNote, Meter } from '../components/ui.jsx';
 import { navigate } from '../router.js';
 import { act, bytes, duration, pct, usePoll } from '../util.js';
 import { t } from '../i18n.js';
+import { ArrowLeft, Power, Save, Square } from 'lucide-preact';
 
 export function Server({ name }) {
   const path = `/v1/servers/${encodeURIComponent(name)}`;
@@ -21,12 +22,12 @@ export function Server({ name }) {
         <a href="#/servers" class="muted">{t('Servers')}</a><span class="muted">/</span>
         <h1 class="grow">{name}</h1>
         {s && <Badge status={s.status} />}
-        <button disabled={!s} onClick={() => act(api(path + '/save', { method: 'POST', body: {} }))}>{t('Save')}</button>
-        <ConfirmButton disabled={!s} confirmText={t('Stop server?')} onConfirm={() => stop(false)}>{t('Stop')}</ConfirmButton>
-        <ConfirmButton class="danger" disabled={!s} confirmText={t('Kill process?')} onConfirm={() => stop(true)}>{t('Force stop')}</ConfirmButton>
+        <button disabled={!s} onClick={() => act(api(path + '/save', { method: 'POST', body: {} }))}><Save size={15} />{t('Save')}</button>
+        <ConfirmButton disabled={!s} confirmText={t('Stop server?')} onConfirm={() => stop(false)}><Square size={15} />{t('Stop')}</ConfirmButton>
+        <ConfirmButton class="danger" disabled={!s} confirmText={t('Kill process?')} onConfirm={() => stop(true)}><Power size={15} />{t('Force stop')}</ConfirmButton>
       </div>
       {gone ? (
-        <div class="card"><p>{t('This server is not running anymore.')}</p><button onClick={() => navigate('/servers')}>{t('Back to servers')}</button></div>
+        <div class="card"><p>{t('This server is not running anymore.')}</p><button onClick={() => navigate('/servers')}><ArrowLeft size={15} />{t('Back to servers')}</button></div>
       ) : <ErrorNote error={info.error} />}
 
       {s && (
