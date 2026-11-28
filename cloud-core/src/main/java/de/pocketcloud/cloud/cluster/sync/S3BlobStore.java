@@ -63,7 +63,7 @@ public final class S3BlobStore {
      * credentials are missing. Credentials: {@code credentialsFile} (accessKey=, secretKey=), otherwise the
      * environment variables AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY.
      */
-    static S3BlobStore fromConfig(String templateStorage, S3Configuration config, Path credentialsFile) {
+    public static S3BlobStore fromConfig(String templateStorage, S3Configuration config, Path credentialsFile) {
         if (!"s3".equals(templateStorage)) return null;
         String access = System.getenv("AWS_ACCESS_KEY_ID");
         String secret = System.getenv("AWS_SECRET_ACCESS_KEY");
@@ -84,20 +84,29 @@ public final class S3BlobStore {
         return new S3BlobStore(config.endpoint(), config.region(), config.bucket(), config.prefix(), access.trim(), secret.trim());
     }
 
-    String describe() {
+    public String describe() {
         return endpoint + "/" + bucket + "/" + prefix;
     }
 
     /** Uploads the file unless the bucket already has it. {@code sha} must be the file's SHA-256. */
     void upload(String sha, Path file) throws IOException, InterruptedException {
         if (known.contains(sha)) return;
-        if (send("HEAD", sha, null, HttpResponse.BodyHandlers.discarding()).statusCode() == 200) {
+        if (send("HEAD", "blobs/" + sha, null, null, HttpResponse.BodyHandlers.discarding()).statusCode() == 200) {
             known.add(sha);
             return;
         }
-        HttpResponse<String> response = send("PUT", sha, file, HttpResponse.BodyHandlers.ofString());
-        if (response.statusCode() != 200) throw new IOException("S3 upload failed (" + response.statusCode() + "): " + shorten(response.body()));
+        put("blobs/" + sha, sha, file);
         known.add(sha);
+    }
+
+    /** Uploads a file under {@code <prefix><key>} (e.g. backups). */
+    public void putFile(String key, Path file) throws IOException, InterruptedException {
+        put(key, UnitScanner.sha256(file), file);
+    }
+
+    private void put(String key, String sha, Path file) throws IOException, InterruptedException {
+        HttpResponse<String> response = send("PUT", key, sha, file, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() != 200) throw new IOException("S3 upload failed (" + response.statusCode() + "): " + shorten(response.body()));
     }
 
     /** Downloads the file with this SHA-256 to {@code target} and verifies it; false if the bucket does not have it. */
@@ -105,7 +114,7 @@ public final class S3BlobStore {
         Files.createDirectories(target.getParent());
         Path tmp = target.resolveSibling(target.getFileName() + ".s3");
         try {
-            HttpResponse<Path> response = send("GET", sha, null, HttpResponse.BodyHandlers.ofFile(tmp));
+            HttpResponse<Path> response = send("GET", "blobs/" + sha, null, null, HttpResponse.BodyHandlers.ofFile(tmp));
             if (response.statusCode() == 404) return false;
             if (response.statusCode() != 200) throw new IOException("S3 download failed (" + response.statusCode() + "): " + shorten(Files.readString(tmp)));
             if (!UnitScanner.sha256(tmp).equals(sha)) throw new IOException("S3 object " + sha + " has a different hash");
@@ -117,11 +126,12 @@ public final class S3BlobStore {
         }
     }
 
-    private <T> HttpResponse<T> send(String method, String sha, Path body, HttpResponse.BodyHandler<T> handler) throws IOException, InterruptedException {
-        String path = "/" + bucket + "/" + prefix + "blobs/" + sha;
+    /** {@code sha}: SHA-256 of {@code body} (signed as payload hash), null without body. */
+    private <T> HttpResponse<T> send(String method, String key, String sha, Path body, HttpResponse.BodyHandler<T> handler) throws IOException, InterruptedException {
+        String path = "/" + bucket + "/" + prefix + key;
         URI uri = URI.create(endpoint + path);
         ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
-        String payloadHash = body == null ? UNSIGNED : sha; // the blob key is the SHA-256 of its content
+        String payloadHash = body == null ? UNSIGNED : sha;
         HttpRequest.Builder request = HttpRequest.newBuilder(uri)
                 .timeout(Duration.ofMinutes(10))
                 .header("x-amz-content-sha256", payloadHash)

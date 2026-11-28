@@ -21,6 +21,21 @@ as head (single-node mode).
 
 ## config.yml
 
+### backups
+
+```yaml
+backups:
+  intervalHours: 0
+  keep: 7
+  uploadToS3: false
+```
+
+| Key | Default | Description |
+|-----|---------|-------------|
+| `backups.intervalHours` | `0` | Creates `storage/backups/auto-<time>.zip` every X hours (`0` = off), like `backup create`. In a cluster only the head does it, checked every 10 minutes. |
+| `backups.keep` | `7` | Number of automatic backups that are kept; older ones are deleted. Manual and `before-restore` backups are never deleted. |
+| `backups.uploadToS3` | `false` | Also uploads every backup to the bucket of `cluster.s3` (`<prefix>backups/<file>`), with the credentials of the [S3 storage](templates.md#s3-storage). Restoring from S3 means downloading the file into `storage/backups/` first. |
+
 ### paths
 
 ```yaml

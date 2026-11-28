@@ -55,6 +55,16 @@ node-3 | 10.0.0.13:3657 | DEAD | state: FOLLOWER | cpu: 5% | last seen: 47s ago
 `template info <template>` shows `Nodes` and `StaticNode`. `template create`, `edit` and `remove` work on every
 node (see [Templates](templates.md#where-templates-are-edited-from-the-console)).
 
+## backup
+
+| Command | Description |
+|---------|-------------|
+| `backup create` | Zips `templates/`, `groups/`, `storage/configs/` and the in-game folder into `storage/backups/backup-<time>.zip`. Not included: `node.yml` (the identity of the node), `storage/internal/` (certificates, keys, cluster state) and template log archives. The configs contain secrets (HTTP auth key, MySQL password): keep backups private. |
+| `backup list` | All backups of this node, newest first, with time and size. |
+| `backup restore <backup> [-y]` | Saves the current state as `before-restore-<time>.zip`, then replaces `templates/` and `groups/` with the backup and overwrites the config and in-game files. In a cluster the template sync distributes the restored templates and groups to all nodes. Restart the node to load restored configs. Without `-y` it asks first. |
+
+Automatic backups: see [Configuration](configuration.md#backups).
+
 ## server in a cluster
 
 | Command | Behaviour in a cluster |

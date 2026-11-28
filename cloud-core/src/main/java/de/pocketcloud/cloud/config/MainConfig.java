@@ -41,6 +41,9 @@ public final class MainConfig extends OkaeriConfig implements ICloudConfig {
     @Comment({"Custom locations of storage folders. Relative paths start in the cloud folder, absolute paths can point anywhere.", "Changes need a restart."})
     private PathsConfiguration paths = new PathsConfiguration();
 
+    @Comment({"Backups of templates, groups and configs (command: backup)."})
+    private BackupConfiguration backups = new BackupConfiguration();
+
     @Comment({"The network configuration for the cloud."})
     private NetworkConfiguration network = new NetworkConfiguration();
 
@@ -64,6 +67,7 @@ public final class MainConfig extends OkaeriConfig implements ICloudConfig {
         }
 
         paths.validate();
+        backups.validate();
         network.validate();
         httpServer.validate();
         mysqlSettings.validate();
