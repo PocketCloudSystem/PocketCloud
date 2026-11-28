@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { api, events } from '../api.js';
+import { events } from '../api.js';
 import { toast } from '../util.js';
 
 const MAX_LINES = 2000;
@@ -8,16 +8,27 @@ const COLORS = {
   8: '#777', 9: '#55f', a: '#5f5', b: '#5ff', c: '#f55', d: '#f5f', e: '#ff5', f: '#fff',
 };
 
-// Minecraft § colour codes to spans; ANSI escapes are dropped
+const ANSI = { 30: '0', 31: '4', 32: '2', 33: '6', 34: '1', 35: '5', 36: '3', 37: '7', 90: '8', 91: 'c', 92: 'a', 93: 'e', 94: '9', 95: 'd', 96: 'b', 97: 'f' };
+
+// ANSI colour escapes (cloud console) to § codes, so one parser handles both
+const ansiToSection = (line) => line.replace(/\x1b\[([0-9;]*)m/g, (_, codes) => codes.split(';').map((c) => {
+  const n = Number(c || 0);
+  if (n === 0 || n === 39) return '§r';
+  if (n === 1) return '§l';
+  if (n === 3) return '§o';
+  return ANSI[n] ? '§' + ANSI[n] : '';
+}).join(''));
+
+// Minecraft § colour codes to spans
 function colorize(line) {
   const parts = [];
   let style = {};
-  for (const [i, chunk] of line.replace(/\x1b\[[0-9;]*m/g, '').split('§').entries()) {
+  for (const [i, chunk] of ansiToSection(line).split('§').entries()) {
     let text = chunk;
     if (i > 0 && chunk.length) {
       const code = chunk[0].toLowerCase();
       text = chunk.slice(1);
-      if (COLORS[code]) style = { color: COLORS[code] };
+      if (COLORS[code]) style = { ...style, color: COLORS[code] };
       else if (code === 'l') style = { ...style, fontWeight: 600 };
       else if (code === 'o') style = { ...style, fontStyle: 'italic' };
       else if (code === 'r') style = {};
@@ -29,7 +40,8 @@ function colorize(line) {
 
 let lineId = 0;
 
-export function Console({ server }) {
+/** Live console: `stream` is the SSE path, `run(command)` sends a command. */
+export function Console({ stream, run, title = 'Console', placeholder = 'Command, e.g. list', height }) {
   const [lines, setLines] = useState([]);
   const [state, setState] = useState('connecting');
   const [command, setCommand] = useState('');
@@ -41,7 +53,7 @@ export function Console({ server }) {
   useEffect(() => {
     setLines([]);
     setState('connecting');
-    return events(`/panel-api/servers/${encodeURIComponent(server)}/console`, {
+    return events(stream, {
       open: () => setState('live'),
       lines: (data) => {
         setState('live');
@@ -52,7 +64,7 @@ export function Console({ server }) {
       failure: (data, source) => { source.close(); setState('failed: ' + data); },
       error: (_, source) => source.readyState === EventSource.CLOSED || setState('reconnecting'),
     });
-  }, [server]);
+  }, [stream]);
 
   useEffect(() => {
     if (stick.current && box.current) box.current.scrollTop = box.current.scrollHeight;
@@ -66,7 +78,7 @@ export function Console({ server }) {
     setHistoryAt(-1);
     setCommand('');
     try {
-      await api(`/v1/servers/${encodeURIComponent(server)}/dispatch`, { method: 'POST', body: { command: cmd } });
+      await run(cmd);
     } catch (err) {
       toast(err.message, 'bad');
     }
@@ -83,10 +95,10 @@ export function Console({ server }) {
   return (
     <div class="console card">
       <div class="console-head">
-        <strong>Console</strong>
+        <strong>{title}</strong>
         <span class={'badge ' + (state === 'live' ? 'ok' : state === 'ended' || state.startsWith('failed') ? 'bad' : 'warn')}>{state}</span>
       </div>
-      <pre ref={box} class="console-lines" onScroll={(e) => {
+      <pre ref={box} class="console-lines" style={height ? { height } : null} onScroll={(e) => {
         const el = e.currentTarget;
         stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < 24;
       }}>
@@ -95,7 +107,7 @@ export function Console({ server }) {
       <form class="console-input" onSubmit={send}>
         <span class="muted">&gt;</span>
         <input value={command} onInput={(e) => setCommand(e.currentTarget.value)} onKeyDown={onKey}
-               placeholder="Command, e.g. list" aria-label="Command" disabled={state === 'ended'} />
+               placeholder={placeholder} aria-label="Command" disabled={state === 'ended'} />
         <button disabled={!command.trim() || state === 'ended'}>Send</button>
       </form>
     </div>

@@ -18,6 +18,7 @@ to the head or the node that runs a server, like the [HTTP API](cluster/http-api
 | Page | What you can do |
 |------|-----------------|
 | Overview | Players, servers, templates, uptime, charts of the last 24 h (players, servers, CPU, memory), CPU/memory/TPS of this cloud process, nodes of the cluster |
+| Console | The cloud console of the node you are connected to: live log, run any cloud command (confirmations are answered with `y`/`n`). Commands from the panel are logged as `[Panel] > ...` |
 | Servers | Filter, start servers of a template, stop all; per server: live data, save, stop, force stop, live console with commands |
 | Templates | Create, edit all settings (incl. `nodes`/`staticNode`), start a server, rolling restart, delete; file history with rollback (cluster) |
 | Groups | Create, delete, add and remove templates |

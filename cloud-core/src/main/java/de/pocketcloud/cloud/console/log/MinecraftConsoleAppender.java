@@ -4,6 +4,7 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.AppenderBase;
 import ch.qos.logback.core.Layout;
 import de.pocketcloud.cloud.console.ConsoleColor;
+import de.pocketcloud.cloud.console.log.cache.ConsoleTail;
 import de.pocketcloud.cloud.console.log.cache.LogMessagesCache;
 import de.pocketcloud.cloud.console.output.OutputManager;
 import lombok.Setter;
@@ -17,6 +18,7 @@ public final class MinecraftConsoleAppender extends AppenderBase<ILoggingEvent> 
     protected void append(ILoggingEvent event) {
         String formatted = layout.doLayout(event);
         if (CloudLogger.get().isSaveLogs()) LogMessagesCache.save(ConsoleColor.clean(formatted));
+        ConsoleTail.add(formatted);
         if (OutputManager.get().canOutput(CloudLogger.get())) OutputManager.get().handleOutput(formatted);
     }
 }

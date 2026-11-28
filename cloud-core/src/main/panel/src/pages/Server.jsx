@@ -57,7 +57,8 @@ export function Server({ name }) {
         </div>
       )}
 
-      {!gone && <Console server={name} />}
+      {!gone && <Console stream={`/panel-api/servers/${encodeURIComponent(name)}/console`}
+                          run={(command) => api(path + '/dispatch', { method: 'POST', body: { command } })} />}
     </section>
   );
 }

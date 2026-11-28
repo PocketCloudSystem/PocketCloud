@@ -1,5 +1,8 @@
 package de.pocketcloud.cloud.http.panel;
 
+import de.pocketcloud.cloud.console.log.cache.ConsoleTail;
+import de.pocketcloud.cloud.console.log.CloudLogger;
+import java.util.List;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import de.pocketcloud.api.component.software.IServerSoftware;
@@ -125,5 +128,43 @@ public final class PanelRoutes {
                 stream.close();
             }
         });
+    }
+
+    /** Live console of this cloud process: event {@code lines} with new lines (ANSI colours), the last 1000 lines first. */
+    @GetRoute("/panel-api/console")
+    public void cloudConsole(HttpRequest request, HttpResponse response) {
+        HttpResponse.EventStream stream = response.eventStream();
+        Thread.ofVirtual().name("panel-cloud-console").start(() -> {
+            long seq = 0, lastPing = System.currentTimeMillis();
+            try {
+                while (stream.open()) {
+                    List<ConsoleTail.Line> lines = ConsoleTail.after(seq);
+                    if (!lines.isEmpty()) {
+                        seq = lines.getLast().seq();
+                        stream.send("lines", String.join("\n", lines.stream().map(ConsoleTail.Line::text).toList()));
+                    } else if (System.currentTimeMillis() - lastPing > 15_000) {
+                        stream.ping();
+                        lastPing = System.currentTimeMillis();
+                    }
+                    Thread.sleep(250);
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            } finally {
+                stream.close();
+            }
+        });
+    }
+
+    /** Runs a cloud command as if typed into the console of this node; the output shows up in the console stream. */
+    @PostRoute("/panel-api/console")
+    public void cloudCommand(HttpRequest request, HttpResponse response) {
+        JsonObject body = request.json();
+        String line = body != null && body.has("command") ? body.get("command").getAsString().strip() : "";
+        if (line.isEmpty()) throw new HttpException(400, "Missing field: command");
+        if (line.contains("\n") || line.contains("\r")) throw new HttpException(400, "One command per request.");
+        CloudLogger.get().info("§8[§bPanel§8] §r> {}", line);
+        PocketCloud.instance().console().submit(line);
+        response.noContent();
     }
 }

@@ -1,5 +1,7 @@
 package de.pocketcloud.cloud.console.command;
 
+import de.pocketcloud.cloud.console.log.cache.ConsoleTail;
+import de.pocketcloud.cloud.console.ConsoleColor;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.console.command.sender.CommandSender;
 import de.pocketcloud.cloud.console.command.sub.SubCommand;
@@ -111,6 +113,7 @@ public final class CommandManager implements Loadable, Tickable {
             currentAwaitConfirmationExpiration = currentTick + currentAwaitConfirmation.timeout;
             String prompt = currentAwaitConfirmation.prompt.trim() + " §8[§aY§8/§cn§8] ";
             PocketCloud.instance().console().setPrompt(prompt);
+            ConsoleTail.add(ConsoleColor.convert(prompt)); // the prompt is not a log line: show it in the web panel too
         }
     }
 

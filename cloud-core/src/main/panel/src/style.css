@@ -222,3 +222,5 @@ td.wrap-cell { white-space: normal; min-width: 260px; }
 .chip { display: inline-flex; align-items: center; gap: 4px; }
 .chip-x { background: none; border: none; padding: 0 2px; color: var(--muted); font-size: 15px; line-height: 1; }
 .chip-x:hover { color: var(--bad); }
+.stack.wide { max-width: none; }
+.console-lines { min-height: 240px; }

@@ -128,6 +128,11 @@ public final class CloudConsole extends Thread implements Tickable {
         }
     }
 
+    /** Runs a line as if it was typed into this console (also answers pending confirmations). */
+    public void submit(String line) {
+        consoleQueue.offer(line);
+    }
+
     public void print(String line) {
         if (reader == null) {
             System.out.println(line);

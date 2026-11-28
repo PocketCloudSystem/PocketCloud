@@ -11,6 +11,7 @@ import { Backups } from './Backups.jsx';
 import { Groups } from './Groups.jsx';
 import { Maintenance } from './Maintenance.jsx';
 import { Plugins } from './Plugins.jsx';
+import { CloudConsole } from './CloudConsole.jsx';
 
 // list page, or the detail page when the route has a name: #/servers/Lobby-1
 const listOrDetail = (List, Detail) => ({ params, session }) =>
@@ -19,6 +20,7 @@ const listOrDetail = (List, Detail) => ({ params, session }) =>
 // '' is the overview; the order here is the order in the sidebar
 export const pages = {
   '': { label: 'Overview', component: Overview },
+  console: { label: 'Console', component: CloudConsole },
   servers: { label: 'Servers', component: listOrDetail(Servers, Server) },
   templates: { label: 'Templates', component: listOrDetail(Templates, Template) },
   groups: { label: 'Groups', component: Groups },
