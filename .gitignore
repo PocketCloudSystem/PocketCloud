@@ -1,5 +1,6 @@
 .idea/
 target/
 target-minimal/
-server-configs/node_modules/
-dist/
+server-configs/
+node_modules/
+cloud-core/src/main/panel/dist/
