@@ -53,13 +53,14 @@ public final class PowerNukkitXPlayerAdapter implements NativePlayerAdapter<Play
     public void transfer(Player player, ICloudServer server) {
         // Behind a cloud proxy: let the proxy switch the server internally (works for servers on every node and
         // does not depend on WaterdogPE's prefer_fast_transfer or on the client resolving a server name).
-        boolean viaProxy = CloudAPI.instance().players().get(player.getName())
-                .flatMap(ICloudPlayer::currentProxy)
-                .isPresent();
-        if (viaProxy) {
+        // Only the proxy name counts: the proxy itself may be missing from this server's cache (other node, not synced yet).
+        // A player this server does not know yet is also sent the cloud way, the cloud knows its proxy.
+        Optional<ICloudPlayer> known = CloudAPI.instance().players().get(player.getName());
+        if (known.isEmpty() || known.get().currentProxyName() != null) {
             PlayerTransferPacket.create(player.getName(), server.name()).sendPacket();
             return;
         }
+        Server.getInstance().getLogger().debug("[CloudBridge] " + player.getName() + " has no cloud proxy, transferring directly to " + server.name());
 
         // Joined directly (no cloud proxy): a real client transfer to the server's public address.
         TransferPacket packet = new TransferPacket();
