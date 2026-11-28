@@ -184,3 +184,6 @@ scrape_configs:
 
 Scraping more than one node keeps the metrics available when a node fails; the values are the same, so use
 `max by (node)` / `max by (template)` (or `max without (instance)`) in queries.
+
+A ready Grafana dashboard is in [grafana-dashboard.json](grafana-dashboard.json): in Grafana under
+**Dashboards → New → Import**, upload the file and pick your Prometheus data source.
