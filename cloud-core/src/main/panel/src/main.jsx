@@ -4,6 +4,7 @@ import { api } from './api.js';
 import { useRoute } from './router.js';
 import { Login } from './pages/Login.jsx';
 import { Shell } from './components/Shell.jsx';
+import { Toasts } from './components/ui.jsx';
 import { pages, NotFound } from './pages/index.js';
 import './style.css';
 
@@ -26,6 +27,7 @@ function App() {
   return (
     <Shell session={session} section={section} onLogout={() => setSession(null)}>
       <Page params={rest.map(decodeURIComponent)} session={session} />
+      <Toasts />
     </Shell>
   );
 }
