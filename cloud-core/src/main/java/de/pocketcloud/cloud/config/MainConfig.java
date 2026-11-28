@@ -41,22 +41,22 @@ public final class MainConfig extends OkaeriConfig implements ICloudConfig {
     @Comment({"Custom locations of storage folders. Relative paths start in the cloud folder, absolute paths can point anywhere.", "Changes need a restart."})
     private PathsConfiguration paths = new PathsConfiguration();
 
-    @Comment({"Backups of templates, groups and configs (command: backup)."})
+    @Exclude // own file, see PocketCloud#loadConfigs
     private BackupConfiguration backups = new BackupConfiguration();
 
     @Comment({"The network configuration for the cloud."})
     private NetworkConfiguration network = new NetworkConfiguration();
 
-    @Comment({"The HTTP service configuration for the cloud."})
+    @Exclude // own file, see PocketCloud#loadConfigs
     private HttpServerConfiguration httpServer = new HttpServerConfiguration();
 
-    @Comment({"The MySQL configuration for the cloud. Only used if provider is set to 'mysql'"})
+    @Exclude // own file, see PocketCloud#loadConfigs
     private MySqlConfiguration mysqlSettings = new MySqlConfiguration();
 
-    @Comment({"The Redis configuration for the cloud. Holds the shared cluster state and caches the provider data."})
+    @Exclude // own file, see PocketCloud#loadConfigs
     private RedisConfiguration redis = new RedisConfiguration();
 
-    @Comment({"Settings for running several nodes as one cluster."})
+    @Exclude // own file, see PocketCloud#loadConfigs
     private ClusterConfiguration cluster = new ClusterConfiguration();
 
     @Override
@@ -67,11 +67,6 @@ public final class MainConfig extends OkaeriConfig implements ICloudConfig {
         }
 
         paths.validate();
-        backups.validate();
         network.validate();
-        httpServer.validate();
-        mysqlSettings.validate();
-        redis.validate();
-        cluster.validate();
     }
 }

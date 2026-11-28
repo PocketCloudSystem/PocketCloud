@@ -4,6 +4,7 @@ import de.pocketcloud.api.config.ICloudConfig;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import eu.okaeri.configs.OkaeriConfig;
 import eu.okaeri.configs.annotation.Comment;
+import eu.okaeri.configs.annotation.Header;
 import eu.okaeri.configs.annotation.Exclude;
 import lombok.Getter;
 import lombok.Setter;
@@ -14,6 +15,7 @@ import java.util.List;
 @Getter
 @Setter
 @Accessors(fluent = true)
+@Header({"Settings for running several nodes as one cluster."})
 public final class ClusterConfiguration extends OkaeriConfig implements ICloudConfig {
 
     @Exclude

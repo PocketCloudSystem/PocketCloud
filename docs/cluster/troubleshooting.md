@@ -113,7 +113,7 @@ Redis held head term 100 of another cluster (id deadbeef, this cluster 3ef2...);
 Redis knows head term 500, but no member of this cluster reports it (this node: 11). Claiming term 501 next
 ```
 
-With `redis.enabled: true` a node only becomes head after storing its term in Redis, and only if Redis does not
+With `enabled: true` in `redis.yml` a node only becomes head after storing its term in Redis, and only if Redis does not
 already contain a higher term of the same cluster. The term is stored together with the cluster id (serial number
 of the cluster CA certificate).
 

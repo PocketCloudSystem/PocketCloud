@@ -5,6 +5,7 @@ import de.pocketcloud.api.logging.CloudLogLevel;
 import de.pocketcloud.cloud.PocketCloud;
 import eu.okaeri.configs.OkaeriConfig;
 import eu.okaeri.configs.annotation.Comment;
+import eu.okaeri.configs.annotation.Header;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -12,6 +13,7 @@ import lombok.experimental.Accessors;
 @Getter
 @Setter
 @Accessors(fluent = true)
+@Header({"The Redis configuration for the cloud. Holds the shared cluster state and caches the provider data."})
 public final class RedisConfiguration extends OkaeriConfig implements ICloudConfig {
 
     @Comment({"Whether Redis is used as cache in front of the provider and as optional shared state of a cluster",

@@ -108,6 +108,6 @@ A node with an **expired** certificate can no longer connect and cannot be renew
 
 ## HTTP API
 
-Each node checks the `Authorization: Bearer <auth-key>` header against **its own** `httpServer.auth-key`. Requests
+Each node checks the `Authorization: Bearer <auth-key>` header against **its own** `auth-key` in `http.yml`. Requests
 that a node forwards to the head or to another node travel over the mutually authenticated cluster connection and
 are not checked again there. Use the same `auth-key` on all nodes if clients may connect to any of them.

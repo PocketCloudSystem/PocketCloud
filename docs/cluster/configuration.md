@@ -19,22 +19,35 @@ Settings of this node. Created on the first start; `--join` fills in `name`, `se
 Without cluster certificates in `storage/internal/cluster/` the node ignores everything but `name` and runs alone
 as head (single-node mode).
 
-## config.yml
+## config.yml and its neighbours
 
-### backups
+The settings of the cloud are split over several files in `storage/configs/`:
+
+| File | Content |
+|------|---------|
+| `config.yml` | `cloudName`, `language`, `provider`, update checks, `paths`, `network` (bridge port) |
+| `cluster.yml` | Settings for several nodes: `strategy`, `templateStorage`, `restartOnUpdate`, `s3` |
+| `redis.yml` | Redis connection |
+| `mysql.yml` | MySQL connection (only with `provider: mysql`) |
+| `http.yml` | HTTP API: `enabled`, `address`, `port`, `auth-key`, `ssl`, `routePrefix` |
+| `backups.yml` | Automatic backups |
+| `log_settings.yml`, `server_settings.yml`, `node.yml` | as before |
+
+An older `config.yml` that still has these sections is split on the first start; the values are kept.
+
+### backups.yml
 
 ```yaml
-backups:
-  intervalHours: 0
-  keep: 7
-  uploadToS3: false
+intervalHours: 0
+keep: 7
+uploadToS3: false
 ```
 
 | Key | Default | Description |
 |-----|---------|-------------|
-| `backups.intervalHours` | `0` | Creates `storage/backups/auto-<time>.zip` every X hours (`0` = off), like `backup create`. In a cluster only the head does it, checked every 10 minutes. |
-| `backups.keep` | `7` | Number of automatic backups that are kept; older ones are deleted. Manual and `before-restore` backups are never deleted. |
-| `backups.uploadToS3` | `false` | Also uploads every backup to the bucket of `cluster.s3` (`<prefix>backups/<file>`), with the credentials of the [S3 storage](templates.md#s3-storage). Restoring from S3 means downloading the file into `storage/backups/` first. |
+| `intervalHours` | `0` | Creates `storage/backups/auto-<time>.zip` every X hours (`0` = off), like `backup create`. In a cluster only the head does it, checked every 10 minutes. |
+| `keep` | `7` | Number of automatic backups that are kept; older ones are deleted. Manual and `before-restore` backups are never deleted. |
+| `uploadToS3` | `false` | Also uploads every backup to the bucket of `s3` in `cluster.yml` (`<prefix>backups/<file>`), with the credentials of the [S3 storage](templates.md#s3-storage). Restoring from S3 means downloading the file into `storage/backups/` first. |
 
 ### paths
 
@@ -59,42 +72,40 @@ yourself before you change the path. The paths are per node: in a cluster every 
 Several nodes on one machine can share the software folder; do not share `inGame` between nodes with the `json`
 provider, because each node writes its own whitelist and notification list there.
 
-### cluster
+### cluster.yml
 
 ```yaml
-cluster:
-  strategy: least-memory
-  templateStorage: packets
-  restartOnUpdate: []
-  s3:
-    endpoint: https://s3.eu-central-1.amazonaws.com
-    region: eu-central-1
-    bucket: pocketcloud
-    prefix: templates/
+strategy: least-memory
+templateStorage: packets
+restartOnUpdate: []
+s3:
+  endpoint: https://s3.eu-central-1.amazonaws.com
+  region: eu-central-1
+  bucket: pocketcloud
+  prefix: templates/
 ```
 
 | Key | Default | Values |
 |-----|---------|--------|
-| `cluster.strategy` | `least-memory` | How the head picks the node for a new server (only used with more than one node). `least-memory`: the node with the most free memory budget (even distribution). `fill`: the node with the smallest free budget that is still enough (keeps machines free). `round-robin`: the next node in turn (by name). Invalid values are reset to `least-memory`. Only the head's setting is used, so keep it the same on all nodes. |
-| `cluster.restartOnUpdate` | `[]` | Templates whose servers get a rolling restart (like `template restart`) after the template was changed, e.g. `[Lobby, BedWars]`. Only the head's setting is used. A change during a running restart restarts the template once more afterwards. |
-| `cluster.templateStorage` | `packets` | Where the nodes get template files from. `packets`: from the head over the cluster connection. `s3`: from an S3 bucket, see [Templates → S3 storage](templates.md#s3-storage). |
-| `cluster.s3.endpoint` | `https://s3.eu-central-1.amazonaws.com` | URL of the S3 service, e.g. `http://10.0.0.5:9000` (MinIO) or `https://<account>.r2.cloudflarestorage.com` (Cloudflare R2). |
-| `cluster.s3.region` | `eu-central-1` | Region of the bucket. MinIO: `us-east-1`, R2: `auto`. |
-| `cluster.s3.bucket` | `pocketcloud` | The bucket. It must exist. |
-| `cluster.s3.prefix` | `templates/` | Folder inside the bucket. Use the same bucket and prefix on all nodes. |
+| `strategy` | `least-memory` | How the head picks the node for a new server (only used with more than one node). `least-memory`: the node with the most free memory budget (even distribution). `fill`: the node with the smallest free budget that is still enough (keeps machines free). `round-robin`: the next node in turn (by name). Invalid values are reset to `least-memory`. Only the head's setting is used, so keep it the same on all nodes. |
+| `restartOnUpdate` | `[]` | Templates whose servers get a rolling restart (like `template restart`) after the template was changed, e.g. `[Lobby, BedWars]`. Only the head's setting is used. A change during a running restart restarts the template once more afterwards. |
+| `templateStorage` | `packets` | Where the nodes get template files from. `packets`: from the head over the cluster connection. `s3`: from an S3 bucket, see [Templates → S3 storage](templates.md#s3-storage). |
+| `s3.endpoint` | `https://s3.eu-central-1.amazonaws.com` | URL of the S3 service, e.g. `http://10.0.0.5:9000` (MinIO) or `https://<account>.r2.cloudflarestorage.com` (Cloudflare R2). |
+| `s3.region` | `eu-central-1` | Region of the bucket. MinIO: `us-east-1`, R2: `auto`. |
+| `s3.bucket` | `pocketcloud` | The bucket. It must exist. |
+| `s3.prefix` | `templates/` | Folder inside the bucket. Use the same bucket and prefix on all nodes. |
 
-### redis
+### redis.yml
 
 ```yaml
-redis:
-  enabled: false
-  address: 127.0.0.1
-  port: 6379
-  username: ''
-  password: ''
-  database: 0
-  ssl: false
-  timeout: 3000
+enabled: false
+address: 127.0.0.1
+port: 6379
+username: ''
+password: ''
+database: 0
+ssl: false
+timeout: 3000
 ```
 
 | Key | Default | Description |
@@ -132,7 +143,7 @@ If Redis cannot be reached at startup the node logs `Could not connect to Redis:
 | `cloudName` | Used as the Redis namespace and in the name of the cluster CA. Use the same value on all nodes. |
 | `provider` | `json`: `templates/templates.json` and `groups/groups.json` are replicated between nodes. `mysql`: all nodes use the same database. Use the same provider on all nodes. |
 | `network.address`, `network.port` | Bridge port. Keep `127.0.0.1`; bridges only talk to the node on their machine. |
-| `httpServer.*` | Each node runs its own HTTP server with its own `auth-key`. Use the same key on all nodes if clients may talk to any node. |
+| `http.yml` | Each node runs its own HTTP server with its own `auth-key`. Use the same key on all nodes if clients may talk to any node. |
 
 ## server_settings.yml
 

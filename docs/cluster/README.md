@@ -14,7 +14,7 @@ A single machine without a cluster keeps working exactly as before: it is one no
 |------|----------|
 | [Overview](overview.md) | Head-node model, what is shared, what each node does |
 | [Setup](setup.md) | Requirements, ports, addresses, creating a cluster step by step |
-| [Configuration](configuration.md) | `node.yml`, `config.yml` (`cluster`, `redis`), `server_settings.yml`, template settings `nodes`/`staticNode` |
+| [Configuration](configuration.md) | `node.yml`, `config.yml`, `cluster.yml`, `redis.yml`, `server_settings.yml`, template settings `nodes`/`staticNode` |
 | [Templates & replication](templates.md) | How template files are synchronised, `.pcignore`, conflicts, history, rollback, pause |
 | [Scheduling](scheduling.md) | How the head picks a node, strategies, drain mode, start retries |
 | [Failures & recovery](failures.md) | Node down, head down, network partition, adopting servers after a restart |

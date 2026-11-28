@@ -12,6 +12,8 @@ import de.pocketcloud.cloud.cluster.NodeConfig;
 import de.pocketcloud.cloud.config.CloudEnvironmentConfig;
 import de.pocketcloud.cloud.config.LogSettingsConfig;
 import de.pocketcloud.cloud.config.MainConfig;
+import de.pocketcloud.cloud.config.ConfigMigration;
+import de.pocketcloud.cloud.config.sub.*;
 import de.pocketcloud.cloud.config.ServerSettingsConfig;
 import de.pocketcloud.cloud.console.CloudConsole;
 import de.pocketcloud.cloud.console.CloudShutdownHook;
@@ -74,6 +76,11 @@ import java.util.concurrent.CopyOnWriteArrayList;
 @Getter
 @Accessors(fluent = true)
 public final class PocketCloud implements CloudAPI {
+
+    /** Sections of config.yml that live in their own file: key in an old config.yml → file in storage/configs. */
+    private static final Map<String, String> SPLIT_CONFIGS = Map.of("backups", "backups.yml", "httpServer", "http.yml",
+            "mysqlSettings", "mysql.yml", "redis", "redis.yml", "cluster", "cluster.yml");
+
 
     @Getter
     private static PocketCloud instance = null;
@@ -186,7 +193,7 @@ public final class PocketCloud implements CloudAPI {
         Benchmark.startTiming("cloud_start");
 
         services.register(Loader.class, new Loader());
-        services.register(MainConfig.class, loadYmlConfig(MainConfig.class, PocketCloudPaths.storage().configs().with("config.yml").asPath()));
+        services.register(MainConfig.class, loadConfigs());
         PocketCloudPaths.configure(config().paths().software(), config().paths().inGame(), config().paths().libraries(), config().paths().plugins());
         FileUtils.createDirs(PocketCloudPaths.configurableDirectories().toArray(Path[]::new));
         services.register(LogSettingsConfig.class, loadYmlConfig(LogSettingsConfig.class, PocketCloudPaths.storage().configs().with("log_settings.yml").asPath()));
@@ -310,6 +317,24 @@ public final class PocketCloud implements CloudAPI {
         }
     }
 
+    /** config.yml plus the sections that have their own file (moved out of an older config.yml on the first start). */
+    private MainConfig loadConfigs() {
+        Path configs = PocketCloudPaths.storage().configs().asPath();
+        Path main = configs.resolve("config.yml");
+        List<String> moved = ConfigMigration.splitSections(main, SPLIT_CONFIGS);
+        MainConfig config = loadYmlConfig(MainConfig.class, main);
+        config.backups(loadYmlConfig(BackupConfiguration.class, configs.resolve(SPLIT_CONFIGS.get("backups"))));
+        config.httpServer(loadYmlConfig(HttpServerConfiguration.class, configs.resolve(SPLIT_CONFIGS.get("httpServer"))));
+        config.mysqlSettings(loadYmlConfig(MySqlConfiguration.class, configs.resolve(SPLIT_CONFIGS.get("mysqlSettings"))));
+        config.redis(loadYmlConfig(RedisConfiguration.class, configs.resolve(SPLIT_CONFIGS.get("redis"))));
+        config.cluster(loadYmlConfig(ClusterConfiguration.class, configs.resolve(SPLIT_CONFIGS.get("cluster"))));
+        if (!moved.isEmpty()) {
+            config.save(); // drops the moved sections from config.yml
+            appendStartNotification("Moved sections of config.yml into their own files§8: §b{}", CloudLogLevel.INFO, String.join("§8, §b", moved));
+        }
+        return config;
+    }
+
     private <T extends OkaeriConfig> T loadYmlConfig(Class<T> clazz, Path filePath) {
         return ConfigManager.create(clazz, config -> {
             config.withConfigurer(new YamlSnakeYamlConfigurer());
@@ -362,6 +387,7 @@ public final class PocketCloud implements CloudAPI {
         try {
             boolean httpServerBeforeReload = config().httpServer().enabled();
             reloadYmlConfig(config());
+            for (OkaeriConfig split : List.of(config().backups(), config().httpServer(), config().mysqlSettings(), config().redis(), config().cluster())) reloadYmlConfig(split);
             reloadYmlConfig(logSettingsConfig());
             reloadYmlConfig(serverSettingsConfig());
             loader().reload();

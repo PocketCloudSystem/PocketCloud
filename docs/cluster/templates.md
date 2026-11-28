@@ -77,7 +77,7 @@ Template Lobby was removed on another node.
 
 ## S3 storage
 
-By default the head sends the files to every node itself. With `cluster.templateStorage: s3` (see
+By default the head sends the files to every node itself. With `templateStorage: s3` in `cluster.yml` (see
 [Configuration](configuration.md#cluster)) the files go through an S3 bucket instead (AWS S3, MinIO,
 Cloudflare R2 or any other S3-compatible service):
 
@@ -90,7 +90,7 @@ Cloudflare R2 or any other S3-compatible service):
 - If the bucket cannot be reached or a file is missing there, the nodes get the file from the head as before. The
   head then logs `Could not upload template Lobby to S3, the nodes get it from this node instead: ...`.
 
-Credentials go into `storage/internal/cluster/s3.properties` on every node (not into `config.yml`, which is often
+Credentials go into `storage/internal/cluster/s3.properties` on every node (not into `cluster.yml`, which is often
 shared), or into the environment variables `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`:
 
 ```properties
@@ -108,7 +108,7 @@ Files larger than 5 GB cannot be uploaded (one upload per file).
 
 A change reaches servers that start afterwards; running servers keep their copy. To bring them up to date without
 fewer servers or kicked players, run `template restart Lobby` (see [Commands](commands.md)) or list the template in
-`cluster.restartOnUpdate` to do it automatically after every change:
+`restartOnUpdate` in `cluster.yml` to do it automatically after every change:
 
 ```text
 Restarting 3 server(s) of Lobby one after another...

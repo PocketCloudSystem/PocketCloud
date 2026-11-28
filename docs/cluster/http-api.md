@@ -1,13 +1,13 @@
 # HTTP API in a cluster
 
-The HTTP API runs on **every node** that has `httpServer.enabled: true`. A client can talk to any node:
+The HTTP API runs on **every node** that has `enabled: true` in `http.yml`. A client can talk to any node:
 
 - **Reads** are answered by that node from its cache, which contains the whole cluster.
 - **Writes with cluster effect** are forwarded to the **head**.
 - **Requests about a server on another node** (logs, command, save, stop) are forwarded to **the node that runs
   it**.
 
-Authentication happens on the node the client talks to, with that node's `httpServer.auth-key` (see
+Authentication happens on the node the client talks to, with that node's `auth-key` (`http.yml`) (see
 [Security](security.md#http-api)). Paths below are shown without the route prefix (`/cloud/` by default), as in
 the [HTTP API documentation](../../http_api_docs.md).
 
@@ -177,7 +177,7 @@ scrape_configs:
   - job_name: pocketcloud
     metrics_path: /cloud/metrics
     authorization:
-      credentials: <auth-key from config.yml>
+      credentials: <auth-key from http.yml>
     static_configs:
       - targets: ["node-1:8080", "node-2:8080"]
 ```

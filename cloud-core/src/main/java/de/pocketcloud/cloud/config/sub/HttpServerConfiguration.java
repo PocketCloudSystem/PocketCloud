@@ -6,6 +6,7 @@ import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.http.util.AuthTokenGenerator;
 import eu.okaeri.configs.OkaeriConfig;
 import eu.okaeri.configs.annotation.Comment;
+import eu.okaeri.configs.annotation.Header;
 import eu.okaeri.configs.annotation.CustomKey;
 import lombok.Getter;
 import lombok.Setter;
@@ -17,6 +18,7 @@ import java.net.SocketAddress;
 @Getter
 @Setter
 @Accessors(fluent = true)
+@Header({"The HTTP service configuration for the cloud."})
 public final class HttpServerConfiguration extends OkaeriConfig implements ICloudConfig {
 
     @Comment({"Whether the http server will start"})

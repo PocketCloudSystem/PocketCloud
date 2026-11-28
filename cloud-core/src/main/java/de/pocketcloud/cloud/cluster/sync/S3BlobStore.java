@@ -62,7 +62,7 @@ public final class S3BlobStore {
     }
 
     /**
-     * The store of {@code cluster.s3} in config.yml, or null if the template storage is "packets" or the
+     * The store of {@code s3} in cluster.yml, or null if the template storage is "packets" or the
      * credentials are missing. Credentials: {@code credentialsFile} (accessKey=, secretKey=), otherwise the
      * environment variables AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY.
      */

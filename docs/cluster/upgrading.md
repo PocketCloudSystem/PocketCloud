@@ -13,7 +13,7 @@ always head. The steps below first update it, then turn it into a cluster.
 Replace `pocketcloud.jar` and start it. New on the first start:
 
 - `storage/configs/node.yml` is created (`name: node-1`, `advertisedAddress: 127.0.0.1`, ...).
-- `config.yml` gets the sections `redis` (disabled) and `cluster` (`strategy: least-memory`).
+- `redis.yml` (Redis disabled) and `cluster.yml` (`strategy: least-memory`) are created. An older `config.yml` is split into `config.yml`, `cluster.yml`, `redis.yml`, `mysql.yml`, `http.yml` and `backups.yml` on the first start; the values are kept.
 - `server_settings.yml` gets `addresses` and `bridgeReconnectTimeout`.
 - Templates get the settings `nodes: []` and `staticNode: ""`.
 - `storage/internal/auth-token` is created: the bridge token of the node is now persistent, so servers can
@@ -55,7 +55,7 @@ Before adding the second node:
 3. Give every static template its node: `template staticnode <template> <node>`. Their server folders stay on that
    node only.
 4. Open the ports and check the addresses (see [Setup → Network](setup.md#network)).
-5. Optionally set `maxMemoryMb` in `node.yml` and `cluster.strategy` in `config.yml`.
+5. Optionally set `maxMemoryMb` in `node.yml` and `strategy` in `cluster.yml`.
 
 ## 5. Add nodes
 

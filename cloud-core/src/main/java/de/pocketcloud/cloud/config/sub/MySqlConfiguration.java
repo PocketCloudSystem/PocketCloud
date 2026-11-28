@@ -6,6 +6,7 @@ import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.provider.database.MySqlSettings;
 import eu.okaeri.configs.OkaeriConfig;
 import eu.okaeri.configs.annotation.Comment;
+import eu.okaeri.configs.annotation.Header;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -16,6 +17,7 @@ import java.net.SocketAddress;
 @Getter
 @Setter
 @Accessors(fluent = true)
+@Header({"The MySQL configuration for the cloud. Only used if provider is set to 'mysql'"})
 public final class MySqlConfiguration extends OkaeriConfig implements ICloudConfig {
 
     @Comment({"MySQL server address"})

@@ -112,6 +112,7 @@ public final class ConfigSetup extends Setup {
         }
 
         config.save();
+        config.httpServer().save();
         CloudLogger.get().success("Your configuration has been §asaved§r. Restart the cloud to apply the changes made.");
     }
 }

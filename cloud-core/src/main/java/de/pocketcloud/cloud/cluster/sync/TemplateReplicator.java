@@ -81,7 +81,7 @@ public final class TemplateReplicator implements ClusterModule {
     private ExecutorService syncExecutor;
     private ExecutorService serveExecutor;
     private TemplateWatcher watcher;
-    /** Template files in S3 ({@code cluster.templateStorage: s3}), null: only the cluster connection. */
+    /** Template files in S3 ({@code templateStorage: s3} in cluster.yml), null: only the cluster connection. */
     private S3BlobStore s3;
     private volatile boolean s3DownloadWarned;
     private boolean jsonMeta;

@@ -58,7 +58,7 @@ The ID is given back and auto-scaling tries again on its next run.
 
 ## Strategies
 
-Among the candidates the head picks one according to `cluster.strategy` in `config.yml` of the head:
+Among the candidates the head picks one according to `strategy` in `cluster.yml` of the head:
 
 | Strategy | Picks | Good for |
 |----------|-------|----------|

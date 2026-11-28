@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *     is at least {@code template.maxMemory}</li>
  *     <li>CPU load of the node (heartbeat) below {@value #CPU_LIMIT} %</li>
  * </ul>
- * Sorting by {@code cluster.strategy} in config.yml: {@code least-memory} (default), {@code fill}, {@code round-robin}.
+ * Sorting by {@code strategy} in cluster.yml: {@code least-memory} (default), {@code fill}, {@code round-robin}.
  * If no node fits, the reason per node is logged.
  */
 public final class NodeSelector {
