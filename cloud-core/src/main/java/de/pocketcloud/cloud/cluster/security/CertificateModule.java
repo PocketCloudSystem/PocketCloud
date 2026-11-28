@@ -18,6 +18,8 @@ import java.security.KeyPair;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.security.spec.X509EncodedKeySpec;
+import de.pocketcloud.cloud.cluster.NodeAlertModule;
+import java.awt.Color;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -161,17 +163,20 @@ public final class CertificateModule implements ClusterModule {
         boolean autoRenewOwn = cluster.isHead() && certificates().hasCaKey() && own.due(now);
         if (own.notAfter() <= now) {
             if (warnOnce("expired:" + own.serial())) {
+                NodeAlertModule.alert("Certificate expired", "The certificate of `" + cluster.nodeName() + "` has expired; other nodes reject it.", Color.RED);
                 CloudLogger.get().error("The certificate of this node §chas expired§r, other nodes reject it. Run §bnode add {} <address> <port> §ron a node with ca.key "
                         + "and start this node once with §b--join <token>§r.", cluster.nodeName());
                 CloudLogger.get().debug("Own certificate (serial {}) expired on {}.", own.serial(), DATE.format(Instant.ofEpochMilli(own.notAfter())));
             }
         } else if (own.expiresSoon(now) && !autoRenewOwn && warnOnce("own:" + own.serial())) {
+            NodeAlertModule.alert("Certificate expires soon", "The certificate of `" + cluster.nodeName() + "` expires in " + remaining(own.notAfter(), now) + ".", Color.ORANGE);
             CloudLogger.get().warn("The certificate of this node §cexpires in {}§r. {}", remaining(own.notAfter(), now),
                     certificates().hasCaKey() ? "Renew it with §bnode cert renew§r." : "Run §bnode cert renew " + cluster.nodeName() + " §ron a node with ca.key" + holdersHint() + ".");
         }
 
         X509Certificate ca = certificates().caCertificate();
         if (ca.getNotAfter().getTime() - now <= Duration.ofDays(CA_WARN_DAYS).toMillis() && warnOnce("ca:" + ClusterCertificates.serialOf(ca))) {
+            NodeAlertModule.alert("Cluster CA expires soon", "The cluster CA expires in " + remaining(ca.getNotAfter().getTime(), now) + ".", Color.ORANGE);
             CloudLogger.get().warn("The cluster CA §cexpires in {}§r. It cannot be renewed yet, and all node certificates stop working with it.",
                     remaining(ca.getNotAfter().getTime(), now));
             CloudLogger.get().debug("Cluster CA valid until {}.", DATE.format(ca.getNotAfter().toInstant()));

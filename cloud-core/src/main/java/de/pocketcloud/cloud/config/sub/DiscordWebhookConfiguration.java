@@ -95,6 +95,11 @@ public final class DiscordWebhookConfiguration extends OkaeriConfig implements I
         @CustomKey("player-kicks")
         private boolean playerKicks = false;
 
+        @CustomKey("node-alerts")
+        @Comment({"Cluster: a node went offline or came back, the head changed, a certificate expires soon.",
+                "Sent by the head (certificate warnings by the affected node), so each node needs the same webhook."})
+        private boolean nodeAlerts = false;
+
         @Override
         public void validate() {}
     }

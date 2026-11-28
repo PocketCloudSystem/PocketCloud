@@ -40,8 +40,26 @@ for (INode node : nodes.getAll()) {
 
 On the cloud side the provider reads the live cluster state. On servers and proxies the bridge keeps the list it
 received from its node with `SyncType.NODES`; the node sends it on connect and whenever a node joins, leaves, dies
-or the head changes (checked every 2 s). There are no node events yet; check the provider when you need the
+or the head changes (checked every 2 s). Plugins there have no node events; check the provider when you need the
 current state. If the bridge is connected to an older cloud that does not send nodes, `getAll()` is empty.
+
+## Node events
+
+Cloud plugins (in `storage/plugins/` of a node) get these events, listened to like the other cloud events
+(package `de.pocketcloud.cloud.event.impl.node`). Each node fires them for what it sees itself:
+
+| Event | When | Getters |
+|-------|------|---------|
+| `NodeConnectedEvent` | Another node connected (also after a reconnect). | `getNode()` |
+| `NodeDisconnectedEvent` | Another node left or is considered dead (10 s without heartbeat); its servers are treated as offline. | `getNode()` |
+| `HeadChangedEvent` | A node became head. | `getHead()`, `getPreviousHead()` (null if none was known), `isThisNode()` |
+
+## Discord alerts
+
+With `discordWebhook.notifications.node-alerts: true` in `log_settings.yml` (and the webhook enabled) the cluster
+sends Discord messages when a node goes offline or comes back, when the head changes, and when a node certificate
+or the cluster CA expires soon. The head sends them (while there is no head, the oldest reachable node), so every
+change arrives once; certificate warnings come from the affected node. Configure the same webhook on all nodes.
 
 ## ICloudServer.node()
 

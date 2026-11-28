@@ -41,6 +41,10 @@ public interface ClusterModule {
     default void onPeerGone(String name) {
     }
 
+    /** The head changed (also when this node became head). Called on every node. */
+    default void onHeadChanged(String head) {
+    }
+
     /** Adds values to the stats of this node's next heartbeat (sent every second). */
     default void heartbeatStats(Map<String, Object> stats) {
     }

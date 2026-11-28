@@ -41,6 +41,23 @@ public final class NotificationService {
         return true;
     }
 
+    /** Discord alert about the cluster (node offline/back, head change, certificates), if node-alerts is enabled. */
+    public void sendNodeAlert(String title, String description, Color color) {
+        var config = PocketCloud.instance().logSettingsConfig().discordWebhook();
+        if (!config.enabled() || !config.notifications().nodeAlerts()) return;
+        Webhook webhook = config.buildWebhook();
+        if (webhook == null) return;
+        new Message().wait(false).addEmbed(Embed.create()
+                .setTitle("Cluster | " + title)
+                .setDescription(description)
+                .setColor(color)
+                .setFooter("Node: " + PocketCloud.instance().cluster().nodeName(), null, null)
+        ).sendWithDiffWebhook(webhook).exceptionally(ex -> {
+            CloudLogger.get().debug("Failed to send the cluster alert to Discord: {}", ex.getMessage());
+            return null;
+        });
+    }
+
     public Message craftDiscordMessage(NotificationType type, Map<String, Object> args, Map<String, Object> extraArgs) {
         Message message = new Message().wait(false);
         switch (type) {

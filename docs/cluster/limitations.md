@@ -24,6 +24,6 @@
   other nodes do not reload changed template settings while running; restart them after changing definitions.
 - **`server screen` for servers on other nodes** is limited (see [Commands](commands.md#server-in-a-cluster)).
 - **Redis itself is not highly available** (use Redis Sentinel or a managed Redis if you depend on it).
-- **No node events** (`NodeJoinedEvent` etc.) for plugins yet; poll `CloudAPI.nodes()`.
+- **Node events only in cloud plugins** (see [Plugin API](plugin-api.md#node-events)); plugins on servers and proxies poll `CloudAPI.nodes()`.
 - **Software and bridge jars are not replicated**; every node downloads them itself.
 - **`template push`** (manual push of a template to all nodes) does not exist; the automatic sync replaces it.

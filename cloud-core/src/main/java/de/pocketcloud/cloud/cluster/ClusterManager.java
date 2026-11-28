@@ -73,7 +73,7 @@ public final class ClusterManager {
     /** Features on top of the node protocol. Add new modules here. */
     @Getter
     private final ServerRecovery recovery = new ServerRecovery();
-    private final List<ClusterModule> modules = List.of(new de.pocketcloud.cloud.cluster.sync.TemplateReplicator(), new BridgeClusterModule(),
+    private final List<ClusterModule> modules = List.of(new de.pocketcloud.cloud.cluster.sync.TemplateReplicator(), new NodeAlertModule(), new BridgeClusterModule(),
             new de.pocketcloud.cloud.cluster.scheduling.SchedulingModule(), recovery, new de.pocketcloud.cloud.cluster.data.ClusterDataModule(),
             new de.pocketcloud.cloud.cluster.logs.LogStreamModule(), new de.pocketcloud.cloud.cluster.security.CertificateModule());
     private final NodeSelector selector = new NodeSelector(this);
@@ -634,6 +634,11 @@ public final class ClusterManager {
 
     // ------------------------------------------------------------------ election support
 
+    /** The current head, or null while there is none (election, no majority). */
+    public String head() {
+        return election == null ? null : election.head();
+    }
+
     public List<String> aliveNodes(long now) {
         List<String> alive = new ArrayList<>();
         alive.add(nodeName());
@@ -718,7 +723,7 @@ public final class ClusterManager {
     }
 
     void onHeadChanged(String head) {
-        // Hook for later phases (scheduling, state takeover).
+        for (ClusterModule module : modules) module.onHeadChanged(head);
     }
 
     private NodeIdentity identity() {
