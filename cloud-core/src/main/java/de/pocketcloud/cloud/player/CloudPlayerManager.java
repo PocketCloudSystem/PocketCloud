@@ -1,5 +1,6 @@
 package de.pocketcloud.cloud.player;
 
+import de.pocketcloud.network.packet.impl.PlayerKickPacket;
 import de.pocketcloud.api.CloudAPI;
 import de.pocketcloud.api.component.player.ICloudPlayer;
 import de.pocketcloud.api.component.server.ICloudServer;
@@ -29,7 +30,9 @@ public final class CloudPlayerManager implements IWritePlayerProvider {
         CloudPlayer cloudPlayer = requireCloudPlayer(player);
         boolean anyProxies = !PocketCloud.instance().servers().query(ServerSearchQuery.create().ofType(TemplateType.PROXY)).isEmpty();
         if (anyProxies && cloudPlayer.currentProxy().isEmpty()) {
-            cloudPlayer.kick("Joined via sub-server instead of a proxy.", "Please do not join via sub-servers.");
+            // not registered yet, so kick() would not find the player: tell the server it joined directly
+            cloudPlayer.currentServer().ifPresent(server -> ((de.pocketcloud.cloud.server.CloudServer) server)
+                    .sendPacket(PlayerKickPacket.create(cloudPlayer.name(), "Joined via sub-server instead of a proxy.", "Please do not join via sub-servers.")));
             CloudAPI.instance().events().call(new PlayerJoinFailedEvent(player, cloudPlayer.currentServer().orElse(null), "Joined via sub-server instead of a proxy."));
             return;
         }
