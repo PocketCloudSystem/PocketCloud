@@ -75,7 +75,7 @@ public final class S3BlobStore {
             try (InputStream in = Files.newInputStream(credentialsFile)) {
                 p.load(in);
             } catch (IOException e) {
-                CloudLogger.get().warn("Could not read §b{}§r: {}", credentialsFile, e.getMessage());
+                CloudLogger.get().warn("Could not read §b{}§8: §c{}", credentialsFile, e.getMessage());
             }
             access = p.getProperty("accessKey", access);
             secret = p.getProperty("secretKey", secret);

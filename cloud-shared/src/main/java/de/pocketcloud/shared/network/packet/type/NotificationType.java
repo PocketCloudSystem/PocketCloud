@@ -15,7 +15,10 @@ public enum NotificationType implements Writable<String> {
     PLAYER_LEFT,
     PLAYER_JOIN_FAILED,
     PLAYER_KICKED,
-    PLAYER_SWITCHED_SERVER;
+    PLAYER_SWITCHED_SERVER,
+    NODE_CONNECTED,
+    NODE_DISCONNECTED,
+    HEAD_CHANGED;
 
     @Override
     public String write() {

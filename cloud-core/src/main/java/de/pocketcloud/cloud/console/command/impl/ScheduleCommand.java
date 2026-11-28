@@ -1,5 +1,6 @@
 package de.pocketcloud.cloud.console.command.impl;
 
+import de.pocketcloud.cloud.console.command.parameter.def.SuggestingParameter;
 import de.pocketcloud.cloud.console.command.Command;
 import de.pocketcloud.cloud.console.command.ctx.CommandContext;
 import de.pocketcloud.cloud.console.command.desc.CommandDescription;
@@ -20,13 +21,13 @@ public final class ScheduleCommand extends Command {
                 .addParameter(new StringParameter("command", false))));
         registerSubCommand(SubCommand.lambda("list", this::handleListSub, true));
         registerSubCommand(SubCommand.lambda("remove", this::handleRemoveSub, true, sub -> sub
-                .addParameter(new StringParameter("id", false))));
+                .addParameter(new SuggestingParameter("id", false, () -> CommandScheduler.all().stream().map(CommandScheduler.Schedule::id).toList()))));
     }
 
     public boolean handleAddSub(CommandSender sender, CommandContext ctx) {
         try {
             CommandScheduler.Schedule schedule = CommandScheduler.add(ctx.argString("cron"), ctx.argString("command"));
-            sender.success("Scheduled §b{} §rat §b{}§r §8(id §b{}§8)§r.", schedule.command(), schedule.cron(), schedule.id());
+            sender.success("Scheduled §b{} §rat §b{} §8(§rid §b{}§8)§r.", schedule.command(), schedule.cron(), schedule.id());
         } catch (IllegalArgumentException e) {
             sender.error("§cInvalid schedule§8: §c{}", e.getMessage());
             sender.info("Example§8: §bschedule add \"0 4 * * *\" \"template restart Lobby\"");
@@ -40,7 +41,7 @@ public final class ScheduleCommand extends Command {
             sender.info("There are no scheduled commands. Add one with §bschedule add \"<cron>\" \"<command>\"§r.");
             return true;
         }
-        sender.info("Scheduled commands (§b{}§r):", schedules.size());
+        sender.info("Scheduled commands §8(§b{}§8)§r:", schedules.size());
         for (CommandScheduler.Schedule s : schedules) sender.info("§b{} §8| §r{} §8| §b{}", s.id(), s.cron(), s.command());
         return true;
     }

@@ -5,7 +5,10 @@ import de.pocketcloud.cloud.event.impl.node.HeadChangedEvent;
 import de.pocketcloud.cloud.event.impl.node.NodeConnectedEvent;
 import de.pocketcloud.cloud.event.impl.node.NodeDisconnectedEvent;
 
+import de.pocketcloud.shared.network.packet.type.NotificationType;
+
 import java.awt.Color;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -28,6 +31,7 @@ public final class NodeAlertModule implements ClusterModule {
     @Override
     public void onPeerConnected(String name) {
         new NodeConnectedEvent(name).call();
+        notifyPlayers(NotificationType.NODE_CONNECTED, Map.of("node", name));
         if (gone.remove(name) && reporter()) {
             alert("Node back online", "`" + name + "` has reconnected to the cluster.", Color.GREEN);
         }
@@ -37,6 +41,7 @@ public final class NodeAlertModule implements ClusterModule {
     public void onPeerGone(String name) {
         if (!gone.add(name)) return; // reported by several paths
         new NodeDisconnectedEvent(name).call();
+        notifyPlayers(NotificationType.NODE_DISCONNECTED, Map.of("node", name));
         if (reporter()) {
             alert("Node offline", "`" + name + "` is not reachable. Its servers are treated as offline and replaced where needed.", Color.RED);
         }
@@ -49,10 +54,16 @@ public final class NodeAlertModule implements ClusterModule {
         if (newHead == null || newHead.equals(previous)) return;
         boolean self = newHead.equals(cluster.nodeName());
         new HeadChangedEvent(newHead, previous, self).call();
+        if (previous != null) notifyPlayers(NotificationType.HEAD_CHANGED, Map.of("node", newHead, "previous", previous));
         if (self && previous != null) {
             String unreachable = gone.isEmpty() ? "" : "\nUnreachable: `" + String.join("`, `", gone) + "`";
             alert("Head changed", "`" + newHead + "` is the new head (before: `" + previous + "`)." + unreachable, Color.ORANGE);
         }
+    }
+
+    /** In-game message to players with notifications on, via this node's own servers (playerLogs.node_events). */
+    private static void notifyPlayers(NotificationType type, Map<String, Object> args) {
+        PocketCloud.instance().notifications().sendNotification(type, args, Map.of());
     }
 
     private boolean reporter() {

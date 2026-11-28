@@ -74,7 +74,7 @@ public final class NodeSelector {
             if (cluster.throttle("no-node:" + template.name())) {
                 List<String> reasons = new ArrayList<>();
                 rejected.forEach((node, reason) -> reasons.add("§b" + node + "§8: §r" + reason));
-                CloudLogger.get().warn("No node can start a server of §b{} §rright now§8: {}", template.name(),
+                CloudLogger.get().warn("No node can start a server of §b{} §rright now§8: §c{}", template.name(),
                         reasons.isEmpty() ? "no nodes" : String.join("§8; ", reasons));
             }
             return null;

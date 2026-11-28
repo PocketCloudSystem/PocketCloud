@@ -1,5 +1,6 @@
 package de.pocketcloud.cloud.console.command.impl;
 
+import de.pocketcloud.cloud.console.command.parameter.def.SuggestingParameter;
 import de.pocketcloud.cloud.backup.BackupService;
 import de.pocketcloud.cloud.console.command.Command;
 import de.pocketcloud.cloud.console.command.ctx.CommandContext;
@@ -26,7 +27,7 @@ public final class BackupCommand extends Command {
         registerSubCommand(SubCommand.lambda("create", this::handleCreateSub, true));
         registerSubCommand(SubCommand.lambda("list", this::handleListSub, true));
         registerSubCommand(SubCommand.lambda("restore", this::handleRestoreSub, true, subCommand -> {
-            subCommand.addParameter(new StringParameter("backup", false))
+            subCommand.addParameter(new SuggestingParameter("backup", false, BackupCommand::backupNames))
                     .addFlag(CommandFlag.shortFlag("y"));
         }));
     }
@@ -51,7 +52,7 @@ public final class BackupCommand extends Command {
                 sender.info("There are no backups yet. Create one with §bbackup create§r.");
                 return true;
             }
-            sender.info("Backups (§b{}§r, newest first):", backups.size());
+            sender.info("Backups §8(§b{}§8)§r, newest first:", backups.size());
             for (Path zip : backups) {
                 sender.info("§b{} §8| §r{} §8| §r{} KB", zip.getFileName(), TIME.format(Instant.ofEpochMilli(zip.toFile().lastModified())), Files.size(zip) / 1024);
             }
@@ -78,6 +79,14 @@ public final class BackupCommand extends Command {
                     if (r) restore.run();
                 });
         return true;
+    }
+
+    private static List<String> backupNames() {
+        try {
+            return BackupService.list().stream().map(p -> p.getFileName().toString()).toList();
+        } catch (Exception e) {
+            return List.of();
+        }
     }
 
     @Override

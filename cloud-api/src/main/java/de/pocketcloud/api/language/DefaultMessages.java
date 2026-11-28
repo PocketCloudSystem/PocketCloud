@@ -42,6 +42,9 @@ public final class DefaultMessages {
         MESSAGES_EN.put("inGame.notify.message.player_join_failed", "{PREFIX}§fPlayer §b%player% §ftried to connect via §b%server%§f, but §cfailed§f: §b%reason%");
         MESSAGES_EN.put("inGame.notify.message.player_kicked", "{PREFIX}§fPlayer §b%player% §fhas been §ckicked §ffrom §b%server%§f: §b%reason%");
         MESSAGES_EN.put("inGame.notify.message.player_switched_server", "{PREFIX}§fPlayer §b%player% §fswitched servers §8(§b%old_server% §8-> §b%new_server%§8)");
+        MESSAGES_EN.put("inGame.notify.message.node_connected", "{PREFIX}§fNode §b%node% §fhas §aconnected §fto the cluster.");
+        MESSAGES_EN.put("inGame.notify.message.node_disconnected", "{PREFIX}§fNode §b%node% §fhas §cdisconnected §ffrom the cluster.");
+        MESSAGES_EN.put("inGame.notify.message.head_changed", "{PREFIX}§fNode §b%node% §fis now the §bhead §fof the cluster §8(§fbefore§8: §b%previous%§8)");
 
         // server
         MESSAGES_EN.put("inGame.server.verified", "§rThe server was §averified §rby the cloud!");
@@ -182,6 +185,9 @@ public final class DefaultMessages {
         MESSAGES_GER.put("inGame.notify.message.player_join_failed", "{PREFIX}§fSpieler §b%player% §fversuchte über §b%server%§f zu verbinden, §cscheiterte §fjedoch: §b%reason%");
         MESSAGES_GER.put("inGame.notify.message.player_kicked", "{PREFIX}§fSpieler §b%player% §fwurde von §b%server%§f §cgekickt§f: §b%reason%");
         MESSAGES_GER.put("inGame.notify.message.player_switched_server", "{PREFIX}§fSpieler §b%player% §fhat den Server gewechselt §8(§b%old_server% §8-> §b%new_server%§8)");
+        MESSAGES_GER.put("inGame.notify.message.node_connected", "{PREFIX}§fDie Node §b%node% §fhat sich mit dem Cluster §averbunden§f.");
+        MESSAGES_GER.put("inGame.notify.message.node_disconnected", "{PREFIX}§fDie Node §b%node% §fhat die Verbindung zum Cluster §cgetrennt§f.");
+        MESSAGES_GER.put("inGame.notify.message.head_changed", "{PREFIX}§fDie Node §b%node% §fist jetzt der §bHead §fdes Clusters §8(§fvorher§8: §b%previous%§8)");
 
         // server
         MESSAGES_GER.put("inGame.server.verified", "§rDer Server wurde von der Cloud §averifiziert§r!");

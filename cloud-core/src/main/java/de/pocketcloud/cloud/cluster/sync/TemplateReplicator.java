@@ -506,7 +506,7 @@ public final class TemplateReplicator implements ClusterModule {
                 if (s3.download(sha, target)) return;
                 CloudLogger.get().debug("{} of {} is not in S3 yet, fetching it from {}", path, unit.display(), peer);
             } catch (Exception e) {
-                if (!s3DownloadWarned) CloudLogger.get().warn("S3 download failed, fetching template files from {} instead§8: §c{}", peer, e.getMessage());
+                if (!s3DownloadWarned) CloudLogger.get().warn("S3 download failed, fetching template files from §b{} §rinstead§8: §c{}", peer, e.getMessage());
                 else CloudLogger.get().debug("S3 download of {} of {} failed, fetching it from {}: {}", path, unit.display(), peer, e.getMessage());
                 s3DownloadWarned = true; // once per start, the rest goes to debug
             }

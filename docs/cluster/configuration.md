@@ -145,6 +145,22 @@ If Redis cannot be reached at startup the node logs `Could not connect to Redis:
 | `network.address`, `network.port` | Bridge port. Keep `127.0.0.1`; bridges only talk to the node on their machine. |
 | `http.yml` | Each node runs its own HTTP server with its own `auth-key`. Use the same key on all nodes if clients may talk to any node. |
 
+## log_settings.yml
+
+`playerLogs.node_events` controls the messages about the cluster: a node connected or disconnected, the head
+changed.
+
+```yaml
+playerLogs:
+  node_events:
+    console: true    # "Node node-2 has connected." in the console
+    in-game: true    # message to players with notifications on (/cloud notify)
+```
+
+Each node sends the in-game message to the players on its own servers. The servers need the bridge of this
+version; an older bridge logs `NotificationType 'NODE_CONNECTED' not found`. Discord alerts for the same events are
+`discordWebhook.notifications.node-alerts` (see [Plugin API](plugin-api.md)).
+
 ## server_settings.yml
 
 ```yaml

@@ -200,7 +200,7 @@ public final class CertificateModule implements ClusterModule {
             }
             CloudLogger.get().info("Renewing the certificate of node §b{} §8(§rexpires in §e{}§8)§r...", node, remaining(status.notAfter(), now));
             renew(node, "automatic renewal by head " + cluster.nodeName()).whenComplete((message, error) -> {
-                if (error != null) CloudLogger.get().warn("Could not renew the certificate of node §b{}§r: {}", node, rootMessage(error));
+                if (error != null) CloudLogger.get().warn("Could not renew the certificate of node §b{}§8: §c{}", node, rootMessage(error));
                 else {
                     CloudLogger.get().success("Renewed the certificate of node §b{}§r.", node);
                     CloudLogger.get().debug(message);
@@ -307,7 +307,7 @@ public final class CertificateModule implements ClusterModule {
                     pendingKey = null;
                     cluster.respond(channel, request, new NodeCertInstallResultPacket(true, null));
                 } catch (Exception e) {
-                    CloudLogger.get().warn("§cRejected §ra new certificate from §b{}§r: {}", from, e.getMessage());
+                    CloudLogger.get().warn("§cRejected §ra new certificate from §b{}§8: §c{}", from, e.getMessage());
                     cluster.respond(channel, request, new NodeCertInstallResultPacket(false, e.getMessage()));
                 }
             }

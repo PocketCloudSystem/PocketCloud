@@ -19,6 +19,9 @@ public final class NotificationHelper {
             case PLAYER_JOIN_FAILED -> LanguageKey.INGAME_NOTIFY_MESSAGE_PLAYER_JOIN_FAILED;
             case PLAYER_KICKED -> LanguageKey.INGAME_NOTIFY_MESSAGE_PLAYER_KICKED;
             case PLAYER_SWITCHED_SERVER -> LanguageKey.INGAME_NOTIFY_MESSAGE_PLAYER_SWITCHED_SERVER;
+            case NODE_CONNECTED -> LanguageKey.INGAME_NOTIFY_MESSAGE_NODE_CONNECTED;
+            case NODE_DISCONNECTED -> LanguageKey.INGAME_NOTIFY_MESSAGE_NODE_DISCONNECTED;
+            case HEAD_CHANGED -> LanguageKey.INGAME_NOTIFY_MESSAGE_HEAD_CHANGED;
         };
     }
 }

@@ -29,12 +29,17 @@ public final class PlayerLogsConfiguration extends OkaeriConfig implements IClou
     @Comment({"Regular player server switching messages"})
     private ConsoleInGameConfiguration serverSwitched = new ConsoleInGameConfiguration();
 
+    @CustomKey("node_events")
+    @Comment({"Cluster: a node connected or disconnected, the head changed"})
+    private ConsoleInGameConfiguration nodeEvents = new ConsoleInGameConfiguration();
+
     @Override
     public void validate() {
         connectionLifecycle.validate();
         failedJoins.validate();
         kicks.validate();
         serverSwitched.validate();
+        nodeEvents.validate();
     }
 
     public boolean canNotify(NotificationType type) {
@@ -43,6 +48,7 @@ public final class PlayerLogsConfiguration extends OkaeriConfig implements IClou
             case PLAYER_JOIN_FAILED -> failedJoins.inGame;
             case PLAYER_KICKED -> kicks.inGame;
             case PLAYER_SWITCHED_SERVER -> serverSwitched.inGame;
+            case NODE_CONNECTED, NODE_DISCONNECTED, HEAD_CHANGED -> nodeEvents.inGame;
             default -> true;
         };
     }
@@ -53,6 +59,7 @@ public final class PlayerLogsConfiguration extends OkaeriConfig implements IClou
             case PLAYER_JOIN_FAILED -> failedJoins.console;
             case PLAYER_KICKED -> kicks.console;
             case PLAYER_SWITCHED_SERVER -> serverSwitched.console;
+            case NODE_CONNECTED, NODE_DISCONNECTED, HEAD_CHANGED -> nodeEvents.console;
             default -> true;
         };
     }

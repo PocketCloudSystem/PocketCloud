@@ -1,5 +1,6 @@
 package de.pocketcloud.cloud.console.command.impl.template;
 
+import de.pocketcloud.cloud.console.command.parameter.def.SuggestingParameter;
 import de.pocketcloud.api.component.template.ITemplate;
 import de.pocketcloud.cloud.server.RollingRestart;
 import de.pocketcloud.api.search.TemplateSearchQuery;
@@ -48,7 +49,7 @@ public final class TemplateCommand extends Command implements TabComplete {
 
         registerSubCommand(SubCommand.lambda("staticnode", this::handleStaticNodeSub, true, subCommand -> {
             subCommand.addParameter(new TemplateParameter("template", false))
-                    .addParameter(new StringParameter("node", true));
+                    .addParameter(new SuggestingParameter("node", true, () -> PocketCloud.instance().cluster().members().all().stream().map(m -> m.name()).toList()));
         }));
 
         registerSubCommand(SubCommand.lambda("info", this::handleInfoSub, true, subCommand -> {
@@ -66,18 +67,22 @@ public final class TemplateCommand extends Command implements TabComplete {
         }));
 
         registerSubCommand(SubCommand.lambda("history", this::handleHistorySub, true, subCommand -> {
-            subCommand.addParameter(new StringParameter("template", false));
+            subCommand.addParameter(new SuggestingParameter("template", false, TemplateCommand::templateNames));
         }));
 
         registerSubCommand(SubCommand.lambda("rollback", this::handleRollbackSub, true, subCommand -> {
-            subCommand.addParameter(new StringParameter("template", false))
+            subCommand.addParameter(new SuggestingParameter("template", false, TemplateCommand::templateNames))
                     .addParameter(new IntegerParameter("version", false));
         }));
 
         registerSubCommand(SubCommand.lambda("sync", this::handleSyncSub, true, subCommand -> {
             subCommand.addParameter(new StringEnumParameter("action", false, "pause", "resume", "status"))
-                    .addParameter(new StringParameter("template", true));
+                    .addParameter(new SuggestingParameter("template", true, TemplateCommand::templateNames));
         }));
+    }
+
+    private static List<String> templateNames() {
+        return PocketCloud.instance().templates().getAll().stream().map(ITemplate::name).toList();
     }
 
     private static Optional<TemplateReplicator> replicator(CommandSender sender) {

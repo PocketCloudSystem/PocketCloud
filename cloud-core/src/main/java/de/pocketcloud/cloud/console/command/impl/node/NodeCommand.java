@@ -66,7 +66,7 @@ public final class NodeCommand extends Command implements TabComplete {
             sender.info("Renewing the certificate of §b{}§r...", node);
             module.renew(node, "node cert renew on " + cluster.nodeName()).whenComplete((message, error) -> {
                 if (error == null) sender.success(message);
-                else sender.error("Could not renew the certificate of §b{}§r: {}", node,
+                else sender.error("Could not renew the certificate of §b{}§8: §c{}", node,
                         (error instanceof java.util.concurrent.CompletionException && error.getCause() != null ? error.getCause() : error).getMessage());
             });
             return true;
@@ -86,7 +86,7 @@ public final class NodeCommand extends Command implements TabComplete {
         for (Peer peer : cluster.peers()) {
             CertificateModule.CertStatus status = module.statusOf(peer.name());
             X509Certificate presented = peer.connected() ? ClusterNetwork.peerCertificate(peer.channel()) : null;
-            sender.info("§b{} §8| §rserial§8: §b{} §8| §rexpires§8: §b{} §8({}§8) §8| §rCA key§8: {} §8| §rserial in use§8: §b{}", peer.name(),
+            sender.info("§b{} §8| §rserial§8: §b{} §8| §rexpires§8: §b{} §8(§r{}§8) §8| §rCA key§8: {} §8| §rserial in use§8: §b{}", peer.name(),
                     status == null ? "?" : status.serial(), status == null ? "?" : CertificateModule.formatDate(status.notAfter()),
                     status == null ? "§7unknown" : expiry(status.notAfter(), now), status != null && status.caKey() ? "§aYes" : "§7No",
                     presented == null ? "§7-" : ClusterCertificates.serialOf(presented));
@@ -113,7 +113,7 @@ public final class NodeCommand extends Command implements TabComplete {
         }
         module.setDrain(name, drain, drain && ctx.hasFlag("stop"))
                 .thenSuccess(sender::success)
-                .failure(e -> sender.error("Could not {} §b{}§r: {}", drain ? "drain" : "undrain", name, e.getMessage()));
+                .failure(e -> sender.error("Could not {} §b{}§8: §c{}", drain ? "drain" : "undrain", name, e.getMessage()));
         return true;
     }
 
@@ -191,7 +191,7 @@ public final class NodeCommand extends Command implements TabComplete {
             long now = System.currentTimeMillis();
             sender.info("Health§8: {}", color(peer.health(now)));
             sender.info("State§8: §b{}", peer.state());
-            sender.info("Connected§8: §b{} §8({})", peer.connected(), peer.outbound() ? "outgoing" : "incoming");
+            sender.info("Connected§8: §b{} §8(§r{}§8)", peer.connected(), peer.outbound() ? "outgoing" : "incoming");
             sender.info("Term§8: §b{}", peer.term());
             if (peer.identity() != null) {
                 sender.info("Version§8: §b{}", peer.identity().version());
@@ -216,7 +216,7 @@ public final class NodeCommand extends Command implements TabComplete {
             PocketCloud.instance().cluster().joinNow(ctx.argString("token"));
             sender.info("Connecting to the cluster... check with §bnode list§r.");
         } catch (Exception e) {
-            sender.error("Could not join the cluster: {}", e.getMessage());
+            sender.error("Could not join the cluster§8: §c{}", e.getMessage());
         }
         return true;
     }
@@ -237,7 +237,7 @@ public final class NodeCommand extends Command implements TabComplete {
                 sender.warn("No new servers are started until §b{} §rhas joined §8(§rwith 2 nodes, both must be online§8)§r.", name);
             }
         } catch (Exception e) {
-            sender.error("Could not add node §b{}§r: {}", name, e.getMessage());
+            sender.error("Could not add node §b{}§8: §c{}", name, e.getMessage());
         }
         return true;
     }
@@ -248,7 +248,7 @@ public final class NodeCommand extends Command implements TabComplete {
             if (PocketCloud.instance().cluster().removeNode(name)) sender.success("Node §b{} §rhas been §cremoved§r. It can no longer connect.", name);
             else sender.error("The node §b{} §rdoes not exist.", name);
         } catch (Exception e) {
-            sender.error("Could not remove node §b{}§r: {}", name, e.getMessage());
+            sender.error("Could not remove node §b{}§8: §c{}", name, e.getMessage());
         }
         return true;
     }

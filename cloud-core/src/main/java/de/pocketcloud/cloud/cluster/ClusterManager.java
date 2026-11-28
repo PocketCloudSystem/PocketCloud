@@ -3,6 +3,7 @@ package de.pocketcloud.cloud.cluster;
 import de.pocketcloud.api.component.server.ICloudServer;
 import de.pocketcloud.api.component.template.ITemplate;
 import de.pocketcloud.cloud.PocketCloud;
+import de.pocketcloud.shared.network.packet.type.NotificationType;
 import de.pocketcloud.cloud.cluster.bridge.BridgeClusterModule;
 import de.pocketcloud.cloud.cluster.net.ClusterNetwork;
 import de.pocketcloud.cloud.cluster.net.packet.*;
@@ -489,7 +490,7 @@ public final class ClusterManager {
             peer.lastSeen(System.currentTimeMillis());
             peer.serversDropped(false);
             if (!wasAlive) {
-                CloudLogger.get().info("Node §b{} §rhas §aconnected§r.", id.name());
+                if (PocketCloud.instance().notifications().canLog(NotificationType.NODE_CONNECTED)) CloudLogger.get().info("Node §b{} §rhas §aconnected§r.", id.name());
                 CloudLogger.get().debug("Node {} connected from {}:{} ({})", id.name(), id.address(), id.port(), outbound ? "outgoing" : "incoming");
             }
         }
@@ -948,7 +949,7 @@ public final class ClusterManager {
             for (ClusterModule module : modules) module.onPeerGone(peer.name());
             Collection<CloudServer> lost = PocketCloud.instance().servers().serversOfNode(peer.name());
             if (lost.isEmpty()) {
-                CloudLogger.get().info("Node §b{} §rhas §cdisconnected§r.", peer.name());
+                if (PocketCloud.instance().notifications().canLog(NotificationType.NODE_DISCONNECTED)) CloudLogger.get().info("Node §b{} §rhas §cdisconnected§r.", peer.name());
                 continue;
             }
             CloudLogger.get().warn("Node §b{} §rhas §cdisconnected§r. Its servers are offline§8: §b{}", peer.name(),

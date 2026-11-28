@@ -352,7 +352,7 @@ public final class ServerRecovery implements ClusterModule {
         Long last = killOrders.get(uuid);
         if (last != null && System.currentTimeMillis() - last < 5_000) return;
         killOrders.put(uuid, System.currentTimeMillis());
-        CloudLogger.get().warn("§cStopping §b{} §ron node §b{}§r: {}.", server.name(), node, reason);
+        CloudLogger.get().warn("§cStopping §b{} §ron node §b{}§8: §r{}.", server.name(), node, reason);
         cluster().send(node, new HeadKillServerPacket(server.name(), uuid, reason));
     }
 
@@ -386,7 +386,7 @@ public final class ServerRecovery implements ClusterModule {
         }
         PocketCloud.instance().servers().get(packet.getServerName()).ifPresent(server -> {
             if (!(server instanceof CloudServer cs) || cs.remote() || !cs.uuid().toString().equals(packet.getUuid())) return;
-            CloudLogger.get().warn("Stopping §b{}§r: {}.", cs.name(), packet.getReason());
+            CloudLogger.get().warn("Stopping §b{}§8: §r{}.", cs.name(), packet.getReason());
             CloudLogger.get().debug("Stop of the duplicate {} ordered by head {}.", cs.name(), from);
             cs.stop(true);
         });
