@@ -14,6 +14,7 @@ import { Plugins } from './Plugins.jsx';
 import { CloudConsole } from './CloudConsole.jsx';
 import { Crashes } from './Crashes.jsx';
 import { Users } from './Users.jsx';
+import { t } from '../i18n.js';
 
 // list page, or the detail page when the route has a name: #/servers/Lobby-1
 const listOrDetail = (List, Detail) => ({ params, session }) =>
@@ -36,4 +37,4 @@ export const pages = {
   users: { label: 'Users', component: Users, admin: true },
 };
 
-export const NotFound = () => h('section', null, h('h1', null, 'Not found'), h('a', { href: '#/' }, 'Back to the overview'));
+export const NotFound = () => h('section', null, h('h1', null, t('Not found')), h('a', { href: '#/' }, t('Back to the overview')));

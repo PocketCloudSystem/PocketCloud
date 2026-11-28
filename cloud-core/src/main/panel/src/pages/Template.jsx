@@ -5,6 +5,7 @@ import { History } from '../components/History.jsx';
 import { FileBrowser } from '../components/FileBrowser.jsx';
 import { navigate } from '../router.js';
 import { act, usePoll } from '../util.js';
+import { t } from '../i18n.js';
 
 const FLAGS = [
   ['maintenance', 'Maintenance', 'Only players with the bypass can join.'],
@@ -42,19 +43,19 @@ function Settings({ name, settings, nodes, onSaved }) {
 
   return (
     <form class="card stack-sm" onSubmit={save}>
-      <h3>Settings</h3>
+      <h3>{t('Settings')}</h3>
       <div class="grid flags">
         {FLAGS.map(([key, label, hint]) => (
           <label class="check" key={key}>
             <input type="checkbox" checked={!!draft[key]} onChange={(e) => set(key, e.currentTarget.checked)} />
-            <span>{label}<small class="muted">{hint}</small></span>
+            <span>{t(label)}<small class="muted">{t(hint)}</small></span>
           </label>
         ))}
       </div>
       <div class="grid fields">
         {NUMBERS.map(([key, label, min, step]) => (
           <label class="field" key={key}>
-            <span>{label}</span>
+            <span>{t(label)}</span>
             <input type="number" min={min} max={key === 'startNewServerThreshold' ? 1 : undefined} step={step || 1}
                    value={draft[key]} onInput={(e) => set(key, e.currentTarget.valueAsNumber)} required />
           </label>
@@ -63,7 +64,7 @@ function Settings({ name, settings, nodes, onSaved }) {
       {nodes && (
         <div class="grid fields">
           <fieldset class="field">
-            <legend>Nodes (none = all)</legend>
+            <legend>{t('Nodes (none = all)')}</legend>
             <div class="chips">
               {nodes.map((n) => (
                 <label class="check inline" key={n}>
@@ -75,17 +76,17 @@ function Settings({ name, settings, nodes, onSaved }) {
             </div>
           </fieldset>
           <label class="field">
-            <span>Static node</span>
+            <span>{t('Static node')}</span>
             <select value={draft.staticNode} onChange={(e) => set('staticNode', e.currentTarget.value)}>
-              <option value="">not set</option>
+              <option value="">{t('not set')}</option>
               {nodes.map((n) => <option value={n}>{n}</option>)}
             </select>
           </label>
         </div>
       )}
       <div class="row">
-        <button class="primary" disabled={!Object.keys(changed).length}>Save changes</button>
-        {Object.keys(changed).length > 0 && <button type="button" class="ghost" onClick={() => setDraft(settings)}>Reset</button>}
+        <button class="primary" disabled={!Object.keys(changed).length}>{t('Save changes')}</button>
+        {Object.keys(changed).length > 0 && <button type="button" class="ghost" onClick={() => setDraft(settings)}>{t('Reset')}</button>}
       </div>
     </form>
   );
@@ -96,7 +97,7 @@ export function Template({ name, session }) {
   const info = usePoll(() => api(path), 5000, [name]);
   const servers = usePoll(() => api('/v1/servers'), 5000);
   const nodes = usePoll(() => (session.clustered ? api('/v1/nodes') : null), 30000);
-  const t = info.data;
+  const tpl = info.data;
   const own = Object.values(servers.data || {}).filter((s) => s.template === name)
     .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
 
@@ -108,32 +109,32 @@ export function Template({ name, session }) {
   return (
     <section class="stack">
       <div class="row wrap">
-        <a href="#/templates" class="muted">Templates</a><span class="muted">/</span>
+        <a href="#/templates" class="muted">{t('Templates')}</a><span class="muted">/</span>
         <h1 class="grow">{name}</h1>
-        {t && <span class="muted small">{t.templateType.toLowerCase()} · {t.serverSoftware}</span>}
-        <button disabled={!t} onClick={start}>Start server</button>
-        <ConfirmButton disabled={!t || !own.length} confirmText="Restart all, one by one?"
-                       onConfirm={() => act(api(path + '/restart', { method: 'POST', body: {} }))}>Rolling restart</ConfirmButton>
-        <ConfirmButton class="danger" disabled={!t} confirmText="Delete template?" onConfirm={remove}>Delete</ConfirmButton>
+        {tpl && <span class="muted small">{tpl.templateType.toLowerCase()} · {tpl.serverSoftware}</span>}
+        <button disabled={!tpl} onClick={start}>{t('Start server')}</button>
+        <ConfirmButton disabled={!tpl || !own.length} confirmText={t('Restart all, one by one?')}
+                       onConfirm={() => act(api(path + '/restart', { method: 'POST', body: {} }))}>{t('Rolling restart')}</ConfirmButton>
+        <ConfirmButton class="danger" disabled={!tpl} confirmText={t('Delete template?')} onConfirm={remove}>{t('Delete')}</ConfirmButton>
       </div>
       <ErrorNote error={info.error} />
-      {t && (
+      {tpl && (
         <div class="card">
-          <h3>Servers <span class="muted small">{own.length} / {t.settings.maxServerCount} · {t.playerCount} players</span></h3>
+          <h3>{t('Servers')} <span class="muted small">{own.length} / {tpl.settings.maxServerCount} · {t('{n} players', { n: tpl.playerCount })}</span></h3>
           <div class="chips">
             {own.map((s) => (
               <a class="chip" href={'#/servers/' + encodeURIComponent(s.name)}>
                 {s.name} <Badge status={s.status} />
               </a>
             ))}
-            {!own.length && <span class="muted">No servers running.</span>}
+            {!own.length && <span class="muted">{t('No servers running.')}</span>}
           </div>
         </div>
       )}
-      {t && <Settings name={name} settings={t.settings} onSaved={info.reload}
+      {tpl && <Settings name={name} settings={tpl.settings} onSaved={info.reload}
                       nodes={nodes.data?.nodes.map((n) => n.name).sort()} />}
-      {t && <FileBrowser api={path + '/files'} title="Template files" writable />}
-      {t && session.clustered && <History name={name} />}
+      {tpl && <FileBrowser api={path + '/files'} title={t('Template files')} writable />}
+      {tpl && session.clustered && <History name={name} />}
     </section>
   );
 }

@@ -14,6 +14,21 @@
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   color-scheme: dark;
 }
+/* the console stays dark in both themes: Minecraft colours are made for a dark background */
+:root[data-theme="light"] {
+  --bg: #f4f6f8;
+  --surface: #ffffff;
+  --surface-2: #eef1f4;
+  --border: #d5dbe1;
+  --text: #1b2430;
+  --muted: #5b6673;
+  --accent: #0b7fb3;
+  --accent-text: #ffffff;
+  --ok: #1a7f37;
+  --warn: #9a6700;
+  --bad: #cf222e;
+  color-scheme: light;
+}
 
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; }

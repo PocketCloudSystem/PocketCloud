@@ -1,4 +1,5 @@
 import { useRef, useState } from 'preact/hooks';
+import { t } from '../i18n.js';
 
 const W = 600, H = 180, PAD = { l: 56, r: 8, t: 10, b: 24 };
 
@@ -18,7 +19,7 @@ export function Chart({ title, points, format = String, max }) {
     return (
       <div class="card chart">
         <h3>{title}</h3>
-        <p class="muted small">Collecting data, one point per minute…</p>
+        <p class="muted small">{t('Collecting data, one point per minute…')}</p>
       </div>
     );
   }
@@ -42,7 +43,7 @@ export function Chart({ title, points, format = String, max }) {
   const last = points[points.length - 1][1];
   return (
     <div class="card chart">
-      <h3>{title} <span class="muted small">now {format(last)}</span></h3>
+      <h3>{title} <span class="muted small">{t('now')} {format(last)}</span></h3>
       <div class="chart-box">
         <svg ref={svg} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${title}, last value ${format(last)}`}
              onPointerMove={move} onPointerLeave={() => setHover(null)}>

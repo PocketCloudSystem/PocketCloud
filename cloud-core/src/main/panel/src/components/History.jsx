@@ -1,6 +1,7 @@
 import { api } from '../api.js';
 import { ConfirmButton, ErrorNote } from './ui.jsx';
 import { act, usePoll } from '../util.js';
+import { t } from '../i18n.js';
 
 const files = (list, sign) => list.slice(0, 4).map((f) => `${sign}${f}`).join(', ') + (list.length > 4 ? ` +${list.length - 4}` : '');
 
@@ -12,13 +13,13 @@ export function History({ name }) {
 
   return (
     <div class="card">
-      <h3>File history {h?.currentVersion != null && <span class="muted small">current version v{h.currentVersion}</span>}</h3>
+      <h3>{t('File history')} {h?.currentVersion != null && <span class="muted small">{t('current version')} v{h.currentVersion}</span>}</h3>
       <ErrorNote error={history.error} />
-      {h && !h.records.length && <p class="muted">No versions yet.</p>}
+      {h && !h.records.length && <p class="muted">{t('No versions yet.')}</p>}
       {h?.records.length > 0 && (
         <div class="table-wrap flush">
           <table>
-            <thead><tr><th>Version</th><th>Time</th><th>Node</th><th>Change</th><th /></tr></thead>
+            <thead><tr><th>{t('Version')}</th><th>{t('Time')}</th><th>{t('Node')}</th><th>{t('Change')}</th><th /></tr></thead>
             <tbody>
               {h.records.map((r) => (
                 <tr key={r.version}>
@@ -27,15 +28,15 @@ export function History({ name }) {
                   <td>{r.node}</td>
                   <td class="wrap-cell">
                     {r.note}
-                    {r.deleted && <span class="badge bad">deleted</span>}
+                    {r.deleted && <span class="badge bad">{t('deleted')}</span>}
                     {(r.changed.length > 0 || r.removed.length > 0) && <div class="muted small">{[files(r.changed, '~'), files(r.removed, '-')].filter(Boolean).join(', ')}</div>}
-                    {r.conflicts.length > 0 && <div class="error small">conflicts: {r.conflicts.join(', ')}</div>}
+                    {r.conflicts.length > 0 && <div class="error small">{t('conflicts')}: {r.conflicts.join(', ')}</div>}
                   </td>
                   <td>
                     {r.version !== h.currentVersion && (
-                      <ConfirmButton confirmText={`Roll back to v${r.version}?`}
+                      <ConfirmButton confirmText={t('Roll back to v{n}?', { n: r.version })}
                                      onConfirm={() => act(api(path + '/rollback', { method: 'POST', body: { version: r.version } })).then(() => setTimeout(history.reload, 1500))}>
-                        Roll back
+                        {t('Roll back')}
                       </ConfirmButton>
                     )}
                   </td>

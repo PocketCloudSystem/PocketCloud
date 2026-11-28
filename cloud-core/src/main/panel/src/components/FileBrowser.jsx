@@ -2,6 +2,7 @@ import { useEffect, useState } from 'preact/hooks';
 import { api, base, fileText } from '../api.js';
 import { ConfirmButton, ErrorNote } from './ui.jsx';
 import { act, bytes } from '../util.js';
+import { t } from '../i18n.js';
 
 const EDITABLE_BYTES = 1024 * 1024;
 const TEXT = /\.(ya?ml|json|properties|txt|log|md|toml|cfg|conf|ini|xml|sh|bat|js|lang|csv|html|css|php|lua)$/i;
@@ -12,7 +13,7 @@ const parent = (p) => p.split('/').slice(0, -1).join('/');
  * Browses a folder through `<api>?path=`: GET lists a folder or returns a file. With `writable` it also saves
  * (PUT raw body), uploads, creates folders (POST <api>/mkdir) and deletes (DELETE).
  */
-export function FileBrowser({ api: endpoint, title = 'Files', writable = false, empty = 'This folder is empty.' }) {
+export function FileBrowser({ api: endpoint, title = t('Files'), writable = false, empty = t('This folder is empty.') }) {
   const [dir, setDir] = useState('');
   const [listing, setListing] = useState(null);
   const [error, setError] = useState(null);
@@ -49,7 +50,7 @@ export function FileBrowser({ api: endpoint, title = 'Files', writable = false, 
     load();
   };
   const mkdir = async () => {
-    const name = prompt('Folder name'); // shortcut: native prompt, swap for an inline input if it bothers anyone
+    const name = prompt(t('Folder name')); // shortcut: native prompt, swap for an inline input if it bothers anyone
     if (name && await act(api(url(join(dir, name), '/mkdir'), { method: 'POST', body: {} }))) load();
   };
   const remove = async (name) => {
@@ -61,11 +62,11 @@ export function FileBrowser({ api: endpoint, title = 'Files', writable = false, 
     <div class="card stack-sm files">
       <div class="row wrap">
         <h3 class="grow">{title}</h3>
-        {writable && <button type="button" onClick={mkdir}>New folder</button>}
-        {writable && <label class="button">Upload<input type="file" multiple hidden onChange={upload} /></label>}
-        <button type="button" class="ghost" onClick={() => load()}>Refresh</button>
+        {writable && <button type="button" onClick={mkdir}>{t('New folder')}</button>}
+        {writable && <label class="button">{t('Upload')}<input type="file" multiple hidden onChange={upload} /></label>}
+        <button type="button" class="ghost" onClick={() => load()}>{t('Refresh')}</button>
       </div>
-      <nav class="row wrap small crumbs" aria-label="Folder">
+      <nav class="row wrap small crumbs" aria-label={t('Folder')}>
         <a href="javascript:void 0" onClick={() => setDir('')}>/</a>
         {crumbs.map((c, i) => (
           <span key={i}>
@@ -80,9 +81,9 @@ export function FileBrowser({ api: endpoint, title = 'Files', writable = false, 
         <div class="stack-sm">
           <div class="row wrap">
             <code class="grow">{open.path}</code>
-            {writable && <button class="primary" disabled={open.text === open.original} onClick={save}>Save</button>}
-            <a class="button ghost" href={base + url(open.path)} download>Download</a>
-            <button class="ghost" onClick={() => setOpen(null)}>Close</button>
+            {writable && <button class="primary" disabled={open.text === open.original} onClick={save}>{t('Save')}</button>}
+            <a class="button ghost" href={base + url(open.path)} download>{t('Download')}</a>
+            <button class="ghost" onClick={() => setOpen(null)}>{t('Close')}</button>
           </div>
           <textarea class="editor" spellcheck={false} readOnly={!writable} value={open.text}
                     onInput={(e) => setOpen({ ...open, text: e.currentTarget.value })}
@@ -91,7 +92,7 @@ export function FileBrowser({ api: endpoint, title = 'Files', writable = false, 
       ) : listing && (
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Name</th><th>Size</th><th>Modified</th><th /></tr></thead>
+            <thead><tr><th>{t('Name')}</th><th>{t('Size')}</th><th>{t('Modified')}</th><th /></tr></thead>
             <tbody>
               {dir && <tr><td colSpan={4}><a href="javascript:void 0" onClick={() => setDir(parent(dir))}>..</a></td></tr>}
               {listing.entries.map((e) => (
@@ -104,8 +105,8 @@ export function FileBrowser({ api: endpoint, title = 'Files', writable = false, 
                   <td class="muted">{e.dir ? '' : bytes(e.size)}</td>
                   <td class="muted">{new Date(e.modified).toLocaleString()}</td>
                   <td class="actions">
-                    {!e.dir && <a class="muted small" href={base + url(join(dir, e.name))} download>Download</a>}
-                    {writable && <ConfirmButton class="ghost small" confirmText="Delete?" onConfirm={() => remove(e.name)}>Delete</ConfirmButton>}
+                    {!e.dir && <a class="muted small" href={base + url(join(dir, e.name))} download>{t('Download')}</a>}
+                    {writable && <ConfirmButton class="ghost small" confirmText={t('Delete?')} onConfirm={() => remove(e.name)}>{t('Delete')}</ConfirmButton>}
                   </td>
                 </tr>
               ))}

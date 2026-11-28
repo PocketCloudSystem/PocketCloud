@@ -2,6 +2,7 @@ import { useState } from 'preact/hooks';
 import { api } from '../api.js';
 import { ErrorNote } from '../components/ui.jsx';
 import { act, usePoll } from '../util.js';
+import { t } from '../i18n.js';
 
 const TEXT_TYPES = ['message', 'popup', 'tip', 'title', 'action_bar', 'toast'];
 
@@ -25,29 +26,29 @@ function PlayerActions({ player, servers, onDone }) {
   if (!mode) {
     return (
       <div class="row">
-        <button onClick={() => setMode('text')}>Message</button>
-        <button onClick={() => setMode('transfer')}>Transfer</button>
-        <button class="danger" onClick={() => setMode('kick')}>Kick</button>
+        <button onClick={() => setMode('text')}>{t('Message')}</button>
+        <button onClick={() => setMode('transfer')}>{t('Transfer')}</button>
+        <button class="danger" onClick={() => setMode('kick')}>{t('Kick')}</button>
       </div>
     );
   }
   return (
     <form class="row wrap" onSubmit={submit}>
       {mode === 'text' && (
-        <select value={type} onChange={(e) => setType(e.currentTarget.value)} aria-label="Type">
+        <select value={type} onChange={(e) => setType(e.currentTarget.value)} aria-label={t('Type')}>
           {TEXT_TYPES.map((t) => <option value={t}>{t.replace('_', ' ')}</option>)}
         </select>
       )}
       {mode === 'transfer' ? (
-        <select value={target} onChange={(e) => setTarget(e.currentTarget.value)} aria-label="Server" class="grow">
+        <select value={target} onChange={(e) => setTarget(e.currentTarget.value)} aria-label={t('Server')} class="grow">
           {servers.map((s) => <option value={s}>{s}</option>)}
         </select>
       ) : (
         <input class="grow" value={text} onInput={(e) => setText(e.currentTarget.value)} autofocus
-               placeholder={mode === 'kick' ? 'Reason (optional)' : 'Text'} required={mode === 'text'} aria-label="Text" />
+               placeholder={mode === 'kick' ? t('Reason (optional)') : t('Text')} required={mode === 'text'} aria-label={t('Text')} />
       )}
-      <button class={mode === 'kick' ? 'danger' : 'primary'}>{mode === 'kick' ? 'Kick' : mode === 'text' ? 'Send' : 'Transfer'}</button>
-      <button type="button" class="ghost" onClick={() => setMode(null)}>Cancel</button>
+      <button class={mode === 'kick' ? 'danger' : 'primary'}>{mode === 'kick' ? t('Kick') : mode === 'text' ? t('Send') : t('Transfer')}</button>
+      <button type="button" class="ghost" onClick={() => setMode(null)}>{t('Cancel')}</button>
     </form>
   );
 }
@@ -64,13 +65,13 @@ export function Players() {
   return (
     <section class="stack">
       <div class="row wrap">
-        <h1 class="grow">Players <span class="muted small">{Object.keys(players.data || {}).length} online</span></h1>
-        <input type="search" placeholder="Filter by name or server" value={filter} onInput={(e) => setFilter(e.currentTarget.value)} class="search" aria-label="Filter" />
+        <h1 class="grow">{t('Players')} <span class="muted small">{t('{n} online', { n: Object.keys(players.data || {}).length })}</span></h1>
+        <input type="search" placeholder={t('Filter by name or server')} value={filter} onInput={(e) => setFilter(e.currentTarget.value)} class="search" aria-label={t('Filter')} />
       </div>
       <ErrorNote error={players.error} />
       <div class="card table-wrap">
         <table>
-          <thead><tr><th>Name</th><th>Server</th><th>Proxy</th><th /></tr></thead>
+          <thead><tr><th>{t('Name')}</th><th>{t('Server')}</th><th>{t('Proxy')}</th><th /></tr></thead>
           <tbody>
             {list.map((p) => (
               <tr key={p.name}>
@@ -80,7 +81,7 @@ export function Players() {
                 <td><PlayerActions player={p} servers={serverNames} onDone={players.reload} /></td>
               </tr>
             ))}
-            {players.data && !list.length && <tr><td colSpan="4" class="muted">{filter ? 'No player matches the filter.' : 'Nobody is online.'}</td></tr>}
+            {players.data && !list.length && <tr><td colSpan="4" class="muted">{filter ? t('No player matches the filter.') : t('Nobody is online.')}</td></tr>}
           </tbody>
         </table>
       </div>

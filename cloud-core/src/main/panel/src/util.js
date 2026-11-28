@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
+import { t } from './i18n.js';
 
 /** Calls fn now and every ms; returns { data, error, reload }. */
 export function usePoll(fn, ms, deps = []) {
@@ -55,7 +56,7 @@ export function useToasts() {
 }
 
 /** Runs an API action and shows its message or error as a toast. */
-export async function act(promise, fallback = 'Done.') {
+export async function act(promise, fallback = t('Done.')) {
   try {
     const res = await promise;
     toast(res?.message || fallback);

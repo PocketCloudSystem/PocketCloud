@@ -7,6 +7,7 @@ import { Shell } from './components/Shell.jsx';
 import { Toasts } from './components/ui.jsx';
 import { pages, NotFound } from './pages/index.js';
 import './style.css';
+import { t } from './i18n.js';
 
 function App() {
   const [session, setSession] = useState(undefined); // undefined = loading, null = logged out
@@ -19,7 +20,7 @@ function App() {
     return () => removeEventListener('pc-logout', logout);
   }, []);
 
-  if (session === undefined) return <div class="center muted">Loading…</div>;
+  if (session === undefined) return <div class="center muted">{t('Loading…')}</div>;
   if (session === null) return <Login onLogin={setSession} />;
 
   const [, section = '', ...rest] = route.split('/');

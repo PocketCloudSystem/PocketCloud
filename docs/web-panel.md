@@ -34,6 +34,9 @@ to the head or the node that runs a server, like the [HTTP API](cluster/http-api
 The charts are sampled once a minute by the node you are connected to and kept in memory, so they start empty
 after a restart. CPU and memory are those of that node's cloud process; players and servers count the whole cluster.
 
+The buttons at the top switch between light and dark (default: the system setting) and between German and
+English (default: the browser language). Both choices are kept in the browser. Messages from the server stay English.
+
 ## Users and permissions
 
 The auth-key login has every right. Under *Users* it can add panel users with a name, a password (at least 8

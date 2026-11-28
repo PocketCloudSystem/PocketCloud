@@ -2,6 +2,7 @@ import { useState } from 'preact/hooks';
 import { api } from '../api.js';
 import { ConfirmButton, ErrorNote } from '../components/ui.jsx';
 import { act, usePoll } from '../util.js';
+import { t } from '../i18n.js';
 
 function GroupCard({ group, templates, onChange }) {
   const [adding, setAdding] = useState('');
@@ -12,8 +13,8 @@ function GroupCard({ group, templates, onChange }) {
   return (
     <div class="card stack-sm">
       <div class="row">
-        <h3 class="grow">{group.name} <span class="muted small">{group.playerCount} players</span></h3>
-        <ConfirmButton class="danger" confirmText="Delete group?" onConfirm={() => act(api(path, { method: 'DELETE' })).then(onChange)}>Delete</ConfirmButton>
+        <h3 class="grow">{group.name} <span class="muted small">{t('{n} players', { n: group.playerCount })}</span></h3>
+        <ConfirmButton class="danger" confirmText={t('Delete group?')} onConfirm={() => act(api(path, { method: 'DELETE' })).then(onChange)}>{t('Delete')}</ConfirmButton>
       </div>
       <div class="chips">
         {group.templates.map((t) => (
@@ -22,14 +23,14 @@ function GroupCard({ group, templates, onChange }) {
             <button class="chip-x" aria-label={`Remove ${t}`} onClick={() => change('DELETE', [t])}>×</button>
           </span>
         ))}
-        {!group.templates.length && <span class="muted">No templates.</span>}
+        {!group.templates.length && <span class="muted">{t('No templates.')}</span>}
       </div>
       {free.length > 0 && (
         <form class="row" onSubmit={(e) => { e.preventDefault(); change('POST', [adding || free[0]]); setAdding(''); }}>
-          <select class="grow" value={adding || free[0]} onChange={(e) => setAdding(e.currentTarget.value)} aria-label="Template">
+          <select class="grow" value={adding || free[0]} onChange={(e) => setAdding(e.currentTarget.value)} aria-label={t('Template')}>
             {free.map((t) => <option value={t}>{t}</option>)}
           </select>
-          <button>Add template</button>
+          <button>{t('Add template')}</button>
         </form>
       )}
     </div>
@@ -50,16 +51,16 @@ export function Groups() {
 
   return (
     <section class="stack">
-      <h1>Groups</h1>
-      <p class="muted">Groups bundle templates, for example for player counts or for sending players to any server of a group.</p>
+      <h1>{t('Groups')}</h1>
+      <p class="muted">{t('Groups bundle templates, for example for player counts or for sending players to any server of a group.')}</p>
       <form class="card row wrap" onSubmit={create}>
-        <strong>New group</strong>
-        <input class="grow" placeholder="Name" value={name} onInput={(e) => setName(e.currentTarget.value)}
-               pattern="[A-Za-z0-9_-]+" title="Letters, numbers, _ and -" aria-label="Name" required />
-        <button class="primary" disabled={!name}>Create</button>
+        <strong>{t('New group')}</strong>
+        <input class="grow" placeholder={t('Name')} value={name} onInput={(e) => setName(e.currentTarget.value)}
+               pattern="[A-Za-z0-9_-]+" title={t('Letters, numbers, _ and -')} aria-label={t('Name')} required />
+        <button class="primary" disabled={!name}>{t('Create')}</button>
       </form>
       <ErrorNote error={groups.error} />
-      {groups.data && !list.length && <p class="muted">No groups yet.</p>}
+      {groups.data && !list.length && <p class="muted">{t('No groups yet.')}</p>}
       <div class="grid two">
         {list.map((g) => <GroupCard key={g.name} group={g} templates={templateNames} onChange={groups.reload} />)}
       </div>

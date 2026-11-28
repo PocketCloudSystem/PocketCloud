@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { events } from '../api.js';
 import { toast } from '../util.js';
+import { t } from '../i18n.js';
 
 const MAX_LINES = 2000;
 const COLORS = {
@@ -41,7 +42,7 @@ function colorize(line) {
 let lineId = 0;
 
 /** Live console: `stream` is the SSE path, `run(command)` sends a command. */
-export function Console({ stream, run, title = 'Console', placeholder = 'Command, e.g. list', height }) {
+export function Console({ stream, run, title = t('Console'), placeholder = t('Command, e.g. list'), height }) {
   const [lines, setLines] = useState([]);
   const [state, setState] = useState('connecting');
   const [command, setCommand] = useState('');
@@ -96,7 +97,7 @@ export function Console({ stream, run, title = 'Console', placeholder = 'Command
     <div class="console card">
       <div class="console-head">
         <strong>{title}</strong>
-        <span class={'badge ' + (state === 'live' ? 'ok' : state === 'ended' || state.startsWith('failed') ? 'bad' : 'warn')}>{state}</span>
+        <span class={'badge ' + (state === 'live' ? 'ok' : state === 'ended' || state.startsWith('failed') ? 'bad' : 'warn')}>{t(state.split(':')[0]) + (state.includes(':') ? state.slice(state.indexOf(':')) : '')}</span>
       </div>
       <pre ref={box} class="console-lines" style={height ? { height } : null} onScroll={(e) => {
         const el = e.currentTarget;
@@ -107,8 +108,8 @@ export function Console({ stream, run, title = 'Console', placeholder = 'Command
       <form class="console-input" onSubmit={send}>
         <span class="muted">&gt;</span>
         <input value={command} onInput={(e) => setCommand(e.currentTarget.value)} onKeyDown={onKey}
-               placeholder={placeholder} aria-label="Command" disabled={state === 'ended'} />
-        <button disabled={!command.trim() || state === 'ended'}>Send</button>
+               placeholder={placeholder} aria-label={t('Command')} disabled={state === 'ended'} />
+        <button disabled={!command.trim() || state === 'ended'}>{t('Send')}</button>
       </form>
     </div>
   );

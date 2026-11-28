@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
 import { useToasts } from '../util.js';
+import { t } from '../i18n.js';
 
 export function Stat({ label, value, sub }) {
   return (
@@ -52,4 +53,4 @@ export function Toasts() {
   );
 }
 
-export const ErrorNote = ({ error }) => error ? <p class="error">Could not load: {error.message}</p> : null;
+export const ErrorNote = ({ error }) => error ? <p class="error">{t('Could not load:')} {error.message}</p> : null;

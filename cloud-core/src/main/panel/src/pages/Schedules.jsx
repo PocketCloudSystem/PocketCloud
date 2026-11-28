@@ -2,6 +2,7 @@ import { useState } from 'preact/hooks';
 import { api } from '../api.js';
 import { ConfirmButton, ErrorNote } from '../components/ui.jsx';
 import { act, usePoll } from '../util.js';
+import { t } from '../i18n.js';
 
 const EXAMPLES = [
   ['0 4 * * *', 'every day at 04:00'],
@@ -25,28 +26,28 @@ export function Schedules() {
 
   return (
     <section class="stack">
-      <h1>Schedules</h1>
-      <p class="muted">Console commands that run at cron times (minute hour day month weekday). In a cluster the head runs them.</p>
+      <h1>{t('Schedules')}</h1>
+      <p class="muted">{t('Console commands that run at cron times (minute hour day month weekday). In a cluster the head runs them.')}</p>
       <form class="card stack-sm" onSubmit={add}>
         <div class="grid fields">
           <label class="field">
-            <span>Cron</span>
+            <span>{t('Cron')}</span>
             <input value={cron} onInput={(e) => setCron(e.currentTarget.value)} placeholder="0 4 * * *" required class="mono" />
           </label>
           <label class="field wide">
-            <span>Command</span>
+            <span>{t('Command')}</span>
             <input value={command} onInput={(e) => setCommand(e.currentTarget.value)} placeholder="template restart Lobby" required class="mono" />
           </label>
         </div>
         <div class="row wrap">
-          <button class="primary">Add schedule</button>
+          <button class="primary">{t('Add schedule')}</button>
           {EXAMPLES.map(([c, label]) => <button type="button" class="ghost small" onClick={() => setCron(c)}><code>{c}</code> {label}</button>)}
         </div>
       </form>
       <ErrorNote error={schedules.error} />
       <div class="card table-wrap">
         <table>
-          <thead><tr><th>Id</th><th>Cron</th><th>Command</th><th /></tr></thead>
+          <thead><tr><th>{t('Id')}</th><th>{t('Cron')}</th><th>{t('Command')}</th><th /></tr></thead>
           <tbody>
             {(schedules.data || []).map((s) => (
               <tr key={s.id}>
@@ -54,14 +55,14 @@ export function Schedules() {
                 <td><code>{s.cron}</code></td>
                 <td><code>{s.command}</code></td>
                 <td>
-                  <ConfirmButton class="danger" confirmText="Remove?"
+                  <ConfirmButton class="danger" confirmText={t('Remove?')}
                                  onConfirm={() => act(api('/v1/schedules/' + encodeURIComponent(s.id), { method: 'DELETE' })).then(schedules.reload)}>
-                    Remove
+                    {t('Remove')}
                   </ConfirmButton>
                 </td>
               </tr>
             ))}
-            {schedules.data?.length === 0 && <tr><td colSpan="4" class="muted">No scheduled commands.</td></tr>}
+            {schedules.data?.length === 0 && <tr><td colSpan="4" class="muted">{t('No scheduled commands.')}</td></tr>}
           </tbody>
         </table>
       </div>
