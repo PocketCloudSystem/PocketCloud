@@ -200,6 +200,18 @@ they contain secrets.
 | `POST /v1/backups` | Creates a backup and answers when it is done: `{"message": ..., "name": ...}` |
 | `POST /v1/backups/{name}/restore` | Restores; answers with `before`, the backup of the previous state |
 
+## Stats history
+
+`GET /v1/stats/history` returns one point per minute for the last 24 hours, recorded in memory by the node that
+answers (empty after a restart). Each point is `[time, players, servers, cpuPercent, memoryBytes]`; CPU and memory
+are of that node's cloud process.
+
+```json
+{"interval_ms": 60000, "points": [[1795869600000, 12, 4, 2.5, 83886080]]}
+```
+
+`GET /v1/groups` entries contain `templates`, and `GET /v1/plugins` entries contain `enabled`.
+
 ## Web panel routes
 
 `/panel/` serves the [web panel](../web-panel.md). `/panel-api/...` (login, logout, session, live console as

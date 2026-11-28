@@ -17,13 +17,19 @@ to the head or the node that runs a server, like the [HTTP API](cluster/http-api
 
 | Page | What you can do |
 |------|-----------------|
-| Overview | Players, servers, templates, uptime, CPU/memory/TPS of this cloud process, nodes of the cluster |
+| Overview | Players, servers, templates, uptime, charts of the last 24 h (players, servers, CPU, memory), CPU/memory/TPS of this cloud process, nodes of the cluster |
 | Servers | Filter, start servers of a template, stop all; per server: live data, save, stop, force stop, live console with commands |
 | Templates | Create, edit all settings (incl. `nodes`/`staticNode`), start a server, rolling restart, delete; file history with rollback (cluster) |
+| Groups | Create, delete, add and remove templates |
 | Players | Filter, send a message/popup/title/..., transfer, kick |
+| Maintenance | Players that may join templates in maintenance: add, remove |
 | Nodes | State, load, version, drain/undrain (cluster) |
 | Schedules | Scheduled console commands: add with a cron time, remove |
 | Backups | Create, restore (the zips stay on the node: they contain secrets) |
+| Plugins | Cloud plugins of this node: enable, disable |
+
+The charts are sampled once a minute by the node you are connected to and kept in memory, so they start empty
+after a restart. CPU and memory are those of that node's cloud process; players and servers count the whole cluster.
 
 ## Security
 

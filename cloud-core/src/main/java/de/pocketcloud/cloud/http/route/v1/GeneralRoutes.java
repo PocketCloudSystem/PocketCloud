@@ -1,5 +1,6 @@
 package de.pocketcloud.cloud.http.route.v1;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import de.pocketcloud.api.network.traffic.TrafficDirection;
 import de.pocketcloud.cloud.PocketCloud;
@@ -7,6 +8,7 @@ import de.pocketcloud.cloud.http.annotation.ApiVersion;
 import de.pocketcloud.cloud.http.annotation.GetRoute;
 import de.pocketcloud.cloud.http.io.HttpRequest;
 import de.pocketcloud.cloud.http.io.HttpResponse;
+import de.pocketcloud.cloud.util.StatsHistory;
 import de.pocketcloud.cloud.util.VersionInfo;
 import io.netty.handler.codec.http.HttpResponseStatus;
 
@@ -14,6 +16,29 @@ import java.time.Duration;
 
 @ApiVersion(1)
 public final class GeneralRoutes {
+
+    public GeneralRoutes() {
+        StatsHistory.start();
+    }
+
+    /** One point per minute for the last 24 h of this node: time, players, servers, cpu (%), memory (bytes). */
+    @GetRoute("/stats/history")
+    public void history(HttpRequest request, HttpResponse response) {
+        JsonArray points = new JsonArray();
+        for (StatsHistory.Point p : StatsHistory.points()) {
+            JsonArray point = new JsonArray();
+            point.add(p.time());
+            point.add(p.players());
+            point.add(p.servers());
+            point.add(Math.round(p.cpu() * 10) / 10.0);
+            point.add(p.memory());
+            points.add(point);
+        }
+        JsonObject json = new JsonObject();
+        json.addProperty("interval_ms", StatsHistory.INTERVAL_MS);
+        json.add("points", points);
+        response.json(json);
+    }
 
     @GetRoute("/stats")
     public void stats(HttpRequest request, HttpResponse response) {

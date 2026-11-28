@@ -24,6 +24,7 @@ public final class PluginRoutes {
             JsonObject entry = new JsonObject();
             entry.addProperty("name", plugin.getDescription().name());
             entry.addProperty("version", plugin.getDescription().version());
+            entry.addProperty("enabled", plugin.isEnabled());
             JsonArray authors = new JsonArray();
             for (String author : plugin.getDescription().authors()) authors.add(author);
             entry.add("authors", authors);

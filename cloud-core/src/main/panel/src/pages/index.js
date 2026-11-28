@@ -8,6 +8,9 @@ import { Players } from './Players.jsx';
 import { Nodes } from './Nodes.jsx';
 import { Schedules } from './Schedules.jsx';
 import { Backups } from './Backups.jsx';
+import { Groups } from './Groups.jsx';
+import { Maintenance } from './Maintenance.jsx';
+import { Plugins } from './Plugins.jsx';
 
 // list page, or the detail page when the route has a name: #/servers/Lobby-1
 const listOrDetail = (List, Detail) => ({ params, session }) =>
@@ -18,10 +21,13 @@ export const pages = {
   '': { label: 'Overview', component: Overview },
   servers: { label: 'Servers', component: listOrDetail(Servers, Server) },
   templates: { label: 'Templates', component: listOrDetail(Templates, Template) },
+  groups: { label: 'Groups', component: Groups },
   players: { label: 'Players', component: Players },
+  maintenance: { label: 'Maintenance', component: Maintenance },
   nodes: { label: 'Nodes', component: Nodes },
   schedules: { label: 'Schedules', component: Schedules },
   backups: { label: 'Backups', component: Backups },
+  plugins: { label: 'Plugins', component: Plugins },
 };
 
 export const NotFound = () => h('section', null, h('h1', null, 'Not found'), h('a', { href: '#/' }, 'Back to the overview'));

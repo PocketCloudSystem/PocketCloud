@@ -121,6 +121,7 @@ public final class GroupRoutes {
         JsonObject json = new JsonObject();
         json.addProperty("name", group.name());
         json.addProperty("playerCount", group.playerCount());
+        json.add("templates", HttpUtils.toElement(group.templates().stream().sorted().toList()));
         return json;
     }
 

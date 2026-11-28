@@ -1,11 +1,14 @@
 import { api } from '../api.js';
 import { Badge, ErrorNote, Meter, Stat } from '../components/ui.jsx';
+import { Chart } from '../components/Chart.jsx';
 import { bytes, duration, pct, usePoll } from '../util.js';
 
 export function Overview({ session }) {
   const stats = usePoll(() => api('/v1/stats'), 5000);
   const nodes = usePoll(() => (session.clustered ? api('/v1/nodes') : null), 5000);
   const servers = usePoll(() => api('/v1/servers'), 5000);
+  const history = usePoll(() => api('/v1/stats/history'), 60000);
+  const series = (i) => (history.data?.points || []).map((p) => [p[0], p[i]]);
   const s = stats.data;
   const list = Object.values(servers.data || {});
   const online = list.filter((x) => x.status === 'ONLINE').length;
@@ -19,6 +22,13 @@ export function Overview({ session }) {
         <Stat label="Servers" value={s ? list.length || s.server_count : '–'} sub={servers.data ? `${online} online` : null} />
         <Stat label="Templates" value={s?.template_count ?? '–'} />
         <Stat label="Uptime" value={duration(s?.uptime_ms)} sub={s ? `v${s.version}${s.beta ? ' beta' : ''}` : null} />
+      </div>
+
+      <div class="grid charts">
+        <Chart title="Players" points={series(1)} />
+        <Chart title="Servers" points={series(2)} />
+        <Chart title={`CPU${session.clustered ? ` (${session.node})` : ''}`} points={series(3)} format={(v) => `${Math.round(v)} %`} max={100} />
+        <Chart title={`Memory${session.clustered ? ` (${session.node})` : ''}`} points={series(4)} format={bytes} />
       </div>
 
       <div class="card">
