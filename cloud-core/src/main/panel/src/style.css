@@ -181,3 +181,19 @@ button.armed { background: var(--bad); border-color: var(--bad); color: #fff; }
 .console-input input:focus { outline: none; }
 .console-input:focus-within { box-shadow: inset 0 0 0 1px var(--accent); }
 @media (max-width: 720px) { .console-lines { height: 300px; } }
+
+.stack-sm { display: flex; flex-direction: column; gap: 12px; }
+.stack-sm h3 { margin: 0; }
+.grid.flags { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+.grid.fields { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+.check { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; }
+.check input { width: auto; margin-top: 3px; accent-color: var(--accent); }
+.check span { display: flex; flex-direction: column; }
+.check small { font-size: 12px; }
+.check.inline { align-items: center; gap: 6px; }
+.check.inline input { margin: 0; }
+.field { display: flex; flex-direction: column; gap: 4px; border: none; padding: 0; margin: 0; min-width: 0; }
+.field > span, .field > legend { color: var(--muted); font-size: 12px; padding: 0; }
+.chip .badge { margin-left: 4px; }
+td .row { gap: 6px; }
+td .row button { padding: 4px 10px; }

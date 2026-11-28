@@ -1,6 +1,9 @@
 package de.pocketcloud.cloud.http.panel;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import de.pocketcloud.api.component.software.IServerSoftware;
+import java.util.Comparator;
 import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.http.annotation.GetRoute;
 import de.pocketcloud.cloud.http.annotation.PathVariable;
@@ -55,6 +58,19 @@ public final class PanelRoutes {
     @GetRoute("/panel-api/session")
     public void session(HttpRequest request, HttpResponse response) {
         response.json(this::info);
+    }
+
+    /** Software names for the "new template" form. */
+    @GetRoute("/panel-api/softwares")
+    public void softwares(HttpRequest request, HttpResponse response) {
+        JsonArray array = new JsonArray();
+        PocketCloud.instance().softwares().getAll().stream().sorted(Comparator.comparing(IServerSoftware::name)).forEach(software -> {
+            JsonObject json = new JsonObject();
+            json.addProperty("name", software.name());
+            json.addProperty("templateType", software.templateType());
+            array.add(json);
+        });
+        response.json(array);
     }
 
     private void info(JsonObject json) {

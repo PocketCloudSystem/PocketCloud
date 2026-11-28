@@ -4,7 +4,9 @@ import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 import de.pocketcloud.api.component.group.IServerGroup;
 import de.pocketcloud.api.component.player.ICloudPlayer;
+import de.pocketcloud.api.component.software.IServerSoftware;
 import de.pocketcloud.api.component.template.ITemplate;
+import de.pocketcloud.api.template.TemplateType;
 import de.pocketcloud.api.search.TemplateSearchQuery;
 import de.pocketcloud.api.template.util.TemplateEditData;
 import de.pocketcloud.cloud.PocketCloud;
@@ -60,8 +62,24 @@ public final class TemplateRoutes {
         String name = requireString(body, "name");
         if (PocketCloud.instance().templates().check(name)) throw new HttpException(409, "Template already exists.");
 
-        Template template = Template.read(FileUtils.GSON.fromJson(body, new TypeToken<Map<String, Object>>() {}.getType()));
-        PocketCloud.instance().templates().create(TemplateBuilder.of(template));
+        Map<String, Object> map = FileUtils.GSON.fromJson(body, new TypeToken<Map<String, Object>>() {}.getType());
+        try {
+            ITemplate template;
+            if (body.has("settings")) {
+                template = Template.read(map);
+            } else {
+                // short form: name, templateType, serverSoftware and the flat settings of PATCH, the rest defaults
+                TemplateType type = TemplateType.valueOf(requireString(body, "templateType").toUpperCase());
+                IServerSoftware software = PocketCloud.instance().softwares().get(requireString(body, "serverSoftware"))
+                        .orElseThrow(() -> new HttpException(400, "Server software not found."));
+                template = TemplateBuilder.create().name(name).type(type).software(software).build();
+                TemplateEditData.read(map).applyTo(template);
+            }
+            if (template.settings() == null || template.serverSoftware() == null) throw new HttpException(400, "Missing settings or serverSoftware.");
+            PocketCloud.instance().templates().create(TemplateBuilder.of(template));
+        } catch (IllegalArgumentException | ClassCastException e) {
+            throw new HttpException(400, e.getMessage() == null ? "Please use the correct data types for your values." : e.getMessage());
+        }
         response.json(message("Created the template."));
     }
 
@@ -74,6 +92,8 @@ public final class TemplateRoutes {
             response.json(message("Edited the template."));
         } catch (ClassCastException _) {
             response.badRequest("Please use the correct data types for your values.");
+        } catch (IllegalArgumentException e) {
+            response.badRequest(e.getMessage());
         }
     }
 

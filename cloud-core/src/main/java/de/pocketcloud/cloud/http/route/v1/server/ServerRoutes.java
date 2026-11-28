@@ -131,6 +131,7 @@ public final class ServerRoutes {
         JsonObject entry = new JsonObject();
         entry.addProperty("name", server.name());
         entry.addProperty("uuid", server.uuid().toString());
+        entry.addProperty("template", server.templateName());
         entry.addProperty("status", server.status().name());
         entry.addProperty("playerCount", server.playerCount());
         entry.addProperty("maxPlayers", server.data().maxPlayers());

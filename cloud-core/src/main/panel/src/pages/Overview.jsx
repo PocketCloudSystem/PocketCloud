@@ -44,7 +44,7 @@ export function Overview({ session }) {
               <tbody>
                 {nodes.data.nodes.map((n) => (
                   <tr key={n.name}>
-                    <td><a href={'#/nodes/' + encodeURIComponent(n.name)}>{n.name}</a>{n.drain && <span class="badge warn">drain</span>}</td>
+                    <td><a href="#/nodes">{n.name}</a>{n.drain && <span class="badge warn">drain</span>}</td>
                     <td><Badge status={n.health === 'ALIVE' ? n.state : n.health}>{n.health === 'ALIVE' ? n.state.toLowerCase() : n.health.toLowerCase()}</Badge></td>
                     <td>{n.servers}</td>
                     <td>{pct(n.cpu)}</td>
