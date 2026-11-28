@@ -3,6 +3,9 @@ package de.pocketcloud.cloud.http.panel;
 import de.pocketcloud.cloud.console.log.cache.ConsoleTail;
 import de.pocketcloud.cloud.console.log.CloudLogger;
 import java.util.List;
+import java.util.ArrayList;
+import com.google.gson.Gson;
+import de.pocketcloud.cloud.http.annotation.DeleteRoute;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import de.pocketcloud.api.component.software.IServerSoftware;
@@ -26,27 +29,36 @@ public final class PanelRoutes {
 
     private static final long CONSOLE_TAIL_BYTES = 64 * 1024;
 
+    /** Body {@code {"key": ...}} for the auth-key, or {@code {"user": ..., "password": ...}}. */
     @PostRoute(value = "/panel-api/login", authentication = NonRequiredAuthentication.class)
     public void login(HttpRequest request, HttpResponse response) {
         String address = request.remoteAddress();
         if (!PanelSessions.mayTry(address)) throw new HttpException(429, "Too many failed logins, try again in a minute.");
-        String key = null;
+        String key = null, name = null, password = null;
         try {
             JsonObject body = request.json();
             if (body != null && body.has("key")) key = body.get("key").getAsString().trim();
+            if (body != null && body.has("user")) name = body.get("user").getAsString().trim();
+            if (body != null && body.has("password")) password = body.get("password").getAsString();
         } catch (RuntimeException ignored) {
             // no JSON body
         }
-        if (key == null || !StringUtils.secureEquals(key, PocketCloud.instance().httpServer().authToken())) {
+        String user;
+        if (name != null && !name.isEmpty()) {
+            user = password == null ? null : PanelUsers.check(name, password).map(PanelUsers.User::name).orElse(null);
+        } else {
+            user = key != null && StringUtils.secureEquals(key, PocketCloud.instance().httpServer().authToken()) ? PanelUsers.KEY_USER : null;
+        }
+        if (user == null) {
             PanelSessions.failed(address);
-            throw new HttpException(401, "Wrong auth-key.");
+            throw new HttpException(401, name != null && !name.isEmpty() ? "Wrong name or password." : "Wrong auth-key.");
         }
         PanelSessions.succeeded(address);
         String prefix = PocketCloud.instance().httpServer().router().routePrefix();
-        response.cookie(PanelSessions.COOKIE, PanelSessions.create(), c -> c.path(prefix.isEmpty() ? "/" : prefix)
+        response.cookie(PanelSessions.COOKIE, PanelSessions.create(user), c -> c.path(prefix.isEmpty() ? "/" : prefix)
                 .httpOnly(true).sameSite(CookieBuilder.SameSite.STRICT).maxAge(PanelSessions.LIFETIME.toSeconds())
                 .secure(PocketCloud.instance().config().httpServer().ssl().enabled()));
-        response.json(this::info);
+        response.json(json -> info(json, PanelUsers.get(user).orElseThrow()));
     }
 
     @PostRoute(value = "/panel-api/logout", authentication = NonRequiredAuthentication.class)
@@ -60,7 +72,50 @@ public final class PanelRoutes {
     /** Who am I talking to; 401 tells the panel to show the login. */
     @GetRoute("/panel-api/session")
     public void session(HttpRequest request, HttpResponse response) {
-        response.json(this::info);
+        // a bearer token (API client) has no panel user: it has every right, like the auth-key login
+        PanelUsers.User user = PanelSessions.user(request).orElseGet(() -> PanelUsers.get(PanelUsers.KEY_USER).orElseThrow());
+        response.json(json -> info(json, user));
+    }
+
+    // ------------------------------------------------------------------ users (admin only, see PanelSessions)
+
+    @GetRoute("/panel-api/users")
+    public void users(HttpRequest request, HttpResponse response) {
+        JsonArray list = new JsonArray();
+        for (PanelUsers.User user : PanelUsers.list()) list.add(userJson(user));
+        JsonObject json = new JsonObject();
+        json.add("users", list);
+        json.add("permissions", new Gson().toJsonTree(PanelUsers.PERMISSIONS));
+        response.json(json);
+    }
+
+    /** Creates or updates: {@code {"name", "password" (empty keeps it), "permissions": [...]}}. */
+    @PostRoute("/panel-api/users")
+    public void saveUser(HttpRequest request, HttpResponse response) {
+        JsonObject body = request.json();
+        if (body == null || !body.has("name")) throw new HttpException(400, "Missing name.");
+        List<String> permissions = new ArrayList<>();
+        if (body.has("permissions")) body.getAsJsonArray("permissions").forEach(p -> permissions.add(p.getAsString()));
+        String password = body.has("password") ? body.get("password").getAsString() : null;
+        PanelUsers.User user = PanelUsers.save(body.get("name").getAsString().trim(), password, permissions);
+        PanelSessions.removeUser(user.name()); // changed rights or password: log in again
+        CloudLogger.get().info("Panel user §b{}§r was saved by §b{}§r.", user.name(), PanelSessions.user(request).map(PanelUsers.User::name).orElse("?"));
+        response.json(userJson(user));
+    }
+
+    @DeleteRoute("/panel-api/users/{name}")
+    public void deleteUser(HttpRequest request, HttpResponse response, @PathVariable("name") String name) {
+        if (!PanelUsers.remove(name)) throw new HttpException(404, "No such user.");
+        PanelSessions.removeUser(name);
+        CloudLogger.get().info("Panel user §b{}§r was deleted.", name);
+        response.noContent();
+    }
+
+    private static JsonObject userJson(PanelUsers.User user) {
+        JsonObject json = new JsonObject();
+        json.addProperty("name", user.name());
+        json.add("permissions", new Gson().toJsonTree(user.permissions()));
+        return json;
     }
 
     /** Software names for the "new template" form. */
@@ -76,8 +131,10 @@ public final class PanelRoutes {
         response.json(array);
     }
 
-    private void info(JsonObject json) {
+    private void info(JsonObject json, PanelUsers.User user) {
         var cloud = PocketCloud.instance();
+        json.addProperty("user", user.name());
+        json.add("permissions", new Gson().toJsonTree(user.permissions().contains("admin") ? PanelUsers.PERMISSIONS : user.permissions()));
         json.addProperty("cloudName", cloud.config().cloudName());
         json.addProperty("node", cloud.cluster().nodeName());
         json.addProperty("clustered", cloud.cluster().clustered());

@@ -8,7 +8,7 @@ nothing extra to install.
 1. In `storage/configs/http.yml` set `enabled: true` and pick `address` and `port`.
 2. Restart the cloud (or `reload`).
 3. Open `http://<address>:<port>/cloud/panel/` (`/cloud` is the `routePrefix` of `http.yml`).
-4. Sign in with the `auth-key` from `http.yml`.
+4. Sign in with the `auth-key` from `http.yml` (leave the name empty), or as a panel user.
 
 In a cluster every node with HTTP enabled serves the panel. Each node shows the whole cluster; actions are forwarded
 to the head or the node that runs a server, like the [HTTP API](cluster/http-api.md#forwarding-rules).
@@ -29,9 +29,28 @@ to the head or the node that runs a server, like the [HTTP API](cluster/http-api
 | Backups | Create, restore (the zips stay on the node: they contain secrets) |
 | Plugins | Cloud plugins of this node: enable, disable |
 | Crashes | Crash reports of servers, per node |
+| Users | Panel users and their permissions (only with `admin`) |
 
 The charts are sampled once a minute by the node you are connected to and kept in memory, so they start empty
 after a restart. CPU and memory are those of that node's cloud process; players and servers count the whole cluster.
+
+## Users and permissions
+
+The auth-key login has every right. Under *Users* it can add panel users with a name, a password (at least 8
+characters, stored as a PBKDF2 hash in `storage/internal/panel/users.json`) and permissions. Every user may look at
+everything; changes need a permission:
+
+| Permission | Allows |
+|------------|--------|
+| `servers` | Start, stop, save servers, server commands |
+| `templates` | Templates and their files, groups, maintenance |
+| `players` | Messages, transfer, kick |
+| `console` | Commands in the cloud console (these can do anything) |
+| `admin` | Everything, including users, nodes, backups, schedules and plugins |
+
+Missing permissions answer `403`. Saving or deleting a user signs that user out. Users are stored on each node
+separately: copy `users.json` to a node if people should sign in there too. The REST API with the auth-key is not
+affected.
 
 ## Security
 

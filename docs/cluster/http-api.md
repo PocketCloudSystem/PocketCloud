@@ -230,7 +230,7 @@ are of that node's cloud process.
 
 ## Web panel routes
 
-`/panel/` serves the [web panel](../web-panel.md). `/panel-api/...` (login, logout, session, live console as
+`/panel/` serves the [web panel](../web-panel.md). `/panel-api/...` (login, logout, session, users, live console as
 Server-Sent Events, software list) is meant for the panel only and may change without notice.
 
 ## Metrics (Prometheus)

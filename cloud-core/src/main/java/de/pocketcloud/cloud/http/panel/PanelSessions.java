@@ -1,5 +1,6 @@
 package de.pocketcloud.cloud.http.panel;
 
+import de.pocketcloud.cloud.http.exception.HttpException;
 import de.pocketcloud.cloud.http.io.HttpRequest;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.cookie.ServerCookieDecoder;
@@ -8,10 +9,11 @@ import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.HexFormat;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Logins of the web panel: the browser sends the auth-key once and gets a random session id as HttpOnly cookie,
+ * Logins of the web panel: the browser sends the auth-key or a user's password once and gets a random session id as HttpOnly cookie,
  * so the key itself is never stored in the browser. Sessions live in memory of this node (a restart logs out).
  */
 public final class PanelSessions {
@@ -25,20 +27,23 @@ public final class PanelSessions {
     private static final long FAILURE_WINDOW_MS = 60_000;
 
     private static final SecureRandom RANDOM = new SecureRandom();
-    private static final Map<String, Long> sessions = new ConcurrentHashMap<>();
+    private record Session(String user, long expires) {
+    }
+
+    private static final Map<String, Session> sessions = new ConcurrentHashMap<>();
     /** remote address → [failures, window start] */
     private static final Map<String, long[]> failures = new ConcurrentHashMap<>();
 
     private PanelSessions() {
     }
 
-    public static String create() {
+    public static String create(String user) {
         byte[] bytes = new byte[32];
         RANDOM.nextBytes(bytes);
         String id = HexFormat.of().formatHex(bytes);
         long now = System.currentTimeMillis();
-        sessions.values().removeIf(expires -> expires < now);
-        sessions.put(id, now + LIFETIME.toMillis());
+        sessions.values().removeIf(s -> s.expires() < now);
+        sessions.put(id, new Session(user, now + LIFETIME.toMillis()));
         return id;
     }
 
@@ -47,15 +52,32 @@ public final class PanelSessions {
         if (id != null) sessions.remove(id);
     }
 
-    /** Valid session cookie; writes also need the panel header. */
-    public static boolean authenticated(HttpRequest request) {
+    /** Logs out every session of a user (deleted, or permissions taken away). */
+    public static void removeUser(String user) {
+        sessions.values().removeIf(s -> s.user().equalsIgnoreCase(user));
+    }
+
+    /** The logged-in user of a valid session, if any. */
+    public static Optional<PanelUsers.User> user(HttpRequest request) {
         String id = sessionId(request);
-        if (id == null) return false;
-        Long expires = sessions.get(id);
-        if (expires == null || expires < System.currentTimeMillis()) return false;
+        Session session = id == null ? null : sessions.get(id);
+        if (session == null || session.expires() < System.currentTimeMillis()) return Optional.empty();
+        return PanelUsers.get(session.user());
+    }
+
+    /**
+     * Valid session cookie; writes also need the panel header and the permission for the route (403 otherwise).
+     * The user management needs admin for reading too.
+     */
+    public static boolean authenticated(HttpRequest request) {
+        PanelUsers.User user = user(request).orElse(null);
+        if (user == null) return false;
         String method = request.method().name();
         boolean read = method.equals("GET") || method.equals("HEAD");
-        return read || request.header(CSRF_HEADER) != null;
+        if (!read && request.header(CSRF_HEADER) == null) return false;
+        String needed = read ? (request.path().endsWith("/panel-api/users") ? "admin" : null) : PanelUsers.required(request.path());
+        if (needed != null && !user.may(needed)) throw new HttpException(403, "You need the permission \"" + needed + "\".");
+        return true;
     }
 
     private static String sessionId(HttpRequest request) {
