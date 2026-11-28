@@ -19,8 +19,8 @@ to the head or the node that runs a server, like the [HTTP API](cluster/http-api
 |------|-----------------|
 | Overview | Players, servers, templates, uptime, charts of the last 24 h (players, servers, CPU, memory), CPU/memory/TPS of this cloud process, nodes of the cluster |
 | Console | The cloud console of the node you are connected to: live log, run any cloud command (confirmations are answered with `y`/`n`). Commands from the panel are logged as `[Panel] > ...` |
-| Servers | Filter, start servers of a template, stop all; per server: live data, save, stop, force stop, live console with commands |
-| Templates | Create, edit all settings (incl. `nodes`/`staticNode`), start a server, rolling restart, delete; file history with rollback (cluster) |
+| Servers | Filter, start servers of a template, stop all; per server: live data, save, stop, force stop, live console with commands, server files (read only) |
+| Templates | Create, edit all settings (incl. `nodes`/`staticNode`), start a server, rolling restart, delete; browse, edit, upload and delete the template files (text files up to 1 MB open in an editor, Ctrl+S saves); file history with rollback (cluster) |
 | Groups | Create, delete, add and remove templates |
 | Players | Filter, send a message/popup/title/..., transfer, kick |
 | Maintenance | Players that may join templates in maintenance: add, remove |
@@ -28,6 +28,7 @@ to the head or the node that runs a server, like the [HTTP API](cluster/http-api
 | Schedules | Scheduled console commands: add with a cron time, remove |
 | Backups | Create, restore (the zips stay on the node: they contain secrets) |
 | Plugins | Cloud plugins of this node: enable, disable |
+| Crashes | Crash reports of servers, per node |
 
 The charts are sampled once a minute by the node you are connected to and kept in memory, so they start empty
 after a restart. CPU and memory are those of that node's cloud process; players and servers count the whole cluster.

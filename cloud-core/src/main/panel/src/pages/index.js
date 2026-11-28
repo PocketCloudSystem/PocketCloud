@@ -12,6 +12,7 @@ import { Groups } from './Groups.jsx';
 import { Maintenance } from './Maintenance.jsx';
 import { Plugins } from './Plugins.jsx';
 import { CloudConsole } from './CloudConsole.jsx';
+import { Crashes } from './Crashes.jsx';
 
 // list page, or the detail page when the route has a name: #/servers/Lobby-1
 const listOrDetail = (List, Detail) => ({ params, session }) =>
@@ -30,6 +31,7 @@ export const pages = {
   schedules: { label: 'Schedules', component: Schedules },
   backups: { label: 'Backups', component: Backups },
   plugins: { label: 'Plugins', component: Plugins },
+  crashes: { label: 'Crashes', component: Crashes },
 };
 
 export const NotFound = () => h('section', null, h('h1', null, 'Not found'), h('a', { href: '#/' }, 'Back to the overview'));

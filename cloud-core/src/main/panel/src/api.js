@@ -8,12 +8,13 @@ export class ApiError extends Error {
   }
 }
 
-export async function api(path, { method = 'GET', body } = {}) {
+/** `raw: true` sends body (string, Blob or File) as it is instead of JSON. */
+export async function api(path, { method = 'GET', body, raw = false } = {}) {
   const headers = { 'X-PocketCloud-Panel': '1' };
-  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  if (body !== undefined) headers['Content-Type'] = raw ? 'application/octet-stream' : 'application/json';
   const res = await fetch(base + path, {
     method, headers, credentials: 'same-origin',
-    body: body === undefined ? undefined : JSON.stringify(body),
+    body: body === undefined || raw ? body : JSON.stringify(body),
   });
   const text = await res.text();
   let data = text;
@@ -28,4 +29,16 @@ export function events(path, handlers) {
   const source = new EventSource(base + path, { withCredentials: true });
   for (const [name, fn] of Object.entries(handlers)) source.addEventListener(name, (e) => fn(e.data, source));
   return () => source.close();
+}
+
+/** File contents as text, never parsed as JSON. */
+export async function fileText(path) {
+  const res = await fetch(base + path, { headers: { 'X-PocketCloud-Panel': '1' }, credentials: 'same-origin' });
+  const text = await res.text();
+  if (!res.ok) {
+    let message = res.statusText;
+    try { message = JSON.parse(text).message || message; } catch { /* plain text */ }
+    throw new ApiError(res.status, message);
+  }
+  return text;
 }

@@ -26,11 +26,13 @@ was forwarded.
 
 | Request | Processed by |
 |---------|--------------|
-| `GET /v1/servers/{name}/logs`, `POST /v1/servers/{name}/dispatch`, `POST /v1/servers/{name}/save`, `POST /v1/servers/{name}/stop` for a server on another node | the node that runs the server |
+| `GET /v1/servers/{name}/logs`, `POST /v1/servers/{name}/dispatch`, `POST /v1/servers/{name}/save`, `POST /v1/servers/{name}/stop`, `GET /v1/servers/{name}/files` for a server on another node | the node that runs the server |
 | `POST /v1/servers/start` | the head |
 | Any non-reading method (`POST`, `PUT`, `PATCH`, `DELETE`) on `/v1/templates...`, `/v1/groups...`, `/v1/maintenance...` | the head |
 | `POST /v1/nodes/{name}/drain`, `POST /v1/nodes/{name}/undrain` | the head |
 | `GET /v1/templates/{name}/history` | the head |
+| `/v1/templates/{name}/files...` (all methods) | the node the client talks to; the template replication sends changes to the head |
+| `GET /v1/crashes?node=<name>` | that node |
 | Everything else (all `GET`/`HEAD`/`OPTIONS`/`QUERY` requests, players, plugins, notifications, `stopAll`, ...) | the node the client talks to |
 
 Forwarded requests time out after 8 s. Errors produced by forwarding:
@@ -199,6 +201,20 @@ they contain secrets.
 | `GET /v1/backups` | `[{"name": "backup-2026-11-28_12-34-27.zip", "time": 1795869267381, "size": 3012072}]`, newest first |
 | `POST /v1/backups` | Creates a backup and answers when it is done: `{"message": ..., "name": ...}` |
 | `POST /v1/backups/{name}/restore` | Restores; answers with `before`, the backup of the previous state |
+
+## Files
+
+Template files can be read and changed, server files and crash reports only read. `path` is relative to the
+folder (empty = the folder itself); paths that leave it (`..`, symlinks) get `400`. Files over 10 MB are refused (`413`).
+
+| Route | Description |
+|-------|-------------|
+| `GET /v1/templates/{name}/files?path=` | A folder: `{"path": "plugins", "entries": [{"name": "x.yml", "dir": false, "size": 12, "modified": 1795869278367}]}` (folders first); a file: its bytes (`application/octet-stream`) |
+| `PUT /v1/templates/{name}/files?path=` | Writes the raw request body to the file (parent folders are created) |
+| `POST /v1/templates/{name}/files/mkdir?path=` | Creates the folder |
+| `DELETE /v1/templates/{name}/files?path=` | Deletes the file or folder (recursive); not the template folder itself |
+| `GET /v1/servers/{name}/files?path=` | Like the template route, for the folder of a running server. Forwarded across nodes as text, so binary files of servers on other nodes arrive mangled |
+| `GET /v1/crashes?path=&node=` | Crash reports of the node that answers (`node` picks another one) |
 
 ## Stats history
 

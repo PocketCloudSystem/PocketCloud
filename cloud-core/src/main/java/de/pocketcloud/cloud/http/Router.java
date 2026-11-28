@@ -12,6 +12,7 @@ import de.pocketcloud.cloud.http.io.HttpResponse;
 import de.pocketcloud.cloud.http.route.HealthRoute;
 import de.pocketcloud.cloud.http.panel.PanelFiles;
 import de.pocketcloud.cloud.http.route.v1.backup.BackupRoutes;
+import de.pocketcloud.cloud.http.route.v1.file.FileRoutes;
 import de.pocketcloud.cloud.http.route.v1.schedule.ScheduleRoutes;
 import de.pocketcloud.cloud.http.panel.PanelRoutes;
 import de.pocketcloud.cloud.http.route.MetricsRoute;
@@ -81,6 +82,7 @@ public final class Router implements IRouter {
         registerCloudController(new TemplateRoutes());
         registerCloudController(new BackupRoutes());
         registerCloudController(new ScheduleRoutes());
+        registerCloudController(new FileRoutes());
     }
 
     /**

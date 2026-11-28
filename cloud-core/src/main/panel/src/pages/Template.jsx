@@ -2,6 +2,7 @@ import { useEffect, useState } from 'preact/hooks';
 import { api } from '../api.js';
 import { Badge, ConfirmButton, ErrorNote } from '../components/ui.jsx';
 import { History } from '../components/History.jsx';
+import { FileBrowser } from '../components/FileBrowser.jsx';
 import { navigate } from '../router.js';
 import { act, usePoll } from '../util.js';
 
@@ -131,6 +132,7 @@ export function Template({ name, session }) {
       )}
       {t && <Settings name={name} settings={t.settings} onSaved={info.reload}
                       nodes={nodes.data?.nodes.map((n) => n.name).sort()} />}
+      {t && <FileBrowser api={path + '/files'} title="Template files" writable />}
       {t && session.clustered && <History name={name} />}
     </section>
   );

@@ -51,6 +51,12 @@ public final class HttpRequest {
         return request.protocolVersion();
     }
 
+    public byte[] bodyBytes() {
+        byte[] bytes = new byte[request.content().readableBytes()];
+        request.content().getBytes(request.content().readerIndex(), bytes);
+        return bytes;
+    }
+
     public String body() {
         return request.content().toString(CharsetUtil.UTF_8);
     }

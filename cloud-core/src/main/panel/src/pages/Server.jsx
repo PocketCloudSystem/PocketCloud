@@ -1,5 +1,6 @@
 import { api } from '../api.js';
 import { Console } from '../components/Console.jsx';
+import { FileBrowser } from '../components/FileBrowser.jsx';
 import { Badge, ConfirmButton, ErrorNote, Meter } from '../components/ui.jsx';
 import { navigate } from '../router.js';
 import { act, bytes, duration, pct, usePoll } from '../util.js';
@@ -59,6 +60,7 @@ export function Server({ name }) {
 
       {!gone && <Console stream={`/panel-api/servers/${encodeURIComponent(name)}/console`}
                           run={(command) => api(path + '/dispatch', { method: 'POST', body: { command } })} />}
+      {s && <FileBrowser api={path + '/files'} title="Server files (read only)" />}
     </section>
   );
 }

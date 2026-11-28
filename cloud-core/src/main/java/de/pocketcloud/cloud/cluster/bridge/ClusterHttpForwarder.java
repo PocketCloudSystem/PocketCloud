@@ -41,7 +41,10 @@ public final class ClusterHttpForwarder {
     /** Below the timeout of the request on the forwarding node (10 s). */
     private static final long TIMEOUT_MS = 8_000;
 
-    private static final Pattern SERVER_ROUTE = Pattern.compile("^.*/v\\d+/servers/([^/]+)/(logs|dispatch|save|stop)$");
+    private static final Pattern SERVER_ROUTE = Pattern.compile("^.*/v\\d+/servers/([^/]+)/(logs|dispatch|save|stop|files)$");
+    /** Template files are edited on the local copy; the replicator sends the change to the head like any local edit. */
+    private static final Pattern LOCAL_ROUTE = Pattern.compile("^.*/v\\d+/templates/[^/]+/files(/.*)?$");
+    private static final Pattern CRASH_ROUTE = Pattern.compile("^.*/v\\d+/crashes$");
     private static final Pattern HEAD_ROUTE = Pattern.compile("^.*/v\\d+/(servers/start|templates(/.*)?|groups(/.*)?|maintenance(/.*)?|nodes/[^/]+/(drain|undrain))$");
     /** Reads only the head can answer completely. */
     private static final Pattern HEAD_READ_ROUTE = Pattern.compile("^.*/v\\d+/templates/[^/]+/history$");
@@ -78,6 +81,14 @@ public final class ClusterHttpForwarder {
             return false;
         }
 
+        if (LOCAL_ROUTE.matcher(path).matches()) return false;
+        if (CRASH_ROUTE.matcher(path).matches()) {
+            String node = request.queryParam("node");
+            if (node == null || node.isEmpty() || node.equals(cluster.nodeName())) return false;
+            send(node, request, response);
+            return true;
+        }
+
         boolean headRoute = READ_METHODS.contains(method) ? HEAD_READ_ROUTE.matcher(path).matches() : HEAD_ROUTE.matcher(path).matches();
         if (headRoute && !cluster.isHead()) {
             String head = cluster.election().head();
@@ -94,6 +105,8 @@ public final class ClusterHttpForwarder {
         Peer peer = cluster.peer(node).orElse(null);
         if (peer == null || !peer.connected()) throw new HttpException(503, "Node " + node + " is not reachable.");
 
+        // shortcut: the forward packets carry bodies as UTF-8 strings, so binary files read from a remote server get
+        // mangled; base64 the body in NodeHttpForward(Result)Packet if binary downloads across nodes are needed.
         String contentType = request.headers().get(HttpHeaderNames.CONTENT_TYPE);
         NodeHttpForwardPacket packet = new NodeHttpForwardPacket(request.method().name(), request.uri(), contentType, request.body());
         packet.then(result -> {
