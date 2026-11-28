@@ -58,7 +58,7 @@ public final class WaterdogPEPlayerAdapter implements NativePlayerAdapter<Proxie
     @Override
     public void transfer(ProxiedPlayer player, ICloudServer server) {
         ServerInfo info = player.getProxy().getServerInfo(server.name());
-        if (info != null) player.redirectServer(info);
+        if (info != null) player.connect(info);
     }
 
     @Override

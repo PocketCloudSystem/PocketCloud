@@ -53,7 +53,7 @@ public final class ProxyPacketHandler implements PacketListener {
         ProxiedPlayer player = ProxyServer.getInstance().getPlayer(packet.getPlayer());
         ServerInfo serverInfo = ProxyServer.getInstance().getServerInfo(packet.getServer());
         if (player != null && serverInfo != null) {
-            player.redirectServer(serverInfo);
+            player.connect(serverInfo);
         }
     }
 }
