@@ -3,7 +3,8 @@
 Basic rule: **a failure never stops servers on healthy nodes.** What ran on a failed machine is treated as offline
 and replaced by auto-scaling on the other nodes.
 
-Timings: heartbeat every 1 s, a node is `SUSPECT` after 5 s and `DEAD` after 10 s without heartbeat. A node that
+Timings: heartbeat every 1 s, a node is `SUSPECT` after 10 s and `DEAD` after 20 s without heartbeat (`nodeTimeout` in
+`cluster.yml`). A node that
 shuts down cleanly (`exit`) tells the others, so it is `DEAD` immediately.
 
 ## Overview

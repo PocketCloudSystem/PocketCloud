@@ -26,7 +26,7 @@ The settings of the cloud are split over several files in `storage/configs/`:
 | File | Content |
 |------|---------|
 | `config.yml` | `cloudName`, `language`, `provider`, update checks, `paths`, `network` (bridge port) |
-| `cluster.yml` | Settings for several nodes: `strategy`, `templateStorage`, `restartOnUpdate`, `s3` |
+| `cluster.yml` | Settings for several nodes: `strategy`, `templateStorage`, `restartOnUpdate`, `nodeTimeout`, `s3` |
 | `redis.yml` | Redis connection |
 | `mysql.yml` | MySQL connection (only with `provider: mysql`) |
 | `http.yml` | HTTP API: `enabled`, `address`, `port`, `auth-key`, `ssl`, `routePrefix` |
@@ -78,6 +78,7 @@ provider, because each node writes its own whitelist and notification list there
 strategy: least-memory
 templateStorage: packets
 restartOnUpdate: []
+nodeTimeout: 20
 s3:
   endpoint: https://s3.eu-central-1.amazonaws.com
   region: eu-central-1
@@ -89,6 +90,7 @@ s3:
 |-----|---------|--------|
 | `strategy` | `least-memory` | How the head picks the node for a new server (only used with more than one node). `least-memory`: the node with the most free memory budget (even distribution). `fill`: the node with the smallest free budget that is still enough (keeps machines free). `round-robin`: the next node in turn (by name). Invalid values are reset to `least-memory`. Only the head's setting is used, so keep it the same on all nodes. |
 | `restartOnUpdate` | `[]` | Templates whose servers get a rolling restart (like `template restart`) after the template was changed, e.g. `[Lobby, BedWars]`. Only the head's setting is used. A change during a running restart restarts the template once more afterwards. |
+| `nodeTimeout` | `20` | Seconds without any packet before a node counts as `DEAD` (servers dropped, new head elected); `SUSPECT` after half of it. Raise it for far-away or unstable nodes. Use the same value on every node; minimum 5. The connection itself is closed after `max(30, nodeTimeout + 10)` s of silence. |
 | `templateStorage` | `packets` | Where the nodes get template files from. `packets`: from the head over the cluster connection. `s3`: from an S3 bucket, see [Templates → S3 storage](templates.md#s3-storage). |
 | `s3.endpoint` | `https://s3.eu-central-1.amazonaws.com` | URL of the S3 service, e.g. `http://10.0.0.5:9000` (MinIO) or `https://<account>.r2.cloudflarestorage.com` (Cloudflare R2). |
 | `s3.region` | `eu-central-1` | Region of the bucket. MinIO: `us-east-1`, R2: `auto`. |

@@ -1,5 +1,6 @@
 package de.pocketcloud.cloud.cluster;
 
+import de.pocketcloud.cloud.PocketCloud;
 import de.pocketcloud.cloud.cluster.net.packet.NodeIdentity;
 import io.netty.channel.Channel;
 import lombok.Getter;
@@ -16,8 +17,10 @@ import java.util.Map;
 @Accessors(fluent = true)
 public final class Peer {
 
-    public static final long SUSPECT_AFTER_MS = 5_000;
-    public static final long DEAD_AFTER_MS = 10_000;
+    /** cluster.yml nodeTimeout: a node is dead after this long without packets, suspect after half of it. */
+    public static long deadAfterMs() {
+        return PocketCloud.instance().config().cluster().nodeTimeout() * 1000L;
+    }
 
     private final String name;
     private volatile Channel channel;
@@ -41,12 +44,12 @@ public final class Peer {
     }
 
     public boolean alive(long now) {
-        return lastSeen > 0 && now - lastSeen < DEAD_AFTER_MS;
+        return lastSeen > 0 && now - lastSeen < deadAfterMs();
     }
 
     public String health(long now) {
-        if (lastSeen == 0 || now - lastSeen >= DEAD_AFTER_MS) return "DEAD";
-        if (now - lastSeen >= SUSPECT_AFTER_MS) return "SUSPECT";
+        if (lastSeen == 0 || now - lastSeen >= deadAfterMs()) return "DEAD";
+        if (now - lastSeen >= deadAfterMs() / 2) return "SUSPECT";
         return "ALIVE";
     }
 

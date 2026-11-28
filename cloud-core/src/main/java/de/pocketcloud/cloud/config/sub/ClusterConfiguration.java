@@ -38,6 +38,11 @@ public final class ClusterConfiguration extends OkaeriConfig implements ICloudCo
             "(like 'template restart <template>'), e.g. [Lobby, BedWars]. Only the head does it."})
     private List<String> restartOnUpdate = List.of();
 
+    @Comment({"Seconds without any packet from a node before it counts as dead (its servers are dropped,",
+            "a new head is elected); after half of it the node is shown as suspect. Raise it for nodes",
+            "far away or on unstable connections, e.g. 30. Use the same value on every node. Minimum 5."})
+    private int nodeTimeout = 20;
+
     @Comment({"S3 settings, only used with templateStorage: s3"})
     private S3Configuration s3 = new S3Configuration();
 
@@ -54,6 +59,10 @@ public final class ClusterConfiguration extends OkaeriConfig implements ICloudCo
         }
         templateStorage = templateStorage.toLowerCase();
         if (restartOnUpdate == null) restartOnUpdate = List.of();
+        if (nodeTimeout < 5) {
+            CloudLogger.get().warn("Invalid cluster nodeTimeout §b{}§r, reset to default... §8(§b20§8)", nodeTimeout);
+            nodeTimeout = 20;
+        }
         s3.validate();
     }
 }

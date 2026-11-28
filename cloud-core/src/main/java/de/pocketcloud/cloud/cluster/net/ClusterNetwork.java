@@ -25,6 +25,7 @@ import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.ssl.SslHandshakeCompletionEvent;
 import io.netty.handler.timeout.ReadTimeoutHandler;
+import de.pocketcloud.cloud.PocketCloud;
 import io.netty.util.AttributeKey;
 
 import javax.net.ssl.SSLException;
@@ -119,7 +120,7 @@ public final class ClusterNetwork {
         return new Bootstrap()
                 .group(workerGroup)
                 .channelFactory(Epoll.isAvailable() ? EpollSocketChannel::new : NioSocketChannel::new)
-                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 3000)
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10_000)
                 .handler(initializer(true, host, port))
                 .attr(ENDPOINT, endpoint)
                 .connect(host, port);
@@ -156,7 +157,8 @@ public final class ClusterNetwork {
                         : serverContext.newHandler(ch.alloc());
                 ch.pipeline().addLast(
                         ssl,
-                        new ReadTimeoutHandler(30),
+                        // heartbeats come every second; give slow links more than the node timeout before closing the connection
+                        new ReadTimeoutHandler(Math.max(30, PocketCloud.instance().config().cluster().nodeTimeout() + 10)),
                         new CloudPacketDecoder(() -> false, () -> PACKET_SIZE_LIMIT, () -> codecToken, listener),
                         new CloudPacketEncoder(() -> false, () -> PACKET_SIZE_LIMIT, () -> codecToken, listener),
                         new Handler()
