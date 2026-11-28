@@ -197,3 +197,9 @@ button.armed { background: var(--bad); border-color: var(--bad); color: #fff; }
 .chip .badge { margin-left: 4px; }
 td .row { gap: 6px; }
 td .row button { padding: 4px 10px; }
+.mono { font-family: var(--mono); }
+.field.wide { grid-column: span 2; }
+@media (max-width: 720px) { .field.wide { grid-column: auto; } }
+button.small { font-size: 12px; padding: 4px 8px; }
+.table-wrap.flush { margin: 0 -18px -18px; }
+td.wrap-cell { white-space: normal; min-width: 260px; }

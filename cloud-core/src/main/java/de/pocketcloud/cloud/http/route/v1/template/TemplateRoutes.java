@@ -1,6 +1,12 @@
 package de.pocketcloud.cloud.http.route.v1.template;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import de.pocketcloud.cloud.cluster.sync.SyncUnit;
+import de.pocketcloud.cloud.cluster.sync.TemplateHistory;
+import de.pocketcloud.cloud.cluster.sync.TemplateReplicator;
+import de.pocketcloud.cloud.console.log.CloudLogger;
+import de.pocketcloud.cloud.server.RollingRestart;
 import com.google.gson.reflect.TypeToken;
 import de.pocketcloud.api.component.group.IServerGroup;
 import de.pocketcloud.api.component.player.ICloudPlayer;
@@ -102,6 +108,55 @@ public final class TemplateRoutes {
         ITemplate template = requireTemplate(name);
         PocketCloud.instance().templates().remove(template);
         response.json(message("Removed the template."));
+    }
+
+    /** Versions of the template files (cluster only), newest first. Answered by the head. */
+    @GetRoute("/templates/{name}/history")
+    public void history(HttpRequest request, HttpResponse response, @PathVariable("name") String name) {
+        TemplateReplicator replicator = requireReplicator();
+        SyncUnit unit = SyncUnit.parse(name);
+        JsonArray records = new JsonArray();
+        for (TemplateHistory.Record r : replicator.historyRecords(unit).reversed()) {
+            JsonObject json = new JsonObject();
+            json.addProperty("version", r.version);
+            json.addProperty("time", r.time);
+            json.addProperty("node", r.node);
+            json.addProperty("note", r.note);
+            json.addProperty("deleted", r.deleted);
+            json.add("changed", HttpUtils.toElement(r.changed.stream().filter(p -> !p.endsWith("/")).toList()));
+            json.add("removed", HttpUtils.toElement(r.removed.stream().filter(p -> !p.endsWith("/")).toList()));
+            json.add("conflicts", HttpUtils.toElement(r.conflicts));
+            records.add(json);
+        }
+        JsonObject json = new JsonObject();
+        json.addProperty("currentVersion", replicator.headVersion(unit));
+        json.add("records", records);
+        response.json(json);
+    }
+
+    @PostRoute("/templates/{name}/rollback")
+    public void rollback(HttpRequest request, HttpResponse response, @PathVariable("name") String name, @RequestBody JsonObject body) {
+        if (!body.has("version") || !body.get("version").isJsonPrimitive()) throw new HttpException(400, "Missing field: version");
+        TemplateReplicator replicator = requireReplicator();
+        SyncUnit unit = SyncUnit.parse(name);
+        long version = body.get("version").getAsLong();
+        if (replicator.historyRecords(unit).stream().noneMatch(r -> r.version == version))
+            throw new HttpException(404, "There is no version " + version + " of " + name + ".");
+        replicator.rollback(unit, version, lines -> {});
+        response.json(message("Rolling back " + name + " to version " + version + "."));
+    }
+
+    /** Rolling restart: replaces the servers of the template one after another. */
+    @PostRoute("/templates/{name}/restart")
+    public void restart(HttpRequest request, HttpResponse response, @PathVariable("name") String name) {
+        ITemplate template = requireTemplate(name);
+        if (!RollingRestart.start(template, line -> CloudLogger.get().info(line)))
+            throw new HttpException(409, "The servers of " + name + " are already being restarted.");
+        response.json(message("Restarting the servers of " + name + " one after another."));
+    }
+
+    private TemplateReplicator requireReplicator() {
+        return TemplateReplicator.get().orElseThrow(() -> new HttpException(409, "Template history is only kept in a cluster."));
     }
 
     private ITemplate requireTemplate(String name) {

@@ -1554,6 +1554,17 @@ public final class TemplateReplicator implements ClusterModule {
         return lines;
     }
 
+    /** History records of a unit, oldest first. Complete only on the head (the HTTP route is forwarded there). */
+    public List<TemplateHistory.Record> historyRecords(SyncUnit unit) {
+        return history.records(unit);
+    }
+
+    /** The head's current version of a unit, null if unknown. */
+    public Long headVersion(SyncUnit unit) {
+        UnitVersion version = headVersions.get(unit);
+        return version == null ? null : version.version();
+    }
+
     /** {@code template history}: local on the head, forwarded otherwise. */
     public void history(SyncUnit unit, java.util.function.Consumer<List<String>> output) {
         if (isHead()) {

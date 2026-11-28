@@ -6,6 +6,8 @@ import { Templates } from './Templates.jsx';
 import { Template } from './Template.jsx';
 import { Players } from './Players.jsx';
 import { Nodes } from './Nodes.jsx';
+import { Schedules } from './Schedules.jsx';
+import { Backups } from './Backups.jsx';
 
 // list page, or the detail page when the route has a name: #/servers/Lobby-1
 const listOrDetail = (List, Detail) => ({ params, session }) =>
@@ -18,6 +20,8 @@ export const pages = {
   templates: { label: 'Templates', component: listOrDetail(Templates, Template) },
   players: { label: 'Players', component: Players },
   nodes: { label: 'Nodes', component: Nodes },
+  schedules: { label: 'Schedules', component: Schedules },
+  backups: { label: 'Backups', component: Backups },
 };
 
 export const NotFound = () => h('section', null, h('h1', null, 'Not found'), h('a', { href: '#/' }, 'Back to the overview'));

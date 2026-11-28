@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'preact/hooks';
 import { api } from '../api.js';
 import { Badge, ConfirmButton, ErrorNote } from '../components/ui.jsx';
+import { History } from '../components/History.jsx';
 import { navigate } from '../router.js';
 import { act, usePoll } from '../util.js';
 
@@ -110,6 +111,8 @@ export function Template({ name, session }) {
         <h1 class="grow">{name}</h1>
         {t && <span class="muted small">{t.templateType.toLowerCase()} · {t.serverSoftware}</span>}
         <button disabled={!t} onClick={start}>Start server</button>
+        <ConfirmButton disabled={!t || !own.length} confirmText="Restart all, one by one?"
+                       onConfirm={() => act(api(path + '/restart', { method: 'POST', body: {} }))}>Rolling restart</ConfirmButton>
         <ConfirmButton class="danger" disabled={!t} confirmText="Delete template?" onConfirm={remove}>Delete</ConfirmButton>
       </div>
       <ErrorNote error={info.error} />
@@ -127,7 +130,8 @@ export function Template({ name, session }) {
         </div>
       )}
       {t && <Settings name={name} settings={t.settings} onSaved={info.reload}
-                      nodes={nodes.data?.nodes.map((n) => n.name)} />}
+                      nodes={nodes.data?.nodes.map((n) => n.name).sort()} />}
+      {t && session.clustered && <History name={name} />}
     </section>
   );
 }

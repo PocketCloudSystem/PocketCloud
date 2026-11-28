@@ -43,6 +43,8 @@ public final class ClusterHttpForwarder {
 
     private static final Pattern SERVER_ROUTE = Pattern.compile("^.*/v\\d+/servers/([^/]+)/(logs|dispatch|save|stop)$");
     private static final Pattern HEAD_ROUTE = Pattern.compile("^.*/v\\d+/(servers/start|templates(/.*)?|groups(/.*)?|maintenance(/.*)?|nodes/[^/]+/(drain|undrain))$");
+    /** Reads only the head can answer completely. */
+    private static final Pattern HEAD_READ_ROUTE = Pattern.compile("^.*/v\\d+/templates/[^/]+/history$");
     private static final Set<String> READ_METHODS = Set.of("GET", "HEAD", "OPTIONS", "QUERY");
     private static final Set<String> SKIPPED_HEADERS = Set.of("content-type", "content-length", "connection", "x-api-version");
 
@@ -76,7 +78,8 @@ public final class ClusterHttpForwarder {
             return false;
         }
 
-        if (!READ_METHODS.contains(method) && HEAD_ROUTE.matcher(path).matches() && !cluster.isHead()) {
+        boolean headRoute = READ_METHODS.contains(method) ? HEAD_READ_ROUTE.matcher(path).matches() : HEAD_ROUTE.matcher(path).matches();
+        if (headRoute && !cluster.isHead()) {
             String head = cluster.election().head();
             if (head == null || head.isEmpty()) throw new HttpException(503, "There is no head node right now.");
             send(head, request, response);
